@@ -1,0 +1,270 @@
+.reportWrapper {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+/* ===== Table ===== */
+.teamTable th,
+.teamTable td {
+  vertical-align: middle;
+  font-size: 15px;
+}
+
+.reportWrapper .table thead th {
+  background-color: #f2f9fd !important;
+}
+.userCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.order-paid-btn {
+  text-transform: capitalize;
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 500;
+  font-size: 14px;
+  display: inline-block;
+  min-width: 70px;
+  text-align: center;
+}
+
+/* Green for paid */
+.order-paid-btn.paid {
+  background-color: #28a745;
+}
+
+/* Yellow for unpaid */
+.order-paid-btn.unpaid {
+  background-color: #ffc107;
+}
+
+.order-status-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: 500;
+  font-size: 14px;
+  text-transform: capitalize;
+  display: inline-block;
+  min-width: 80px;
+  text-align: center;
+}
+
+.source-facebook {
+  background-color: #1877f2;
+}
+
+.source-youtube {
+  background-color: #ff0000;
+}
+
+.source-frontend {
+  background-color: #6c757d;
+}
+
+.source-default {
+  background-color: #343a40;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  font-size: 15px;
+}
+
+.userInfo strong {
+  font-weight: 600;
+}
+
+.userInfo span {
+  font-size: 12px;
+  color: #777;
+}
+
+/* ===== Status Badges ===== */
+.statusBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  background-color: #d8ffe0;
+  color: #31b94c;
+}
+
+.statusBadge.active {
+  background-color: #d8ffe0;
+  color: #31b94c;
+}
+
+.statusBadge.inactive {
+  background-color: #deeeff;
+  color: #adb5bd;
+}
+
+/* ===== Group Badges ===== */
+.groupBadge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.groupBadge.design {
+  background-color: #c9e7ff;
+  color: #339af0;
+}
+.groupBadge.development {
+  background-color: #deffe3;
+  color: #51cf66;
+}
+.groupBadge.marketing {
+  background-color: #ffd9e6;
+  color: #f783ac;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .userCell {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+/* Custom Pagination */
+.customPagination .pagination {
+  display: flex;
+  gap: 4px;
+  margin-top: 30px;
+  margin-bottom: 10px;
+}
+
+.customPagination .page-link {
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  text-align: center;
+  color: #1c558b;
+  border: 1px solid #1c558b;
+  border-radius: 4px;
+  transition: all 0.3s;
+  font-size: 14px;
+}
+
+.customPagination .page-item.active .page-link {
+  background-color: #1c558b;
+  color: #fff;
+  border-color: #1c558b;
+}
+
+.customPagination .page-item.disabled .page-link {
+  color: #ccc;
+  border-color: #ccc;
+  pointer-events: none;
+}
+
+.customPagination .page-link:hover:not(.disabled) {
+  background-color: #15507a;
+  color: #fff;
+  border-color: #15507a;
+}
+.customPagination:focus-visible {
+  outline: none;
+}
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.custom-report-cards {
+  margin-bottom: 20px;
+}
+
+.custom-report-cards .report-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.custom-report-cards .report-card:hover {
+  transform: translateY(-4px);
+}
+
+.custom-report-cards .card-header h6 {
+  font-weight: 500;
+  font-size: 15px;
+  color: #333;
+}
+
+.custom-report-cards .card-icon {
+  background-color: #daf0ff;
+  color: #15507a;
+  height: 40px;
+  width: 40px;
+  line-height: 40px;
+  display: flex;
+  justify-content: center;
+  font-size: 18px;
+  border-radius: 50%;
+}
+
+.custom-report-cards .card-value {
+  font-weight: 700;
+  font-size: 1.35rem;
+  margin: 5px 0;
+}
+
+.custom-report-cards .sub-value {
+  font-size: 0.82rem;
+}
+
+.custom-report-cards .sub-value.text-blue {
+  color: #0d6efd;
+}
+.custom-report-cards .sub-value.text-pink {
+  color: #e83e8c;
+}
+
+.custom-report-cards .sub-items li {
+  font-size: 0.82rem;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.custom-report-cards .sub-items .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.custom-report-cards .sub-items .dot.red {
+  background: #dc3545;
+}
+.custom-report-cards .sub-items .dot.yellow {
+  background: #ffc107;
+}
+.custom-report-cards .sub-items .dot.blue {
+  background: #0d6efd;
+}
+.custom-report-cards .sub-items .dot.green {
+  background: #198754;
+}
+.custom-report-cards .sub-items .dot.purple {
+  background: #6f42c1;
+}

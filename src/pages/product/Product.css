@@ -1,0 +1,357 @@
+/* Responsive Product Table Styling */
+
+/* Compact Table Styling */
+.product-table-desktop .ant-table-thead > tr > th,
+.product-table-desktop .ant-table-tbody > tr > td {
+  padding: 6px 8px;   /* tighter cells */
+}
+
+.product-table-desktop .ant-table-cell {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Desktop visible, Mobile hidden */
+.product-table-desktop {
+  display: block;
+}
+
+.product-table-mobile {
+  display: none;
+}
+
+/* Responsive Filter Section */
+.filter-desktop {
+  display: block;
+}
+
+.filter-mobile {
+  display: none;
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .product-table-desktop {
+    display: none;
+  }
+
+  .product-table-mobile {
+    display: block;
+    padding: 8px;
+  }
+
+  /* Mobile Filter Styles */
+  .filter-desktop {
+    display: none;
+  }
+
+  .filter-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Two-column grid for mobile filters */
+  .filter-mobile-inputs {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  /* Make selects and inputs full width inside each column */
+  .filter-mobile-inputs .ant-select,
+  .filter-mobile-inputs .ant-input {
+    width: 100% !important;
+  }
+
+  /* Make Clear Filters span full width */
+  .filter-mobile-inputs button {
+    grid-column: 1 / -1; /* spans across both columns */
+    width: 100%;
+  }
+
+  /* Action buttons - all in one row */
+  .filter-mobile-actions {
+    display: block;
+  }
+
+  .filter-mobile-actions .ant-space {
+    width: 100%;
+  }
+
+  .filter-mobile-actions .ant-btn,
+  .filter-mobile-actions .ant-select {
+    flex: 1;
+  }
+
+  .mobile-card {
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 12px;
+    margin-bottom: 14px;
+    border: 1px solid #f0f0f0;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .mobile-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  .mobile-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .mobile-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .mobile-image:hover {
+    transform: scale(1.05);
+  }
+
+  .mobile-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #262626;
+    line-height: 1.3;
+    word-wrap: break-word;
+  }
+
+  .mobile-info p {
+    margin: 2px 0;
+    font-size: 13px;
+    color: #555;
+    line-height: 1.4;
+  }
+
+  .mobile-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #222;
+  }
+
+  .info-pairs {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .pair-left, .pair-right {
+    flex: 1;
+  }
+
+  .divider {
+    width: 1px;
+    background: #ddd;
+    margin: 0 6px;
+    align-self: stretch;
+  }
+
+  .pair-left p,
+  .pair-right p {
+    margin: 2px 0;
+    font-size: 13px;
+    color: #333;
+  }
+
+  /* Product Prices Section */
+  .mobile-price-section {
+    border-top: 1px solid #f0f0f0;
+    padding-top: 3px;
+    margin-top: 3px;
+  }
+
+  .price-pair-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3px;
+    margin: 0;
+    line-height: 1.1;
+    padding: 2px 0;
+  }
+
+  .price-left, .price-right {
+    flex: 1;
+    font-size: 13px;
+    color: #333;
+    line-height: 1.2;
+  }
+
+  .price-left strong, .price-right strong {
+    color: #111;
+  }
+
+  .variation-price {
+    font-size: 14px;
+    color: #16a34a;
+    font-weight: 600;
+    text-align: center;
+    margin: 0;
+  }
+
+  /* Actions & Status */
+  .mobile-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 6px;
+  }
+
+  .mobile-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .mobile-status {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .mobile-actions .ant-btn {
+    min-width: 32px;
+    height: 32px;
+  }
+
+  /* Responsive adjustments for very small screens */
+  @media (max-width: 480px) {
+    .mobile-card {
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+
+    .mobile-top {
+      gap: 10px;
+    }
+
+    .mobile-image {
+      width: 70px;
+      height: 70px;
+    }
+
+    .mobile-info h4 {
+      font-size: 15px;
+    }
+
+    .mobile-info p {
+      font-size: 12px;
+    }
+
+    .mobile-actions {
+      gap: 6px;
+    }
+
+    .mobile-actions .ant-btn {
+      min-width: 28px;
+      height: 28px;
+    }
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .product-table-desktop {
+    display: block;
+  }
+
+  .product-table-mobile {
+    display: none;
+  }
+}
+
+/* Collapsible filter wrapper */
+.product-filter-collapsible {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform-origin: top;
+  transform: scaleY(0.98);
+  transition: max-height 350ms ease, opacity 250ms ease, transform 350ms ease;
+}
+
+.product-filter-collapsible.is-open {
+  /* Ensure this is tall enough to fit your filters; increase if needed */
+  max-height: 900px;
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+/* Desktop Actions - Always Visible */
+.filter-desktop-actions {
+  display: block;
+}
+
+/* Mobile Actions - Always Visible */
+.filter-mobile-actions {
+  display: none; /* Hidden by default on desktop */
+}
+
+@media (max-width: 768px) {
+  .filter-desktop-actions {
+    display: none;
+  }
+  
+  .filter-mobile-actions {
+    display: block !important;
+    margin-bottom: 12px;
+  }
+}
+
+@media (min-width: 769px) {
+  .filter-mobile-actions {
+    display: none;
+  }
+}
+.view-product-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.view-product-header .product-name {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 22px;
+  margin: 0;
+}
+
+.view-product-header .view-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* hover effect একটু smooth */
+.view-product-header .view-button:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}

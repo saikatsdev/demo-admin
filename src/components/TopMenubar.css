@@ -1,0 +1,124 @@
+/* Main Top Menu */
+.top-menu-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 24px;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  /* background: rgba(255, 255, 255, 0.8); */
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  overflow: visible;
+}
+
+/* Normal Menu Items */
+.top-menu-item {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+  position: relative;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+
+.top-menu-item::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background-color: #1C558B;
+  transition: width 0.3s ease;
+}
+
+.top-menu-item:hover {
+  color: #1C558B;
+}
+.top-menu-item:hover::after {
+  width: 100%;
+}
+
+.top-menu-item.active {
+  color: #1C558B;
+}
+.top-menu-item.active::after {
+  width: 100%;
+}
+
+/* More Button */
+.more-menu-wrapper {
+  position: relative;
+}
+
+.more-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.3s ease;
+}
+
+.more-btn:hover {
+  color: #1677ff;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  margin-top: 8px;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  z-index: 1100;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.dropdown-item {
+  padding: 10px 14px;
+  text-decoration: none;
+  color: #333;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background: #f0f6ff;
+  color: #1677ff;
+}
+
+.dropdown-item.active {
+  background: #e6f0ff;
+  color: #1677ff;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive: Hide on mobile */
+@media (max-width: 768px) {
+  .top-menu-bar {
+    display: none;
+  }
+}

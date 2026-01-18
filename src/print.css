@@ -1,0 +1,106 @@
+/* =========================
+   print.css  (A4 / A5 / POS)
+   ========================= */
+
+/* ----- Base: common rules for all print layouts ----- */
+@media print {
+  /* ব্রাউজার header/footer এড়াতে */
+  @page { margin: 0; }
+
+  /* শুধুই .printable অংশ প্রিন্ট হবে */
+  body * { visibility: hidden !important; }
+  .printable, .printable * { visibility: visible !important; }
+
+  /* টেবিল ব্রেক/কালার ফিক্স */
+  .printable table { page-break-inside: auto; border-collapse: collapse; }
+  .printable thead { display: table-header-group; }
+  .printable tfoot { display: table-footer-group; }
+  .printable tr    { page-break-inside: avoid; page-break-after: auto; }
+
+  .printable {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    box-sizing: border-box;
+  }
+
+  .no-print { display: none !important; }
+}
+
+/* ==================
+   Named page:  A4
+   ================== */
+@media print {
+  @page invoiceA4 { size: 210mm 297mm; }     /* A4 portrait */
+
+  /* map class -> named page */
+  .invoice-page-a4,
+  .invoice-page { page: invoiceA4; }
+
+  .invoice-page-a4,
+  .invoice-page {
+    position: absolute;
+    top: 6mm;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200mm;                 /* দুই পাশে ~5mm মার্জিন */
+    padding: 6mm 6mm 8mm 6mm;     /* print-safe mm units */
+    background: #fff;
+    border: 1px solid #3f3f3f;
+    overflow: visible;
+  }
+}
+
+/* ==================
+   Named page:  A5
+   ================== */
+@media print {
+  @page invoiceA5 { size: 148mm 210mm;  margin: 0;}     /* A5 portrait */
+
+  .invoice-page-a5 { page: invoiceA5; }
+
+  .invoice-page-a5 {
+    position: absolute;
+    top: 6mm;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 138mm;                 /* দুই পাশে ~5mm মার্জিন */
+    margin: 6mm auto 0;
+    padding: 5mm 5mm 6mm 5mm;
+    background: #fff;
+    border: 1px solid #3f3f3f;
+    overflow: visible;
+  }
+}
+
+/* =========================
+   Named page: POS 80mm roll
+   ========================= */
+@media print {
+  @page receipt80 { size: 80mm auto; }       /* thermal paper width */
+
+  .receipt-80,
+  .pos-receipt { page: receipt80; }
+
+  .receipt-80,
+  .pos-receipt {
+    position: static;            /* roll paper—absolute না */
+    width: 72mm;                 /* সামান্য ইনসেট */
+    margin: 0 auto;
+    padding: 4mm;
+    background: #fff;
+    box-sizing: border-box;
+  }
+
+  /* POS helper */
+  .receipt-80 table,
+  .pos-receipt table { table-layout: fixed; width: 100%; }
+  .receipt-80 th, .receipt-80 td,
+  .pos-receipt th, .pos-receipt td { word-break: break-word; }
+}
+
+/* ==========
+   Utilities
+   ========== */
+@media print {
+  .page-break { page-break-after: always; }  /* পরের কপি/ইনভয়েসে ব্রেক */
+}

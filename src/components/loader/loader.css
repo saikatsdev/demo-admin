@@ -1,0 +1,27 @@
+/* topLineLoader.css */
+.top-line-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: transparent;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.loader-bar {
+  height: 100%;
+  width: 0;
+  background-color: #a3cffc;
+  animation: expandFull 2s ease forwards; 
+}
+
+@keyframes expandFull {
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
+}

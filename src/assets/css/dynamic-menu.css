@@ -1,0 +1,181 @@
+/* Dynamic Menu Styles */
+
+/* Hide dynamic menu on mobile (below 1024px) */
+@media (max-width: 1023px) {
+  .topbar .dynamic-menu {
+    display: none !important;
+  }
+  /* Mobile: let left block size naturally and remove divider */
+  .topbar .leftpad { width: auto; min-width: 0; gap: 10px; }
+  .topbar .brand::after { display: none; }
+  /* Keep search compact on mobile */
+  .topbar .search { margin-left: auto; }
+  .topbar .search input[type="search"] { width: 160px; }
+  /* Ensure cards and tables don’t overflow mobile */
+  .ant-card-body { padding: 12px; }
+  .ant-table { overflow-x: auto; }
+}
+
+/* Show dynamic menu only on desktop */
+@media (min-width: 1024px) {
+  /* Reserve left space equal to sidebar width so the dynamic menu starts where the sidebar ends */
+  .topbar .leftpad {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+  }
+  .topbar .dynamic-menu {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    margin-left: 8px;
+    /* Make the menu take available space and scroll horizontally when overflowing */
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    position: relative;
+    scrollbar-width: thin;             /* Firefox */
+    scrollbar-color: rgba(0,0,0,0.35) transparent;
+  }
+
+  /* WebKit nice scrollbar */
+  .topbar .dynamic-menu::-webkit-scrollbar { height: 6px; }
+  .topbar .dynamic-menu::-webkit-scrollbar-track { background: transparent; }
+  .topbar .dynamic-menu::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.30);
+    border-radius: 9999px;
+  }
+  .topbar .dynamic-menu:hover::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.40); }
+
+  /* Edge fades for a polished look */
+  .topbar .dynamic-menu::before,
+  .topbar .dynamic-menu::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 16px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .topbar .dynamic-menu::before {
+    left: 0;
+    background: linear-gradient(90deg, rgba(0,0,0,0.08), rgba(0,0,0,0.02), rgba(0,0,0,0));
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+  }
+  .topbar .dynamic-menu::after {
+    right: 0;
+    background: linear-gradient(270deg, rgba(0,0,0,0.08), rgba(0,0,0,0.02), rgba(0,0,0,0));
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+  }
+  
+  /* Prevent sidebar details from opening on desktop - only show in header */
+  .sidebar .nav-group[open] > .sublist {
+    display: none !important;
+  }
+  
+  .sidebar .nav-group > summary::after {
+    content: none !important;
+  }
+  
+  .sidebar .nav-group > summary {
+    cursor: pointer;
+  }
+}
+
+/* Enhanced Dynamic Menu Item Styles */
+.topbar .dynamic-menu > a {
+  color: var(--text-strong);
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 500;
+  font-size: 14px;
+  position: relative;
+  opacity: 0.9;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.topbar .dynamic-menu > a:hover {
+  background: rgba(0, 0, 0, 0.06);
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.topbar .dynamic-menu > a::after {
+  display: none !important;
+}
+
+/* Enhanced Dynamic Menu Dropdown Styles */
+.topbar .dynamic-menu > details.menu-item {
+  position: relative;
+}
+
+.topbar .dynamic-menu > details.menu-item > summary {
+  color: var(--text-strong);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  list-style: none;
+  opacity: 0.9;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.topbar .dynamic-menu > details.menu-item > summary::-webkit-details-marker {
+  display: none;
+}
+
+.topbar .dynamic-menu > details.menu-item > summary::after {
+  content: "▾";
+  font-size: 10px;
+  margin-left: 6px;
+  opacity: 0.8;
+  display: inline-block;
+  transition: transform 0.24s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.topbar .dynamic-menu details.menu-item[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.topbar .dynamic-menu > details.menu-item:hover > summary {
+  background: rgba(0, 0, 0, 0.06);
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+/* Improved Header Layout */
+
+
+/* Hide Institute ID pill */
+.topbar .pill { display: none !important; }
+
+.topbar .brand {
+  position: relative;
+}
+
+/* .topbar .brand::after {
+  content: "";
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.1);
+} */
+

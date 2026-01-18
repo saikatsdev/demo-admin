@@ -1,0 +1,186 @@
+.refresh-icon {
+  color: #1c558b;
+  background-color: rgb(255, 255, 255);
+  padding: 6px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: rgba(50, 50, 105, 0.15) 0px 2px 5px 0px,
+    rgba(0, 0, 0, 0.05) 0px 1px 1px 0px;
+  border: 1px solid #bfbfbf;
+}
+
+.search-results-dropdown {
+  position: absolute;
+  top: 70px;
+  right: 5%;
+  background: #fff;
+  width: 475px;
+  max-height: 450px;
+  overflow-y: auto;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Profile section */
+.search-profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: linear-gradient(90deg, #1C558B, #2875bd);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  color: #fff;
+}
+
+.profile-avatar {
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  color: #1C558B;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-right: 10px;
+}
+
+.profile-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-info strong {
+  font-size: 14px;
+}
+
+.profile-info span {
+  font-size: 12px;
+  opacity: 0.9;
+  color: #ffffff;
+}
+
+.success-btn {
+  background: #28a745;
+  border: none;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.success-btn:hover {
+  background: #218838;
+}
+
+.divider {
+  height: 1px;
+  background: #e6e6e6;
+  margin: 8px 0;
+}
+
+/* Orders list styling */
+.search-result-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f2f2f2;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-result-item:hover {
+  background: #f8f9fa;
+}
+
+.search-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.search-result-body {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #555;
+  margin-top: 3px;
+}
+
+.order-total {
+  font-weight: 600;
+  color: #1C558B;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.customer-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 6px;
+  padding-top: 10px;
+}
+
+.tab-btn {
+  background: #f5f5f5;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-left: 5px;
+  text-transform: capitalize;
+}
+
+.tab-btn:hover {
+  background: #e6f7ff;
+}
+
+.tab-btn.active {
+  background: #1890ff;
+  color: white;
+  font-weight: 500;
+}
+
+.customer-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.customer-avatar {
+  font-size: 16px;
+}
+
+.customer-type {
+  font-size: 12px;
+  color: #888;
+  margin-left: 4px;
+}

@@ -1,0 +1,354 @@
+.page-header-block {
+  display: flex;
+  justify-content: space-between;
+}
+
+.incomplete-sms {
+  background-color: #1890ff;
+  color: #fff;
+  border: none;
+}
+
+.incomplete-sms:hover {
+  background-color: #096dd9;
+}
+
+.incomplete-edit {
+  border: 1px solid #ccc;
+}
+
+.incomplete-edit:hover {
+  border: 1px solid #1c558b !important;
+  color: #1c558b;
+}
+
+.incomplete-call {
+  background-color: #52c41a;
+  color: #fff;
+  border: none;
+}
+
+.incomplete-call:hover {
+  background-color: #389e0d;
+}
+
+.incomplete-convert {
+  background-color: #1c558b;
+  color: #fff;
+  border: none;
+  font-size: 14px;
+}
+
+.incomplete-convert:hover {
+  background-color: #3874ac !important;
+  color: #fff !important;
+}
+
+.incomplete-delete {
+  border: 1px solid #ff4d4f;
+  color: #ff4d4f;
+}
+
+.incomplete-delete:hover {
+  border: 1px solid #fa9d9e !important;
+  color: #fd6365 !important;
+}
+
+.io-modal .ant-modal-header {
+  background: linear-gradient(90deg, #1C558B, #21619c);
+  border-bottom: none;
+  padding: 16px 24px;
+  margin-top: 30px;
+}
+
+.io-modal .ant-modal-title {
+  color: #fff;
+  font-weight: 600;
+}
+
+
+.io-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 14px 0 18px;
+}
+
+.io-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(17, 24, 39, 0.06);
+  min-width: 0;
+  cursor: pointer;
+  transition: 0.5s;
+}
+
+.io-card:hover {
+  box-shadow: 0 6px 20px rgba(17, 24, 39, 0.15);
+}
+
+.io-badge {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  font-size: 22px;
+  color: #fff;
+  background-color: #1C558B;
+}
+
+.io-card-body {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.io-card-label {
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.io-card-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Make modal fully responsive */
+@media (max-width: 1200px) {
+  .io-modal {
+    width: 90% !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .io-cards {
+    grid-template-columns: 1fr; /* stack cards on small screens */
+  }
+}
+
+.recent-activity-container {
+  margin-top: 40px;
+}
+
+.recent-activity-container h3 {
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activity-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.activity-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.activity-card {
+  flex: 1 1 250px;
+  background: #f9fafc;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.activity-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.activity-card p {
+  margin: 4px 0;
+}
+
+.activity-card p:first-child {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.activity-card span.new {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.activity-card span.converted {
+  color: #00b894;
+  font-weight: 600;
+}
+
+/* 🔹 Abandoned Products Section */
+.abandoned-products-container {
+  margin-top: 40px;
+}
+
+.abandoned-products-container h3 {
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* slightly smaller gap between rows */
+}
+
+.product-item {
+  display: flex;
+  align-items: center; /* vertically center image, text, and badge */
+  gap: 8px; /* reduce spacing between image and text */
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 6px;
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 2px;
+  border: 1px solid #f0f0f0;
+}
+
+.product-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.product-item span {
+  font-size: 14px;
+  color: #333;
+}
+
+.product-item .badge {
+  margin-left: auto; /* push badge to right */
+  background-color: #1c558b;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.product-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 🔹 Responsive */
+@media (max-width: 768px) {
+  .activity-stats {
+    flex-direction: column;
+  }
+
+  .product-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .activity-buttons {
+    justify-content: flex-start;
+  }
+}
+
+/* Modal body */
+.delivery-modal .ant-modal-body {
+ margin-top: 20px;
+}
+
+.delivery-modal .status-cards {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.delivery-modal .status-card {
+  flex: 1;
+  padding: 16px;
+  border-radius: 8px;
+  color: #000;
+  font-weight: 600;
+}
+
+.delivery-modal .success-card {
+  background: #e6f7ff;
+  color: #0050b3;
+  margin-right: 10px;
+}
+
+.delivery-modal .cancel-card {
+  background: #fff1f0;
+  color: #a8071a;
+  margin-left: 10px;
+}
+
+.delivery-modal .ant-table-tbody > tr.table-row-light > td {
+  background-color: #ffffff;
+}
+.delivery-modal .ant-table-tbody > tr.table-row-dark > td {
+  background-color: #f5f5f5;
+}
+
+.delivery-modal .success-percent {
+  font-weight: 600;
+  color: #52c41a;
+}
+.delivery-modal .success-percent.warning {
+  color: #faad14;
+}
+.delivery-modal .cancel-percent {
+  font-weight: 600;
+  color: #52c41a;
+}
+.delivery-modal .cancel-percent.high {
+  color: #f5222d;
+}
+
+.delivery-modal .order-summary {
+  padding: 16px;
+  background: #fffbe6;
+  border-radius: 8px;
+}
+
+.delivery-modal .order-summary h4 {
+  margin-bottom: 8px;
+  color: #ad8b00;
+}
+
+.delivery-modal .order-summary p {
+  margin: 0;
+}
+
+.delivery-modal .no-data {
+  text-align: center;
+  color: #888;
+  padding: 20px 0;
+}
+
+.delivery-modal .loading-spinner {
+  text-align: center;
+  padding: 50px 0;
+}
