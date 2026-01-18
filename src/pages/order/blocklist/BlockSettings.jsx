@@ -1,5 +1,5 @@
 
-import { Input as AntInput, Breadcrumb, Button, Form, Select,message, Switch } from "antd";
+import { Input as AntInput, Breadcrumb, Button, Form, Select,message } from "antd";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
@@ -100,8 +100,6 @@ export default function BlockSettings() {
                 <Form form={form} onFinish={handleSubmit} layout="vertical" initialValues={{width:"960", height:"1200"}}>
                     <div>
                         <Form.Item label="Maximum Order">
-                            {/* <Switch size="small" checkedChildren="On" unCheckedChildren="Off" style={{ marginLeft:"30rem", marginBottom:"1rem" }}/> */}
-
                             <Form.Item name="quantity" noStyle>
                                 <AntInput type="number" placeholder="Enter quantity" />
                             </Form.Item>
@@ -109,24 +107,18 @@ export default function BlockSettings() {
 
 
                         <Form.Item label="Order Blocking Duration">
-                            {/* <Switch size="small" checkedChildren="On" unCheckedChildren="Off" style={{ marginLeft:"30rem", marginBottom:"1rem" }}/> */}
-
                             <Form.Item name="duration" noStyle rules={[{ required: true }]}>
                                 <AntInput type="number" placeholder="Enter duration" />
                             </Form.Item>
                         </Form.Item>
 
                         <Form.Item label="Order Blocking Percentage">
-                            {/* <Switch size="small" checkedChildren="On" unCheckedChildren="Off" style={{ marginLeft:"30rem", marginBottom:"1rem" }}/> */}
-
                             <Form.Item name="allow_percentage" noStyle rules={[{ required: true }]}>
                                 <AntInput type="number" placeholder="Enter percentage" />
                             </Form.Item>
                         </Form.Item>
 
                         <Form.Item label="Duration Type">
-                            {/* <Switch size="small" checkedChildren="On" unCheckedChildren="Off" style={{ marginLeft:"30rem", marginBottom:"1rem" }}/> */}
-
                             <Form.Item name="duration_type" noStyle>
                                 <Select
                                     options={[

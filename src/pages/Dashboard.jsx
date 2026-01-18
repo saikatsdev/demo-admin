@@ -27,7 +27,7 @@ export default function Dashboard() {
             const res = await getDatas("/admin/dashboard");
 
             if(res && res.success){
-            setDashboardSummary(res.result || {});
+                setDashboardSummary(res.result || {});
             }
         } catch (error) {
             console.log(error);

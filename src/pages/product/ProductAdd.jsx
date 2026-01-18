@@ -767,6 +767,11 @@ const ProductAdd = () => {
     },
   };
 
+  const regular = Number(regularPrice);
+  const offer = Number(offerPrice);
+
+  const isInvalidOffer = offerPrice !== "" && regularPrice !== "" && !Number.isNaN(regular) && !Number.isNaN(offer) && offer > regular;
+
   return (
     <div style={{ padding: 16 }}>
       {contextHolder}
@@ -1602,6 +1607,7 @@ const ProductAdd = () => {
                       </Form.Item>
                     </Form>
                   </Col>
+
                   <Col xs={24} lg={8}>
                     <Form layout="vertical">
                       <Form.Item label="Regular Price" required>
@@ -1613,9 +1619,10 @@ const ProductAdd = () => {
                       </Form.Item>
                     </Form>
                   </Col>
+
                   <Col xs={24} lg={8}>
                     <Form layout="vertical">
-                      <Form.Item label="Offer Price">
+                      <Form.Item label="Offer Price" validateStatus={isInvalidOffer ? "error" : ""} help={isInvalidOffer ? "Offer price cannot be greater than regular price" : "" }>
                         <Input
                           placeholder="Enter Offer Price"
                           value={offerPrice}
@@ -1624,17 +1631,13 @@ const ProductAdd = () => {
                       </Form.Item>
                     </Form>
                   </Col>
+
                 </Row>
               </Card>
             )}
 
             <Row justify="end" style={{ marginTop: 16 }}>
-              <Button
-                type="primary"
-                size="large"
-                onClick={handleSubmit}
-                loading={loading}
-              >
+              <Button type="primary" size="large" onClick={handleSubmit} loading={loading} disabled={isInvalidOffer}>
                 Add Product
               </Button>
             </Row>

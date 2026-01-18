@@ -104,7 +104,7 @@ export default function OrderAdd() {
 
     useEffect(() => {
         if (couriers.length && !courierId) {
-            const initialCourier = defaultCourierId || (couriers[0] ? couriers[0].id : "");
+            const initialCourier = defaultCourierId || "";
             setCourierId(initialCourier);
             getCourierWiseData(initialCourier);
         }
@@ -254,7 +254,6 @@ export default function OrderAdd() {
             shippingCharge(defaultId);
         }
     }, [deliveryGateways]);
-
 
     const removeAddField = () => {
         setDeliveryChargeId('')
@@ -433,7 +432,7 @@ export default function OrderAdd() {
             delivery_type      : isPathao && !isRedx ? 12                   : 48,
             courier_id         : courierId,
             pickup_store_id    : pathaoStoreId,
-            courier_area_id    : selectedPathaoArea.area_value.area_id || '',
+            courier_area_id    : selectedPathaoArea?.area_value?.area_id || '',
             item_weight        : itemWeight,
             is_incomplete      : isIncomplte ? 1                            : 0
         })
