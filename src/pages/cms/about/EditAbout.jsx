@@ -1,11 +1,11 @@
-import useTitle from "../../hooks/useTitle"
+import useTitle from "../../../hooks/useTitle"
 
 import { PlusOutlined } from '@ant-design/icons';
 import { Input as AntInput, Breadcrumb, Button, Form, message, Upload } from "antd";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getDatas, postData } from "../../api/common/common";
+import { getDatas, postData } from "../../../api/common/common";
 import { useEffect } from "react";
 
 export default function EditAbout() {

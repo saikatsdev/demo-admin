@@ -2,8 +2,8 @@ import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/ico
 import { Input as AntInput, Breadcrumb, Button, message, Tag, Popconfirm, Space, Table } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { deleteData, getDatas } from "../../api/common/common";
-import useTitle from "../../hooks/useTitle";
+import { deleteData, getDatas } from "../../../api/common/common";
+import useTitle from "../../../hooks/useTitle";
 
 export default function FAQ() {
     //Hook

@@ -3,8 +3,8 @@ import { Breadcrumb, Button, Skeleton, Space } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { deleteData, getDatas } from "../../api/common/common";
-import useTitle from "../../hooks/useTitle";
+import { deleteData, getDatas } from "../../../api/common/common";
+import useTitle from "../../../hooks/useTitle";
 
 export default function Slider() {
     // Variable

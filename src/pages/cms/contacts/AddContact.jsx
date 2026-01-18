@@ -1,11 +1,11 @@
-import useTitle from "../../hooks/useTitle"
+import useTitle from "../../../hooks/useTitle"
 
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button, Form, message } from "antd";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { Link, useNavigate } from "react-router-dom";
-import { postData } from "../../api/common/common";
+import { postData } from "../../../api/common/common";
 
 export default function AddContact() {
     // Hook

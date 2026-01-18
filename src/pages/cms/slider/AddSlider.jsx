@@ -2,8 +2,8 @@ import { ArrowLeftOutlined, CloudUploadOutlined } from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message } from "antd";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { postData } from "../../api/common/common";
-import useTitle from "../../hooks/useTitle";
+import { postData } from "../../../api/common/common";
+import useTitle from "../../../hooks/useTitle";
 
 const DEVICE_SIZES = {
     desktop: { width: 4360, height: 1826 },

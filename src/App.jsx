@@ -21,15 +21,6 @@ import EditCampaign from "./pages/campaigns/EditCampaign";
 import AddCategorySection from "./pages/categorySection/AddCategorySection";
 import CategorySection from "./pages/categorySection/CategorySection";
 import EditCategorySection from "./pages/categorySection/EditCategorySection";
-import About from "./pages/cms/About";
-import AddSlider from "./pages/cms/AddSlider";
-import Banner from "./pages/cms/Banner";
-import Contact from "./pages/cms/Contact";
-import EditSlider from "./pages/cms/EditSlider";
-import FAQ from "./pages/cms/FAQ";
-import PrivacyPolicy from "./pages/cms/PrivacyPolicy";
-import Slider from "./pages/cms/Slider";
-import TermsCondition from "./pages/cms/TermsCondition";
 import Pathao from "./pages/courier/Pathao";
 import REDX from "./pages/courier/RedX";
 import SteadFast from "./pages/courier/SteadFast";
@@ -72,14 +63,7 @@ import SectionProdcut from "./pages/section&product/SectionProdcut";
 import Settings from "./pages/setting/Settings";
 import RedirectIfAuth from "./routes/RedirectIfAuth";
 import RequireAuth from "./routes/RequireAuth";
-
-import {
-  InvoiceA4,
-  InvoiceA5,
-  InvoicePos,
-  MultipleInvoice,
-} from "./pages/invoice";
-
+import {InvoiceA4,InvoiceA5,InvoicePos,MultipleInvoice} from "./pages/invoice";
 import Customer from "./pages/auth/Customer";
 import Employee from "./pages/auth/Employee";
 import Clarity from "./pages/product/catelog/Clarity";
@@ -97,20 +81,10 @@ import AddDownSell from "./pages/order/downsell/AddDownSell";
 import EditDownSell from "./pages/order/downsell/EditDownSell";
 import AddCustomer from "./pages/auth/AddCustomer";
 import EditAttribute from "./pages/product/attribute/EditAttribute";
-import AddPrivacy from "./pages/cms/AddPrivacy";
-import EditPrivacy from "./pages/cms/EditPrivacy";
-import AddTermsCondition from "./pages/cms/AddTermsCondition";
-import EditTermsCondition from "./pages/cms/EditTermsCondition";
-import AddAbout from "./pages/cms/AddAbout";
-import EditAbout from "./pages/cms/EditAbout";
 import Review from "./pages/product/review/Review";
 import AddReview from "./pages/product/review/AddReview";
 import EditReview from "./pages/product/review/EditReview";
 import EditCustomer from "./pages/auth/EditCustomer";
-import AddContact from "./pages/cms/AddContact";
-import EditContact from "./pages/cms/EditContact";
-import AddFaq from "./pages/cms/AddFaq";
-import EditFaq from "./pages/cms/EditFaq";
 import AddPaymentGateway from "./pages/order/incomplete/AddPaymentGateway";
 import EditPaymentGateway from "./pages/order/incomplete/EditPaymentGateway";
 import Gallary from "./pages/gallary/Gallary";
@@ -149,25 +123,7 @@ import CourierReport from "./pages/report/CourierReport";
 import Pusher from "./pages/pusher/Pusher";
 import PathaStore from "./pages/courier/PathaStore";
 import StoreCreate from "./pages/courier/StoreCreate";
-import ShippingPolicy from "./pages/cms/ShippingPolicy";
-import AddShippingPolicy from "./pages/cms/AddShippingPolicy";
-import EditShippingPolicy from "./pages/cms/EditShippingPolicy";
-import AddWarrantyPolicy from "./pages/cms/AddWarrantyPolicy";
-import WarrantyPolicy from "./pages/cms/WarrantyPolicy";
-import EditWarrantyPolicy from "./pages/cms/EditWarrantyPolicy";
-import AddOrderPolicy from "./pages/cms/AddOrderPolicy";
-import OrderPolicy from "./pages/cms/OrderPolicy";
-import EditOrderPolicy from "./pages/cms/EditOrderPolicy";
-import Mission from "./pages/cms/Mission";
-import AddMission from "./pages/cms/AddMission";
-import EditMission from "./pages/cms/EditMission";
-import Vision from "./pages/cms/Vision";
-import AddVision from "./pages/cms/AddVision";
-import EditVision from "./pages/cms/EditVision";
 import AddBlockUser from "./pages/order/blocklist/AddBlockUser";
-import ReturnRefundPolicy from "./pages/cms/ReturnRefundPolicy";
-import AddReturnRefundPolicy from "./pages/cms/AddReturnRefundPolicy";
-import EditReturnRefundPolicy from "./pages/cms/EditReturnRefundPolicy";
 import UpSell from "./pages/product/thankyou/UpSell";
 import TrashList from "./components/order/TrashList";
 import CourierSetting from "./pages/order/courier/CourierSetting";
@@ -181,6 +137,24 @@ import { fetchPaymentGateways } from "./features/paymentGateway/paymentGatewaySl
 import { fetchCouriers } from "./features/courier/courierSlice";
 import { fetchStatuses } from "./features/status/statusSlice";
 import { fetchDeliveryGateways } from "./features/deliveryGateway/deliveryGatewaySlice";
+import About from "./pages/cms/about/About";
+import AddAbout from "./pages/cms/about/AddAbout";
+import EditAbout from "./pages/cms/about/EditAbout";
+import Slider from "./pages/cms/slider/Slider";
+import AddSlider from "./pages/cms/slider/AddSlider";
+import EditSlider from "./pages/cms/slider/EditSlider";
+import Contact from "./pages/cms/contacts/Contact";
+import AddContact from "./pages/cms/contacts/AddContact";
+import EditContact from "./pages/cms/contacts/EditContact";
+import FAQ from "./pages/cms/faqs/FAQ";
+import AddFaq from "./pages/cms/faqs/AddFaq";
+import EditFaq from "./pages/cms/faqs/EditFaq";
+import PrivacyPolicy from "./pages/cms/privacy/PrivacyPolicy";
+import AddPrivacy from "./pages/cms/privacy/AddPrivacy";
+import EditPrivacy from "./pages/cms/privacy/EditPrivacy";
+import TermsCondition from "./pages/cms/terms&condition/TermsCondition";
+import AddTermsCondition from "./pages/cms/terms&condition/AddTermsCondition";
+import EditTermsCondition from "./pages/cms/terms&condition/EditTermsCondition";
 
 function App() {
 
@@ -372,43 +346,23 @@ function App() {
           <Route path="/sliders" element={<Slider />} />
           <Route path="/add/slider" element={<AddSlider />} />
           <Route path="/slider/edit/:id" element={<EditSlider />} />
+
           <Route path="/about" element={<About />} />
           <Route path="/add/about" element={<AddAbout />} />
           <Route path="/edit/about/:id" element={<EditAbout />} />
+
           <Route path="/contacts" element={<Contact />} />
           <Route path="/add/contact" element={<AddContact />} />
           <Route path="/edit/contact/:id" element={<EditContact />} />
+
           <Route path="/faqs" element={<FAQ />} />
           <Route path="/add/faq" element={<AddFaq />} />
           <Route path="/edit/faq/:id" element={<EditFaq />} />
 
-          <Route path="/visions" element={<Vision />} />
-          <Route path="/add/vision" element={<AddVision />} />
-          <Route path="/edit/vision/:id" element={<EditVision />} />
-
-          <Route path="/missions" element={<Mission />} />
-          <Route path="/add/mission" element={<AddMission />} />
-          <Route path="/edit/mission/:id" element={<EditMission />} />
-
-          <Route path="/shipping-policy" element={<ShippingPolicy />} />
-          <Route path="/add/shipping/policy" element={<AddShippingPolicy />} />
-          <Route path="/edit/shipping/policy/:id" element={<EditShippingPolicy />} />
-
-          <Route path="/warranty-policy" element={<WarrantyPolicy />} />
-          <Route path="/add/warranty/policy" element={<AddWarrantyPolicy />} />
-          <Route path="/edit/warranty/policy/:id" element={<EditWarrantyPolicy />} />
-
-          <Route path="/return-refund-policy" element={<ReturnRefundPolicy />} />
-          <Route path="/add/return/policy" element={<AddReturnRefundPolicy />} />
-          <Route path="/edit/return/policy/:id" element={<EditReturnRefundPolicy />} />
-
-          <Route path="/order-policy" element={<OrderPolicy />} />
-          <Route path="/add/order/policy" element={<AddOrderPolicy />} />
-          <Route path="/edit/order/policy/:id" element={<EditOrderPolicy />} />
-
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/add/privacy" element={<AddPrivacy />} />
           <Route path="/edit/privacy/:id" element={<EditPrivacy />} />
+
           <Route path="/terms-and-conditions" element={<TermsCondition />} />
           <Route path="/add/terms" element={<AddTermsCondition />} />
           <Route path="/edit/terms-condition/:id" element={<EditTermsCondition />} />
