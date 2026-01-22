@@ -4,6 +4,7 @@ import { Input as AntInput, Breadcrumb, Button, Form, Upload,Select,message } fr
 import { Link, useNavigate } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
 import { postData } from "../../../api/common/common";
+import { useState } from "react";
 
 export default function AddPaymentGateway() {
     // Hook
@@ -13,6 +14,7 @@ export default function AddPaymentGateway() {
 
     const [form]                      = Form.useForm();
     const [messageApi, contextHolder] = message.useMessage();
+    const [loading, setLoading]       = useState(false);
 
     // Method
     const normFile = e => {
@@ -39,16 +41,24 @@ export default function AddPaymentGateway() {
         formData.append("width", values.width);
         formData.append("height", values.height);
 
-        const res = await postData("/admin/payment-gateways", formData);
+        try {
+            setLoading(true);
 
-        messageApi.open({
-            type: "success",
-            content: res.msg,
-        });
+            const res = await postData("/admin/payment-gateways", formData);
 
-        setTimeout(() => {
-            navigate("/payment-gateways");
-        }, 400);
+            messageApi.open({
+                type: "success",
+                content: res.msg,
+            });
+
+            setTimeout(() => {
+                navigate("/payment-gateways");
+            }, 400);
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setLoading(false);
+        }
     }
 
     return (
@@ -114,7 +124,7 @@ export default function AddPaymentGateway() {
                         <div style={{marginTop:"40px"}}>
                             <Form.Item>
                                 <Button type="primary" htmlType="submit" block>
-                                    Submit
+                                    {loading ? "Submiting..." : "Submit"}
                                 </Button>
                             </Form.Item>
                         </div>

@@ -4,7 +4,7 @@ import { Input as AntInput, Breadcrumb, Button, Form, Upload,Select,message } fr
 import { Link, useNavigate, useParams } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
 import { getDatas, postData } from "../../../api/common/common";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function EditPaymentGateway() {
     // Hook
@@ -15,6 +15,7 @@ export default function EditPaymentGateway() {
 
     const [form]                      = Form.useForm();
     const [messageApi, contextHolder] = message.useMessage();
+    const [loading, setLoading]       = useState(false);
 
     useEffect(() => {
         const getGateway = async () => {
@@ -60,16 +61,25 @@ export default function EditPaymentGateway() {
         formData.append("height", values.height);
         formData.append("_method", "PUT");
 
-        const res = await postData(`/admin/payment-gateways/${id}`, formData);
+        try {
+            setLoading(true);
 
-        messageApi.open({
-            type: "success",
-            content: res.msg,
-        });
+            const res = await postData(`/admin/payment-gateways/${id}`, formData);
 
-        setTimeout(() => {
-            navigate("/payment-gateways");
-        }, 400);
+            messageApi.open({
+                type: "success",
+                content: res.msg,
+            });
+
+            setTimeout(() => {
+                navigate("/payment-gateways");
+            }, 400);
+
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setLoading(false);
+        }
     }
 
     return (
@@ -135,7 +145,7 @@ export default function EditPaymentGateway() {
                         <div style={{marginTop:"40px"}}>
                             <Form.Item>
                                 <Button type="primary" htmlType="submit" block>
-                                    Update
+                                    {loading ? "Updating..." : "Update"}
                                 </Button>
                             </Form.Item>
                         </div>

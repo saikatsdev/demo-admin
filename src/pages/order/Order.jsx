@@ -92,7 +92,6 @@ export default function Order() {
     const [employeeList, setEmployeeList]                                                              = useState([]);
     const [employeeId, setEmployeeId]                                                                  = useState(null);
     const [invoiceStatus, setInvoiceStatus]                                                            = useState(null);
-    const [customerTypeList, setCustomerTypeList]                                                      = useState([]);
     const [selectedCustomerTypeId, setSelectedCustomerTypeId]                                          = useState(null);
     const [courierId, setCourierId]                                                                    = useState(null);
     const scanEnabled                                                                                  = true;
@@ -127,9 +126,11 @@ export default function Order() {
     const [isCourierModalOpen, setIsCourierModalOpen]                                                  = useState(false);
     const [courierLogs, setCourierLogs]                                                                = useState([]);
     const [pageSize, setPageSize]                                                                      = useState(orders?.per_page);
+    const [bulkLoading, setBulkLoading]                                                                = useState(false);
 
     // Redux State
     const orderTagList             = useSelector((state) => state.orderFrom.list);
+    const customerTypeList             = useSelector((s) => s.customerType.list);
 
     const authenticateUserPermission = async () => {
         try {
@@ -190,7 +191,7 @@ export default function Order() {
                 setCurrentPage(res?.result?.orders?.meta?.current_page);
                 setPageSize(res?.result?.orders?.meta?.per_page);
         
-                serTotalOrder(res?.result?.total_orders || 0);
+                serTotalOrder(res?.result?.orders?.orders_count || 0);
         
                 setDuplicateOrder(0);
 
@@ -281,19 +282,6 @@ export default function Order() {
         }
     };
 
-    const getCustomerType = async () => {
-        try {
-            const data = await cachedFetch("customer_types", async () => {
-                const res = await getDatas("/admin/customer-types/list");
-                return res?.success ? res.result : [];
-            });
-
-            setCustomerTypeList(data);
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
     const handleStatusChange = (status) => {
         if (status === "all-order") {
             allOrderStatus();
@@ -330,7 +318,6 @@ export default function Order() {
 
     useEffect(() => {
         authenticateUserPermission();
-        getCustomerType();
         getOrders(1);
         getEmployees();
         getDistrict();
@@ -549,7 +536,8 @@ export default function Order() {
 
     const orderCurrentStatusUpdate = async () => {
         try {
-            
+            setBulkLoading(true);
+
             const payload = {
                 order_ids        : selectedOrderIds,
                 current_status_id: orderCurrentStatus,
@@ -585,6 +573,8 @@ export default function Order() {
 
         } catch (error) {
             console.error("Error:", error);
+        }finally{
+            setBulkLoading(false);
         }
     };
 
@@ -1552,7 +1542,7 @@ export default function Order() {
                                     setPreviewSrc(p.img);
                                     }}
                                     onMouseLeave={() => setPreviewSrc(null)}
-                                    style={{width: 80,height: 80,borderRadius: "50%",objectFit: "cover",border: "1px solid #f0f0f0",cursor: "pointer",}}
+                                    style={{width: 40,height: 40,borderRadius: "50%",objectFit: "cover",border: "1px solid #f0f0f0",cursor: "pointer",}}
                                 />
                             ))}
                         </div>
@@ -1711,26 +1701,40 @@ export default function Order() {
             title: "Payment Info",
             key: "payment_info",
             width: 180,
-            render: (_, record) => (
-                <div>
-                    <p style={{ marginBottom: 5 }}>
-                        <span style={{ fontWeight: "bold" }}>Advanced Payment:</span>
-                        {record.advance_payment}
-                    </p>
-                    <p style={{ marginBottom: 5 }}>
-                        <span style={{ fontWeight: "bold" }}>Discount:</span>
-                        {record.Discount}
-                    </p>
-                    <p style={{ marginBottom: 5 }}>
-                        <span style={{ fontWeight: "bold" }}>Delivery Charge:</span>
-                        {record.delivery_charge}
-                    </p>
-                    <p style={{ marginBottom: 5 }}>
-                        <span style={{ fontWeight: "bold" }}>Payable Amount:</span>
-                        {record.payable_price}
-                    </p>
-                </div>
-            ),
+            render: (_, record) => {
+                const products = record?.products ?? [];
+                const money = (v) => `৳ ${Number(v || 0).toLocaleString('en-BD')}`;
+
+                return (
+                    <div>
+                        <p style={{ marginBottom: 5 }}>
+                            <span style={{ fontWeight: "bold" }}>Advanced Payment:</span>
+                            {money(record.advance_payment)}
+                        </p>
+
+                        <p style={{ marginBottom: 5 }}>
+                            <span style={{ fontWeight: "bold" }}>Discount:</span>
+                            {money(record.Discount)}
+                        </p>
+
+                        <p style={{ marginBottom: 5 }}>
+                            <span style={{ fontWeight: "bold" }}>Delivery Charge:</span>
+                            {money(record.delivery_charge)}
+                        </p>
+
+                        {products.map((p, index) => (
+                            <p key={index} style={{ marginBottom: 5 }}>
+                                <strong>Sell Price:</strong> {money(p.sell_price)}
+                            </p>
+                        ))}
+                        
+                        <p style={{ marginBottom: 5 }}>
+                            <span style={{ fontWeight: "bold" }}>Payable Amount:</span>
+                            {money(record.payable_price)}
+                        </p>
+                    </div>
+                );
+            },
         },
         {
             title: "Order Note",
@@ -2743,7 +2747,7 @@ export default function Order() {
                 </Select>
             </Modal>
 
-            <Modal title="Change Your Order Status" open={handleselectedActionCurrentOrderStatusModal} onCancel={() => setHandleselectedActionCurrentOrderStatusModal(false)}
+            <Modal title="Change Your Order Status" open={handleselectedActionCurrentOrderStatusModal} loading={bulkLoading} onCancel={() => setHandleselectedActionCurrentOrderStatusModal(false)}
                 onOk={orderCurrentStatusUpdate} width={300}>
                 <Select value={orderCurrentStatus} onChange={(value) => setOrderCurrentStatus(value)} style={{ width: "100%", marginBottom: 16 }}>
                     {orderStatus?.filter((status) => status.status_id !== 9 && status.status_id !== 10)

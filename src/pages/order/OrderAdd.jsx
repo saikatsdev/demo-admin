@@ -432,7 +432,7 @@ export default function OrderAdd() {
             delivery_type      : isPathao && !isRedx ? 12                   : 48,
             courier_id         : courierId,
             pickup_store_id    : pathaoStoreId,
-            courier_area_id    : selectedPathaoArea?.area_value?.area_id || '',
+            courier_area_id    : selectedPathaoArea?.id || '',
             item_weight        : itemWeight,
             is_incomplete      : isIncomplte ? 1                            : 0
         })

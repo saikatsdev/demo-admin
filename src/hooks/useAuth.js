@@ -1,8 +1,9 @@
 import { useDispatch, useSelector } from 'react-redux';
-import {setCredentials,clearCredentials,selectUser,selectToken,selectIsAuthenticated} from '../features/auth/authSlice.js';
+import {setCredentials,clearCredentials,selectUser,selectToken,selectIsAuthenticated} from '../features/auth/authSlice';
 
 export function useAuth() {
   const dispatch = useDispatch();
+
   const user = useSelector(selectUser);
   const token = useSelector(selectToken);
   const isAuthenticated = useSelector(selectIsAuthenticated);
