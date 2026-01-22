@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/_img": {
-        target: "http://127.0.0.1:8000",
+        target: "https://api.servicekeyweb.xyz",
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/_img/, ""),
