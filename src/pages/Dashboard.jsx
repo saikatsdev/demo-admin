@@ -53,6 +53,12 @@ export default function Dashboard() {
         getSettings();
     }, []);
 
+    const auth = localStorage.getItem("auth");
+
+    const parsedAuth = JSON.parse(auth);
+
+    console.log(parsedAuth);
+
     return (
         <div className="dashboard-container">
             {loading && <FullPageLoader />}
