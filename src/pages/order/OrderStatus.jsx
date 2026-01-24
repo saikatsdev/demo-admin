@@ -1,7 +1,7 @@
 
 
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, message, Modal, Popconfirm, Select, Space, Table, Tag } from "antd";
+import { Input as AntInput, Breadcrumb, Button, Form, message, Modal, Popconfirm, Select, Space, Table, Tag,ColorPicker } from "antd";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { deleteData, getDatas, postData } from "../../api/common/common";
@@ -219,14 +219,8 @@ export default function OrderStatus() {
             <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
 
             <div>
-                <Modal style={{textAlign:"center"}}
-                    title={editingItems ? "Edit Info" : "Create New"}
-                    open={isModalOpen}
-                    onOk={handleSubmit}
-                    okText={editingItems ? "Update" : "Create"}
-                    confirmLoading={loading}
-                    onCancel={() => setIsModalOpen(false)}
-                >
+                <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"} confirmLoading={loading}
+                    onCancel={() => setIsModalOpen(false)}>
                     <div>
                         <Form form={form} layout="s">
                             <div>
@@ -238,12 +232,24 @@ export default function OrderStatus() {
                                     <AntInput placeholder="Enter Position" />
                                 </Form.Item>
 
-                                <Form.Item name="bg_color" label="Background Color" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter Bg Color" />
+                                <Form.Item name="bg_color" label="Background Color" rules={[{ required: true, message: "Background color is required" }]}>
+                                    <Space>
+                                        <Form.Item name="bg_color" noStyle>
+                                            <AntInput placeholder="#ffffff" style={{ width: 140 }} />
+                                        </Form.Item>
+
+                                        <ColorPicker format="hex" onChangeComplete={(color) => {form.setFieldValue("bg_color", color.toHexString());}}/>
+                                    </Space>
                                 </Form.Item>
 
-                                <Form.Item name="text_color" label="Text Color" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter Text Color" />
+                                <Form.Item name="text_color" label="Text Color" rules={[{ required: true, message: "Text color is required" }]}>
+                                    <Space>
+                                        <Form.Item name="text_color" noStyle>
+                                            <AntInput placeholder="#000000" style={{ width: 140 }} />
+                                        </Form.Item>
+
+                                        <ColorPicker format="hex" onChangeComplete={(color) => {form.setFieldValue("text_color", color.toHexString());}}/>
+                                    </Space>
                                 </Form.Item>
 
                                 <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">

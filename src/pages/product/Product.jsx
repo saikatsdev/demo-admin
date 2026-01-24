@@ -591,9 +591,14 @@ export default function Product() {
     const handleCopy = async (id) => {
         if (hasPermission("products-create")) {
             try {
-                const res = await getDatas(`/admin/products/copy/${id}`, {}, "POST");
+                const res = await postData(`/admin/products/copy/${id}`);
                 if (res?.success) {
-                    message.success("Product copied successfully");
+                    
+                    messageApi.open({
+                        type: "success",
+                        content: "Product copied successfully",
+                    });
+                    
                     window.location.reload();
                 }
             } catch {
