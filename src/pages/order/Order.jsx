@@ -167,6 +167,7 @@ export default function Order() {
         try {
             const res = await getDatas("/admin/orders/list", {
                 page         : page,
+				paginate_size: "paginate_size" in overrides ? overrides.paginate_size : pageSize,
                 search_key   : "search_key" in overrides ? overrides.search_key      : searchQuery,
                 paid_status  : "paid_status" in overrides ? overrides.paid_status    : isPaid,
         
@@ -2372,17 +2373,15 @@ export default function Order() {
                                     pageSize: pageSize,
                                     total: orders?.meta?.total || 0,
                                     showSizeChanger: true,
-                                    pageSizeOptions: [10, 20, 50, 100],
+                                    pageSizeOptions: [10, 20, 50, 100,150,200,250,300,400,500],
                                     showQuickJumper: true,
                                     showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
                 
                                     onChange: (page, size) => {
                                     const targetPage = size !== pageSize ? 1 : page;
-                
-                                    setCurrentPage(targetPage);
-                                    setPageSize(size);
-                
-                                    getOrders(targetPage, { paginate_size: size });
+                                        setCurrentPage(targetPage);
+                                        setPageSize(size);
+                                        getOrders(targetPage, { paginate_size: size });
                                     },
                                 }}
                             />

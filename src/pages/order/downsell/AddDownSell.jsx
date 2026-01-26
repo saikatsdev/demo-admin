@@ -19,12 +19,12 @@ export default function AddDownSell() {
     const [selectedProducts, setSelectedProducts]     = useState([]);
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [image, setImage]                           = useState(null);
-    const [imageFile, setImageFile] = useState(null);
-    const [messageApi, contextHolder]           = message.useMessage();
+    const [imageFile, setImageFile]                   = useState(null);
+    const [messageApi, contextHolder]                 = message.useMessage();
 
     const debounceTimeout = useRef(null);
-    const cancelToken = useRef(null);
-    const navigate = useNavigate();
+    const cancelToken     = useRef(null);
+    const navigate        = useNavigate();
 
     useEffect(() => {
         let isMounted = true;
@@ -136,6 +136,8 @@ export default function AddDownSell() {
         if (imageFile) formData.append("image", imageFile);
 
         try {
+            setLoading(true);
+
             const res = await postData("/admin/down-sells", formData, {headers: { "Content-Type": "multipart/form-data" }});
             if(res && res?.success){
                 messageApi.open({
@@ -271,37 +273,37 @@ export default function AddDownSell() {
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
                                 <label className="raw-sell-label">Width:</label>
-                                <input type="number" name="width" className="raw-sell-input" placeholder="Enter width"/>
+                                <input type="number" value={450} name="width" className="raw-sell-input" placeholder="Enter width"/>
                             </div>
                         </div>
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
                                 <label className="raw-sell-label">Height:</label>
-                                <input type="number" name="height" className="raw-sell-input" placeholder="Enter height"/>
+                                <input type="number" value={220} name="height" className="raw-sell-input" placeholder="Enter height"/>
                             </div>
                         </div>
 
                         <div className="col-12 mb-3">
-                          <div className="raw-radio-main">
-                              <label className="raw-sell-block-title d-block mb-2">Select Trigger Mode:</label>
-                            <div className="raw-sell-radio-group">
-                                <label className={`${mode === 'all' ? 'active' : ''}`}>
-                                <input type="radio" name="trigger_mode" value="all" checked={mode === 'all'} onChange={(e) => setMode(e.target.value)}/>
-                                    For All Products
-                                </label>
+                            <div className="raw-radio-main">
+                                <label className="raw-sell-block-title d-block mb-2">Select Trigger Mode:</label>
+                                <div className="raw-sell-radio-group">
+                                    <label className={`${mode === 'all' ? 'active' : ''}`}>
+                                    <input type="radio" name="trigger_mode" value="all" checked={mode === 'all'} onChange={(e) => setMode(e.target.value)}/>
+                                        For All Products
+                                    </label>
 
-                                <label className={`${mode === 'product' ? 'active' : ''}`}>
-                                <input type="radio" name="trigger_mode" value="product" checked={mode === 'product'} onChange={(e) => setMode(e.target.value)}/>
-                                    For Specific Products
-                                </label>
+                                    <label className={`${mode === 'product' ? 'active' : ''}`}>
+                                    <input type="radio" name="trigger_mode" value="product" checked={mode === 'product'} onChange={(e) => setMode(e.target.value)}/>
+                                        For Specific Products
+                                    </label>
 
-                                <label className={`${mode === 'category' ? 'active' : ''}`}>
-                                <input type="radio" name="trigger_mode" value="category" checked={mode === 'category'} onChange={(e) => setMode(e.target.value)}/>
-                                    For Specific Category
-                                </label>
+                                    <label className={`${mode === 'category' ? 'active' : ''}`}>
+                                    <input type="radio" name="trigger_mode" value="category" checked={mode === 'category'} onChange={(e) => setMode(e.target.value)}/>
+                                        For Specific Category
+                                    </label>
+                                </div>
                             </div>
-                          </div>
                         </div>
 
                         {mode === "product" && (
@@ -385,7 +387,7 @@ export default function AddDownSell() {
                         <div className="col-12">
                             <div className="raw-sell-submit">
                                 <button type="submit" className="raw-sell-btn">
-                                    Submit
+                                    {loading ? "Submiting..." : "Submit"}
                                 </button>
                             </div>
                         </div>

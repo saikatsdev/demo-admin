@@ -26,42 +26,6 @@ export default function EditCampaign() {
     const [messageApi, contextHolder]               = message.useMessage();
     const [previewImage, setPreviewImage]           = useState(null);
     const [loading, setLoading]                     = useState(false);
-    const [mode, setMode]                             = useState("search");
-    const [open, setOpen]                             = useState(false);
-    const [selectedCategories, setSelectedCategories] = useState([]);
-    const [categoryProducts, setCategoryProducts]     = useState([]);
-    const [categories, setcategories]                 = useState([]);
-
-    const toggleCategory = async (cat) => {
-        const exists = selectedCategories.some(c => c.id === cat.id);
-
-        const values = exists ? selectedCategories.filter(c => c.id !== cat.id) : [...selectedCategories, cat];
-
-        setSelectedCategories(values);
-
-        if (values.length === 0) {
-            setCategoryProducts([]);
-            return;
-        }
-
-        const res = await getDatas("/admin/products", {category_ids: values.map(v => v.id)});
-
-        if (res?.success) {
-            setCategoryProducts(res?.result?.data ?? []);
-        }
-    };
-
-    useEffect(() => {
-        const getCategories = async () => {
-            const res = await getDatas("/admin/categories/list");
-
-            if(res && res?.success){
-                setcategories(res?.result || []);
-            }
-        }
-
-        getCategories();
-    }, []);
 
     // Get Campaign
     useEffect(() => {
@@ -84,45 +48,44 @@ export default function EditCampaign() {
     }, []);
 
     useEffect(() => {
-        if (!campaign) return;
+        if (campaign) {
+            const startDate = campaign.start_date?.split(" ")[0] || "";
+            const endDate = campaign.end_date?.split(" ")[0] || "";
 
-        const startDate = campaign.start_date?.split(" ")[0] || "";
-        const endDate   = campaign.end_date?.split(" ")[0] || "";
-
-        form.setFieldsValue({
-            title     : campaign.title,
-            start_date: startDate,
-            end_date  : endDate,
-            width     : campaign.width ?? 4360,
-            height    : campaign.height ?? 1826,
-            status    : campaign.status,
-        });
-
-        if (campaign?.image) {
-            setPreviewImage(campaign.image);
-        }
-
-        if (Array.isArray(campaign.campaign_products)) {
-            setSelectedProducts(
-                campaign.campaign_products.map(cp => ({
-                    id   : cp.product.id,
-                    name : cp.product.name,
-                    image: cp.product.img_path,
-                    category: cp.product.category,
-                }))
-            );
-
-            const discountFields = {};
-
-            campaign.campaign_products.forEach(cp => {
-                discountFields[`discount_value_${cp.product.id}`] = Number(cp.discount);
-                discountFields[`discount_type_${cp.product.id}`]  = cp.discount_type;
+            form.setFieldsValue({
+                title     : campaign.title,
+                start_date: startDate,
+                end_date  : endDate,
+                status    : campaign.status,
             });
 
-            form.setFieldsValue(discountFields);
+            if (campaign?.image) {
+              setPreviewImage(campaign.image);
+            }
+
+            if (campaign.campaign_products && Array.isArray(campaign.campaign_products)) {
+                setSelectedProducts(
+                    campaign.campaign_products.map((item) => ({
+                        id            : item.product.id,
+                        name          : item.product.name,
+                        image         : item.product.img_path,
+                        category      : item.product.category,
+                        discount_value: item.discount,
+                        discount_type : item.discount_type,
+                    }))
+                );
+
+                const discountFields = {};
+
+                campaign.campaign_products.forEach((item) => {
+                    discountFields[`discount_value_${item.product.id}`] = item.discount;
+                    discountFields[`discount_type_${item.product.id}`] = item.discount_type;
+                });
+                
+                form.setFieldsValue(discountFields);
+            }
         }
     }, [campaign]);
-
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -136,14 +99,13 @@ export default function EditCampaign() {
         form.setFieldValue("image", null);
     };
 
-    // Debounced search effect
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
-            if (query.trim() !== "") {
-                fetchProducts(query);
-            } else {
-                setSearchProducts([]);
-            }
+        if (query.trim() !== "") {
+            fetchProducts(query);
+        } else {
+            setSearchProducts([]);
+        }
         }, 500);
 
         return () => clearTimeout(delayDebounce);
@@ -151,8 +113,9 @@ export default function EditCampaign() {
 
     const fetchProducts = async (search) => {
         try {
-            const res = await getDatas(`/admin/products?search_key=${search}`);
-            setSearchProducts(res?.result?.data || []);
+            const res = await getDatas('/admin/products/search', {search_key: search });
+
+            setSearchProducts(res?.result || []);
         } catch (err) {
             console.error("Error fetching products:", err);
         }
@@ -173,8 +136,8 @@ export default function EditCampaign() {
 
     const handleSubmit = async (values) => {
         const items = selectedProducts.map((product) => ({
-            product_id   : product.id,
-            discount     : values[`discount_value_${product.id}`],
+            product_id: product.id,
+            discount: values[`discount_value_${product.id}`],
             discount_type: values[`discount_type_${product.id}`],
         }));
 
@@ -187,8 +150,6 @@ export default function EditCampaign() {
         formData.append("width", values.width);
         formData.append("height", values.height);
 
-        formData.append("_method", "PUT");
-
         if (values.image) {
             formData.append("image", values.image);
         }
@@ -198,6 +159,8 @@ export default function EditCampaign() {
                 formData.append(`items[${index}][${key}]`, value);
             });
         });
+
+        formData.append('_method','PUT');
 
         try {
             setLoading(true);
@@ -249,121 +212,68 @@ export default function EditCampaign() {
                 </Space>
             </div>
 
-            <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" initialValues={{width:"200", height:"200", start_date: new Date().toISOString().split("T")[0]}}>
+            <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" initialValues={{width:"1800", height:"960", start_date: new Date().toISOString().split("T")[0]}}>
                 <div className="form-container">
                     <div className="form-left">
                         <div className="left-side-product" onClick={() => setShowInput(!showInput)}>
-                            <h2 style={{ margin: 0, color: "#000" }}>Add Product in Campaign</h2>
+                            <h2 style={{ margin: 0, color: "#000" }}>Edit Product in Campaign</h2>
                             <span style={{ fontSize: "20px" }}>{showInput ? "➖" : "➕"}</span>
                         </div>
 
                         <hr />
 
-                        <div className="campaign">
-                            <label className="campaign-label">Add a new product</label>
+                        {showInput && (
+                            <div className="campaign" style={{ position: "relative" }}>
+                                <label className="campaign-label">
+                                    Add a new product
+                                </label>
+                                <input type="text" placeholder="Search Product..." className="campaign-input" value={query} onChange={(e) => setQuery(e.target.value)}/>
 
-                            <div className="campaign-option-tabs">
-                                <button className={mode === "search" ? "active" : ""} type="button" onClick={() => setMode("search")}>
-                                    Search Product
-                                </button>
-
-                                <button className={mode === "category" ? "active" : ""} type="button" onClick={() => setMode("category")}>
-                                    Select by Category
-                                </button>
+                                {searchProducts.length > 0 && (
+                                    <ul className="campaingn-ul">
+                                        {searchProducts.map((product) => (
+                                            <li className="campaign-ul-li" key={product.id} onClick={() => handleSelectProduct(product)}>
+                                                <img src={product.image || product.img_path} alt="Product" className="campaign-product-img"/>
+                                                <div>
+                                                    {product.name} <br />
+                                                    {product.category?.name}
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
+                        )}
 
-                            {mode === "search" && (
-                                <>
-                                    <AntInput placeholder="Search Product..." className="campaign-input" value={query} onChange={(e) => setQuery(e.target.value)}/>
-
-                                    {searchProducts.length > 0 && (
-                                        <ul className="campaingn-ul">
-                                            {searchProducts.map((product) => (
-                                                <li key={product.id} className="campaign-ul-li" onClick={() => handleSelectProduct(product)}>
-                                                    <img src={product.img_path || product.image} alt={product.name} className="campaign-product-img"/>
-                                                    <div>
-                                                        {product.name} <br />
-                                                        {product?.category?.name}
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </>
-                            )}
-
-                            {mode === "category" && (
-                                <>
-                                    <div className="multi-select">
-                                        <div className="multi-select-input" onClick={() => setOpen(!open)}>
-                                            {selectedCategories.length === 0 && (
-                                                <span className="placeholder">Select Categories…</span>
-                                            )}
-
-                                            {selectedCategories.map((cat) => (
-                                                <span key={cat.id} className="campaign-tag">
-                                                    {cat.name}
-                                                    <button type="button" className="campaign-remove-tag" onClick={(e) => toggleCategory(cat, e)}>
-                                                        ×
-                                                    </button>
-                                                </span>
-                                            ))}
+                        {selectedProducts.length > 0 && (
+                            <div className="search-product-section" style={{ marginTop: "20px" }}>
+                                {selectedProducts.map((item) => (
+                                    <div key={item.id} className="product-card">
+                                        <div className="product-card-top">
+                                            <img src={item.image || item.img_path} alt={item.name || "Product"} className="camp-product-image"/>
+                                            <h2 className="product-name">{item.name}</h2>
+                                            <button className="delete-btn" type="button" onClick={() => handleRemoveProduct(item.id)}>
+                                                <DeleteOutlined />
+                                            </button>
                                         </div>
 
-                                        {open && (
-                                            <ul className="multi-select-dropdown">
-                                                {categories.map((cat) => {
-                                                    const isSelected = selectedCategories.some((c) => c.id === cat.id);
-                                                    return (
-                                                        <li key={cat.id} className={isSelected ? "selected" : ""} onClick={(e) => toggleCategory(cat, e)}>
-                                                            <input type="checkbox" readOnly checked={isSelected} />
-                                                            {cat.name}
-                                                        </li>
-                                                    );
-                                                })}
-                                            </ul>
-                                        )}
+                                        <div className="product-card-bottom">
+                                            <Form.Item name={`discount_value_${item.id}`} label="Discount Value" rules={[{ required: true, message: "Enter discount value" }]}>
+                                                <input type="number" placeholder="Enter Value" />
+                                            </Form.Item>
+
+                                            <Form.Item  name={`discount_type_${item.id}`} label="Type" rules={[{ required: true, message: "Select type" }]}>
+                                                <select>
+                                                    <option value="">Select One</option>
+                                                    <option value="percentage">Percentage</option>
+                                                    <option value="fixed">Fixed</option>
+                                                </select>
+                                            </Form.Item>
+                                        </div>
                                     </div>
-
-                                    {categoryProducts.length > 0 && (
-                                        <ul className="campaingn-ul">
-                                            {categoryProducts.map((product) => (
-                                                <li key={product.id} className="campaign-ul-li" onClick={() => handleSelectProduct(product)}>
-                                                    <img src={product.img_path || product.image} alt={product.name} className="campaign-product-img"/>
-                                                    <div>{product.name}</div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </>
-                            )}
-
-                            {selectedProducts.length > 0 && (
-                                <div className="search-product-section" style={{ marginTop: "20px" }}>
-                                    {selectedProducts?.map((item) => (
-                                        <div key={item?.id} className="product-card">
-                                            <div className="product-card-top">
-                                                <img src={item.image} alt={item?.name || "Product"} className="camp-product-image"/>
-                                                <h2 className="product-name">{item?.name}</h2>
-                                                <button className="delete-btn" type="button" onClick={() => handleRemoveProduct(item?.id)}>
-                                                    <DeleteOutlined />
-                                                </button>
-                                            </div>
-
-                                            <div className="product-card-bottom">
-                                                <Form.Item name={`discount_value_${item?.id}`} label="Discount Value">
-                                                    <AntInput type="number" placeholder="Enter Value" />
-                                                </Form.Item>
-
-                                                <Form.Item name={`discount_type_${item?.id}`} label="Type" initialValue={"fixed"}>
-                                                    <Select options={[{ value: "fixed", label: "Fixed" },{ value: "percentage", label: "Percentage" },]}placeholder="Select Type"/>
-                                                </Form.Item>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className="form-right">
@@ -420,8 +330,8 @@ export default function EditCampaign() {
 
                 <Form.Item>
                     <Space>
-                        <Button type="primary" htmlType="submit">
-                            {loading ? "Updating..." : "Update"}
+                        <Button type="primary" htmlType="submit" loading={loading}>
+                            Update
                         </Button>
                         <Button htmlType="reset">Reset</Button>
                     </Space>

@@ -8,12 +8,18 @@ import OrderStatictisCard from "../components/dashboard/OrderStatictisCard.jsx";
 import SummaryCard from "../components/dashboard/SummaryCard.jsx";
 import Ticker from "../components/dashboard/Ticker.jsx";
 import useTitle from "../hooks/useTitle.js";
+import {useRole} from "../hooks/useRole.js";
+
 import "./DashboardStyles.css";
 import FullPageLoader from "../components/loader/FullPageLoader.jsx";
 
 export default function Dashboard() {
     // Hook
     useTitle("Admin Dashboard");
+
+    const { hasAnyRole } = useRole();
+
+    const canSeeAdminWidgets = hasAnyRole(["superadmin", "admin"]);
 
     // State
     const [dashboardSummary, setDashboardSummary] = useState({});
@@ -53,12 +59,6 @@ export default function Dashboard() {
         getSettings();
     }, []);
 
-    const auth = localStorage.getItem("auth");
-
-    const parsedAuth = JSON.parse(auth);
-
-    console.log(parsedAuth);
-
     return (
         <div className="dashboard-container">
             {loading && <FullPageLoader />}
@@ -73,11 +73,15 @@ export default function Dashboard() {
 
             <ChartGrid />
 
-            <OrderStatictisCard dashboardSummary={dashboardSummary}/>
+            {canSeeAdminWidgets && (
+                <>
+                    <OrderStatictisCard dashboardSummary={dashboardSummary}/>
 
-            <CustomerProductList/>
+                    <CustomerProductList/>
 
-            <OrderList/>
+                    <OrderList/>
+                </>
+            )}
         </div>
     )
 }

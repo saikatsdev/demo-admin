@@ -21,8 +21,9 @@ export default function EditDownSell() {
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [imageFile, setImageFile]                   = useState(null);
     const [mode, setMode]                             = useState("all");
-    const [downSellData, setDownSellData]             = useState({});
     const [messageApi, contextHolder]                 = message.useMessage();
+    const [downSellData, setDownSellData] = useState({title: "",amount: "",duration: "",type: "fixed",started_at: "",ended_at: "",status: "active",description: "",width: 200,height: 200});
+
 
     // Variable
     const {id}            = useParams();
@@ -66,10 +67,10 @@ export default function EditDownSell() {
                     setDownSellData(data);
                     setImage(data.image);
 
-                    if (data.is_all) {
-                        setMode("all");
-                    } else {
+                    if (Array.isArray(data.products) && data.products.length > 0) {
                         setMode("product");
+                    } else {
+                        setMode("all");
                     }
 
                     if (Array.isArray(data.products) && data.products.length > 0) {
@@ -105,6 +106,14 @@ export default function EditDownSell() {
         }
     }, [downSellData, categories]);
 
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+
+        setDownSellData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
 
     const handleImageChange = (e) => {
         if (e.target.files && e.target.files[0]) {
@@ -198,11 +207,12 @@ export default function EditDownSell() {
 
         formData.append("_method", "PUT");
 
-        setLoading(true);
-
         try {
+            setLoading(true);
+
             const res = await postData(`/admin/down-sells/${id}`, formData, {headers: { "Content-Type": "multipart/form-data" }});
             if(res && res?.success){
+
                 messageApi.open({
                     type: "success",
                     content: res.msg,
@@ -252,28 +262,28 @@ export default function EditDownSell() {
                                 <div className="col-lg-6 col-12">
                                     <div className="raw-sell-row">
                                         <label className="raw-sell-label">Name:</label>
-                                        <input type="text" className="raw-sell-input" placeholder="Enter offer name" value={downSellData?.title} name="title"/>
+                                        <input type="text" className="raw-sell-input" placeholder="Enter offer name" value={downSellData?.title} name="title" onChange={handleChange}/>
                                     </div>
                                 </div>
 
                                 <div className="col-lg-6 col-12">
                                     <div className="raw-sell-row">
                                         <label className="raw-sell-label">Coupon Amount:</label>
-                                        <input type="number" className="raw-sell-input" placeholder="Enter amount" value={downSellData?.amount} name="amount"/>
+                                        <input type="number" className="raw-sell-input" placeholder="Enter amount" value={downSellData?.amount} name="amount" onChange={handleChange}/>
                                     </div>
                                 </div>
 
                                 <div className="col-lg-6 col-12">
                                     <div className="raw-sell-row">
                                         <label className="raw-sell-label">Duration (days):</label>
-                                        <input type="number" className="raw-sell-input" placeholder="Enter offer name" value={downSellData?.duration} name="duration"/>
+                                        <input type="number" className="raw-sell-input" placeholder="Enter offer name" value={downSellData?.duration} name="duration" onChange={handleChange}/>
                                     </div>
                                 </div>
 
                                 <div className="col-lg-6 col-12">
                                     <div className="raw-sell-row">
                                         <label className="raw-sell-label">Coupon Type:</label>
-                                        <select name="coupon_type" className="raw-sell-input" value={downSellData?.type}>
+                                        <select name="coupon_type" className="raw-sell-input" value={downSellData?.type} onChange={handleChange}>
                                             <option value="fixed">Fixed Amount</option>
                                             <option value="percent">Percent</option>
                                         </select>
@@ -283,21 +293,21 @@ export default function EditDownSell() {
                                 <div className="col-lg-6 col-12">
                                     <div className="raw-sell-row">
                                         <label className="raw-sell-label">Start Date :</label>
-                                        <input type="date" className="raw-sell-input" name="started_at" value={downSellData?.started_at?.slice(0, 10) || ""}/>
+                                        <input type="date" className="raw-sell-input" name="started_at" value={downSellData?.started_at?.slice(0, 10) || ""} onChange={handleChange}/>
                                     </div>
                                 </div>
 
                                 <div className="col-lg-6 col-12">
                                     <div className="raw-sell-row">
                                         <label className="raw-sell-label">End Date :</label>
-                                        <input type="date" className="raw-sell-input" name="ended_at" value={downSellData?.ended_at?.slice(0, 10) || ""}/>
+                                        <input type="date" className="raw-sell-input" name="ended_at" value={downSellData?.ended_at?.slice(0, 10) || ""} onChange={handleChange}/>
                                     </div>
                                 </div>
 
                                 <div className="col-lg-6 col-12">
                                     <div className="raw-sell-row">
                                         <label className="raw-sell-label">Status:</label>
-                                        <select name="status" className="raw-sell-input" value={downSellData?.status}>
+                                        <select name="status" className="raw-sell-input" value={downSellData?.status} onChange={handleChange}>
                                             <option value="active">Active</option>
                                             <option value="inactive">Inactive</option>
                                         </select>
@@ -307,7 +317,7 @@ export default function EditDownSell() {
                                 <div className="col-lg-6 col-12">
                                     <div className="raw-sell-row">
                                         <label className="raw-sell-label">Description:</label>
-                                        <textarea name="description" className="raw-sell-input" placeholder="Enter description" value={downSellData?.description || ""}></textarea>
+                                        <textarea name="description" className="raw-sell-input" placeholder="Enter description" value={downSellData?.description || ""} onChange={handleChange}></textarea>
                                     </div>
                                 </div>
 
@@ -335,14 +345,14 @@ export default function EditDownSell() {
                                 <div className="col-lg-6 col-12">
                                     <div className="raw-sell-row">
                                         <label className="raw-sell-label">Width:</label>
-                                        <input type="number" name="width" value={200} className="raw-sell-input" placeholder="Enter width"/>
+                                        <input type="number" name="width" value={downSellData?.width} className="raw-sell-input" placeholder="Enter width" onChange={handleChange}/>
                                     </div>
                                 </div>
 
                                 <div className="col-lg-6 col-12">
                                     <div className="raw-sell-row">
                                         <label className="raw-sell-label">Height:</label>
-                                        <input type="number" name="height" value={200} className="raw-sell-input" placeholder="Enter height"/>
+                                        <input type="number" name="height" value={downSellData?.height} className="raw-sell-input" placeholder="Enter height" onChange={handleChange}/>
                                     </div>
                                 </div>
 
@@ -450,7 +460,7 @@ export default function EditDownSell() {
                                 <div className="col-12">
                                     <div className="raw-sell-submit">
                                         <button type="submit" className="raw-sell-btn">
-                                            Update
+                                            {loading ? "Updating..." : "Update"}
                                         </button>
                                     </div>
                                 </div>
