@@ -8,6 +8,7 @@ import { useDebounce } from "../../hooks/useDebounce";
 import useTitle from "../../hooks/useTitle";
 import "./Product.css";
 import { cachedFetch } from "../../utils/cacheApi";
+import { usePermission } from "../../hooks/usePermission";
 
 const { Option } = Select;
 
@@ -16,6 +17,12 @@ const { Text, Title } = Typography;
 export default function Product() {
     // Hook
     useTitle("All Products");
+
+    const {permissions} = usePermission();
+
+    const productCreate = permissions?.includes("products-create");
+    const productDelete = permissions?.includes("products-delete");
+    const productUpdate = permissions?.includes("products-update");
 
     // Variable
     const navigate = useNavigate();
@@ -56,7 +63,6 @@ export default function Product() {
     const [subSubCategories, setSubSubCategories]   = useState([]);
     const [attributeValues, setAttributeValues]     = useState([]);
     const [productTypes, setProductTypes]           = useState([]);
-    const [authPermission, setAuthPermission]       = useState([]);
     const [modal, modalContextHolder]               = Modal.useModal();
     const [messageApi, contextHolder]               = message.useMessage();
     const [isTrashView, setIsTrashView]             = useState(false);
@@ -70,35 +76,6 @@ export default function Product() {
 
     // Debounced search query
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
-
-    useEffect(() => {
-        try {
-            const auth = localStorage.getItem("auth");
-            if (auth) {
-                const parsedAuth = JSON.parse(auth);
-
-                if (Array.isArray(parsedAuth?.user?.roles?.[0]?.permissions)) {
-                    setAuthPermission(parsedAuth.user.roles[0].permissions);
-                    return;
-                }
-            }
-
-            const permissions = localStorage.getItem("permission");
-            if (permissions) {
-                const parsedPermissions = JSON.parse(permissions);
-                if (Array.isArray(parsedPermissions)) {
-                    setAuthPermission(parsedPermissions);
-                } else {
-                    setAuthPermission([]);
-                }
-            } else {
-                setAuthPermission([]);
-            }
-        } catch (error) {
-            console.error("Error loading permissions:", error);
-            setAuthPermission([]);
-        }
-    }, []);
 
     useEffect(() => {
         const fetchFilterOptions = async () => {
@@ -127,12 +104,6 @@ export default function Product() {
 
         fetchFilterOptions();
     }, []);
-
-
-    const hasPermission = (permissionName) => {
-        if (!permissionName || !Array.isArray(authPermission)) return false;
-        return authPermission.some((p) => p.name === permissionName);
-    };
 
     const columns = 
     [
@@ -400,19 +371,19 @@ export default function Product() {
                         <Button size="small" icon={<EyeOutlined />} onClick={() => handlePreview(record)}/>
                     </Tooltip>
 
-                    {hasPermission("products-update") && (
+                    {productUpdate && (
                         <Tooltip title="Product Edit">
                             <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}/>
                         </Tooltip>
                     )}
         
-                    {hasPermission("products-create") && (
+                    {productCreate && (
                         <Tooltip title="Product Duplicate">
                             <Button size="small" icon={<CopyOutlined />} onClick={() => handleCopy(record.id)}/>
                         </Tooltip>
                     )}
 
-                    {hasPermission("products-delete") && (
+                    {productDelete && (
                         <Tooltip title="Product Delete">
                             <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}/>
                         </Tooltip>
@@ -581,7 +552,7 @@ export default function Product() {
     };
 
     const handleEdit = (record) => {
-        if (hasPermission("products-update")) {
+        if (productUpdate) {
             navigate(`/product-edit/${record.id}`);
         } else {
             message.error("You don't have permission to edit Product");
@@ -589,7 +560,7 @@ export default function Product() {
     };
 
     const handleCopy = async (id) => {
-        if (hasPermission("products-create")) {
+        if (productCreate) {
             try {
                 const res = await postData(`/admin/products/copy/${id}`);
                 if (res?.success) {
@@ -610,7 +581,7 @@ export default function Product() {
     };
 
     const handleDelete = async (record) => {
-        if (!hasPermission("products-delete")) {
+        if (!productDelete) {
             message.error("You don't have permission to delete Product");
             return;
         }
@@ -659,7 +630,7 @@ export default function Product() {
     };
 
     const handleProductAdd = () => {
-        if (hasPermission("products-create")) {
+        if (productCreate) {
             navigate("/product-add");
         } else {
             message.error("You don't have permission to create Product");
@@ -1286,15 +1257,15 @@ export default function Product() {
                                     </Select>
                                 )}
             
-                                {hasPermission("products-create") && (
+                                {productCreate && (
                                     <Button type="primary" icon={<PlusOutlined />} onClick={handleProductAdd}>
-                                    Add
+                                        Add
                                     </Button>
                                 )}
             
-                                {hasPermission("products-delete") && (
+                                {productDelete && (
                                     <Button icon={<DeleteOutlined />} onClick={handleToggleTrash}>
-                                    {isTrashView ? "Back to List" : "Trash"}
+                                        {isTrashView ? "Back to List" : "Trash"}
                                     </Button>
                                 )}
             
@@ -1328,13 +1299,13 @@ export default function Product() {
                             </Select>
                         )}
         
-                        {hasPermission("products-create") && (
+                        {productCreate && (
                             <Button type="primary" icon={<PlusOutlined />} onClick={handleProductAdd} style={{ flex: 1 }}>
                                 Add
                             </Button>
                         )}
         
-                        {hasPermission("products-delete") && (
+                        {productDelete && (
                             <Button type="primary" icon={<DeleteOutlined />} onClick={handleToggleTrash} style={{ flex: 1 }}>
                                 {isTrashView ? "Back" : "Trash"}
                             </Button>
@@ -1623,19 +1594,19 @@ export default function Product() {
                                                     <Button size="small" icon={<EyeOutlined />} onClick={() => handlePreview(item)}/>
                                                 </Tooltip>
 
-                                                {hasPermission("products-update") && (
+                                                {productUpdate && (
                                                     <Tooltip title="Product Edit">
                                                         <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(item)}/>
                                                     </Tooltip>
                                                 )}
 
-                                                {hasPermission("products-create") && (
+                                                {productCreate && (
                                                     <Tooltip title="Product Copy">
                                                         <Button size="small" icon={<CopyOutlined />} onClick={() => handleCopy(item.id)}/>
                                                     </Tooltip>
                                                 )}
 
-                                                {hasPermission("products-delete") && (
+                                                {productDelete && (
                                                     <Tooltip title="Product Delete">
                                                         <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(item)}/>
                                                     </Tooltip>

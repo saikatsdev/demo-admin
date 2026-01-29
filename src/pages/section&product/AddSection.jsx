@@ -54,7 +54,7 @@ export default function AddSection() {
     }, [query]);
 
     const fetchSearchProduct = async (searchText) => {
-        const res = await getDatas(`/admin/products/list?search_key=${searchText}`);
+        const res = await getDatas("/admin/products/search",{search_key :searchText});
 
         if(res?.success){
             setResults(res?.result || []);
@@ -207,7 +207,7 @@ export default function AddSection() {
                                             <h2 style={{textAlign:"center", color:"#000", fontWeight:"600", fontSize:"20px", lineHeight:"25px"}}>{item.name}</h2>
 
                                             <p style={{textTransform:"capitalize", fontWeight:"600", textAlign:"center", marginBottom:"0"}}>
-                                                Category : {item.category.name}
+                                                Category : {item?.category?.name}
                                             </p>
                                             <p style={{textTransform:"capitalize", fontWeight:"600", textAlign:"center"}}>
                                                 Sku : {item.sku}
@@ -251,7 +251,7 @@ export default function AddSection() {
                                             <h2 style={{textAlign:"center", color:"#000", fontWeight:"600", fontSize:"20px", lineHeight:"25px"}}>{item.name}</h2>
 
                                             <p style={{textTransform:"capitalize", fontWeight:"600", textAlign:"center", marginBottom:"0"}}>
-                                                Category : {item.category.name}
+                                                Category : {item?.category?.name}
                                             </p>
                                             <p style={{textTransform:"capitalize", fontWeight:"600", textAlign:"center"}}>
                                                 Sku : {item.sku}

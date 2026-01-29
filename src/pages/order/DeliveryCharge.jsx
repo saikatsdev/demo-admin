@@ -1,147 +1,189 @@
-
-
-
-import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, message, Modal, Popconfirm, Select, Space, Table, Tag } from "antd";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import {ArrowLeftOutlined,DeleteOutlined,PlusOutlined,MenuOutlined} from "@ant-design/icons";
+import {Input as AntInput,Breadcrumb,Button,Form,message,Modal,Popconfirm,Select,Space,Table,Tag} from "antd";
 import { Link } from "react-router-dom";
 import { deleteData, getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 
+import { DndContext, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import {SortableContext,useSortable,verticalListSortingStrategy} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+const DraggableRow = (props) => {
+    const {attributes,listeners,setNodeRef,transform,transition,isDragging} = useSortable({id: props["data-row-key"]});
+
+    const style = {...props.style,transform: CSS.Transform.toString(transform),transition,...(isDragging ? { background: "#fafafa" } : {}),};
+
+    return (
+        <tr ref={setNodeRef} style={style} {...attributes}>
+            {React.Children.map(props.children, (child, index) => {
+                if (index === 0) {
+                    return (
+                        <td>
+                            <MenuOutlined {...listeners} onMouseDown={(e) => e.stopPropagation()} style={{cursor: "grab",color: "#888",}}/>
+                        </td>
+                    );
+                }
+                return child;
+            })}
+        </tr>
+    );
+};
+
 export default function DeliveryCharge() {
-    //Hook
     useTitle("Delivery Charge");
 
-    // State
     const [query, setQuery]               = useState("");
     const [loading, setLoading]           = useState(false);
-    const [deliveryCharge, setItems]                = useState([]);
+    const [items, setItems]               = useState([]);
+    const [filteredData, setFilteredData] = useState([]);
     const [isModalOpen, setIsModalOpen]   = useState(false);
-    const [messageApi, contextHolder]     = message.useMessage();
     const [editingItems, setEditingItems] = useState(null);
-    const [filteredData, setFilteredData] = useState(deliveryCharge);
+    const [messageApi, contextHolder]     = message.useMessage();
     const [form]                          = Form.useForm();
 
-    //Table Columns
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
     const columns = [
         {
+            title: "",
+            width: 40,
+        },
+        {
             title: "SL",
-            key:"sl",
-            width: 10,
-            render: (_,__, index) => (
-                index + 1
-            )
+            render: (_, __, index) => index + 1,
         },
         {
             title: "Name",
             dataIndex: "name",
-            key: "name"
         },
         {
             title: "Delivery Fee",
             dataIndex: "delivery_fee",
-            key: "delivery_fee"
         },
         {
-            title: "Minimum Time",
+            title: "Min Time",
             dataIndex: "min_time",
-            key: "min_time"
         },
         {
-            title: "Maximum Time",
+            title: "Max Time",
             dataIndex: "max_time",
-            key: "max_time"
         },
         {
             title: "Time Unit",
             dataIndex: "time_unit",
-            key: "time_unit"
         },
         {
             title: "Status",
             dataIndex: "status",
-            key: "status",
             render: (status) => (
-                <Tag color={status === 'active' ? "green" : "danger"} style={{textTransform:"capitalize"}}>{status}</Tag>
-            )
+                <Tag color={status === "active" ? "green" : "red"}>
+                    {status}
+                </Tag>
+            ),
         },
         {
             title: "Action",
-            key: "operation",
-            width:170,
+            width: 160,
             render: (_, record) => (
                 <Space>
                     <Button size="small" type="primary" onClick={() => onEdit(record)}>
                         Edit
                     </Button>
-                    <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
+                    <Popconfirm title="Delete item?" onConfirm={() => onDelete(record.id)}>
                         <Button size="small" danger>
-                            Delete
+                            <DeleteOutlined/>
                         </Button>
                     </Popconfirm>
                 </Space>
-            )
+            ),
         },
     ];
 
-    //Method
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            const res = await getDatas("/admin/delivery-gateways");
+            const list = res?.result?.data || [];
+            setItems(list);
+            setFilteredData(list);
+            setLoading(false);
+        };
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        if (!query) {
+            setFilteredData(items);
+            return;
+        }
+        const q = query.toLowerCase();
+        setFilteredData(
+            items.filter(
+                (i) =>
+                    i.name?.toLowerCase().includes(q) ||
+                    i.status?.toLowerCase().includes(q)
+            )
+        );
+    }, [query, items]);
+
+    const handleDragEnd = async ({ active, over }) => {
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = filteredData.findIndex((i) => i.id === active.id);
+        const newIndex = filteredData.findIndex((i) => i.id === over.id);
+
+        const newData = [...filteredData];
+        const [moved] = newData.splice(oldIndex, 1);
+        newData.splice(newIndex, 0, moved);
+
+        setFilteredData(newData);
+        setItems(newData);
+
+        const payload = newData.map((item, index) => ({
+            id: item.id,
+            position: index + 1,
+        }));
+
+        try {
+            setLoading(true);
+
+            const res = await postData("/admin/delivery-gateways/reorder", {items: payload});
+
+            if(res && res?.success){
+                messageApi.open({
+                    type: "success",
+                    content: res.msg,
+                });
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setLoading(false);
+        }
+    };
+
     const openCreate = () => {
-        setIsModalOpen(true);
         setEditingItems(null);
+        setIsModalOpen(true);
         form.resetFields();
-    }
+    };
 
     const onEdit = (record) => {
         setEditingItems(record);
         setIsModalOpen(true);
+        form.setFieldsValue(record);
+    };
 
-        form.setFieldsValue({
-            name:record.name,
-            delivery_fee:record.delivery_fee,
-            min_time:record.min_time,
-            max_time:record.max_time,
-            time_unit:record.time_unit,
-            status:record.status,
-        });
-    }
-
-    useEffect(() => {
-        if(!query){
-            setFilteredData(deliveryCharge);
+    const onDelete = async (id) => {
+        const res = await deleteData(`/admin/delivery-gateways/${id}`);
+        if (res?.success) {
+            const refreshed = await getDatas("/admin/delivery-gateways");
+            setItems(refreshed?.result?.data || []);
+            setFilteredData(refreshed?.result?.data || []);
+            messageApi.success(res.msg);
         }
-
-        const lowerQuery = query.toLowerCase();
-
-        const filtered = deliveryCharge?.filter(item => 
-            item.name?.toLowerCase().includes(lowerQuery) || item.status?.toLowerCase().includes(lowerQuery)
-        );
-
-        setFilteredData(filtered);
-    }, [query, deliveryCharge]);
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const fetchContactList = async () => {
-            setLoading(true);
-
-            const res = await getDatas("/admin/delivery-gateways");
-
-            const list = res?.result?.data;
-
-            if(isMounted){
-                setItems(list);
-            }
-
-            setLoading(false);
-        }
-
-        fetchContactList();
-
-        return () => {
-            isMounted = false;
-        }
-    }, []);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -171,8 +213,8 @@ export default function DeliveryCharge() {
             setItems(refreshed?.result?.data);
 
             messageApi.open({
-              type: "success",
-              content: res.msg,
+                type: "success",
+                content: res.msg,
             });
         }
 
@@ -182,48 +224,44 @@ export default function DeliveryCharge() {
         }, 500);
     }
 
-    const onDelete = async (id) => {
-        const res = await deleteData(`/admin/delivery-gateways/${id}`);
-
-        if(res?.success){
-            const refreshed = await getDatas("/admin/delivery-gateways");
-
-            setItems(refreshed?.result?.data);
-
-            messageApi.open({
-              type: "success",
-              content: res.msg,
-            });
-        }
-    }
-
     return (
         <>
             {contextHolder}
+
             <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">Delivery Charge List</h1>
-                </div>
-                <div className="head-actions">
-                    <Breadcrumb
-                        items={[
-                            { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Delivery Charge List" },
-                        ]}
-                    />
-                </div>
+                <h1 className="title">Delivery Charge List</h1>
+                <Breadcrumb
+                    items={[
+                        { title: <Link to="/dashboard">Dashboard</Link> },
+                        { title: "Delivery Charge" },
+                    ]}
+                />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+                <AntInput.Search allowClear placeholder="Search..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
+
                 <Space>
-                    <Button size="small" icon={<DeleteOutlined />}>Trash</Button>
-                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
+                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>
+                        Add
+                    </Button>
+                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                        Back
+                    </Button>
                 </Space>
             </div>
 
-            <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
+            <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                <SortableContext items={filteredData.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                    <Table bordered loading={loading} columns={columns} dataSource={filteredData} rowKey="id" pagination={false}
+                        components={{
+                            body: {
+                                row: DraggableRow,
+                            },
+                        }}
+                    />
+                </SortableContext>
+            </DndContext>
 
             <div>
                 <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"}
@@ -260,7 +298,6 @@ export default function DeliveryCharge() {
                     </div>
                 </Modal>
             </div>
-
         </>
-    )
+    );
 }

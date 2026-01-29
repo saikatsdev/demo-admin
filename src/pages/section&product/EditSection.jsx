@@ -79,7 +79,7 @@ export default function EditSection() {
     }, [query]);
 
     const fetchSearchProduct = async (searchText) => {
-        const res = await getDatas(`/admin/products/list?search_key=${searchText}`);
+        const res = await getDatas("/admin/products/search", {search_key:searchText});
 
         if (res?.success) {
             setResults(res?.result || []);
@@ -273,7 +273,7 @@ export default function EditSection() {
                                             </h2>
 
                                             <p className="result-product-list-p-sss">
-                                                Category : {item?.category.name}
+                                                Category : {item?.category?.name}
                                             </p>
                                             <p className="result-product-list-p1-sss">
                                                 Sku : {item?.sku}

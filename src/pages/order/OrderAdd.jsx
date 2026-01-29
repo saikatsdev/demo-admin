@@ -30,7 +30,7 @@ export default function OrderAdd() {
     const [district, setDistrict]                           = useState('');
     const [address, setAddress]                             = useState('');
     const [statusId, setStatusId]                           = useState(1);
-    const [orderFromId, setOrderFromId]                     = useState(1);
+    const [orderFromId, setOrderFromId]                     = useState(2);
     const [deliveryChargeId, setDeliveryChargeId]           = useState(1);
     const [paymentGatewayId, setPaymentGatewayId]           = useState(1);
     const [paymentStatus, setPaymentStatus]                 = useState('unpaid');
@@ -391,11 +391,6 @@ export default function OrderAdd() {
         )
     }, [totalPrice, changeableChargeValue, specialDiscount, advancePayment]);
 
-    const filteredOrderFrom = orderFromList?.filter(tag => {
-        return !isIncomplte ? tag.slug === "manual" : tag.slug === "incomplete";
-    });
-
-    const defaultOrderFromId = filteredOrderFrom?.[0]?.id || "add";
 
     const submit = async () => {
         setSubmitLoading(true);
@@ -426,7 +421,7 @@ export default function OrderAdd() {
             customer_type_id   : customerTypeId,
             customer_name      : customerName,
             phone_number       : phoneNumber,
-            order_from_id      : defaultOrderFromId,
+            order_from_id      : orderFromId,
             order_note         : orderNote,
             items              : items,
             delivery_type      : isPathao && !isRedx ? 12                   : 48,
@@ -685,12 +680,12 @@ export default function OrderAdd() {
                                                     <Button icon={<CloseOutlined />} onClick={removeAddField} />
                                                 </Input.Group>
                                             ) : (
-                                                <Select placeholder="Select source" value={defaultOrderFromId} onChange={(value) => setOrderFromId(value)}>
+                                                <Select placeholder="Select source" value={orderFromId} onChange={(value) => setOrderFromId(value)}>
                                                     <Select.Option value="add" style={{ color: 'red' }}>
                                                         Add New
                                                     </Select.Option>
                             
-                                                    {filteredOrderFrom?.map(tag => (
+                                                    {orderFromList?.map(tag => (
                                                         <Select.Option key={tag.id} value={tag.id}>
                                                             {tag.name}
                                                         </Select.Option>

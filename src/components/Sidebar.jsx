@@ -1,11 +1,16 @@
 import {BarChartOutlined,DeliveredProcedureOutlined,FallOutlined,HeartTwoTone,NotificationOutlined,ProductOutlined,PropertySafetyOutlined,ToolOutlined,FileTextOutlined,BulbOutlined,PictureOutlined,} from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { usePermission } from "../hooks/usePermission";
 
 const Sidebar = ({ onMenuSelect }) => {
   const navigate                    = useNavigate();
   const location                    = useLocation();
   const [activeMenu, setActiveMenu] = useState(null);
+
+  const {permissions} = usePermission();
+
+  const can = (permission) => permissions?.includes(permission);
 
   const menus = [
     { title: "Dashboard", icon: "🏠", path: "/dashboard" },
@@ -23,19 +28,17 @@ const Sidebar = ({ onMenuSelect }) => {
       title: "Product Management",
       icon: <ProductOutlined />,
       submenus: [
-        { label: "Products", path: "/products" },
-        { label: "Upsell Products", path: "/upsell" },
-        { label: "Downsell Products", path: "/downsell-coupon" },
-
-        { label: "Review", path: "/review" },
-        
-        { label: "Attributes", path: "/attributes" },
-        { label: "Product Type", path: "/product-types" },
-        { label: "Categories", path: "/categories" },
-        { label: "Sub Categories", path: "/subcategories" },
-        { label: "Sub Sub Categories", path: "/subsubcategories" },
-        { label: "Brand", path: "/brands" },
-      ],
+        can("products-read") && { label: "Products", path: "/products" },
+        can("up-sells-read") && { label: "Upsell Products", path: "/upsell" },
+        can("down-sells-read") && { label: "Downsell Products", path: "/downsell-coupon" },
+        can("reviews-read") && { label: "Review", path: "/review" },
+        can("attributes-read") && { label: "Attributes", path: "/attributes" },
+        can("product-types-read") && { label: "Product Type", path: "/product-types" },
+        can("categories-read") && { label: "Categories", path: "/categories" },
+        can("sub-categories-read") && { label: "Sub Categories", path: "/subcategories" },
+        can("sub-sub-categories-read") && { label: "Sub Sub Categories", path: "/subsubcategories" },
+        can("brands-read") && { label: "Brand", path: "/brands" },
+      ].filter(Boolean),
     },
     {
       title: "Marketing Tools",

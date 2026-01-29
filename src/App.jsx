@@ -158,15 +158,15 @@ import EditTermsCondition from "./pages/cms/terms&condition/EditTermsCondition";
 
 function App() {
 
-  const dispatch        = useDispatch();
-  const auth = useSelector(state => state.auth);
-  const districts       = useSelector((state) => state.districts.list);
-  const orderFromList   = useSelector((state) => state.orderFrom.list);
-  const customerTypes   = useSelector((s) => s.customerType.list);
-  const cancelReasons   = useSelector((s) => s.cancelReason.list);
-  const paymentGateways = useSelector((s) => s.paymentGateway.list);
-  const couriers        = useSelector((s) => s.courier.list);
-  const statuses        = useSelector((s) => s.status.list);
+  const dispatch         = useDispatch();
+  const auth             = useSelector(state => state.auth);
+  const districts        = useSelector((state) => state.districts.list);
+  const orderFromList    = useSelector((state) => state.orderFrom.list);
+  const customerTypes    = useSelector((s) => s.customerType.list);
+  const cancelReasons    = useSelector((s) => s.cancelReason.list);
+  const paymentGateways  = useSelector((s) => s.paymentGateway.list);
+  const couriers         = useSelector((s) => s.courier.list);
+  const statuses         = useSelector((s) => s.status.list);
   const deliveryGateways = useSelector((s) => s.deliveryGateway.list);
 
   useEffect(() => {

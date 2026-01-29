@@ -1,4 +1,4 @@
-import {FilterOutlined,CopyOutlined,DeleteFilled,DeleteOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined} from "@ant-design/icons";
+import {CopyOutlined,DeleteFilled,DeleteOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined} from "@ant-design/icons";
 import {Badge,Button,Col,DatePicker,Dropdown,Form,Input,InputNumber,message,Modal,Popover,Row,Select,Space,Spin,Table,Tag,Tooltip} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
@@ -58,7 +58,6 @@ export default function Order() {
     const [selectedAction, setSelectedAction]                                                          = useState("");
     const [orderPaidOrUnpaidStatus, setOrderPaidOrUnpaidStatus]                                        = useState("");
     const [orderCurrentStatus, setOrderCurrentStatus]                                                  = useState("");
-    const [cancelReasons, setCancelReasons]                                                            = useState("");
     const [orderAssign, setOrderAssign]                                                                = useState("");
     const [printInvoice, setPrintInvoice]                                                              = useState("");
     const [users, setUsers]                                                                            = useState("");
@@ -85,13 +84,11 @@ export default function Order() {
     const [lockedInfo, setLockedInfo]                                                                  = useState("");
     const [courierList, setCourierList]                                                                = useState([]);
     const [districtWiseList, setDistrictWiseList]                                                      = useState([]);
-    const [courierDataList, setCourierDataList]                                                        = useState([]);
-    const [selectedCourier, setSelectedCourier]                                                        = useState(null);
-    const [districtList, setDistrictList]                                                              = useState([]);
     const [selectedDistrictId, setSelectedDistrictId]                                                  = useState(null);
     const [employeeList, setEmployeeList]                                                              = useState([]);
     const [employeeId, setEmployeeId]                                                                  = useState(null);
     const [invoiceStatus, setInvoiceStatus]                                                            = useState(null);
+    const [customerTypeList, setCustomerTypeList]                                                      = useState([]);
     const [selectedCustomerTypeId, setSelectedCustomerTypeId]                                          = useState(null);
     const [courierId, setCourierId]                                                                    = useState(null);
     const scanEnabled                                                                                  = true;
@@ -109,11 +106,10 @@ export default function Order() {
     const [previewOpen, setPreviewOpen]                                                                = useState(false);
     const [previewOrder, setPreviewOrder]                                                              = useState(null);
     const [previewItems, setPreviewItems]                                                              = useState([]);
-    const [showFilters, setShowFilters]                                                                = useState(false);
     const [approxStartDate, setApproxStartDate]                                                        = useState("");
     const [approxEndDate, setApproxEndDate]                                                            = useState("");
     const [followNote, setFollowNote]                                                                  = useState("");
-    const [totalOrder, serTotalOrder]                                                                  = useState(0);
+    const [totalOrder, setTotalOrder]                                                                  = useState(0);
     const [currentPage, setCurrentPage]                                                                = useState(1);
     const [historyModalOpen, setHistoryModalOpen]                                                      = useState(false);
     const [selectedOrderId, setSelectedOrderId]                                                        = useState(null);
@@ -126,11 +122,13 @@ export default function Order() {
     const [isCourierModalOpen, setIsCourierModalOpen]                                                  = useState(false);
     const [courierLogs, setCourierLogs]                                                                = useState([]);
     const [pageSize, setPageSize]                                                                      = useState(orders?.per_page);
-    const [bulkLoading, setBulkLoading]                                                                = useState(false);
+    const [bulkLoading, setBulLoading]                                                                 = useState(false);
 
     // Redux State
-    const orderTagList             = useSelector((state) => state.orderFrom.list);
-    const customerTypeList             = useSelector((s) => s.customerType.list);
+    const orderTagList  = useSelector((state) => state.orderFrom.list);
+    const cancelReasons = useSelector((state) => state.cancelReason.list)
+    const districtList  = useSelector((state) => state.districts.list);
+    const couriers        = useSelector((s) => s.courier.list);
 
     const authenticateUserPermission = async () => {
         try {
@@ -166,20 +164,17 @@ export default function Order() {
         setLoading(true);
         try {
             const res = await getDatas("/admin/orders/list", {
-                page         : page,
-				paginate_size: "paginate_size" in overrides ? overrides.paginate_size : pageSize,
-                search_key   : "search_key" in overrides ? overrides.search_key      : searchQuery,
-                paid_status  : "paid_status" in overrides ? overrides.paid_status    : isPaid,
-        
-                customer_type_id: "customer_type_id" in overrides ? overrides.customer_type_id: selectedCustomerTypeId,
-                order_from_id   : "order_from_id" in overrides ? overrides.order_from_id      : orderTagId,
-        
-                current_status_id: "current_status_id" in overrides ? overrides.current_status_id: statusId,
-                district_id      : "district_id" in overrides ? overrides.district_id            : districtId,
-                cancel_reason_id : "cancel_reason_id" in overrides ? overrides.cancel_reason_id  : cancelReasonId,
-                start_date       : "start_date" in overrides ? overrides.start_date              : startDate ? dayjs(startDate).format("YYYY-MM-DD"): "",
-                end_date         : "end_date" in overrides ? overrides.end_date                  : endDate ? dayjs(endDate).format("YYYY-MM-DD")    : "",
-        
+                page              : page,
+                paginate_size     : "paginate_size" in overrides ? overrides.paginate_size          : pageSize,
+                search_key        : "search_key" in overrides ? overrides.search_key                : searchQuery,
+                paid_status       : "paid_status" in overrides ? overrides.paid_status              : isPaid,
+                customer_type_id  : "customer_type_id" in overrides ? overrides.customer_type_id    : selectedCustomerTypeId,
+                order_from_id     : "order_from_id" in overrides ? overrides.order_from_id          : orderTagId,
+                current_status_id : "current_status_id" in overrides ? overrides.current_status_id  : statusId,
+                district_id       : "district_id" in overrides ? overrides.district_id              : districtId,
+                cancel_reason_id  : "cancel_reason_id" in overrides ? overrides.cancel_reason_id    : cancelReasonId,
+                start_date        : "start_date" in overrides ? overrides.start_date                : startDate ? dayjs(startDate).format("YYYY-MM-DD"): "",
+                end_date          : "end_date" in overrides ? overrides.end_date                    : endDate ? dayjs(endDate).format("YYYY-MM-DD")    : "",
                 is_duplicate      : "is_duplicate" in overrides ? overrides.is_duplicate            : duplicateOrder,
                 courier_id        : "courier_id" in overrides ? overrides.courier_id                : courierId,
                 is_invoice_printed: "is_invoice_printed" in overrides ? overrides.is_invoice_printed: invoiceStatus,
@@ -192,7 +187,19 @@ export default function Order() {
                 setCurrentPage(res?.result?.orders?.meta?.current_page);
                 setPageSize(res?.result?.orders?.meta?.per_page);
         
-                serTotalOrder(res?.result?.orders?.orders_count || 0);
+                const keysToCheck = ["paid_status", "order_from_id","start_date", "end_date", "is_invoice_printed"];
+                const hasRelevantOverride = keysToCheck.some(key => key in overrides);
+
+                if (hasRelevantOverride && statusId) {
+                    setStatusId(null);
+                    setIsAllOrders(true); 
+                }
+
+                if (hasRelevantOverride) {
+                    setTotalOrder(res.result?.total_orders || 0);
+                } else if (!("current_status_id" in overrides)) {
+                    setTotalOrder(res?.result?.orders?.orders_count || 0);
+                }
         
                 setDuplicateOrder(0);
 
@@ -204,6 +211,18 @@ export default function Order() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        const handleUnload = () => {
+            sessionStorage.removeItem("orderStatusId");
+        };
+
+        window.addEventListener("beforeunload", handleUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", handleUnload);
+        };
+    }, []);
 
     const getUserInformation = async () => {
         try {
@@ -244,32 +263,6 @@ export default function Order() {
         }
     };
 
-    const getCourier = async () => {
-        try {
-            const data = await cachedFetch("couriers", async () => {
-                const res = await getDatas("/admin/couriers");
-                return res?.success ? res.result.data : [];
-            });
-
-            setCourierDataList(data);
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const getDistrict = async () => {
-        try {
-            const data = await cachedFetch("districts", async () => {
-                const res = await getDatas("/admin/districts/list");
-                return res?.success ? res.result : [];
-            });
-
-            setDistrictList(data);
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
     const getEmployees = async () => {
         try {
             const data = await cachedFetch("employees", async () => {
@@ -278,6 +271,19 @@ export default function Order() {
             });
 
             setEmployeeList(data);
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const getCustomerType = async () => {
+        try {
+            const data = await cachedFetch("customer_types", async () => {
+                const res = await getDatas("/admin/customer-types/list");
+                return res?.success ? res.result : [];
+            });
+
+            setCustomerTypeList(data);
         } catch (e) {
             console.error(e);
         }
@@ -319,13 +325,13 @@ export default function Order() {
 
     useEffect(() => {
         authenticateUserPermission();
+        getCustomerType();
         getOrders(1);
         getEmployees();
-        getDistrict();
         getUserInformation();
-        getCourier();
 
         const status = new URLSearchParams(location.search).get("status");
+
         if (status) {
             handleStatusChange(status);
         }
@@ -461,10 +467,8 @@ export default function Order() {
             setDistrictId("");
             setCancelReasonId("");
         } else if (id === 8) {
-            getCancelReason();
             setDistrictId("");
         } else if (id === 9 || id === 10) {
-            getCancelReason();
             setDistrictId("");
         } else {
             setDistrictId("");
@@ -474,15 +478,6 @@ export default function Order() {
         setStatusId(id);
         setIsAllOrders(false);
         getOrders(1, {current_status_id: id,district_id: "",cancel_reason_id: "",courier_id: null,});
-    };
-
-    const getCancelReason = async () => {
-        try {
-            const res = await getDatas("/admin/cancel-reasons");
-            setCancelReasons(res?.result);
-        } catch (error) {
-            console.error("Error:", error);
-        }
     };
 
     const handleSelectionChange = (selectedRowKeys) => {
@@ -537,15 +532,14 @@ export default function Order() {
 
     const orderCurrentStatusUpdate = async () => {
         try {
-            setBulkLoading(true);
-
+            setBulLoading(true);
             const payload = {
                 order_ids        : selectedOrderIds,
                 current_status_id: orderCurrentStatus,
                 cancel_reason_id : cancelReasonId || null,
             };
 
-            if (orderCurrentStatus === 3) {
+            if (orderCurrentStatus == 3) {
                 payload.approx_start_date = approxStartDate;
                 payload.approx_end_date   = approxEndDate;
                 payload.follow_note       = followNote;
@@ -565,7 +559,6 @@ export default function Order() {
                 setOrderCurrentStatus("");
                 setSelectedOrderIds([]);
                 getOrders();
-                getCancelReason();
             }
 
             if(res?.success === false){
@@ -575,7 +568,7 @@ export default function Order() {
         } catch (error) {
             console.error("Error:", error);
         }finally{
-            setBulkLoading(false);
+            setBulLoading(false);
         }
     };
 
@@ -1070,10 +1063,16 @@ export default function Order() {
     }, [statusId]);
 
     useEffect(() => {
-        if (orderCurrentStatus === 8) {
-            getCancelReason();
+        if (couriers?.length > 0) {
+            const defaultCourier = couriers.find(
+                (c) => c.is_default === "1"
+            );
+
+            if (defaultCourier) {
+                setCourierId(defaultCourier.id);
+            }
         }
-    }, [orderCurrentStatus]);
+    }, [couriers]);
 
     useEffect(() => {
         if (!scanEnabled) return;
@@ -1543,7 +1542,7 @@ export default function Order() {
                                     setPreviewSrc(p.img);
                                     }}
                                     onMouseLeave={() => setPreviewSrc(null)}
-                                    style={{width: 40,height: 40,borderRadius: "50%",objectFit: "cover",border: "1px solid #f0f0f0",cursor: "pointer",}}
+                                    style={{width: 80,height: 80,borderRadius: "50%",objectFit: "cover",border: "1px solid #f0f0f0",cursor: "pointer",}}
                                 />
                             ))}
                         </div>
@@ -1702,40 +1701,26 @@ export default function Order() {
             title: "Payment Info",
             key: "payment_info",
             width: 180,
-            render: (_, record) => {
-                const products = record?.products ?? [];
-                const money = (v) => `৳ ${Number(v || 0).toLocaleString('en-BD')}`;
-
-                return (
-                    <div>
-                        <p style={{ marginBottom: 5 }}>
-                            <span style={{ fontWeight: "bold" }}>Advanced Payment:</span>
-                            {money(record.advance_payment)}
-                        </p>
-
-                        <p style={{ marginBottom: 5 }}>
-                            <span style={{ fontWeight: "bold" }}>Discount:</span>
-                            {money(record.Discount)}
-                        </p>
-
-                        <p style={{ marginBottom: 5 }}>
-                            <span style={{ fontWeight: "bold" }}>Delivery Charge:</span>
-                            {money(record.delivery_charge)}
-                        </p>
-
-                        {products.map((p, index) => (
-                            <p key={index} style={{ marginBottom: 5 }}>
-                                <strong>Sell Price:</strong> {money(p.sell_price)}
-                            </p>
-                        ))}
-                        
-                        <p style={{ marginBottom: 5 }}>
-                            <span style={{ fontWeight: "bold" }}>Payable Amount:</span>
-                            {money(record.payable_price)}
-                        </p>
-                    </div>
-                );
-            },
+            render: (_, record) => (
+                <div>
+                    <p style={{ marginBottom: 5 }}>
+                        <span style={{ fontWeight: "bold" }}>Advanced Payment:</span>
+                        {record.advance_payment}
+                    </p>
+                    <p style={{ marginBottom: 5 }}>
+                        <span style={{ fontWeight: "bold" }}>Discount:</span>
+                        {record.Discount}
+                    </p>
+                    <p style={{ marginBottom: 5 }}>
+                        <span style={{ fontWeight: "bold" }}>Delivery Charge:</span>
+                        {record.delivery_charge}
+                    </p>
+                    <p style={{ marginBottom: 5 }}>
+                        <span style={{ fontWeight: "bold" }}>Payable Amount:</span>
+                        {record.payable_price}
+                    </p>
+                </div>
+            ),
         },
         {
             title: "Order Note",
@@ -1971,12 +1956,7 @@ export default function Order() {
             <Row>
                 <Col span={24}>
                     <Row style={{ marginBottom: 25 }}>
-
-                        <Col xs={24} md={16} style={{ display: "flex", justifyContent: "flex-start" }}>
-                            <Button type="primary" onClick={() => setShowFilters(!showFilters)} icon={<FilterOutlined />}>
-                                Filter
-                            </Button>
-                        </Col>
+                        <Col xs={24} md={16} style={{ display: "flex", justifyContent: "flex-start" }}></Col>
                         
                         <Col xs={24} md={8} style={{display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap"}}>
                             <div className="form-actions" style={{ display: "flex", gap: 8,  }}>
@@ -2010,150 +1990,131 @@ export default function Order() {
                             </div>
                         </Col>
                     </Row>
+
+                    <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+                        <Col xs={24} md={24}>
+                            <div className="filter-actions" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+                                <div className="filter-item">
+                                    <label className="filter-label">Payment Status</label>
+                                    <Select value={isPaid} onChange={(value) => {setIsPaid(value);getOrders(1, { paid_status: value });}} placeholder="Is Paid" style={{ width: 170, height: 40 }}allowClear>
+                                        <Option value="Paid">Paid</Option>
+                                        <Option value="Unpaid">Unpaid</Option>
+                                    </Select>
+                                </div>
         
-                    {showFilters && (
-                        <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-                            <Col xs={24} md={24}>
-                                <div className="filter-actions" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                                    <div className="filter-item">
-                                        <label className="filter-label">Status</label>
-                                        <Select value={statusId} onChange={(value) => {setStatusId(value); getOrders(1, { current_status_id: value })}} placeholder="Select Status" style={{ width: 170, height: 40 }} allowClear>
-                                            {orderStatus?.map((item) => (
-                                                <Option key={Number(item.status_id)} value={Number(item.status_id)}>
-                                                    {item.status_name}
-                                                </Option>
-                                            ))}
-                                        </Select>
-                                    </div>
-            
-                                    <div className="filter-item">
-                                        <label className="filter-label">Payment Status</label>
-                                        <Select value={isPaid} onChange={(value) => {setIsPaid(value);getOrders(1, { paid_status: value });}} placeholder="Is Paid" style={{ width: 170, height: 40 }}allowClear>
-                                            <Option value="Paid">Paid</Option>
-                                            <Option value="Unpaid">Unpaid</Option>
-                                        </Select>
-                                    </div>
-            
-                                    <div className="filter-item">
-                                        <label className="filter-label">Order Tag</label>
-                                        <Select value={orderTagId} onChange={(value) => {setOrderTagId(value);getOrders(1, { order_from_id: value });}} placeholder="Order Tag" style={{ width: 170, height: 40 }} allowClear>
-                                            {orderTagList?.map((item) => (
-                                                <Option key={item.id} value={item.id}>
-                                                    {item.name}
-                                                </Option>
-                                            ))}
-                                        </Select>
-                                    </div>
-            
-                                    <div className="filter-item">
-                                        <label className="filter-label">Employee</label>
-                                        <Select value={employeeId} onChange={(value) => {setEmployeeId(value);getOrders(1, { assign_user_id: value });}}placeholder="Employee" style={{ width: 170, height: 40 }} allowClear>
-                                            {employeeList?.map((item) => (
-                                                <Option key={item.id} value={item.id}>
-                                                    {item.username}
-                                                </Option>
-                                            ))}
-                                        </Select>
-                                    </div>
-            
-                                    <div className="filter-item">
-                                        <label className="filter-label">Start Date</label>
-                                        <DatePicker value={startDate ? dayjs(startDate) : null} onChange={(date) => {setStartDate(date); getOrders(1, {start_date: date ? dayjs(date).format("YYYY-MM-DD"): "",
-                                            });}} style={{ width: 170, height: 40 }}/>
-                                    </div>
-            
-                                    <div className="filter-item">
-                                        <label className="filter-label">End Date</label>
-                                        <DatePicker value={endDate ? dayjs(endDate) : null} onChange={(date) => {setEndDate(date);getOrders(1, {end_date: date? dayjs(date).format("YYYY-MM-DD"): "",
-                                            });}} style={{ width: 170, height: 40 }}/>
-                                    </div>
-            
-                                    <div className="filter-item">
-                                        <label className="filter-label">Invoice Status</label>
-                                        <Select value={invoiceStatus} onChange={(value) => {setInvoiceStatus(value);getOrders(1, { is_invoice_printed: value });}} placeholder="Invoice Status"style={{ width: 170, height: 40 }}allowClear>
-                                            <Option value={1}>Printed</Option>
-                                            <Option value={0}>Not Printed</Option>
-                                        </Select>
-                                    </div>
-            
-                                    <div className="filter-item">
-                                        <label className="filter-label">Search</label>
-                                        <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onPressEnter={filterData} placeholder="Search Key..." prefix={<SearchOutlined />}
-                                            style={{width: 250,height: 40,borderRadius: 6,boxShadow: "0 2px 6px rgba(64, 169, 255, 0.2)"}}
-                                        />
-                                    </div>
+                                <div className="filter-item">
+                                    <label className="filter-label">Order Tag</label>
+                                    <Select value={orderTagId} onChange={(value) => {setOrderTagId(value);getOrders(1, { order_from_id: value });}} placeholder="Order Tag" style={{ width: 170, height: 40 }} allowClear>
+                                        {orderTagList?.map((item) => (
+                                            <Option key={item.id} value={item.id}>
+                                                {item.name}
+                                            </Option>
+                                        ))}
+                                    </Select>
                                 </div>
-                
-                                <div style={{marginTop: 10, display: "flex",flexWrap: "wrap",gap: 8}}>
-                                    {statusId && (
-                                        <Tag closable onClose={() => {setStatusId(null);getOrders(1);}}>
-                                            Status: {orderStatus?.find((o) => Number(o.status_id) === statusId) ?.status_name || "N/A"}
-                                        </Tag>
-                                    )}
-                
-                                    {isPaid && (
-                                        <Tag closable onClose={() => {setIsPaid(null);getOrders(1);}}>
-                                            Paid: {isPaid}
-                                        </Tag>
-                                    )}
-                
-                                    {selectedCustomerTypeId && (
-                                        <Tag closable onClose={() => {setSelectedCustomerTypeId(null);getOrders(1);}}>
-                                            Customer Type: {customerTypeList?.find((c) => c.id === selectedCustomerTypeId)?.name || "N/A"}
-                                        </Tag>
-                                    )}
-                
-                                    {orderTagId && (
-                                        <Tag closable onClose={() => {setOrderTagId(null); getOrders(1);}}>
-                                            Order Tag: {orderTagList?.data?.find((t) => t.id === orderTagId)?.name || "N/A"}
-                                        </Tag>
-                                    )}
-                
-                                    {selectedCourier && (
-                                        <Tag closable onClose={() => {setSelectedCourier(null);getOrders(1);}}>
-                                            Courier: {courierDataList?.find((c) => c.id === selectedCourier)?.name || "N/A"}
-                                        </Tag>
-                                    )}
-                
-                                    {selectedDistrictId && (
-                                        <Tag closable onClose={() => {setSelectedDistrictId(null);getOrders(1);}}>
-                                            District:{districtList?.find((d) => d.id === selectedDistrictId)?.name || "N/A"}
-                                        </Tag>
-                                    )}
-                
-                                    {employeeId && (
-                                        <Tag closable onClose={() => {setEmployeeId(null);getOrders(1);}}>
-                                            Employee:{employeeList?.find((e) => e.id === employeeId)?.name || "N/A"}
-                                        </Tag>
-                                    )}
-                
-                                    {startDate && (
-                                        <Tag closable onClose={() => {setStartDate(null);getOrders(1);}}>
-                                            Start: {dayjs(startDate).format("YYYY-MM-DD")}
-                                        </Tag>
-                                    )}
-                
-                                    {endDate && (
-                                        <Tag closable onClose={() => {setEndDate(null);getOrders(1);}}>
-                                            End: {dayjs(endDate).format("YYYY-MM-DD")}
-                                        </Tag>
-                                    )}
-                
-                                    {invoiceStatus !== null && invoiceStatus !== undefined && (
-                                        <Tag closable onClose={() => {setInvoiceStatus(null);getOrders(1);}}>
-                                            Invoice: {invoiceStatus === 1 ? "Printed" : "Not Printed"}
-                                        </Tag>
-                                    )}
-                
-                                    {searchQuery && (
-                                        <Tag closable onClose={() => {setSearchQuery("");getOrders(1);}}>
-                                            Search: {searchQuery}
-                                        </Tag>
-                                    )}
+
+                                <div className="filter-item">
+                                    <label className="filter-label">Employee</label>
+                                    <Select value={employeeId} onChange={(value) => {setEmployeeId(value);getOrders(1, { assign_user_id: value });}}placeholder="Employee" style={{ width: 170, height: 40 }} allowClear>
+                                        {employeeList?.map((item) => (
+                                            <Option key={item.id} value={item.id}>
+                                                {item.username}
+                                            </Option>
+                                        ))}
+                                    </Select>
                                 </div>
-                            </Col>
-                        </Row>
-                    )}
+        
+                                <div className="filter-item">
+                                    <label className="filter-label">Start Date</label>
+                                    <DatePicker value={startDate ? dayjs(startDate) : null} onChange={(date) => {setStartDate(date); getOrders(1, {start_date: date ? dayjs(date).format("YYYY-MM-DD"): "",
+                                        });}} style={{ width: 170, height: 40 }}/>
+                                </div>
+        
+                                <div className="filter-item">
+                                    <label className="filter-label">End Date</label>
+                                    <DatePicker value={endDate ? dayjs(endDate) : null} onChange={(date) => {setEndDate(date);getOrders(1, {end_date: date? dayjs(date).format("YYYY-MM-DD"): "",
+                                        });}} style={{ width: 170, height: 40 }}/>
+                                </div>
+        
+                                <div className="filter-item">
+                                    <label className="filter-label">Invoice Status</label>
+                                    <Select value={invoiceStatus} onChange={(value) => {setInvoiceStatus(value);getOrders(1, { is_invoice_printed: value });}} placeholder="Invoice Status"style={{ width: 170, height: 40 }}allowClear>
+                                        <Option value={1}>Printed</Option>
+                                        <Option value={0}>Not Printed</Option>
+                                    </Select>
+                                </div>
+        
+                                <div className="filter-item">
+                                    <label className="filter-label">Search</label>
+                                    <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onPressEnter={filterData} placeholder="Search Key..." prefix={<SearchOutlined />}
+                                        style={{width: 250,height: 40,borderRadius: 6,boxShadow: "0 2px 6px rgba(64, 169, 255, 0.2)"}}
+                                    />
+                                </div>
+                            </div>
+            
+                            <div style={{marginTop: 10, display: "flex",flexWrap: "wrap",gap: 8}}>
+                                {statusId && (
+                                    <Tag closable onClose={() => {allOrderStatus();}}>
+                                        Status: {orderStatus?.find((o) => Number(o.status_id) === statusId)?.status_name || "N/A"}
+                                    </Tag>
+                                )}
+            
+                                {isPaid && (
+                                    <Tag closable onClose={() => {setIsPaid(null);getOrders(1);}}>
+                                        Paid: {isPaid}
+                                    </Tag>
+                                )}
+            
+                                {selectedCustomerTypeId && (
+                                    <Tag closable onClose={() => {setSelectedCustomerTypeId(null);getOrders(1);}}>
+                                        Customer Type: {customerTypeList?.find((c) => c.id === selectedCustomerTypeId)?.name || "N/A"}
+                                    </Tag>
+                                )}
+            
+                                {orderTagId && (
+                                    <Tag closable onClose={() => {setOrderTagId(null); getOrders(1);}}>
+                                        Order Tag: {orderTagList?.find((t) => t.id === orderTagId)?.name || "N/A"}
+                                    </Tag>
+                                )}
+            
+                                {selectedDistrictId && (
+                                    <Tag closable onClose={() => {setSelectedDistrictId(null);getOrders(1);}}>
+                                        District:{districtList?.find((d) => d.id === selectedDistrictId)?.name || "N/A"}
+                                    </Tag>
+                                )}
+            
+                                {employeeId && (
+                                    <Tag closable onClose={() => {setEmployeeId(null);getOrders(1);}}>
+                                        Employee:{employeeList?.find((e) => e.id === employeeId)?.name || "N/A"}
+                                    </Tag>
+                                )}
+            
+                                {startDate && (
+                                    <Tag closable onClose={() => {setStartDate(null);getOrders(1);}}>
+                                        Start: {dayjs(startDate).format("YYYY-MM-DD")}
+                                    </Tag>
+                                )}
+            
+                                {endDate && (
+                                    <Tag closable onClose={() => {setEndDate(null);getOrders(1);}}>
+                                        End: {dayjs(endDate).format("YYYY-MM-DD")}
+                                    </Tag>
+                                )}
+            
+                                {invoiceStatus !== null && invoiceStatus !== undefined && (
+                                    <Tag closable onClose={() => {setInvoiceStatus(null);getOrders(1);}}>
+                                        Invoice: {invoiceStatus === 1 ? "Printed" : "Not Printed"}
+                                    </Tag>
+                                )}
+            
+                                {searchQuery && (
+                                    <Tag closable onClose={() => {setSearchQuery("");getOrders(1);}}>
+                                        Search: {searchQuery}
+                                    </Tag>
+                                )}
+                            </div>
+                        </Col>
+                    </Row>
         
                     <Row>
                         <Col span={24}>
@@ -2341,7 +2302,7 @@ export default function Order() {
                         {statusId === 8 && (
                             <Col span={24}>
                                 <div className="all-location-tags" style={{ marginBottom: 15 }}>
-                                    {cancelReasons?.data?.map((cancelReason, index) => (
+                                    {cancelReasons?.map((cancelReason, index) => (
                                         <span key={index} className={cancelReason.id === cancelReasonId ? "location-tags-child-active" : "location-tags-child"}
                                             data-tooltip={`BDT ${cancelReason.total_amount}`} onClick={() => getCancelReasonOrder(cancelReason.id)} style={{ cursor: "pointer", marginRight: 10 }}>
                                             {cancelReason.name}
@@ -2378,7 +2339,7 @@ export default function Order() {
                                     showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
                 
                                     onChange: (page, size) => {
-                                    const targetPage = size !== pageSize ? 1 : page;
+                                        const targetPage = size !== pageSize ? 1 : page;
                                         setCurrentPage(targetPage);
                                         setPageSize(size);
                                         getOrders(targetPage, { paginate_size: size });
@@ -2746,7 +2707,7 @@ export default function Order() {
                 </Select>
             </Modal>
 
-            <Modal title="Change Your Order Status" open={handleselectedActionCurrentOrderStatusModal} loading={bulkLoading} onCancel={() => setHandleselectedActionCurrentOrderStatusModal(false)}
+            <Modal title="Change Your Order Status" loading={bulkLoading} open={handleselectedActionCurrentOrderStatusModal} onCancel={() => setHandleselectedActionCurrentOrderStatusModal(false)}
                 onOk={orderCurrentStatusUpdate} width={300}>
                 <Select value={orderCurrentStatus} onChange={(value) => setOrderCurrentStatus(value)} style={{ width: "100%", marginBottom: 16 }}>
                     {orderStatus?.filter((status) => status.status_id !== 9 && status.status_id !== 10)
@@ -2757,9 +2718,19 @@ export default function Order() {
                     ))}
                 </Select>
         
-                {orderCurrentStatus === 8 && (
+                {orderCurrentStatus == 5 && (
+                    <Select value={courierId} onChange={(value) => setCourierId(value)} style={{ width: "100%" }} placeholder="Select Courier">
+                        {couriers?.map((item, index) => (
+                            <Option key={index} value={item.id}>
+                                {item.name}
+                            </Option>
+                        ))}
+                    </Select>
+                )}
+
+                {orderCurrentStatus == 8 && (
                     <Select value={cancelReasonId} onChange={(value) => setCancelReasonId(value)} style={{ width: "100%" }}>
-                        {cancelReasons?.data?.map((reason, index) => (
+                        {cancelReasons?.map((reason, index) => (
                             <Option key={index} value={reason.id}>
                             {reason.name}
                             </Option>
@@ -2767,7 +2738,7 @@ export default function Order() {
                     </Select>
                 )}
         
-                {orderCurrentStatus === 3 && (
+                {orderCurrentStatus == 3 && (
                     <>
                         <Input type="date" placeholder="Approx Start Date" value={approxStartDate} onChange={(e) => setApproxStartDate(e.target.value)} style={{ marginBottom: 12 }}/>
             
