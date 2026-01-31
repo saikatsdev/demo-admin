@@ -1,17 +1,38 @@
 import {Input as AntInput,Breadcrumb,Button,Form,Space,message} from "antd";
 import { Link } from "react-router-dom";
-import { postData } from "../../api/common/common";
+import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useAppSettings from "../../hooks/useAppSettings";
+import WebhookDisplay from "../../components/courier/WebhookDisplay";
 
 export default function RedX() {
     // Hook
     useTitle("Add RedX Credentials");
 
+    const {settings} = useAppSettings();
+
     // State
-    const [form] = Form.useForm();
-    const [loading, setLoading] = useState(false);
+    const [form]                      = Form.useForm();
+    const [loading, setLoading]       = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
+
+    useEffect(() => {
+        const getRedx = async () => {
+            const res = await getDatas("/admin/redx/show");
+
+            if(res && res?.success){
+                const data = res?.result || [];
+
+                form.setFieldsValue({
+                    redx_endpoint  : data?.endpoint,
+                    redx_token   : data?.token,
+                });
+            }
+        };
+
+        getRedx();
+    }, []);
 
     // Method
     const handleSubmit = async () => {
@@ -23,12 +44,11 @@ export default function RedX() {
             const res = await postData("/admin/redx/update/env-credential", values);
 
             if (res && res?.success) {
+
                 messageApi.open({
                     type: "success",
                     content: res?.msg,
                 });
-
-                form.resetFields();
             }
         } catch (error) {
             console.log(error);
@@ -76,6 +96,11 @@ export default function RedX() {
                         </Form.Item>
                     </div>
                 </Form>
+
+                <div>
+                    <WebhookDisplay settings={settings} service="redx"/>
+                </div>
+
             </div>
         </>
     )

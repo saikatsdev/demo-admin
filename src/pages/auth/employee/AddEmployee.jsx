@@ -20,6 +20,7 @@ export default function AddEmployee() {
     const [selectedRoles, setSelectedRoles]     = useState([]);
     const [preview, setPreview]                 = useState(null);
     const [loading, setLoading]                 = useState(false);
+    const [errors, setErrors]                   = useState({});
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -80,7 +81,6 @@ export default function AddEmployee() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        setLoading(true);
         const form = e.target;
         const formData = new FormData();
         formData.append("username", form.username.value);
@@ -102,6 +102,8 @@ export default function AddEmployee() {
         }
 
         try {
+            setLoading(true);
+
             const res = await postData("/admin/users", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
@@ -118,9 +120,17 @@ export default function AddEmployee() {
                 setTimeout(() => {
                     navigate("/employee");
                 }, 500);
+            }else{
+                if (res?.errors) {
+                    setErrors(res?.errors);
+                } else {
+                    message.error("Something went wrong");
+                }
             }
-        } catch (error) {
-            console.error("Error creating user:", error.response?.data || error.message);
+        } catch (err) {
+            console.log("errors", err?.response?.data);
+        }finally{
+            setLoading(false);
         }
     }
 
@@ -157,15 +167,24 @@ export default function AddEmployee() {
                     <div className="row">
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Name:</label>
+                                <label className="raw-sell-label">
+                                    Name:<span className="required">*</span>
+                                </label>
                                 <input type="text" className="raw-sell-input" placeholder="Enter user name" name="username"/>
+                                {errors.username && (
+                                    <span className="error-text">{errors.username[0]}</span>
+                                )}
                             </div>
                         </div>
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Phone Number:</label>
+                                <label className="raw-sell-label">
+                                    Phone Number:<span className="required">*</span>
+                                </label>
                                 <input type="text" className="raw-sell-input" placeholder="Enter phone number" name="phone_number"/>
+
+                                {errors.phone_number && <span className="error-text">{errors.phone_number[0]}</span>}
                             </div>
                         </div>
 
@@ -185,17 +204,22 @@ export default function AddEmployee() {
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Password:</label>
+                                <label className="raw-sell-label">
+                                    Password:<span className="required">*</span>
+                                </label>
                                 <input type="password" className="raw-sell-input" placeholder="Enter password" name="password"/>
                             </div>
                         </div>
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">User Role:</label>
+                                <label className="raw-sell-label">
+                                    User Role:<span className="required">*</span>
+                                </label>
                                 <Select mode="multiple" allowClear placeholder="Select Role" className="raw-sell-select" style={{ width: "100%" }}
                                     value={selectedRoles} onChange={(value) => setSelectedRoles(value)} options={roleOptions}
                                 />
+                                {errors.role_ids && <span className="error-text">{errors.role_ids[0]}</span>}
                             </div>
                         </div>
 
@@ -215,7 +239,9 @@ export default function AddEmployee() {
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">User Category:</label>
+                                <label className="raw-sell-label">
+                                    User Category:<span className="required">*</span>
+                                </label>
                                 <select name="user_category_id" id="" className="raw-sell-select">
                                     <option value="" selected disabled>Select Category</option>
                                     {categoryOptions.length > 0 && (
@@ -229,12 +255,15 @@ export default function AddEmployee() {
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Status:</label>
+                                <label className="raw-sell-label">
+                                    Status:<span className="required">*</span>
+                                </label>
                                 <select name="status" id="" className="raw-sell-select">
                                     <option value="" selected disabled>Select Status</option>
                                     <option value="active">Active</option>
                                     <option value="inactive">In Active</option>
                                 </select>
+                                {errors.status && <span className="error-text">{errors.status[0]}</span>}
                             </div>
                         </div>
 

@@ -1,19 +1,43 @@
 import { Input as AntInput, Breadcrumb, Button, Form, Space, message } from "antd";
 import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import { postData } from "../../api/common/common";
-import { useState } from "react";
+import { getDatas, postData } from "../../api/common/common";
+import { useEffect, useState } from "react";
 import useTitle from "../../hooks/useTitle";
+import useAppSettings from "../../hooks/useAppSettings";
+import WebhookDisplay from "../../components/courier/WebhookDisplay";
 
 export default function SteadFast() {
     // Hook
     useTitle("Add SteadFast Credentials");
 
+    const {settings} = useAppSettings();
+
     // State
     const [form]                      = Form.useForm();
     const [messageApi, contextHolder] = message.useMessage();
     const [loading, setLoading]       = useState(false);
-    const [showForm, setShowForm] = useState(false);
+    const [showForm, setShowForm]     = useState(false);
+
+    useEffect(() => {
+        const getSteadfast = async () => {
+            const res = await getDatas("/admin/stead-fasts/show");
+
+            if(res && res?.success){
+                const data = res?.result || [];
+
+                form.setFieldsValue({
+                    stead_fast_endpoint  : data?.endpoint,
+                    stead_fast_api_key   : data?.api_key,
+                    stead_fast_secret_key: data?.secret_key,
+                });
+
+                
+            }
+        };
+
+        getSteadfast();
+    }, []);
 
     // Form
     const handleSubmit = async () => {
@@ -89,6 +113,11 @@ export default function SteadFast() {
                             </Form.Item>
                         </div>
                     </Form>
+
+                    <div>
+                        <WebhookDisplay settings={settings} service="stead-fast"/>
+                    </div>
+
                 </div>
             )}
         </>

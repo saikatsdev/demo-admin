@@ -80,7 +80,6 @@ export default function AddManagement() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        setLoading(true);
         const form = e.target;
         const formData = new FormData();
         formData.append("username", form.username.value);
@@ -102,6 +101,8 @@ export default function AddManagement() {
         }
 
         try {
+            setLoading(true);
+
             const res = await postData("/admin/users", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
@@ -121,6 +122,8 @@ export default function AddManagement() {
             }
         } catch (error) {
             console.error("Error creating user:", error.response?.data || error.message);
+        }finally{
+            setLoading(false);
         }
     }
 
@@ -157,14 +160,18 @@ export default function AddManagement() {
                     <div className="row">
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Name:</label>
+                                <label className="raw-sell-label">
+                                    Name:<span className="required">*</span>
+                                </label>
                                 <input type="text" className="raw-sell-input" placeholder="Enter user name" name="username"/>
                             </div>
                         </div>
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Phone Number:</label>
+                                <label className="raw-sell-label">
+                                    Phone Number:<span className="required">*</span>
+                                </label>
                                 <input type="text" className="raw-sell-input" placeholder="Enter phone number" name="phone_number"/>
                             </div>
                         </div>
@@ -185,14 +192,18 @@ export default function AddManagement() {
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Password:</label>
+                                <label className="raw-sell-label">
+                                    Password:<span className="required">*</span>
+                                </label>
                                 <input type="password" className="raw-sell-input" placeholder="Enter password" name="password"/>
                             </div>
                         </div>
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">User Role:</label>
+                                <label className="raw-sell-label">
+                                    User Role:<span className="required">*</span>
+                                </label>
                                 <Select mode="multiple" allowClear placeholder="Select Role" className="raw-sell-select" style={{ width: "100%" }}
                                     value={selectedRoles} onChange={(value) => setSelectedRoles(value)} options={roleOptions}
                                 />
@@ -215,7 +226,9 @@ export default function AddManagement() {
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">User Category:</label>
+                                <label className="raw-sell-label">
+                                    User Category:<span className="required">*</span>
+                                </label>
                                 <select name="user_category_id" id="" className="raw-sell-select">
                                     <option value="" selected disabled>Select Category</option>
                                     {categoryOptions.length > 0 && (
@@ -229,7 +242,9 @@ export default function AddManagement() {
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Status:</label>
+                                <label className="raw-sell-label">
+                                    Status:<span className="required">*</span>
+                                </label>
                                 <select name="status" id="" className="raw-sell-select">
                                     <option value="" selected disabled>Select Status</option>
                                     <option value="active">Active</option>

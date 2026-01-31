@@ -1,0 +1,42 @@
+.webhook-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  max-width: 600px;
+  background-color: #f9f9f9;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.webhook-card h4 {
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.webhook-url-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #051760;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-family: monospace;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.copy-btn {
+  margin-left: 10px;
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.copy-btn.copied {
+  background-color: #4caf50;
+}

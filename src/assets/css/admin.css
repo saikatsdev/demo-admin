@@ -136,6 +136,23 @@ body::-webkit-scrollbar-thumb {
 }
 /* Block User Btn */
 
+/* For Employee */
+.raw-sell-label {
+  font-weight: 500;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+
+.required {
+  color: red;
+  margin-left: 4px;
+}
+
+.error-text {
+  color: red;
+}
+/* For Employee */
+
 /* ========= Topbar ========= */
 .topbar {
   grid-column: 1/3;

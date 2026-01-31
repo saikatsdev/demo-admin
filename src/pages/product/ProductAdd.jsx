@@ -90,6 +90,9 @@ const ProductAdd = () => {
   const [thumbnail, setThumbnail] = useState(null);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [slug, setSlug] = useState("");
+  const [isEditingSlug, setIsEditingSlug] = useState(false);
+  const debounceRef = useRef(null);
   // image work end here
 
   // refs to track processed files
@@ -569,6 +572,22 @@ const ProductAdd = () => {
     setOfferPrice("");
   };
 
+  useEffect(() => {
+    if (!title || isEditingSlug) return;
+
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await getDatas("/admin/products/check-slug", { slug: title });
+        setSlug(res.result);
+      } catch (err) {
+        console.error(err);
+      }
+    }, 500);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [title, isEditingSlug]);
+
   // submit function
   const handleSubmit = async () => {
     setLoading(true);
@@ -579,6 +598,7 @@ const ProductAdd = () => {
 
       // Basic product information
       formData.append("name", title);
+      formData.append("slug", slug);
       formData.append("brand_id", brandId || "");
       formData.append("category_id", categoryId || "");
       formData.append("sub_category_id", subCategoryId || "");
@@ -616,24 +636,6 @@ const ProductAdd = () => {
       reviewImages.forEach((reviewImage) => {
         formData.append("review_images[]", reviewImage);
       });
-
-      // // 🔥 Variation data append
-      // for (let i = 0; i < attributeValue.length; i++) {
-      //   for (let j = 0; j < (attributeValue[i] || []).length; j++) {
-      //     const attr = attributeValue[i][j];
-      //     if (attr?.attribute_id === 1) {
-      //       formData.append(`variations[${i}][attribute_value_id_1]`, attr.id);
-      //     } else if (attr?.attribute_id === 2) {
-      //       formData.append(`variations[${i}][attribute_value_id_2]`, attr.id);
-      //     } else if (attr?.attribute_id === 3) {
-      //       formData.append(`variations[${i}][attribute_value_id_3]`, attr.id);
-      //     }
-      //   }
-      // }
-
-      // =======================
-      // 🔥 HANDLE VARIATIONS
-      // =======================
 
       // 1️⃣ Extract unique attribute IDs
       const uniqueAttributes = [
@@ -767,11 +769,6 @@ const ProductAdd = () => {
     },
   };
 
-  const regular = Number(regularPrice);
-  const offer = Number(offerPrice);
-
-  const isInvalidOffer = offerPrice !== "" && regularPrice !== "" && !Number.isNaN(regular) && !Number.isNaN(offer) && offer > regular;
-
   return (
     <div style={{ padding: 16 }}>
       {contextHolder}
@@ -786,12 +783,16 @@ const ProductAdd = () => {
           <Card title="Product Information" bordered>
             <Form layout="vertical">
               <Row gutter={12}>
+
                 <Col span={24}>
                   <Form.Item label="Product Name" required>
                     <Input
                       value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder=""
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        setIsEditingSlug(false); // reset manual edit when typing name
+                      }}
+                      placeholder="Enter product name"
                       status={errors?.name ? "error" : ""}
                     />
                     {errors?.name && (
@@ -803,6 +804,26 @@ const ProductAdd = () => {
                     )}
                   </Form.Item>
                 </Col>
+
+                <Col span={24}>
+                  {title && (
+                    <Form.Item label="Slug" required>
+                      <Input
+                        value={slug}
+                        onChange={(e) => {
+                          setSlug(e.target.value);
+                          setIsEditingSlug(true); // user manually edits slug
+                        }}
+                        placeholder="Slug"
+                      />
+                      <small style={{ color: "#888" }}>
+                        Auto-generated from product name. You can edit manually.
+                      </small>
+                    </Form.Item>
+                  )}
+                </Col>
+
+
                 <Col span={8}>
                   <Form.Item label="Category" required>
                     <Select
@@ -1607,7 +1628,6 @@ const ProductAdd = () => {
                       </Form.Item>
                     </Form>
                   </Col>
-
                   <Col xs={24} lg={8}>
                     <Form layout="vertical">
                       <Form.Item label="Regular Price" required>
@@ -1619,10 +1639,9 @@ const ProductAdd = () => {
                       </Form.Item>
                     </Form>
                   </Col>
-
                   <Col xs={24} lg={8}>
                     <Form layout="vertical">
-                      <Form.Item label="Offer Price" validateStatus={isInvalidOffer ? "error" : ""} help={isInvalidOffer ? "Offer price cannot be greater than regular price" : "" }>
+                      <Form.Item label="Offer Price">
                         <Input
                           placeholder="Enter Offer Price"
                           value={offerPrice}
@@ -1631,14 +1650,13 @@ const ProductAdd = () => {
                       </Form.Item>
                     </Form>
                   </Col>
-
                 </Row>
               </Card>
             )}
 
             <Row justify="end" style={{ marginTop: 16 }}>
-              <Button type="primary" size="large" onClick={handleSubmit} loading={loading} disabled={isInvalidOffer}>
-                Add Product
+              <Button type="primary" size="large" onClick={handleSubmit} loading={loading}>
+                Publish Add Product
               </Button>
             </Row>
           </Card>

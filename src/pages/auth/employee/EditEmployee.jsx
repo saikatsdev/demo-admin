@@ -92,7 +92,6 @@ export default function EditEmployee() {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        setLoading(true);
         const form = e.target;
         const formData = new FormData();
         formData.append("username", form.username.value);
@@ -116,6 +115,8 @@ export default function EditEmployee() {
         formData.append("_method", "PUT");
 
         try {
+            setLoading(true);
+            
             const res = await postData(`/admin/users/${id}`, formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
@@ -136,6 +137,8 @@ export default function EditEmployee() {
             }
         } catch (error) {
             console.error("Error creating user:", error.response?.data || error.message);
+        }finally{
+            setLoading(false);
         }
     }
     
@@ -172,14 +175,18 @@ export default function EditEmployee() {
                     <div className="row">
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Name:</label>
+                                <label className="raw-sell-label">
+                                    Name:<span className="required">*</span>
+                                </label>
                                 <input type="text" className="raw-sell-input" placeholder="Enter user name" value={user?.username || ""} onChange={(e) => setUser({...user, username: e.target.value})} name="username"/>
                             </div>
                         </div>
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Phone Number:</label>
+                                <label className="raw-sell-label">
+                                    Phone Number:<span className="required">*</span>
+                                </label>
                                 <input type="text" className="raw-sell-input" placeholder="Enter phone number" name="phone_number" value={user?.phone_number || ""} onChange={(e) => setUser({...user, phone_number: e.target.value})}/>
                             </div>
                         </div>
@@ -207,7 +214,9 @@ export default function EditEmployee() {
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">User Role:</label>
+                                <label className="raw-sell-label">
+                                    User Role:<span className="required">*</span>
+                                </label>
                                 <Select mode="multiple" allowClear placeholder="Select Role" className="raw-sell-select" style={{ width: "100%" }}
                                     value={selectedRoles} onChange={(value) => setSelectedRoles(value)} options={roleOptions}
                                 />
@@ -230,7 +239,9 @@ export default function EditEmployee() {
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">User Category:</label>
+                                <label className="raw-sell-label">
+                                    User Category:<span className="required">*</span>
+                                </label>
                                 <select name="user_category_id" className="raw-sell-select" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
                                     <option value="" selected disabled>Select Category</option>
                                     {categoryOptions.length > 0 && (
@@ -244,7 +255,9 @@ export default function EditEmployee() {
 
                         <div className="col-lg-6 col-12">
                             <div className="raw-sell-row">
-                                <label className="raw-sell-label">Status:</label>
+                                <label className="raw-sell-label">
+                                    Status:<span className="required">*</span>
+                                </label>
                                 <select name="status" className="raw-sell-select" value={status} onChange={(e) => setStatus(e.target.value)}>
                                     <option value="" selected disabled>Select Status</option>
                                     <option value="active">Active</option>
