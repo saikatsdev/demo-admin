@@ -88,12 +88,11 @@ export default function Header({ submenus }) {
                     <span className="bar"></span>
                 </label>
         
-                <div className="brand logo" aria-label="SOFTEDU Home">
-                    <Link to="/">
-                        <img src={settings.favicon_icon} alt="" aria-hidden="true" />
-                        
-                        <h2>{settings.title}</h2>
-                    </Link>
+                <div className="brand logo" aria-label={settings?.title}>
+                    <a href={settings?.frontend_base_url} target="_blank" rel="noopener noreferrer">
+                        <img src={settings?.favicon_icon} alt="" aria-hidden="true" />
+                        <h2>{settings?.title}</h2>
+                    </a>
                 </div>
         
                 <TopMenuBar submenus={submenus} />

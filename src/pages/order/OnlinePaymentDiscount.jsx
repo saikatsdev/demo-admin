@@ -11,64 +11,79 @@ export default function OnlinePaymentDiscount() {
     useTitle("Online Payment Discount");
 
     // State
-    const [query, setQuery]               = useState("");
-    const [loading, setLoading]           = useState(false);
-    const [onlinePayment, setItems]                = useState([]);
-    const [isModalOpen, setIsModalOpen]   = useState(false);
-    const [messageApi, contextHolder]     = message.useMessage();
-    const [editingItems, setEditingItems] = useState(null);
-    const [filteredData, setFilteredData] = useState(onlinePayment);
-    const [form]                          = Form.useForm();
+    const [query, setQuery]                     = useState("");
+    const [loading, setLoading]                 = useState(false);
+    const [onlinePayment, setItems]             = useState([]);
+    const [isModalOpen, setIsModalOpen]         = useState(false);
+    const [messageApi, contextHolder]           = message.useMessage();
+    const [editingItems, setEditingItems]       = useState(null);
+    const [filteredData, setFilteredData]       = useState(onlinePayment);
+    const [form]                                = Form.useForm();
+    const [paymentGateways, setPaymentGateways] = useState([]);
 
     //Table Columns
     const columns = [
         {
-            title: "SL",
-            key:"sl",
-            width: 10,
+            title : "SL",
+            key   : "sl",
+            width : 10,
             render: (_,__, index) => (
                 index + 1
             )
         },
         {
-            title: "Discount Type",
+            title    : "Payment Gateway",
+            dataIndex: ["payment_gateway", "name"],
+            render   : (_, record) => {
+                const gateway = record?.payment_gateway;
+
+                return (
+                    <div style = {{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <img src   = {gateway?.image} alt = {gateway?.name} style = {{width: 28,height: 28,objectFit: "contain",borderRadius: 4,}}/>
+                        <span>{gateway?.name}</span>
+                    </div>
+                );
+            },
+        },
+        {
+            title    : "Discount Type",
             dataIndex: "discount_type",
-            key: "discount_type"
+            key      : "discount_type"
         },
         {
-            title: "Discount Amount",
+            title    : "Discount Amount",
             dataIndex: "discount_amount",
-            key: "discount_amount"
+            key      : "discount_amount"
         },
         {
-            title: "Minimum Cart Amount",
+            title    : "Minimum Cart Amount",
             dataIndex: "minimum_cart_amount",
-            key: "minimum_cart_amount"
+            key      : "minimum_cart_amount"
         },
         {
-            title: "Maximum Cart Amount",
+            title    : "Maximum Discount Amount",
             dataIndex: "maximum_discount_amount",
-            key: "maximum_discount_amount"
+            key      : "maximum_discount_amount"
         },
         {
-            title: "Status",
+            title    : "Status",
             dataIndex: "status",
-            key: "status",
-            render: (status) => (
-                <Tag color={status === 'active' ? "green" : "danger"} style={{textTransform:"capitalize"}}>{status}</Tag>
+            key      : "status",
+            render   : (status) => (
+                <Tag color = {status === 'active' ? "green" : "danger"} style = {{textTransform:"capitalize"}}>{status}</Tag>
             )
         },
         {
-            title: "Action",
-            key: "operation",
-            width:170,
+            title : "Action",
+            key   : "operation",
+            width : 170,
             render: (_, record) => (
                 <Space>
-                    <Button size="small" type="primary" onClick={() => onEdit(record)}>
+                    <Button size = "small" type = "primary" onClick = {() => onEdit(record)}>
                         Edit
                     </Button>
-                    <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Button size="small" danger>
+                    <Popconfirm title = "Delete Item?" okText = "Yes" cancelText = "No" onConfirm = {() => onDelete(record.id)}>
+                    <Button     size  = "small" danger>
                             Delete
                         </Button>
                     </Popconfirm>
@@ -76,6 +91,18 @@ export default function OnlinePaymentDiscount() {
             )
         },
     ];
+
+    useEffect(() => {
+        const fetchedDeliveryGateways = async () => {
+            const res = await getDatas("/admin/payment-gateways/list");
+
+            if(res && res?.success){
+                setPaymentGateways(res?.result);
+            }
+        };
+
+        fetchedDeliveryGateways();
+    }, []);
 
     //Method
     const openCreate = () => {
@@ -89,19 +116,12 @@ export default function OnlinePaymentDiscount() {
         setIsModalOpen(true);
 
         form.setFieldsValue({
-            title:record.title,
-            description:record.description,
-            status:record.status,
-            image: record.image
-            ? [
-                {
-                    uid: "-1",
-                    name: "existing.png",
-                    status: "done",
-                    url: record.image,
-                },
-                ]
-            : [],
+            payment_gateway_id     : record.payment_gateway.id,
+            discount_type          : record.discount_type,
+            discount_amount        : record.discount_amount,
+            minimum_cart_amount    : record.minimum_cart_amount,
+            maximum_discount_amount: record.maximum_discount_amount,
+            status                 : record.status,
         });
     }
 
@@ -150,36 +170,42 @@ export default function OnlinePaymentDiscount() {
 
         const formData = new FormData();
 
-        formData.append('name', values.name);
-        formData.append('delivery_fee', values.delivery_fee);
-        formData.append('min_time', values.min_time);
-        formData.append('max_time', values.max_time);
-        formData.append('time_unit', values.time_unit);
+        formData.append('payment_gateway_id', values.payment_gateway_id);
+        formData.append('discount_type', values.discount_type);
+        formData.append('discount_amount', values.discount_amount);
+        formData.append('minimum_cart_amount', values.minimum_cart_amount);
+        formData.append('maximum_discount_amount', values.maximum_discount_amount);
         if(values.status) formData.append('status', values.status);
 
         if(editingItems?.id) formData.append('_method', 'PUT');
 
         const url = editingItems?.id ? `/admin/online-payment/discounts/${editingItems.id}` : `/admin/online-payment/discounts`;
 
-        setLoading(true);
+        try {
+            setLoading(true);
 
-        const res = await postData(url, formData, {headers:{ "Content-Type": "multipart/form-data"}, method: editingItems?.id ? "PUT" : "POST"});
+            const res = await postData(url, formData, {headers:{ "Content-Type": "multipart/form-data"}, method: editingItems?.id ? "PUT" : "POST"});
 
-        if(res?.success){
-            const refreshed = await getDatas("/admin/online-payment/discounts");
+            if(res?.success){
+                const refreshed = await getDatas("/admin/online-payment/discounts");
 
-            setItems(refreshed?.result?.data);
+                setItems(refreshed?.result?.data);
 
-            messageApi.open({
-              type: "success",
-              content: res.msg,
-            });
-        }
+                messageApi.open({
+                type: "success",
+                content: res.msg,
+                });
+            }
 
-        setTimeout(() => {
+            setTimeout(() => {
+                setLoading(false);
+                setIsModalOpen(false);
+            }, 500);
+        } catch (error) {
+            console.log(error);
+        }finally{
             setLoading(false);
-            setIsModalOpen(false);
-        }, 500);
+        }
     }
 
     const onDelete = async (id) => {
@@ -226,36 +252,28 @@ export default function OnlinePaymentDiscount() {
             <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
 
             <div>
-                <Modal style={{textAlign:"center"}}
-                    title={editingItems ? "Edit Info" : "Create New"}
-                    open={isModalOpen}
-                    onOk={handleSubmit}
-                    okText={editingItems ? "Update" : "Create"}
-                    confirmLoading={loading}
-                    onCancel={() => setIsModalOpen(false)}
-                >
+                <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"} confirmLoading={loading} onCancel={() => setIsModalOpen(false)}>
                     <div>
-                        <Form form={form} layout="s" initialValues={{width:"960", height:"1200"}}>
+                        <Form form={form} layout="s">
                             <div>
-                                <Form.Item name="name" label="Name" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter Name" />
+                                <Form.Item name="payment_gateway_id" label="Payment Gatewat" rules={[{ required: true }]}>
+                                    <Select options={paymentGateways.map(item => ({label: item.name,value: item.id}))} placeholder="Select Payment Gateway"/>
                                 </Form.Item>
 
-                                <Form.Item name="delivery_fee" label="Delivery Fee" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter Delivery Fee" />
+                                <Form.Item name="discount_type" label="Discount Type" rules={[{ required: true }]}>
+                                    <Select options={[{ value: 'percentage', label: 'Percentage' }, { value: 'fixed', label: 'Fixed' }]} placeholder="Select Discount Type"/>
                                 </Form.Item>
 
-                                <Form.Item name="min_time" label="Minimum Time" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter Minimum Time" />
+                                <Form.Item name="discount_amount" label="Discount Amount" rules={[{ required: true }]}>
+                                    <AntInput placeholder="Enter Discount Amount" />
                                 </Form.Item>
 
-                                <Form.Item name="max_time" label="Maximum Time" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter Maximum Time" />
+                                <Form.Item name="minimum_cart_amount" label="Minimum Cart Amount" rules={[{ required: true }]} placeholder="Write Cart Amount">
+                                    <AntInput placeholder="Enter Minimum Cart Amount" />
                                 </Form.Item>
 
-
-                                <Form.Item name="time_unit" label="Time Unit" rules={[{ required: true }]}>
-                                    <Select options={[{ value: 'hours', label: 'Hours' }, { value: 'days', label: 'Days' }, { value: 'weeks', label: 'Weeks' }]} />
+                                <Form.Item name="maximum_discount_amount" label="Maximum Discount Amount" rules={[{ required: true }]} placeholder="Maximum Discount Amount">
+                                    <AntInput placeholder="Enter Maximum Discount Amount" />
                                 </Form.Item>
 
                                 <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">

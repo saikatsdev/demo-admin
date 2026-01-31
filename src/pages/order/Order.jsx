@@ -1542,7 +1542,7 @@ export default function Order() {
                                     setPreviewSrc(p.img);
                                     }}
                                     onMouseLeave={() => setPreviewSrc(null)}
-                                    style={{width: 80,height: 80,borderRadius: "50%",objectFit: "cover",border: "1px solid #f0f0f0",cursor: "pointer",}}
+                                    style={{width: 40,height: 40,borderRadius: "50%",objectFit: "fill",border: "1px solid #f0f0f0",cursor: "pointer",}}
                                 />
                             ))}
                         </div>
@@ -1658,7 +1658,12 @@ export default function Order() {
             render: (_, record) => (
                 <div>
                     {record?.courier?.name?.toLowerCase() === "steadfast" && (
-                        <Tag color="success">{record?.courier?.name}</Tag>
+                        <>
+                            <Tag color="success">{record?.courier?.name}</Tag>
+                            <Tooltip title="Courier status details">
+                                <InfoCircleOutlined style={{ cursor: "pointer", color: "#1890ff" }} onClick={() => openCourierModal(record.callback_response)} />
+                            </Tooltip>
+                        </>
                     )}
 
                     {record?.courier?.name?.toLowerCase() === "pathao" && (
@@ -1671,7 +1676,12 @@ export default function Order() {
                     )}
 
                     {record?.courier?.name?.toLowerCase() === "redx" && (
-                        <Tag color="error">{record?.courier?.name}</Tag>
+                        <>
+                            <Tag color="error">{record?.courier?.name}</Tag>
+                            <Tooltip title="Courier status details">
+                                <InfoCircleOutlined style={{ cursor: "pointer", color: "#1890ff" }} onClick={() => openCourierModal(record.callback_response)} />
+                            </Tooltip>
+                        </>
                     )}
 
                     {record?.consignment_id && (
