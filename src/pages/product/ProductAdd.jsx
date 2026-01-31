@@ -6,7 +6,7 @@ import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
-import useAppSettings from "../../hooks/useAppSettings";
+import {useAppSettings} from "../../contexts/useAppSettings";
 
 const { Title, Text } = Typography;
 

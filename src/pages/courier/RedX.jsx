@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import { useEffect, useState } from "react";
-import useAppSettings from "../../hooks/useAppSettings";
+import {useAppSettings} from "../../contexts/useAppSettings";
 import WebhookDisplay from "../../components/courier/WebhookDisplay";
 
 export default function RedX() {

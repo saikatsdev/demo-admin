@@ -23,7 +23,7 @@ import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
-import useAppSettings from "../../hooks/useAppSettings";
+import {useAppSettings} from "../../contexts/useAppSettings";
 import Permalink from "../../components/products/Permalink";
 
 const { Title, Text } = Typography;
@@ -40,30 +40,30 @@ const ProductEdit = () => {
   const [errors, setErrors] = useState({});
 
   //  Product fields
-  const [title, setTitle] = useState("");
-  const [productId, setProductId] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [subCategoryId, setSubCategoryId] = useState("");
+  const [title, setTitle]                       = useState("");
+  const [productId, setProductId]               = useState("");
+  const [categoryId, setCategoryId]             = useState("");
+  const [subCategoryId, setSubCategoryId]       = useState("");
   const [subSubCategoryId, setSubSubCategoryId] = useState("");
-  const [brandId, setBrandId] = useState("");
-  const [status, setStatus] = useState("");
-  const [productTypeId, setProductTypeId] = useState("");
-  const [sku, setSku] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
-  const [description, setDescription] = useState("");
+  const [brandId, setBrandId]                   = useState("");
+  const [status, setStatus]                     = useState("");
+  const [productTypeId, setProductTypeId]       = useState("");
+  const [sku, setSku]                           = useState("");
+  const [videoUrl, setVideoUrl]                 = useState("");
+  const [description, setDescription]           = useState("");
   const [shortDescription, setShortDescription] = useState("");
-  const [isFreeShipping, setIsFreeShipping] = useState("0");
-  const [minimumQuantity, setMinimumQuantity] = useState("1");
-  const [currentStock, setCurrentStock] = useState("0");
-  const [soldQty, setSoldQty] = useState("");
-  const [buyPrice, setBuyPrice] = useState("");
-  const [regularPrice, setRegularPrice] = useState("");
-  const [offerPrice, setOfferPrice] = useState("");
-  const [metaTitle, setMetaTitle] = useState("");
-  const [metaKeywords, setMetaKeywords] = useState("");
-  const [metaDescription, setMetaDescription] = useState("");
-  const [width, setWidth] = useState("1000");
-  const [height, setHeight] = useState("1000");
+  const [isFreeShipping, setIsFreeShipping]     = useState("0");
+  const [minimumQuantity, setMinimumQuantity]   = useState("1");
+  const [currentStock, setCurrentStock]         = useState("0");
+  const [soldQty, setSoldQty]                   = useState("");
+  const [buyPrice, setBuyPrice]                 = useState("");
+  const [regularPrice, setRegularPrice]         = useState("");
+  const [offerPrice, setOfferPrice]             = useState("");
+  const [metaTitle, setMetaTitle]               = useState("");
+  const [metaKeywords, setMetaKeywords]         = useState("");
+  const [metaDescription, setMetaDescription]   = useState("");
+  const [width, setWidth]                       = useState("1000");
+  const [height, setHeight]                     = useState("1000");
 
   //  Dropdown data
   const [categories, setCategories] = useState(null);

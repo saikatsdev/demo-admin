@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
 import { useEffect, useState } from "react";
 import useTitle from "../../hooks/useTitle";
-import useAppSettings from "../../hooks/useAppSettings";
+import {useAppSettings} from "../../contexts/useAppSettings";
 import WebhookDisplay from "../../components/courier/WebhookDisplay";
 
 export default function Pathao() {

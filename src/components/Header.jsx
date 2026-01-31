@@ -8,7 +8,7 @@ import { message } from "antd";
 import {useEffect, useState } from "react";
 import "./Header.css";
 import OrderSearch from "./search/OrderSearch";
-import useAppSettings from "../hooks/useAppSettings";
+import { useAppSettings } from "../contexts/useAppSettings";
 import NotificationsDropdown from "./data/NotificationsDropdown";
 import { setFavicon } from "../utils/favicon";
 

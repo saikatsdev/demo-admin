@@ -6,15 +6,18 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import NotificationWrapper from "./components/NotificationWrapper.jsx";
 import { store } from "./store.js";
+import AppSettingsProvider from "./contexts/AppSettingsProvider.jsx";
 
 export const Root = () => {
   return (
     <Provider store={store}>
-      <BrowserRouter>
-        <NotificationWrapper>
-          <App />
-        </NotificationWrapper>
-      </BrowserRouter>
+      <AppSettingsProvider>
+        <BrowserRouter>
+          <NotificationWrapper>
+            <App />
+          </NotificationWrapper>
+        </BrowserRouter>
+      </AppSettingsProvider>
     </Provider>
   );
 };

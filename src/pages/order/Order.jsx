@@ -14,7 +14,7 @@ import "./Order.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import OrderHistoryModal from "../../components/order/OrderHistoryModal";
-import useAppSettings from "../../hooks/useAppSettings";
+import {useAppSettings} from "../../contexts/useAppSettings";
 import CourierInfo from "../../components/order/CourierInfo";
 import { formatCourierData } from "../../helpers/courier.helper";
 import { cachedFetch } from "../../utils/cacheApi";
