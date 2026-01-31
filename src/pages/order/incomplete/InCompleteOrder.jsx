@@ -1,4 +1,4 @@
-import {ArrowLeftOutlined,ShoppingCartOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,ShoppingCartOutlined,RollbackOutlined,WhatsAppOutlined,CopyOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined} from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import {Input as AntInput,Breadcrumb,Button,message,DatePicker,Popconfirm,Space,Table,Modal,Tooltip,Image} from "antd";
 import { useEffect, useState } from "react";
@@ -221,6 +221,7 @@ export default function InCompleteOrder() {
             title: "Name",
             dataIndex: "name",
             key: "name",
+            width:140,
         },
         {
             title: "Phone Number",
@@ -229,9 +230,19 @@ export default function InCompleteOrder() {
             render: (text) => (
                 <Space>
                     {text}
+
+                    <Tooltip title="Copy Phone Number.">
+                        <CopyOutlined style={{fontSize: 18,color: "#1890ff",cursor: "pointer",marginRight: 8}} onClick={() => copyPhoneNo(text)}/>
+                    </Tooltip>
+
+                    <Tooltip title="WhatsApp">
+                        <WhatsAppOutlined style={{fontSize: 17,color: "#25D366",cursor: "pointer",marginRight: 10}} onClick={() => openWhatsApp(text)}/>
+                    </Tooltip>
+
                     <InfoCircleOutlined style={{ color: "#1C558B", cursor: "pointer" }} onClick={() => handleOpenModal(text)}/>
                 </Space>
             ),
+            width:250
         },
         {
             title: "Address",
@@ -248,6 +259,7 @@ export default function InCompleteOrder() {
             dataIndex: "created_at",
             key: "created_at",
             render: (created_at) => created_at ? dayjs(created_at).format("MMMM DD, YYYY hh:mm:ss A") : "N/A",
+            width:150
         },
         {
             title: "Status",
@@ -261,7 +273,7 @@ export default function InCompleteOrder() {
         {
             title: "Action",
             key: "operation",
-            width: 160,
+            width: 100,
             render: (_, record) => (
                 <Space>
                     {showTrash ? (
@@ -287,7 +299,7 @@ export default function InCompleteOrder() {
                                     </Button>
 
                                     <Button size="small" className="incomplete-convert" onClick={() => handleOrder(record)}>
-                                        Convert to Order
+                                        Convert
                                     </Button>
                                 </>
                             )}
@@ -303,6 +315,36 @@ export default function InCompleteOrder() {
             ),
         },
     ];
+
+    const copyPhoneNo = async (phoneNumber) => {
+        if (!phoneNumber) return;
+
+        try {
+            await navigator.clipboard.writeText(phoneNumber);
+
+            messageApi.open({
+                type: "success",
+                content: "Phone Number Copied",
+            });
+
+        } catch (err) {
+            console.log(err);
+            message.error("Failed to copy phone number");
+        }
+    };
+
+    const openWhatsApp = (phone) => {
+        if (!phone) return;
+
+        let formattedPhone = phone.replace(/\D/g, "");
+
+        if (!formattedPhone.startsWith("88")) {
+            formattedPhone = "88" + formattedPhone;
+        }
+
+        const whatsappUrl = `https://wa.me/${formattedPhone}`;
+        window.open(whatsappUrl, "_blank");
+    };
 
     const handleOpenModal = (phoneNumber) => {
         setSelectedPhone(phoneNumber);
@@ -422,70 +464,118 @@ export default function InCompleteOrder() {
         }
     }
 
-    const handleBulkConvert = async () => {
-        if (selectedOrders?.length === 0) {
-            message.warning("Please select at least one incomplete order.");
+    const handleBulkDelete = async () => {
+        if (!selectedOrders?.length) {
+            alert("Please select at least one order.");
             return;
         }
 
-        Modal.confirm({
-            title: "Confirm Bulk Convert",
-            content: `Are you sure you want to convert ${selectedOrders?.length} orders to completed?`,
-            okText: "Yes",
-            cancelText: "No",
-            onOk: async () => {
-                try {
-                    const orderIds = selectedOrders?.map((order) => order.id);
+        const confirmDelete = window.confirm(
+            `Are you sure you want to delete ${selectedOrders.length} orders?`
+        );
 
-                    const res = await postData("/admin/orders/bulk-convert", {
-                        ids: orderIds,
-                    });
+        if (!confirmDelete) return;
 
-                    if (res.success) {
-                        message.success(
-                        `${selectedOrders?.length} orders converted successfully.`
-                        );
+        try {
+            const orderIds = selectedOrders.map(o => o.id);
+
+            const res = await postData("/admin/incomplete-orders/bulk-delete", {
+                ids: orderIds,
+            });
+
+            if (res.success) {
+                messageApi.open({
+                    type: "success",
+                    content: "Orders deleted successfully.",
+                    duration: 1.5,
+                    onClose: () => {
                         setSelectedRowKeys([]);
-                    } else {
-                        message.error("Bulk convert failed.");
-                    }
-                } catch (err) {
-                    message.error("Something went wrong!", err);
-                }
-            },
-        });
+                        fetchIncompleteOrders();
+                    },
+                });
+            } else {
+                message.error("Bulk delete failed.");
+            }
+
+        } catch (err) {
+            message.error("Something went wrong!", err);
+        }
     };
 
-    const handleBulkDelete = async () => {
-        if (selectedOrders?.length === 0) {
-            message.warning("Please select at least one incomplete order.");
+    const handleBulkPermanentDelete = async () => {
+        if (!selectedOrders?.length) {
+            alert("Please select at least one order.");
             return;
         }
 
-        Modal.confirm({
-            title: "Confirm Bulk Convert",
-            content: `Are you sure you want to convert ${selectedOrders?.length} orders to completed?`,
-            okText: "Yes",
-            cancelText: "No",
-            onOk: async () => {
-                try {
-                    const orderIds = selectedOrders?.map((order) => order.id);
+        const confirmDelete = window.confirm(
+            `Are you sure you want to permanent delete ${selectedOrders.length} orders?`
+        );
 
-                    const res = await postData("/admin/orders/bulk-convert", {
-                        ids: orderIds,
-                    });
+        if (!confirmDelete) return;
 
-                    if (res.success) {
-                        message.success(`${selectedOrders?.length} orders converted successfully.`);
+        try {
+            const orderIds = selectedOrders.map(o => o.id);
+
+            const res = await postData("/admin/incomplete-orders/bulk-permanent-delete", {
+                ids: orderIds,
+            });
+
+            if (res.success) {
+                messageApi.open({
+                    type: "success",
+                    content: "Orders permanent deleted successfully.",
+                    duration: 1.5,
+                    onClose: () => {
                         setSelectedRowKeys([]);
-                    } else {
-                        message.error("Bulk convert failed.");
-                    }
-                } catch (err) {
-                    message.error("Something went wrong!", err);
-                }
-            },
-        });
+                        fetchIncompleteOrders();
+                    },
+                });
+            } else {
+                message.error("Bulk permanent delete failed.");
+            }
+
+        } catch (err) {
+            message.error("Something went wrong!", err);
+        }
+    };
+
+    const handleBulkRestore = async () => {
+        if (!selectedOrders?.length) {
+            alert("Please select at least one order.");
+            return;
+        }
+
+        const confirmRestore = window.confirm(
+            `Are you sure you want to restore ${selectedOrders.length} orders?`
+        );
+
+        if (!confirmRestore) return;
+
+        try {
+            const orderIds = selectedOrders.map(o => o.id);
+
+            const res = await postData("/admin/incomplete-orders/bulk-restore", {
+                ids: orderIds,
+            });
+
+            if (res.success) {
+                messageApi.open({
+                    type: "success",
+                    content: "Orders Restore successfully.",
+                    duration: 1.5,
+                    onClose: () => {
+                        setSelectedRowKeys([]);
+                        fetchIncompleteOrders();
+                    },
+                });
+            } else {
+                message.error("Bulk Restore failed.");
+            }
+
+        } catch (err) {
+            message.error("Something went wrong!", err);
+        }
     };
 
     const handleWeekClick = () => {
@@ -553,13 +643,21 @@ export default function InCompleteOrder() {
 
                 <div className="incomplete-bulk-action">
                     <Space style={{ marginBottom: 16 }}>
-                        <Button icon={<ShoppingCartOutlined />} disabled={selectedOrders?.length === 0} onClick={() => handleBulkConvert()}>
-                            Bulk Convert
-                        </Button>
+                        {!showTrash ? (
+                            <Button icon={<DeleteOutlined />} danger="danger" disabled={selectedOrders?.length === 0} onClick={() => handleBulkDelete()}>
+                                Bulk Delete
+                            </Button>
+                        ) : (
+                            <Button icon={<DeleteOutlined />} danger="danger" disabled={selectedOrders?.length === 0} onClick={() => handleBulkPermanentDelete()}>
+                                Bulk Permanent Delete
+                            </Button>
+                        )}
 
-                        <Button icon={<DeleteOutlined />} disabled={selectedOrders?.length === 0} onClick={() => handleBulkDelete()}>
-                            Bulk Delete
-                        </Button>
+                        {showTrash && (
+                            <Button type="primary" icon={<RollbackOutlined />} style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }} disabled={selectedOrders?.length === 0} onClick={handleBulkRestore}>
+                                Bulk Restore
+                            </Button>
+                        )}
 
                         <Tooltip title={showTrash ? "Show Active" : "Show Trash"}>
                             <Button danger={ !showTrash } icon={<DeleteOutlined />} onClick={() => setShowTrash(prev => !prev)}>
@@ -567,13 +665,17 @@ export default function InCompleteOrder() {
                             </Button>
                         </Tooltip>
 
-                        <Button icon={<ExportOutlined />} onClick={handleExport}>
-                            {csvLoader ? "Exporting..." : "Export CSV"}
-                        </Button>
+                        {!showTrash && (
+                            <Button icon={<ExportOutlined />} onClick={handleExport}>
+                                {csvLoader ? "Exporting..." : "Export CSV"}
+                            </Button>
+                        )}
 
-                        <Button icon={<BarChartOutlined />} onClick={handleStatistics}>
-                            Statistics
-                        </Button>
+                        {!showTrash && (
+                            <Button icon={<BarChartOutlined />} onClick={handleStatistics}>
+                                Statistics
+                            </Button>
+                        )}
                     </Space>
                 </div>
             </div>
