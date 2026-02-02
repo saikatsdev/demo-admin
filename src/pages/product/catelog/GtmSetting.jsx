@@ -1,8 +1,8 @@
-import { Input as AntInput, Breadcrumb, Button, Form, message } from "antd";
+import { Input as AntInput, Breadcrumb, Button, Form, message,Popconfirm } from "antd";
 import { Link } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
 import useTitle from "../../../hooks/useTitle";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function GtmSetting() {
     // Hook
@@ -12,7 +12,9 @@ export default function GtmSetting() {
     const [form] = Form.useForm();
 
     // State
-    const [messageApi, contextHolder] = message.useMessage();
+    const [messageApi, contextHolder]   = message.useMessage();
+    const [showGtmForm, setShowGtmForm] = useState(false);
+    const [loading, setLoading]         = useState(false);
 
     useEffect(() => {
         const getAllTolls = async () => {
@@ -37,13 +39,21 @@ export default function GtmSetting() {
 
         formData.append('_method', 'PUT');
 
-        const res = await postData("/admin/marketing-tools/gtm", formData);
+        try {
+            setLoading(true);
 
-        if(res?.success){
-            messageApi.open({
-              type: "success",
-              content: res.msg,
-            });
+            const res = await postData("/admin/marketing-tools/gtm", formData);
+
+            if(res?.success){
+                messageApi.open({
+                type: "success",
+                content: res.msg,
+                });
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setLoading(false);
         }
     }
 
@@ -65,19 +75,27 @@ export default function GtmSetting() {
             </div>
 
             <div className="catelog-form">
-                <Form form={form} layout="vertical" onFinish={handleSubmit}>
-                    <div>
-                        <Form.Item name="gtm_id" label="GTM ID">
-                            <AntInput placeholder="Enter gtm id" />
-                        </Form.Item>
+                {!showGtmForm ? (
+                    <Popconfirm title="Important Warning" description="Updating GTM is a critical action. Please be very careful before making any changes." okText="I Understand" cancelText="Cancel" onConfirm={() => setShowGtmForm(true)}>
+                        <Button type="primary" danger>
+                            Update GTM
+                        </Button>
+                    </Popconfirm>
+                ) : (
+                    <Form form={form} layout="vertical" onFinish={handleSubmit}>
+                        <div>
+                            <Form.Item name="gtm_id" label="GTM ID">
+                                <AntInput placeholder="Enter gtm id" />
+                            </Form.Item>
 
-                        <Form.Item style={{textAlign:"right"}}>
-                            <Button type="primary" htmlType="submit">
-                                Update
-                            </Button>
-                        </Form.Item>
-                    </div>
-                </Form>
+                            <Form.Item style={{textAlign:"right"}}>
+                                <Button type="primary" htmlType="submit" loading={loading}>
+                                    Update
+                                </Button>
+                            </Form.Item>
+                        </div>
+                    </Form>
+                )}
             </div>
         </>
     )
