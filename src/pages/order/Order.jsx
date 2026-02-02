@@ -1444,44 +1444,44 @@ export default function Order() {
 
                         <div>
                             <Space>
-                                {record.current_status?.id === 3 ? (
+                                {![1, 2].includes(record.current_status?.id) ? (
                                     <Dropdown
                                         menu={{
                                             items: [
-                                            {
-                                                key: "a5",
-                                                label: (
-                                                    <a href={`${websiteAdminBaseUrl}/a5-invoice/${id}`} target="_blank" rel="noopener noreferrer">
-                                                        A5 Invoice
-                                                    </a>
-                                                ),
-                                            },
-                                            {
-                                                key: "pos",
-                                                label: (
-                                                    <a href={`${websiteAdminBaseUrl}/pos-invoice/${id}`} target="_blank" rel="noopener noreferrer">
-                                                        Pos Invoice
-                                                    </a>
-                                                ),
-                                            },
-                                            {
-                                                key: "normal",
-                                                label: (
-                                                    <a href={`${websiteAdminBaseUrl}/invoice/${id}`} target="_blank" rel="noopener noreferrer">
-                                                        Normal Invoice
-                                                    </a>
-                                                ),
-                                            },
+                                                {
+                                                    key: "a5",
+                                                    label: (
+                                                        <a href={`${websiteAdminBaseUrl}/a5-invoice/${id}`} target="_blank" rel="noopener noreferrer">
+                                                            A5 Invoice
+                                                        </a>
+                                                    ),
+                                                },
+                                                {
+                                                    key: "pos",
+                                                    label: (
+                                                        <a href={`${websiteAdminBaseUrl}/pos-invoice/${id}`} target="_blank" rel="noopener noreferrer">
+                                                            Pos Invoice
+                                                        </a>
+                                                    ),
+                                                },
+                                                {
+                                                    key: "normal",
+                                                    label: (
+                                                        <a href={`${websiteAdminBaseUrl}/invoice/${id}`} target="_blank" rel="noopener noreferrer">
+                                                            Normal Invoice
+                                                        </a>
+                                                    ),
+                                                },
                                             ],
                                         }}
                                     >
                                         <Tooltip title={printedStatus === 1 ? "Printed" : "Not Printed"}>
-                                            <PrinterOutlined style={{fontSize: 18,color: "#52c41a",cursor: "pointer",marginRight: 8}}/>
+                                            <PrinterOutlined style={{fontSize: 18, color: "#52c41a",cursor: "pointer",marginRight: 8,}}/>
                                         </Tooltip>
                                     </Dropdown>
                                 ) : (
                                     <Tooltip title="First approve your order">
-                                        <PrinterOutlined style={{fontSize: 18,color: "#ccc",cursor: "not-allowed",marginRight: 8}}/>
+                                        <PrinterOutlined style={{fontSize: 18,color: "#ccc",cursor: "not-allowed",marginRight: 8,}}/>
                                     </Tooltip>
                                 )}
                     
@@ -1688,10 +1688,6 @@ export default function Order() {
                         <Tag color="error">{record?.consignment_id}</Tag>
                     )}
 
-                    {record?.tracking_code && (
-                        <Tag color="error">{record?.tracking_code}</Tag>
-                    )}
-
                     {record?.courier_status && (
                         <Tag style={{ textTransform: "capitalize" }}>
                             {record.courier_status}
@@ -1711,26 +1707,40 @@ export default function Order() {
             title: "Payment Info",
             key: "payment_info",
             width: 180,
-            render: (_, record) => (
-                <div>
-                    <p style={{ marginBottom: 5 }}>
-                        <span style={{ fontWeight: "bold" }}>Advanced Payment:</span>
-                        {record.advance_payment}
-                    </p>
-                    <p style={{ marginBottom: 5 }}>
-                        <span style={{ fontWeight: "bold" }}>Discount:</span>
-                        {record.Discount}
-                    </p>
-                    <p style={{ marginBottom: 5 }}>
-                        <span style={{ fontWeight: "bold" }}>Delivery Charge:</span>
-                        {record.delivery_charge}
-                    </p>
-                    <p style={{ marginBottom: 5 }}>
-                        <span style={{ fontWeight: "bold" }}>Payable Amount:</span>
-                        {record.payable_price}
-                    </p>
-                </div>
-            ),
+			render: (_, record) => {
+                const products = record?.products ?? [];
+                const money = (v) => `৳ ${Number(v || 0).toLocaleString('en-BD')}`;
+
+                return (
+                    <div>
+                        <p style={{ marginBottom: 5 }}>
+                            <span style={{ fontWeight: "bold" }}>Advanced Payment:</span>
+                            {money(record.advance_payment)}
+                        </p>
+
+                        <p style={{ marginBottom: 5 }}>
+                            <span style={{ fontWeight: "bold" }}>Discount:</span>
+                            {money(record.Discount)}
+                        </p>
+
+                        <p style={{ marginBottom: 5 }}>
+                            <span style={{ fontWeight: "bold" }}>Delivery Charge:</span>
+                            {money(record.delivery_charge)}
+                        </p>
+
+                        {products.map((p, index) => (
+                            <p key={index} style={{ marginBottom: 5 }}>
+                                <strong>Sell Price:</strong> {money(p.sell_price)}
+                            </p>
+                        ))}
+                        
+                        <p style={{ marginBottom: 5 }}>
+                            <span style={{ fontWeight: "bold" }}>Payable Amount:</span>{" "}
+                            {record.payable_price > 0 ? record.payable_price - (record.advance_payment || 0) : record.payable_price}
+                        </p>
+                    </div>
+                );
+            },
         },
         {
             title: "Order Note",

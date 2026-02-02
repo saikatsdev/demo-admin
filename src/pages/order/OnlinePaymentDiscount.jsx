@@ -66,6 +66,11 @@ export default function OnlinePaymentDiscount() {
             key      : "maximum_discount_amount"
         },
         {
+            title    : "Custom Message",
+            dataIndex: "custom_message",
+            key      : "custom_message"
+        },
+        {
             title    : "Status",
             dataIndex: "status",
             key      : "status",
@@ -121,6 +126,7 @@ export default function OnlinePaymentDiscount() {
             discount_amount        : record.discount_amount,
             minimum_cart_amount    : record.minimum_cart_amount,
             maximum_discount_amount: record.maximum_discount_amount,
+            custom_message         : record.custom_message,
             status                 : record.status,
         });
     }
@@ -175,6 +181,7 @@ export default function OnlinePaymentDiscount() {
         formData.append('discount_amount', values.discount_amount);
         formData.append('minimum_cart_amount', values.minimum_cart_amount);
         formData.append('maximum_discount_amount', values.maximum_discount_amount);
+        formData.append('custom_message', values.custom_message);
         if(values.status) formData.append('status', values.status);
 
         if(editingItems?.id) formData.append('_method', 'PUT');
@@ -274,6 +281,10 @@ export default function OnlinePaymentDiscount() {
 
                                 <Form.Item name="maximum_discount_amount" label="Maximum Discount Amount" rules={[{ required: true }]} placeholder="Maximum Discount Amount">
                                     <AntInput placeholder="Enter Maximum Discount Amount" />
+                                </Form.Item>
+
+                                <Form.Item name="custom_message" label="Custom Message" rules={[{ required: true }]} placeholder="Write your message">
+                                    <AntInput placeholder="Write your message"/>
                                 </Form.Item>
 
                                 <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">

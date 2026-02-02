@@ -102,11 +102,27 @@ const InvoicePos = () => {
   };
 
   if (loading)
-    return (
-      <div style={{ padding: 16, fontFamily: "monospace", color: "red" }}>
-        Loading invoice...
-      </div>
-    );
+  return (
+    <div
+      style={{
+        minHeight: "200px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#fafafa",
+        borderRadius: 8,
+        border: "1px dashed #d9d9d9",
+        color: "#595959",
+        fontSize: 14,
+        fontWeight: 500,
+        letterSpacing: 0.3,
+      }}
+    >
+      <span style={{ marginRight: 8 }}>⏳</span>
+      Loading invoices…
+    </div>
+  );
+
   if (!orderDetails)
     return (
       <div style={{ padding: 16, fontFamily: "monospace" }}>No data found.</div>

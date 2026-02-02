@@ -146,9 +146,6 @@ import EditSlider from "./pages/cms/slider/EditSlider";
 import Contact from "./pages/cms/contacts/Contact";
 import AddContact from "./pages/cms/contacts/AddContact";
 import EditContact from "./pages/cms/contacts/EditContact";
-import FAQ from "./pages/cms/faqs/FAQ";
-import AddFaq from "./pages/cms/faqs/AddFaq";
-import EditFaq from "./pages/cms/faqs/EditFaq";
 import PrivacyPolicy from "./pages/cms/privacy/PrivacyPolicy";
 import AddPrivacy from "./pages/cms/privacy/AddPrivacy";
 import EditPrivacy from "./pages/cms/privacy/EditPrivacy";
@@ -354,10 +351,6 @@ function App() {
           <Route path="/contacts" element={<Contact />} />
           <Route path="/add/contact" element={<AddContact />} />
           <Route path="/edit/contact/:id" element={<EditContact />} />
-
-          <Route path="/faqs" element={<FAQ />} />
-          <Route path="/add/faq" element={<AddFaq />} />
-          <Route path="/edit/faq/:id" element={<EditFaq />} />
 
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/add/privacy" element={<AddPrivacy />} />

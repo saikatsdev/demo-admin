@@ -135,16 +135,14 @@ const Sidebar = ({ onMenuSelect }) => {
 
     { title: "Campaigns", icon: <NotificationOutlined />, path: "/campaigns" },
 
-    { title: "Section & Banner",icon: <HeartTwoTone />,path: "/section-list"},
-
     {
       title: "CMS",
       icon: <PropertySafetyOutlined />,
       submenus: [
+        { label: "Section & Banner", path: "/section-list" },
         { label: "Slider", path: "/sliders" },
         { label: "About", path: "/about" },
         { label: "Contact", path: "/contacts" },
-        { label: "FAQ", path: "/faqs" },
         { label: "Privacy & Policy", path: "/privacy-policy" },
         { label: "Terms & Condition", path: "/terms-and-conditions" },
       ],

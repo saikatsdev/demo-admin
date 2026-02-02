@@ -162,7 +162,7 @@ export default function SectionBanner() {
                         </Form.Item>
 
                         <Form.Item name="device_type" label="Device Type" rules={[{ required: true }]}>
-                            <Select options={[{ value: "desktop", label: 'Desktop' }, { value: "tablet", label: 'Tablet' },{ value: "mobile", label: 'Mobile' }]} placeholder="Select Device"/>
+                            <Select options={[{value: "desktop",label: 'Desktop'},{value:"tablet",label:'Tablet'},{value:"mobile",label:'Mobile'},{value:"both",label:'Both'}]} placeholder="Select Device"/>
                         </Form.Item>
 
                         <Form.Item name="type" label="Type" rules={[{ required: true }]}>
