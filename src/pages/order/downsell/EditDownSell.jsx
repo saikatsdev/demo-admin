@@ -67,10 +67,10 @@ export default function EditDownSell() {
                     setDownSellData(data);
                     setImage(data.image);
 
-                    if (Array.isArray(data.products) && data.products.length > 0) {
-                        setMode("product");
-                    } else {
+                    if (data.is_all == 1) {
                         setMode("all");
+                    } else {
+                        setMode("product");
                     }
 
                     if (Array.isArray(data.products) && data.products.length > 0) {
@@ -143,10 +143,7 @@ export default function EditDownSell() {
         setLoading(true);
 
         try {
-            const res = await getDatas("/admin/products/list", {
-                params:{search_key : searchTerm},
-                cancelToken: cancelToken.current.token,
-            });
+            const res = await getDatas("/admin/products/search", {search_key : searchTerm});
 
             if(res && res?.success){
                 setResults(res?.result);

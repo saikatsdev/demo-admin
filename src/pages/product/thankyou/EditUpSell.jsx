@@ -43,7 +43,7 @@ export default function EditUpSell() {
     
         setLoading(true);
         try {
-          const res = await getDatas("/admin/products/list", { search_key: query });
+          const res = await getDatas("/admin/products/search", { search_key: query });
     
           if (res && res?.success) {
             setStateFn(res?.result || []);
@@ -182,10 +182,10 @@ export default function EditUpSell() {
     // Get Categories
     useEffect(() => {
         const getCategories = async () => {
-            const res = await getDatas("/admin/categories");
+            const res = await getDatas("/admin/categories/list");
 
             if(res && res?.success){
-                setCategories(res?.result?.data || []);
+                setCategories(res?.result || []);
             }
         }
 
@@ -210,7 +210,10 @@ export default function EditUpSell() {
     const handleTrigger = (value) => {
         setTrigger(value);
 
-        if(value === "on_product"){
+        if(value === "on_order"){
+            setSelectedCategories([]);
+            setSelectedTriggerProducts([]);
+        }else if(value === "on_product"){
             setSelectedCategories([]);
         }else if(value === "on_category"){
             setSelectedTriggerProducts([]);
@@ -360,7 +363,14 @@ export default function EditUpSell() {
                                                         <img src={product.img_path} alt={product.name} />
                                                         <div>
                                                             <h4 style={{color:"#000"}}>{product.name}</h4>
-                                                            <p className="category">{product.category?.name}</p>
+                                                            <div className="category" style={{ color: "#000" }}>
+                                                                {product.categories?.map((c, index) => (
+                                                                    <span key={c.id} className="category-badge">
+                                                                        {c.name}
+                                                                        {index < product.categories.length - 1 && ", "}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="raw-sell-product-right">
@@ -451,9 +461,14 @@ export default function EditUpSell() {
                                                 <img src={product.img_path} alt={product.name} />
                                                 <div>
                                                     <h4 style={{ color: "#000" }}>{product.name}</h4>
-                                                    <p className="category">
-                                                        {product?.category?.name}
-                                                    </p>
+                                                    <div className="category" style={{ color: "#000" }}>
+                                                        {product.categories?.map((c, index) => (
+                                                            <span key={c.id} className="category-badge">
+                                                                {c.name}
+                                                                {index < product.categories.length - 1 && ", "}
+                                                            </span>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                                 </div>
                                                 <div className="raw-sell-product-right">
@@ -482,9 +497,14 @@ export default function EditUpSell() {
                                                     <img src={product.img_path} alt={product.name} />
                                                     <div className="product-details">
                                                         <h4>{product.name}</h4>
-                                                        <p className="product-category">
-                                                            {product?.category_name}
-                                                        </p>
+                                                        <div className="category" style={{ color: "#000" }}>
+                                                            {product.categories?.map((c, index) => (
+                                                                <span key={c.id} className="category-badge">
+                                                                    {c.name}
+                                                                    {index < product.categories.length - 1 && ", "}
+                                                                </span>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="raw-product-price">

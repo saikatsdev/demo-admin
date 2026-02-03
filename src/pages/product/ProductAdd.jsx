@@ -22,7 +22,7 @@ export default function ProductAdd() {
     const [title, setTitle]                                     = useState("");
     const [soldQty, setSoldQty]                                 = useState("");
     const [categories, setCategories]                           = useState(null);
-    const [categoryId, setCategoryId]                           = useState("");
+    const [categoryId, setCategoryId]                           = useState([]);
     const [subCategories, setSubCategories]                     = useState([]);
     const [subCategoryId, setSubCategoryId]                     = useState("");
     const [subCategoryLoading, setSubCategoryLoading]           = useState(false);
@@ -118,27 +118,26 @@ export default function ProductAdd() {
         init();
     }, []);
 
-    const handleCategoryChange = async (value) => {
-        setCategoryId(value);
+    const handleCategoryChange = async (values) => {
+        setCategoryId(values);
         setSubCategoryId("");
         setSubSubCategoryId("");
         setSubCategories([]);
         setSubSubCategories([]);
-        if (!value) return;
+
+        if (!values || values.length === 0) return;
 
         setSubCategoryLoading(true);
+
         try {
-            const res = await getDatas("/admin/sub-categories",{category_id:value});
+            const res = await getDatas("/admin/sub-categories/list",{category_ids:values});
 
             if (res?.success && res?.result) {
                 let categories = [];
 
-                // Check if result is an array
                 if (Array.isArray(res.result)) {
                     categories = res.result;
-                }else if (res.result.data && Array.isArray(res.result.data)) {
-                    categories = res.result.data;
-                }else if (typeof res.result === "object" && res.result.id) {
+                } else if (res.result && typeof res.result === "object" && res.result.id) {
                     categories = [res.result];
                 }
 
@@ -535,7 +534,11 @@ export default function ProductAdd() {
             formData.append("name", title);
             formData.append("slug", slug);
             formData.append("brand_id", brandId || "");
-            formData.append("category_id", categoryId || "");
+
+            categoryId.forEach(id => {
+                formData.append("category_ids[]", id);
+            });
+
             formData.append("sub_category_id", subCategoryId || "");
             formData.append("sub_sub_category_id", subSubCategoryId || "");
             formData.append("minimum_qty", minimumQuantity || "1");
@@ -740,7 +743,7 @@ export default function ProductAdd() {
                 
                                     <Col span={8}>
                                         <Form.Item label="Category" validateStatus={errors?.category_id ? "error" : ""} help={errors?.category_id?.[0]} required>
-                                            <Select placeholder="Categories" value={categoryId || undefined} loading={categories === null} onChange={handleCategoryChange} options={(categories?.data || []).map((c) => ({label: c.name,value: c.id,}))}/>
+                                            <Select mode="multiple" placeholder="Categories" value={categoryId || undefined} loading={categories === null} onChange={handleCategoryChange} options={(categories?.data || []).map((c) => ({label: c.name,value: c.id,}))}/>
                                         </Form.Item>
                                     </Col>
 

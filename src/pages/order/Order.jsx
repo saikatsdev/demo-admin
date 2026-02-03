@@ -187,7 +187,7 @@ export default function Order() {
                 setCurrentPage(res?.result?.orders?.meta?.current_page);
                 setPageSize(res?.result?.orders?.meta?.per_page);
         
-                const keysToCheck = ["paid_status", "order_from_id","start_date", "end_date", "is_invoice_printed"];
+                const keysToCheck = ["paid_status", "order_from_id","start_date", "end_date", "is_invoice_printed", "customer_type_id"];
                 const hasRelevantOverride = keysToCheck.some(key => key in overrides);
 
                 if (hasRelevantOverride && statusId) {
@@ -599,7 +599,7 @@ export default function Order() {
         setDistrictId("");
         setOrderTagId(null);
         setCourierId(null);
-        getOrders(1, {paid_status: null,current_status_id: null,cancel_reason_id: "",district_id: "",order_from_id: null,courier_id: null});
+        getOrders(1, {paid_status: null,current_status_id: null,cancel_reason_id: "",district_id: "",order_from_id: null,courier_id: null,customer_type_id:null});
         setIsTrash(false);
     };
 
@@ -2034,6 +2034,17 @@ export default function Order() {
                                 </div>
 
                                 <div className="filter-item">
+                                    <label className="filter-label">Customer Type</label>
+                                    <Select value={selectedCustomerTypeId} onChange={(value) => {setSelectedCustomerTypeId(value);getOrders(1, { customer_type_id: value });}} placeholder="Customer Type" style={{ width: 170, height: 40 }} allowClear>
+                                        {customerTypeList?.map((item) => (
+                                            <Option key={item.id} value={item.id}>
+                                                {item.name}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </div>
+
+                                <div className="filter-item">
                                     <label className="filter-label">Employee</label>
                                     <Select value={employeeId} onChange={(value) => {setEmployeeId(value);getOrders(1, { assign_user_id: value });}}placeholder="Employee" style={{ width: 170, height: 40 }} allowClear>
                                         {employeeList?.map((item) => (
@@ -2086,7 +2097,7 @@ export default function Order() {
                                 )}
             
                                 {selectedCustomerTypeId && (
-                                    <Tag closable onClose={() => {setSelectedCustomerTypeId(null);getOrders(1);}}>
+                                    <Tag closable onClose={() => {setSelectedCustomerTypeId(null);getOrders(1, { customer_type_id: null });}}>
                                         Customer Type: {customerTypeList?.find((c) => c.id === selectedCustomerTypeId)?.name || "N/A"}
                                     </Tag>
                                 )}

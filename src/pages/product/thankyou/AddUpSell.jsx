@@ -26,8 +26,6 @@ export default function AddUpSell() {
     const [selectedTriggerProducts, setSelectedTriggerProducts]   = useState([]);
     const [selectedCategories, setSelectedCategories] = useState([]);
 
-    const filteredProducts = products?.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-
     const debounce = (func, delay = 400) => {
         let timer;
         return (...args) => {
@@ -41,7 +39,7 @@ export default function AddUpSell() {
 
         setLoading(true);
         try {
-            const res = await getDatas("/admin/products/list", { search_key: query });
+            const res = await getDatas("/admin/products/search", { search_key: query });
 
             if (res && res?.success) {
                 setStateFn(res?.result || []);
@@ -64,6 +62,8 @@ export default function AddUpSell() {
         if (searchQuery) debouncedFetch(searchQuery, setProducts);
         if (triggerQuery) debouncedFetch(triggerQuery, setTriggerProducts);
     }, [searchQuery, triggerQuery, debouncedFetch]);
+
+    const filteredProducts = products?.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const handleSelectProduct = (product, type) => {
         const state      = type === "main" ? selectedProducts : selectedTriggerProducts;
@@ -97,10 +97,10 @@ export default function AddUpSell() {
 
     useEffect(() => {
         const getCategories = async () => {
-            const res = await getDatas("/admin/categories");
+            const res = await getDatas("/admin/categories/list");
 
             if(res && res?.success){
-                setCategories(res?.result?.data || []);
+                setCategories(res?.result || []);
             }
         }
 
@@ -257,9 +257,14 @@ export default function AddUpSell() {
                                                         <img src={product.img_path} alt={product.name} />
                                                         <div>
                                                             <h4 style={{ color: "#000" }}>{product.name}</h4>
-                                                            <p className="category">
-                                                                {product.category?.name}
-                                                            </p>
+                                                            <div className="category" style={{ color: "#000" }}>
+                                                                {product.categories?.map((c, index) => (
+                                                                    <span key={c.id} className="category-badge">
+                                                                        {c.name}
+                                                                        {index < product.categories.length - 1 && ", "}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="raw-sell-product-right">
@@ -288,9 +293,14 @@ export default function AddUpSell() {
                                                         <img src={product.img_path} alt={product.name} />
                                                         <div className="product-details">
                                                             <h4>{product.name}</h4>
-                                                            <p className="product-category">
-                                                                {product.category.name}
-                                                            </p>
+                                                            <div className="category" style={{ color: "#000" }}>
+                                                                {product.categories?.map((c, index) => (
+                                                                    <span key={c.id} className="category-badge">
+                                                                        {c.name}
+                                                                        {index < product.categories.length - 1 && ", "}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div className="raw-product-price">
@@ -351,9 +361,14 @@ export default function AddUpSell() {
                                                 <img src={product.img_path} alt={product.name} />
                                                 <div>
                                                     <h4 style={{ color: "#000" }}>{product.name}</h4>
-                                                    <p className="category">
-                                                        {product.category.name}
-                                                    </p>
+                                                    <div className="category" style={{ color: "#000" }}>
+                                                        {product.categories?.map((c, index) => (
+                                                            <span key={c.id} className="category-badge">
+                                                                {c.name}
+                                                                {index < product.categories.length - 1 && ", "}
+                                                            </span>
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="raw-sell-product-right">
@@ -382,9 +397,14 @@ export default function AddUpSell() {
                                                     <img src={product.img_path} alt={product.name} />
                                                     <div className="product-details">
                                                         <h4>{product.name}</h4>
-                                                        <p className="product-category">
-                                                            {product.category.name}
-                                                        </p>
+                                                        <div className="category" style={{ color: "#000" }}>
+                                                            {product.categories?.map((c, index) => (
+                                                                <span key={c.id} className="category-badge">
+                                                                    {c.name}
+                                                                    {index < product.categories.length - 1 && ", "}
+                                                                </span>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="raw-product-price">

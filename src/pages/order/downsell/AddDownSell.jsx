@@ -61,7 +61,7 @@ export default function AddDownSell() {
         setLoading(true);
 
         try {
-            const res = await getDatas("/admin/products/list", {
+            const res = await getDatas("/admin/products/search", {
                 params:{search_key : searchTerm},
                 cancelToken: cancelToken.current.token,
             });
