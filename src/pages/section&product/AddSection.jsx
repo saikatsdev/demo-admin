@@ -24,13 +24,14 @@ export default function AddSection() {
     const [productIds, setProductIds]                 = useState([]);
     const [messageApi, contextHolder]                 = message.useMessage();
     const [addProducts, setAddProducts]               = useState([]);
+    const [loading, setLoading]                       = useState(false);
 
     // Method
     useEffect(() => {
         const fetcheCatgeories = async () => {
-            const res = await getDatas("/admin/categories");
+            const res = await getDatas("/admin/categories/list");
 
-            const list = res?.result?.data || [];
+            const list = res?.result || [];
 
             setCategories(
                 list.map((cat) => ({
@@ -88,17 +89,25 @@ export default function AddSection() {
             product_ids : productIds
         }
 
-        const res = await postData("/admin/sections", payload);
+        try {
+            setLoading(true);
 
-        if(res?.success){
-            messageApi.open({
-                type: "success",
-                content: res.msg,
-            });
+            const res = await postData("/admin/sections", payload);
 
-            setTimeout(() => {
-                navigate("/section-list");
-            }, 400);
+            if(res?.success){
+                messageApi.open({
+                    type: "success",
+                    content: res.msg,
+                });
+
+                setTimeout(() => {
+                    navigate("/section-list");
+                }, 400);
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setLoading(false);
         }
     };
 
@@ -206,12 +215,16 @@ export default function AddSection() {
                                             <img src={item.img_path} alt={item.slug} style={{width:"80%", height:"180px", display:"block", objectFit:"cover", margin:"0 auto"}} />
                                             <h2 style={{textAlign:"center", color:"#000", fontWeight:"600", fontSize:"20px", lineHeight:"25px"}}>{item.name}</h2>
 
-                                            <p style={{textTransform:"capitalize", fontWeight:"600", textAlign:"center", marginBottom:"0"}}>
-                                                Category : {item?.category?.name}
-                                            </p>
+                                            {item.categories?.length > 0 && (
+                                                <p style={{ textTransform: "capitalize", fontWeight: "600", textAlign: "center", marginBottom: "0" }}>
+                                                    Category : {item.categories.map(c => c.name).join(", ")}
+                                                </p>
+                                            )}
+
                                             <p style={{textTransform:"capitalize", fontWeight:"600", textAlign:"center"}}>
                                                 Sku : {item.sku}
                                             </p>
+
                                             <div style={{display:"flex", gap:"15px", justifyContent:"space-around", alignItems:"center"}}>
                                                 <span style={{textDecoration:"line-through", fontSize:"20px", fontWeight:"600", color:"red"}}>
                                                     {item.mrp} tk
@@ -250,12 +263,16 @@ export default function AddSection() {
                                             <img src={item.img_path} alt={item.slug} style={{width:"80%", height:"180px", display:"block", objectFit:"cover", margin:"0 auto"}} />
                                             <h2 style={{textAlign:"center", color:"#000", fontWeight:"600", fontSize:"20px", lineHeight:"25px"}}>{item.name}</h2>
 
-                                            <p style={{textTransform:"capitalize", fontWeight:"600", textAlign:"center", marginBottom:"0"}}>
-                                                Category : {item?.category?.name}
-                                            </p>
+                                            {item.categories?.length > 0 && (
+                                                <p style={{ textTransform: "capitalize", fontWeight: "600", textAlign: "center", marginBottom: "0" }}>
+                                                    Category : {item.categories.map(c => c.name).join(", ")}
+                                                </p>
+                                            )}
+
                                             <p style={{textTransform:"capitalize", fontWeight:"600", textAlign:"center"}}>
                                                 Sku : {item.sku}
                                             </p>
+
                                             <div style={{display:"flex", gap:"15px", justifyContent:"space-around", alignItems:"center"}}>
                                                 <span style={{textDecoration:"line-through", fontSize:"20px", fontWeight:"600", color:"red"}}>
                                                     {item.mrp} tk
@@ -283,7 +300,7 @@ export default function AddSection() {
                         )}
 
                         <Form.Item style={{textAlign:"right"}}>
-                            <Button type="primary" htmlType="submit">
+                            <Button type="primary" htmlType="submit" loading={loading}>
                                 Add Section
                             </Button>
                         </Form.Item>

@@ -110,6 +110,7 @@ export default function AddCampaign() {
         formData.append("status", values.status);
 
         const image = values.image?.[0];
+        
         if (image) {
             if (image.originFileObj) {
                 formData.append('image', image.originFileObj);

@@ -58,9 +58,9 @@ export default function EditSection() {
 
     useEffect(() => {
         const fetcheCatgeories = async () => {
-            const res = await getDatas("/admin/categories");
+            const res = await getDatas("/admin/categories/list");
 
-            const list = res?.result?.data || [];
+            const list = res?.result || [];
 
             setCategories(list.map((cat) => ({label: cat.name,value: cat.id})));
         };
@@ -231,9 +231,11 @@ export default function EditSection() {
                                                 {item?.name}
                                             </h2>
 
-                                            <p className="add-product-box-p">
-                                                Category : {item?.category?.name}
-                                            </p>
+                                            {item.categories?.length > 0 && (
+                                                <p style={{ textTransform: "capitalize", fontWeight: "600", textAlign: "center", marginBottom: "0" }}>
+                                                    Category : {item.categories.map(c => c.name).join(", ")}
+                                                </p>
+                                            )}
 
                                             <p className="add-product-box-p1">
                                                 Sku : {item.sku}
@@ -272,9 +274,12 @@ export default function EditSection() {
                                                 {item?.name}
                                             </h2>
 
-                                            <p className="result-product-list-p-sss">
-                                                Category : {item?.category?.name}
-                                            </p>
+                                            {item.categories?.length > 0 && (
+                                                <p style={{ textTransform: "capitalize", fontWeight: "600", textAlign: "center", marginBottom: "0" }}>
+                                                    Category : {item.categories.map(c => c.name).join(", ")}
+                                                </p>
+                                            )}
+
                                             <p className="result-product-list-p1-sss">
                                                 Sku : {item?.sku}
                                             </p>
@@ -300,8 +305,8 @@ export default function EditSection() {
                         )}
 
                         <Form.Item style={{ textAlign: "right" }}>
-                            <Button type="primary" htmlType="submit">
-                                {loading ? "Updating..." : "Update Section"}
+                            <Button type="primary" htmlType="submit" loading={loading}>
+                                Update Section
                             </Button>
                         </Form.Item>
                     </div>
