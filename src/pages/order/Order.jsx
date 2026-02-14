@@ -91,6 +91,7 @@ export default function Order() {
     const [customerTypeList, setCustomerTypeList]                                                      = useState([]);
     const [selectedCustomerTypeId, setSelectedCustomerTypeId]                                          = useState(null);
     const [courierId, setCourierId]                                                                    = useState(null);
+	const [courierStatusId, setCourierStatusId]                                                        = useState(null);
     const scanEnabled                                                                                  = true;
     const scanBufferRef                                                                                = useRef("");
     const scanTimerRef                                                                                 = useRef(null);
@@ -177,6 +178,7 @@ export default function Order() {
                 end_date          : "end_date" in overrides ? overrides.end_date                    : endDate ? dayjs(endDate).format("YYYY-MM-DD")    : "",
                 is_duplicate      : "is_duplicate" in overrides ? overrides.is_duplicate            : duplicateOrder,
                 courier_id        : "courier_id" in overrides ? overrides.courier_id                : courierId,
+				courier_status_id : "courier_status_id" in overrides ? overrides.courier_status_id  : courierStatusId,
                 is_invoice_printed: "is_invoice_printed" in overrides ? overrides.is_invoice_printed: invoiceStatus,
             });
             
@@ -611,6 +613,11 @@ export default function Order() {
     const getCourierWiseOrder = (id = "") => {
         setCourierId(id);
         getOrders(1, { courier_id: id });
+    };
+	
+	const getCourierStatusWiseOrder = (id = "") => {
+        setCourierStatusId(id);
+        getOrders(1, { courier_status_id: id});
     };
 
     const getDistrictWiseOrder = (id = "") => {
@@ -1708,6 +1715,8 @@ export default function Order() {
             key: "payment_info",
             width: 180,
 			render: (_, record) => {
+				const specialDiscount = Number(record.special_discount || 0);
+				
                 const products = record?.products ?? [];
                 const money = (v) => `৳ ${Number(v || 0).toLocaleString('en-BD')}`;
 
@@ -1727,6 +1736,13 @@ export default function Order() {
                             <span style={{ fontWeight: "bold" }}>Delivery Charge:</span>
                             {money(record.delivery_charge)}
                         </p>
+						
+						{specialDiscount > 0 && (
+                            <p style={{ marginBottom: 5 }}>
+                                <span style={{ fontWeight: "bold" }}>Special Discount:</span>
+                                {money(specialDiscount)}
+                            </p>
+                        )}
 
                         {products.map((p, index) => (
                             <p key={index} style={{ marginBottom: 5 }}>
@@ -2150,18 +2166,18 @@ export default function Order() {
                     <Row>
                         <Col span={24}>
                             <div className="all-status-tags">
-                                {user?.roles?.[0]?.id === 1 && (
-                                    <span className={isAllOrders ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${orders?.total_amount}`} onClick={allOrderStatus}>
-                                        All Orders
-                                        <span className={isAllOrders ? "status-tags-child-child-active" : "status-tags-child-child"}>
-                                            {totalOrder}
-                                        </span>
+                                <span className={isAllOrders ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${orders?.total_amount}`} onClick={allOrderStatus}>
+                                    All Orders
+                                    <span className={isAllOrders ? "status-tags-child-child-active" : "status-tags-child-child"}>
+                                        {totalOrder}
                                     </span>
-                                )}
+                                </span>
 
-                                {orderStatus?.filter((status) => {if (user?.roles?.[0]?.id === 1) return ![9, 10].includes(status.status_id);if (user?.roles?.[0]?.id === 3) return [1, 2, 3, 8].includes(status.status_id);return false;}).slice(0, 8).map((status) => (
-                                    <span key={status.status_id} className={Number(status.status_id) === statusId ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${status.total_payable}`} onClick={() => getStatusWiseOrder(Number(status.status_id))}>
+                                {orderStatus?.slice(0, 8).map((status) => (
+                                    <span key={status.status_id} className={Number(status.status_id) === statusId ? "status-tags-child-active" : "status-tags-child"}
+                                        data-tooltip={`BDT ${status.total_payable}`} onClick={() => getStatusWiseOrder(Number(status.status_id))}>
                                         {status.status_name}
+
                                         <span className={Number(status.status_id) === statusId ? "status-tags-child-child-active" : "status-tags-child-child"}>
                                             {status.order_count}
                                         </span>
@@ -2208,8 +2224,8 @@ export default function Order() {
                                             </span>
                                         ))}
                 
-                                        {orderStatus?.filter(status => Number(status.status_id) === 13).map((status, index) => (
-                                            <span key={index} onClick={() => getCourierWiseOrder(Number(status?.status_id))} className="order-status-partial" onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}} onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}>
+                                        {orderStatus?.filter(status => Number(status.status_id) === 5).map((status, index) => (
+                                            <span key={index} onClick={() => getCourierStatusWiseOrder(Number(13))} data-tooltip={`BDT ${status?.courier_pending_amount}`} className="order-status-partial" onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}} onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}>
                                                 <span style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
                                                     <ExclamationCircleOutlined style={{fontSize: 14,color: "#C98209"}}/>
                                                 </span>
@@ -2223,20 +2239,20 @@ export default function Order() {
                                         ))}
                 
                                         {orderStatus?.filter(status => Number(status.status_id) === 5).map((status, index) => (
-                                            <span className="order-status-received" key={index} onClick={() => getCourierWiseOrder(Number(status?.status_id))}
-                                                onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}}
-                                                onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}
-                                            >
-                                                <span style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
-                                                    <InboxOutlined style={{fontSize: 14,color: "#2E7D32"}}/>
+                                            <Tooltip title={`BDT ${status?.courier_received_amount}`}>
+                                                <span className="order-status-received" key={index} onClick={() => getCourierStatusWiseOrder(Number(14))} 
+                                                    onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}} onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}>
+                                                    <span style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
+                                                        <InboxOutlined style={{fontSize: 14,color: "#2E7D32"}}/>
+                                                    </span>
+                        
+                                                    Courier Received:
+                        
+                                                    <span style={{ marginLeft: 6, fontWeight: "bold" }}>
+                                                        {status?.courier_received_count}
+                                                    </span>
                                                 </span>
-                    
-                                                Courier Received:
-                    
-                                                <span style={{ marginLeft: 6, fontWeight: "bold" }}>
-                                                    {status?.courier_received_count}
-                                                </span>
-                                            </span>
+                                            </Tooltip>
                                         ))}
                 
                                         {districtWiseList?.map((district, index) => (

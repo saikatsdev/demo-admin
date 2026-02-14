@@ -1,7 +1,7 @@
 import { ArrowLeftOutlined, DeleteOutlined, InboxOutlined, PlusOutlined } from "@ant-design/icons";
 import {Button,Card,Col,Divider,Form,Image,Input,message,Modal,Row,Select,Space,Table,Tag,Typography,Upload} from "antd";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams,useSearchParams } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import ReactQuill from "react-quill-new";
@@ -15,6 +15,10 @@ export default function ProductEdit() {
     // Hook
     useTitle("Edit Product");
     const { settings} = useAppSettings();
+	
+	const [searchParams] = useSearchParams();
+    const page = searchParams.get("page") || 1;
+    const pageSize = searchParams.get("pageSize") || 10;
 
     const { id }   = useParams();
     const navigate = useNavigate();
@@ -858,7 +862,7 @@ export default function ProductEdit() {
                     content: res.msg,
                 });
                 
-                navigate("/products");
+                navigate(`/products?page=${page}&pageSize=${pageSize}`);
             } else {
                 setErrors(res.errors || {});
                 

@@ -1,61 +1,102 @@
-import useTitle from "../../hooks/useTitle"
-import { DownloadOutlined } from "@ant-design/icons";
-import { Link } from "react-router-dom";
-import { Input, Select, Button, Breadcrumb } from "antd";
 import { useEffect, useState } from "react";
+import { Table, Input, Select, Button, DatePicker, Space,Breadcrumb } from "antd";
+import { DownloadOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
-import { downloadTablePdf } from "../../utils/downloadTablePdf";
+import useTitle from "../../hooks/useTitle";
+import { Link } from "react-router-dom";
+
+const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 export default function CustomerReport() {
     // Hook
     useTitle("All Customer Report");
 
     // State
-    const [filter, setFilter] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [customerData, setCustomerData] = useState([]);
+    const [localSearch, setLocalSearch] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [dateFilter, setDateFilter] = useState("today");
+    const [orders, setOrders] = useState([]);
+    const [dateRange, setDateRange] = useState([null, null]);
+    const [pagination, setPagination] = useState({current: 1,pageSize: 25,total: 0});
 
-    const itemsPerPage = 5;
+    const columns = [
+        {
+            title: "SL",
+            key: "sl",
+            render: (text, record, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
+            width: 60,
+        },
+        {
+            title: "Customer Name",
+            dataIndex: "customer_name",
+            key: "customer_name",
+        },
+        {
+            title: "Phone Number",
+            dataIndex: "phone_number",
+            key: "phone_number",
+        },
+        {
+            title: "Order Count",
+            dataIndex: "order_count",
+            key: "order_count",
+        },
+        {
+            title: "Order Value",
+            dataIndex: "order_value",
+            key: "order_value",
+        },
+    ];
 
     useEffect(() => {
-        let isMounted = true;
+        setPagination((prev) => ({ ...prev, current: 1 }));
+    }, [dateFilter, dateRange]);
 
-        const getCustomerReport = async () => {
-            const res = await getDatas("/admin/order/reports/by-customer");
+    const getCustomerReport = async () => {
+        let params = {};
+
+        if (dateFilter && dateFilter !== "custom") {
+            params.filter = dateFilter;
+        } else if (dateFilter === "custom" && dateRange[0] !== null && dateRange[1] !== null) {
+            params.start_date = dateRange[0].format("YYYY-MM-DD");
+            params.end_date = dateRange[1].format("YYYY-MM-DD");
+        }
+
+        params.page = pagination.current;
+        params.limit = pagination.pageSize;
+
+        const query = new URLSearchParams(params).toString();
+
+        try {
+            setLoading(true);
+
+            const res = await getDatas(`/admin/order/reports/by-customer?${query}`);
 
             if(res && res.success){
-                if(isMounted){
-                    setCustomerData(res?.result || []);
-                }
+                setOrders(res?.result || []);
             }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setLoading(false)
         }
+    }
 
+    useEffect(() => {
         getCustomerReport();
+    }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
 
-        return () => {
-            isMounted = false;
-        }
-    }, []);
-
-    // Filter data
-    const filteredData = customerData.filter(
-        (user) =>
-        (user?.customer_name.toLowerCase().includes(filter.toLowerCase()) ||
-            user?.location.toLowerCase().includes(filter.toLowerCase()) ||
-            user?.group.toLowerCase().includes(filter.toLowerCase()))
-    );
-
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-
-    const currentData = () => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredData.slice(start, start + itemsPerPage);
-    };
+    const filteredOrders = orders.filter((order) => {
+        if (!localSearch) return true;
+        const term = localSearch.toLowerCase();
+        return (order.name.toLowerCase().includes(term) || order.slug.toLowerCase().includes(term));
+    });
 
     const downloadCSV = () => {
         const headers = ["Name","Email","Status","Location","Phone","Group","Category"];
 
-        const rows = filteredData.map((user) => [user?.name,user?.email,user?.location,user?.phone,user?.group,user?.category]);
+        const rows = filteredOrders.map((user) => [user?.name,user?.email,user?.location,user?.phone,user?.group,user?.category]);
 
         let csvContent =
         "data:text/csv;charset=utf-8," +
@@ -70,13 +111,8 @@ export default function CustomerReport() {
         document.body.removeChild(link);
     };
 
-    const downloadPdf = () => {
-        downloadTablePdf({
-            title: "Customer Report",
-            tableSelector: "#customer-report-table",
-            fileName: "customer-report.pdf",
-            orientation: "portrait",
-        });
+    const downloadPDF = () => {
+        
     }
 
     return (
@@ -96,84 +132,53 @@ export default function CustomerReport() {
             </div>
 
             <div className="reportWrapper">
-                <h5 className="mb-4">All Report</h5>
-                <div className="topBar">
-                    <div className="d-flex gap-3">
-                        <Input.Search placeholder="Search ..." allowClear value={filter} onChange={(e) => {setFilter(e.target.value);setCurrentPage(1);}} style={{ width: 250 }}/>
-                        <Select placeholder="Select Category" value="" allowClear style={{ width: 180 }}>
-                            <Option value="Electronics">Electronics</Option>
-                            <Option value="Apparel">Apparel</Option>
-                        </Select>
-                    </div>
+                <h5 className="mb-4">Customer Report</h5>
+                <Space style={{marginBottom: 16,display: "flex",justifyContent: "space-between",alignItems: "center"}} wrap>
+                    <Space wrap>
+                        <Input.Search placeholder="Search by phone / name ..." allowClear value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} style={{ width: 300 }}/>
 
-                    <div>
-                        <Button type="primary" icon={<DownloadOutlined />} onClick={downloadPdf} style={{ backgroundColor: "#DC3545", borderColor: "#DC3545", marginRight:"5px"}}>
-                            PDF
+                        <Space wrap>
+                            <Select value={dateFilter} style={{ width: 150 }} onChange={(val) => setDateFilter(val)}>
+                                <Option value="today">Today</Option>
+                                <Option value="yesterday">Yesterday</Option>
+                                <Option value="last7days">Last 7 Days</Option>
+                                <Option value="last30days">Last 30 Days</Option>
+                                <Option value="month">This Month</Option>
+                                <Option value="year">This Year</Option>
+                                <Option value="custom">Custom</Option>
+                            </Select>
+
+                            {dateFilter === "custom" && (
+                                <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear/>
+                            )}
+                        </Space>
+                    </Space>
+
+                    <Space wrap>
+                        <Button type="primary" icon={<DownloadOutlined />} onClick={downloadCSV}>
+                            Download CSV
                         </Button>
 
-                        <Button type="primary" icon={<DownloadOutlined />} onClick={downloadCSV} style={{ backgroundColor: "#1C558B", borderColor: "#1C558B" }}>
-                            CSV
+                        <Button type="primary" style={{ backgroundColor: "#1C558B", borderColor: "#1C558B" }} icon={<DownloadOutlined />} onClick={downloadPDF}>
+                            Download PDF
                         </Button>
-                    </div>
-                </div>
+                    </Space>
+                </Space>
 
-                {/* ===== Table ===== */}
-                <div className="table-responsive">
-                    <table id="customer-report-table" className="table align-middle teamTable">
-                        <thead className="table-light">
-                        <tr>
-                            <th scope="col">
-                                <input type="checkbox" checked="" onChange=""/>
-                            </th>
-                            <th scope="col">Customer Name</th>
-                            <th scope="col">Phone Number</th>
-                            <th scope="col">Order Count</th>
-                            <th scope="col">Order Value</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {currentData().map((user) => (
-                            <tr key={user.id}>
-                                <td>
-                                    <input type="checkbox" checked=""/>
-                                </td>
-                                <td className="userCell">
-                                    <img src="https://cdn-icons-png.flaticon.com/512/1177/1177568.png" alt={user.customer_name} className="avatar" />
-                                    <div className="userInfo">
-                                        <strong>{user.customer_name}</strong>
-                                    </div>
-                                </td>
-                                <td>{user.phone_number}</td>
-                                <td>{user.order_count}</td>
-                                <td>{user.order_value}</td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
-
-                    {/* ===== Pagination ===== */}
-                    <nav aria-label="Page navigation" className="customPagination">
-                        <ul className="pagination justify-content-end">
-                            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                                <button className="page-link" onClick={() => setCurrentPage(currentPage - 1)}>
-                                    &lt;
-                                </button>
-                            </li>
-                            {Array.from({ length: totalPages }, (_, i) => (
-                                <li key={i + 1} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
-                                    <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
-                                        {i + 1}
-                                    </button>
-                                </li>
-                            ))}
-                            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                                <button className="page-link" onClick={() => setCurrentPage(currentPage + 1)}>
-                                    &gt;
-                                </button>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
+                <Table
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={filteredOrders}
+                    loading={loading}
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
+                        onChange: (page, pageSize) => {
+                            setPagination((prev) => ({ ...prev, current: page, pageSize }));
+                        },
+                    }}
+                />
             </div>
         </>
     )

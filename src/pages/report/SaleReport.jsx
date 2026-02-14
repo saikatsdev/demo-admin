@@ -1,66 +1,154 @@
-"use client";
 import { useEffect, useState } from "react";
-import { Input, Select, Button, Breadcrumb } from "antd";
+import { Table, Input, Select, Button, DatePicker, Space } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
-import "./report.css";
-import useTitle from "../../hooks/useTitle";
 import { getDatas } from "../../api/common/common";
+import useTitle from "../../hooks/useTitle";
 
 const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 export default function SaleReport() {
     // Hook
     useTitle("Sale Report");
 
     // State
-    const [selectedUsers, setSelectedUsers] = useState([]);
-    const [filter, setFilter] = useState("");
-    const [currentPage, setCurrentPage] = useState(25);
+    const [localSearch, setLocalSearch] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [dateFilter, setDateFilter] = useState("today");
     const [orders, setOrders] = useState([]);
-    const itemsPerPage = 5;
+    const [dateRange, setDateRange] = useState([null, null]);
+    const [pagination, setPagination] = useState({current: 1,pageSize: 25,total: 0});
+
+    const columns = [
+        {
+            title: "SL",
+            key: "sl",
+            render: (text, record, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
+            width: 60,
+        },
+        {
+            title: "Product",
+            key: "product",
+            render: (_, record) => (
+                <div style={{ display: "flex", gap: 10 }}>
+                    <img src={record.img_path} alt={record.name} style={{width: 50,height: 50, borderRadius: 6,objectFit: "cover"}}/>
+                    <div>
+                        <strong style={{ fontSize: 14 }}>
+                            {record.name}
+                        </strong>
+                        <div style={{ fontSize: 12, color: "#888" }}>
+                            {record.category?.name}
+                        </div>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            title: "Category",
+            dataIndex: ["category", "name"],
+            key: "category",
+        },
+        {
+            title: "Sell Price",
+            dataIndex: "sell_price",
+            key: "sell_price",
+            align: "right",
+            render: (value) => (
+                <strong style={{ color: "#1C558B" }}>
+                    ৳ {Number(value).toLocaleString()}
+                </strong>
+            ),
+        },
+        {
+            title: "Orders",
+            dataIndex: "order_count",
+            key: "order_count",
+            width: 100,
+            align: "center",
+            render: (value) => (
+                <span style={{ fontWeight: 600 }}>
+                    {value}
+                </span>
+            ),
+        },
+        {
+            title: "Stock",
+            dataIndex: "current_stock",
+            key: "stock",
+            width: 100,
+            align: "center",
+            render: (value) => (
+                <span style={{fontWeight: 600, color: value <= 5 ? "#d32f2f" : value <= 10 ? "#ed6c02" : "#2e7d32"}}>
+                    {value}
+                </span>
+            ),
+        },
+        {
+            title: "Brand",
+            dataIndex: ["brand", "name"],
+            key: "brand",
+        },
+        {
+            title: "Discount",
+            dataIndex: "discount",
+            key: "discount",
+            align: "right",
+            render: (value) => value ? `৳ ${Number(value).toLocaleString()}` : "-",
+        },
+    ];
 
     useEffect(() => {
-        const getOrderReport = async () => {
-            const res = await getDatas("/admin/order/reports/by-selling");
+        setPagination((prev) => ({ ...prev, current: 1 }));
+    }, [dateFilter, dateRange]);
+
+    const getOrderReport = async () => {
+
+        let params = {};
+
+        if (dateFilter && dateFilter !== "custom") {
+            params.filter = dateFilter;
+        } else if (dateFilter === "custom" && dateRange[0] !== null && dateRange[1] !== null) {
+            params.start_date = dateRange[0].format("YYYY-MM-DD");
+            params.end_date = dateRange[1].format("YYYY-MM-DD");
+        }
+
+        params.page = pagination.current;
+        params.limit = pagination.pageSize;
+
+        const query = new URLSearchParams(params).toString();
+
+        try {
+            setLoading(true);
+            const res = await getDatas(`/admin/order/reports/by-selling?${query}`);
 
             if(res && res?.success){
                 setOrders(res?.result);
+
+                setPagination((prev) => ({
+                    ...prev,
+                    total: res?.result?.length || 0,
+                }));
             }
+        } catch (error) {
+            console.log(error)
+        }finally{
+            setLoading(false);
         }
+    }
 
+    useEffect(() => {
         getOrderReport();
-    }, []);
+    }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
 
-    const filteredData = orders.filter((item) => item.name?.toLowerCase().includes((filter || "").toLowerCase()));
-
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-
-    const currentData = () => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredData.slice(start, start + itemsPerPage);
-    };
-
-    const isAllSelected = selectedUsers.length === currentData().length;
-
-    const toggleSelectAll = () => {
-        if (isAllSelected) {
-            setSelectedUsers([]);
-        } else {
-            setSelectedUsers(currentData().map((user) => user.id));
-        }
-    };
-
-    const toggleUser = (id) => {
-        if (selectedUsers.includes(id)) {
-            setSelectedUsers(selectedUsers.filter((userId) => userId !== id));
-        } else {
-            setSelectedUsers([...selectedUsers, id]);
-        }
-    };
+    const filteredOrders = orders.filter((order) => {
+        if (!localSearch) return true;
+        const term = localSearch.toLowerCase();
+        return (order.name.toLowerCase().includes(term) || order.slug.toLowerCase().includes(term));
+    });
 
     const downloadCSV = () => {
         const headers = ["Name","Email","Status","Location","Phone","Group","Category",];
-        const rows = filteredData.map((user) => [user.name,user.email,user.status,user.location,user.phone,user.group,user.category]);
+        const rows = filteredOrders.map((user) => [user.name,user.email,user.status,user.location,user.phone,user.group,user.category]);
 
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
 
@@ -73,81 +161,61 @@ export default function SaleReport() {
         document.body.removeChild(link);
     };
 
+    const downloadPDF = () => {
+
+    }
+
     return (
         <>
             <div className="reportWrapper">
-                <h5 className="mb-4">All Report</h5>
-                <div className="topBar">
-                    <div className="d-flex gap-3">
-                        <Input.Search placeholder="Search ..." allowClear value={filter} onChange={(e) => {setFilter(e.target.value);setCurrentPage(1);}}style={{ width: 250 }}/>
-                        <Select placeholder="Select Pagination" value={currentPage} allowClear style={{ width: 180 }} onChange={(value) => setCurrentPage(value)}>
-                            <Option value="25">25</Option>
-                            <Option value="50">50</Option>
-                            <Option value="100">100</Option>
-                            <Option value="250">250</Option>
-                        </Select>
-                    </div>
-                    <Button type="primary" icon={<DownloadOutlined />} onClick={downloadCSV} style={{ backgroundColor: "#1C558B", borderColor: "#1C558B" }}>
-                        Download CSV
-                    </Button>
-                </div>
+                <h5 className="mb-4">Sale Report</h5>
+                <Space style={{marginBottom: 16,display: "flex",justifyContent: "space-between",alignItems: "center"}} wrap>
+                    <Space wrap>
+                        <Input.Search placeholder="Search by phone / category ..." allowClear value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} style={{ width: 300 }}/>
 
-                {/* ===== Table ===== */}
-                <div className="table-responsive">
-                    <table className="table align-middle teamTable">
-                        <thead className="table-light">
-                            <tr>
-                                <th scope="col">
-                                    <input type="checkbox" checked={isAllSelected} onChange={toggleSelectAll}/>
-                                </th>
-                                <th scope="col">Name</th>
-                                <th scope="col">Offer Price</th>
-                                <th scope="col">Total Order</th>
-                                <th scope="col">Current Stock</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredData.map((item) => (
-                                <tr key={item.id}>
-                                    <td>
-                                        <input type="checkbox" checked={selectedUsers.includes(item.id)} onChange={() => toggleUser(item.id)}/>
-                                    </td>
-                                    <td className="userCell">
-                                        <img src={item.img_path} alt={item.name} className="avatar" />
-                                        <div className="userInfo">
-                                            <strong>{item.name}</strong>
-                                        </div>
-                                    </td>
-                                    <td>{item.offer_price}</td>
-                                    <td>{item.order_count}</td>
-                                    <td>{item.current_stock}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                        <Space wrap>
+                            <Select value={dateFilter} style={{ width: 150 }} onChange={(val) => setDateFilter(val)}>
+                                <Option value="today">Today</Option>
+                                <Option value="yesterday">Yesterday</Option>
+                                <Option value="last7days">Last 7 Days</Option>
+                                <Option value="last30days">Last 30 Days</Option>
+                                <Option value="month">This Month</Option>
+                                <Option value="year">This Year</Option>
+                                <Option value="custom">Custom</Option>
+                            </Select>
 
-                    <nav aria-label="Page navigation" className="customPagination">
-                        <ul className="pagination justify-content-end">
-                            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                                <button className="page-link" onClick={() => setCurrentPage(currentPage - 1)}>
-                                    &lt;
-                                </button>
-                            </li>
-                            {Array.from({ length: totalPages }, (_, i) => (
-                                <li key={i + 1} className={`page-item ${ currentPage === i + 1 ? "active" : ""}`}>
-                                    <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
-                                        {i + 1}
-                                    </button>
-                                </li>
-                            ))}
-                            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                                <button className="page-link" onClick={() => setCurrentPage(currentPage + 1)}>
-                                    &gt;
-                                </button>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
+                            {dateFilter === "custom" && (
+                                <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear/>
+                            )}
+                        </Space>
+                    </Space>
+
+                    <Space wrap>
+                        <Button type="primary" icon={<DownloadOutlined />} onClick={downloadCSV}>
+                            Download CSV
+                        </Button>
+
+                        <Button type="primary" style={{ backgroundColor: "#1C558B", borderColor: "#1C558B" }} icon={<DownloadOutlined />} onClick={downloadPDF}>
+                            Download PDF
+                        </Button>
+                    </Space>
+                </Space>
+
+                <Table
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={filteredOrders}
+                    loading={loading}
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
+                        onChange: (page, pageSize) => {
+                            setPagination((prev) => ({ ...prev, current: page, pageSize }));
+                        },
+                    }}
+                />
+                
             </div>
         </>
     )

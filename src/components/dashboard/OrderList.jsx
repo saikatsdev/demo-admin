@@ -2,6 +2,8 @@ import { Card, Table, Select } from "antd";
 import { useEffect, useState } from "react";
 import { getDatas } from "../../api/common/common";
 import "./css/order-list.css";
+import useDateFilter from "../../hooks/DateFilter";
+import DateFilter from "../filter/DateFilter";
 
 export default function OrderList() {
     // State
@@ -10,6 +12,11 @@ export default function OrderList() {
     const [locationData, setLocationData]         = useState([]);
     const [cancelOrders, setCancelOrders]         = useState([]);
     const [lowStockData, setLowStockData]         = useState([]);
+
+    const orderFilter         = useDateFilter("today");
+    const orderCancelFilter   = useDateFilter("today");
+    const locationOrderFilter = useDateFilter("today");
+    const stockFilter         = useDateFilter("today");
 
     // Columns
     const orderColumns = 
@@ -150,7 +157,7 @@ export default function OrderList() {
         const res = await getDatas("/admin/order/reports/by-location");
 
         if(res && res?.success){
-            setLocationData(res?.result);
+            setLocationData(res?.result?.data || []);
         }
     }
 
@@ -162,7 +169,7 @@ export default function OrderList() {
         const formattedData = res?.result?.data.map((item, index) => ({
             key          : index + 1,
             sl           : index + 1,
-            orderId      : item?.id,
+            orderId      : item?.invoice_number,
             customerName : item?.customer_name,
             phoneNumber  : item?.phone_number,
             date         : new Date(item?.created_at).toLocaleDateString("en-GB"),
@@ -179,7 +186,7 @@ export default function OrderList() {
         const res = await getDatas("/admin/order/reports/cancel");
 
         if(res && res?.success){
-            setCancelOrders(res?.result);
+            setCancelOrders(res?.result?.data || []);
         }
     }
 
@@ -187,7 +194,7 @@ export default function OrderList() {
         const res = await getDatas("/admin/lowest/stock/products");
 
         if(res && res?.success){
-            setLowStockData(res?.result);
+            setLowStockData(res?.result?.data || []);
         }
     }
 
@@ -214,14 +221,8 @@ export default function OrderList() {
                     <Card className="table-card">
                         <div className="cust-product">
                             <h4>Recent 10-Orders List</h4>
-                            <Select defaultValue="today" size="small" style={{ width: 110 }} popupMatchSelectWidth={false}>
-                                <Option value="today">Today</Option>
-                                <Option value="Yesterday">Yesterday</Option>
-                                <Option value="Last7days">Last 7 days</Option>
-                                <Option value="Last30days">Last 30 days</Option>
-                                <Option value="Month">This Month</Option>
-                                <Option value="year">This Year</Option>
-                            </Select>
+                            
+                            <DateFilter value={orderFilter.filter} range={orderFilter.range} onChange={orderFilter.setFilter} onRangeChange={orderFilter.setRange}/>
                         </div>
 
                         <div style={{ overflowX: "auto" }}>
@@ -234,14 +235,8 @@ export default function OrderList() {
                     <Card className="table-card">
                         <div className="cust-product">
                             <h4>Last 10 Cancel Orders List</h4>
-                            <Select defaultValue="today" size="small" style={{ width: 110 }} popupMatchSelectWidth={false}>
-                                <Option value="today">Today</Option>
-                                <Option value="Yesterday">Yesterday</Option>
-                                <Option value="Last7days">Last 7 days</Option>
-                                <Option value="Last30days">Last 30 days</Option>
-                                <Option value="Month">This Month</Option>
-                                <Option value="year">This Year</Option>
-                            </Select>
+                            
+                            <DateFilter value={orderCancelFilter.filter} range={orderCancelFilter.range} onChange={orderCancelFilter.setFilter} onRangeChange={orderCancelFilter.setRange}/>
                         </div>
 
                         <div style={{ overflowX: "auto" }}>
@@ -256,14 +251,7 @@ export default function OrderList() {
                     <Card className="table-card">
                         <div className="cust-product">
                             <h4>Top 10 Locations</h4>
-                            <Select defaultValue="today" size="small" style={{ width: 110 }} popupMatchSelectWidth={false}>
-                                <Option value="today">Today</Option>
-                                <Option value="Yesterday">Yesterday</Option>
-                                <Option value="Last7days">Last 7 days</Option>
-                                <Option value="Last30days">Last 30 days</Option>
-                                <Option value="Month">This Month</Option>
-                                <Option value="year">This Year</Option>
-                            </Select>
+                            <DateFilter value={locationOrderFilter.filter} range={locationOrderFilter.range} onChange={locationOrderFilter.setFilter} onRangeChange={locationOrderFilter.setRange}/>
                         </div>
                         <div style={{ overflowX: "auto" }}>
                             <Table columns={locationColumns} dataSource={locationData} pagination={false} size="small" scroll={{ y: 350, x: "max-content" }}/>
@@ -275,14 +263,7 @@ export default function OrderList() {
                     <Card className="table-card">
                         <div className="cust-product">
                             <h4>Lowest Stock Products</h4>
-                            <Select defaultValue="today" size="small" style={{ width: 110 }} popupMatchSelectWidth={false}>
-                                <Option value="today">Today</Option>
-                                <Option value="Yesterday">Yesterday</Option>
-                                <Option value="Last7days">Last 7 days</Option>
-                                <Option value="Last30days">Last 30 days</Option>
-                                <Option value="Month">This Month</Option>
-                                <Option value="year">This Year</Option>
-                            </Select>
+                            <DateFilter value={stockFilter.filter} range={stockFilter.range} onChange={stockFilter.setFilter} onRangeChange={stockFilter.setRange}/>
                         </div>
                         <div style={{ overflowX: "auto" }}>
                             <Table columns={lowStockColumns} dataSource={lowStockData} pagination={false} size="small" scroll={{ y: 350, x: "max-content" }}/>

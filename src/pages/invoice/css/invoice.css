@@ -1,0 +1,102 @@
+.invoice-loader {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed #d9d9d9;
+  color: #595959;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.printable.receipt-80 {
+  padding: 10px;
+  width: 80mm;
+  margin: 0 auto;
+  margin-top: 10px;
+  border: 1px solid #000;
+  background: #ffffff;
+}
+
+.invoice-head-reciept {
+  text-align: center;
+  border-bottom: 1px dashed #000;
+  margin-bottom: 5px;
+}
+
+.invoice-head-reciept-dis {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.invoice-customer-info {
+  border-top: 1px dashed #000;
+  border-bottom: 1px dashed #000;
+  margin: 5px 0;
+  padding: 3px 0;
+  font-size: 12px;
+}
+
+.invoice-product-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.invoice-product-table-head {
+  width: 60%;
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px dashed #000;
+}
+
+.invoice-product-table-head-right {
+  width: 10%;
+  text-align: right;
+  padding: 4px 6px;
+  border-bottom: 1px dashed #000;
+}
+
+.invoice-product-table-head1-right {
+  width: 30%;
+  text-align: right;
+  padding: 4px 6px;
+  border-bottom: 1px dashed #000;
+}
+
+.invoice-summary-table {
+  width: 100%;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.invoice-note-div {
+  border-top: 1px dashed #000;
+  margin-top: 8px;
+  padding-top: 6px;
+  font-size: 11px;
+  line-height: 1.35em;
+  text-align: left;
+}
+
+.invoice-footer-div {
+  text-align: center;
+  border-top: 1px dashed #000;
+  margin-top: 8px;
+  padding-top: 5px;
+  font-size: 11px;
+}
+
+.no-print-btn {
+  background: #ffb24c;
+  border: 1px solid #000;
+  font-weight: 600;
+  padding: 6px 15px;
+  cursor: pointer;
+}

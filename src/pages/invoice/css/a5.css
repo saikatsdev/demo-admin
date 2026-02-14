@@ -1,0 +1,31 @@
+.a5-invoice-css {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed #d9d9d9;
+  color: #595959;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.a5-invoice-btn {
+  background-color: #1c558b;
+  border-radius: 3px;
+  border: 2px solid black;
+  color: #fff;
+  font-weight: 500;
+  font-size: 15px;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+
+.a5-invoice-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}

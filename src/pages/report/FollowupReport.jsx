@@ -1,68 +1,109 @@
-"use client";
 import { useEffect, useState } from "react";
-import { Input, Select, Button } from "antd";
+import { Table, Input, Select, Button, DatePicker, Space } from "antd";
 import { DownloadOutlined } from "@ant-design/icons";
-import "./report.css";
-import useTitle from "../../hooks/useTitle";
 import { getDatas } from "../../api/common/common";
+import useTitle from "../../hooks/useTitle";
+
 const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 export default function FollowupReport() {
     // Hook
     useTitle("Followup Report");
 
     // State
-    const [selectedUsers, setSelectedUsers] = useState([]);
-    const [filter, setFilter]               = useState("");
-    const [currentPage, setCurrentPage]     = useState(25);
-    const [orders, setOrders]               = useState([]);
-    const itemsPerPage = 5;
+    const [localSearch, setLocalSearch] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [dateFilter, setDateFilter] = useState("today");
+    const [orders, setOrders] = useState([]);
+    const [dateRange, setDateRange] = useState([null, null]);
+    const [pagination, setPagination] = useState({current: 1,pageSize: 25,total: 0});
+
+    const columns = [
+        {
+            title: "SL",
+            key: "sl",
+            render: (text, record, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
+            width: 60,
+        },
+        {
+            title: "Customer Name",
+            dataIndex: "customer_name",
+            key: "customer_name",
+        },
+        {
+            title: "Phone Number",
+            dataIndex: "phone_number",
+            key: "phone_number",
+        },
+        {
+            title: "Invoice Number",
+            dataIndex: "invoice_number",
+            key: "invoice_number",
+        },
+        {
+            title: "Order Count",
+            dataIndex: "order_count",
+            key: "order_count",
+        },
+        {
+            title: "Order Value",
+            dataIndex: "order_value",
+            key: "order_value",
+        },
+    ];
 
     useEffect(() => {
-        const getOrderReport = async () => {
-            const res = await getDatas("/admin/order/reports/followup");
+        setPagination((prev) => ({ ...prev, current: 1 }));
+    }, [dateFilter, dateRange]);
+
+    const getOrderReport = async () => {
+        let params = {};
+
+        if (dateFilter && dateFilter !== "custom") {
+            params.filter = dateFilter;
+        } else if (dateFilter === "custom" && dateRange[0] !== null && dateRange[1] !== null) {
+            params.start_date = dateRange[0].format("YYYY-MM-DD");
+            params.end_date = dateRange[1].format("YYYY-MM-DD");
+        }
+
+        params.page = pagination.current;
+        params.limit = pagination.pageSize;
+
+        const query = new URLSearchParams(params).toString();
+
+        try {
+            setLoading(true);
+
+            const res = await getDatas(`/admin/order/reports/followup?${query}`);
 
             if(res && res?.success){
                 setOrders(res?.result?.orders.data);
             }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setLoading(false);
         }
+    }
 
+    useEffect(() => {
         getOrderReport();
-    }, []);
+    }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
 
-    const filteredData = orders.filter(
-        (item) => (item.phone_number.toLowerCase().includes(filter.toLowerCase()) || item.current_status.name.toLowerCase().includes(filter.toLowerCase()) ||
-            item?.order_from?.name.toLowerCase().includes(filter.toLowerCase()))
-    );
+    const filteredOrders = orders.filter((order) => {
+        if (!localSearch) return true;
+        const term = localSearch.toLowerCase();
+        return (order.customer_name.toLowerCase().includes(term) || order.phone_number.toLowerCase().includes(term) || order.invoice_number.toLowerCase().includes(term));
+    });
 
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-
-    const currentData = () => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredData.slice(start, start + itemsPerPage);
-    };
-
-    const isAllSelected = selectedUsers.length === currentData().length;
-
-    const toggleSelectAll = () => {
-        if (isAllSelected) {
-            setSelectedUsers([]);
-        } else {
-            setSelectedUsers(currentData().map((user) => user.id));
-        }
-    };
-
-    const toggleUser = (id) => {
-        if (selectedUsers.includes(id)) {
-            setSelectedUsers(selectedUsers.filter((userId) => userId !== id));
-        } else {
-            setSelectedUsers([...selectedUsers, id]);
-        }
-    };
+    const downloadPDF = () => {
+        
+    }
 
     const downloadCSV = () => {
         const headers = ["Name","Email","Status","Location","Phone","Group","Category",];
-        const rows = filteredData.map((user) => [user.name,user.email,user.status,user.location,user.phone,user.group,user.category]);
+        const rows = filteredOrders.map((user) => [user.name,user.email,user.status,user.location,user.phone,user.group,user.category]);
 
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
 
@@ -79,108 +120,52 @@ export default function FollowupReport() {
         <>
             <div className="reportWrapper">
                 <h5 className="mb-4">Followup Report</h5>
-                <div className="topBar">
-                    <div className="d-flex gap-3">
-                        <Input.Search placeholder="Search ..." allowClear value={filter} onChange={(e) => {setFilter(e.target.value);setCurrentPage(1);}}style={{ width: 250 }}/>
-                        <Select placeholder="Select Pagination" value={currentPage} allowClear style={{ width: 180 }} onChange={(value) => setCurrentPage(value)}>
-                            <Option value="25">25</Option>
-                            <Option value="50">50</Option>
-                            <Option value="100">100</Option>
-                            <Option value="250">250</Option>
-                        </Select>
-                    </div>
-                    
-                    <div>
-                        <Button type="primary" icon={<DownloadOutlined />} onClick={downloadCSV} style={{ backgroundColor: "#DC3545", borderColor: "#DC3545", marginRight:"5px"}}>
-                            PDF
+                <Space style={{marginBottom: 16,display: "flex",justifyContent: "space-between",alignItems: "center"}} wrap>
+                    <Space wrap>
+                        <Input.Search placeholder="Search by phone / name..." allowClear value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} style={{ width: 300 }}/>
+
+                        <Space wrap>
+                            <Select value={dateFilter} style={{ width: 150 }} onChange={(val) => setDateFilter(val)}>
+                                <Option value="today">Today</Option>
+                                <Option value="yesterday">Yesterday</Option>
+                                <Option value="last7days">Last 7 Days</Option>
+                                <Option value="last30days">Last 30 Days</Option>
+                                <Option value="month">This Month</Option>
+                                <Option value="year">This Year</Option>
+                                <Option value="custom">Custom</Option>
+                            </Select>
+
+                            {dateFilter === "custom" && (
+                                <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear/>
+                            )}
+                        </Space>
+                    </Space>
+
+                    <Space wrap>
+                        <Button type="primary" icon={<DownloadOutlined />} onClick={downloadCSV}>
+                            Download CSV
                         </Button>
 
-                        <Button type="primary" icon={<DownloadOutlined />} onClick={downloadCSV} style={{ backgroundColor: "#1C558B", borderColor: "#1C558B" }}>
-                            CSV
+                        <Button type="primary" style={{ backgroundColor: "#1C558B", borderColor: "#1C558B" }} icon={<DownloadOutlined />} onClick={downloadPDF}>
+                            Download PDF
                         </Button>
-                    </div>
+                    </Space>
+                </Space>
 
-                </div>
-
-                {/* ===== Table ===== */}
-                <div className="table-responsive">
-                    <table className="table align-middle teamTable">
-                        <thead className="table-light">
-                            <tr>
-                                <th scope="col">
-                                    <input type="checkbox" checked={isAllSelected} onChange={toggleSelectAll}/>
-                                </th>
-                                <th scope="col">Customer</th>
-                                <th scope="col">Invoice Number</th>
-                                <th scope="col">Order Quantity</th>
-                                <th scope="col">Payable Price</th>
-                                <th scope="col">Paid Status</th>
-                                <th scope="col">Status</th>
-                                <th scope="col">Group</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredData.map((item) => (
-                                <tr key={item.id}>
-                                    <td>
-                                        <input type="checkbox" checked={selectedUsers.includes(item.id)} onChange={() => toggleUser(item.id)}/>
-                                    </td>
-                                    <td className="userCell">
-                                        <img src="https://www.shareicon.net/data/256x256/2016/09/15/829472_man_512x512.png" alt="User Image" className="avatar" />
-                                        <div className="userInfo">
-                                            <strong>{item.phone_number}</strong>
-                                        </div>
-                                    </td>
-                                    <td>{item.invoice_number}</td>
-                                    <td>{item.order_quantity}</td>
-                                    <td>{item.payable_price}</td>
-                                    <td>
-                                        <span className={`order-paid-btn ${item.paid_status === "paid" ? "paid" : "unpaid"}`}>
-                                            {item.paid_status}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className="statusBadge">
-                                            {item.current_status.name}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span
-                                            className={`order-status-badge ${
-                                            item?.order_from?.name.toLowerCase() === "Frontend" ? "source-facebook" : item?.order_from?.name.toLowerCase() === "youtube"
-                                                ? "source-youtube" : item?.order_from?.name.toLowerCase() === "frontend" ? "source-frontend" : "source-default"
-                                            }`}
-                                        >
-                                            {item?.order_from?.name}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-
-                    <nav aria-label="Page navigation" className="customPagination">
-                        <ul className="pagination justify-content-end">
-                            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                                <button className="page-link" onClick={() => setCurrentPage(currentPage - 1)}>
-                                    &lt;
-                                </button>
-                            </li>
-                            {Array.from({ length: totalPages }, (_, i) => (
-                                <li key={i + 1} className={`page-item ${ currentPage === i + 1 ? "active" : ""}`}>
-                                    <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
-                                        {i + 1}
-                                    </button>
-                                </li>
-                            ))}
-                            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                                <button className="page-link" onClick={() => setCurrentPage(currentPage + 1)}>
-                                    &gt;
-                                </button>
-                            </li>
-                        </ul>
-                    </nav>
-                </div>
+                <Table
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={filteredOrders}
+                    loading={loading}
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
+                        onChange: (page, pageSize) => {
+                            setPagination((prev) => ({ ...prev, current: page, pageSize }));
+                        },
+                    }}
+                />
             </div>
         </>
     )
