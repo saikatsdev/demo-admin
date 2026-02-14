@@ -12,6 +12,7 @@ import {useRole} from "../hooks/useRole.js";
 
 import "./DashboardStyles.css";
 import FullPageLoader from "../components/loader/FullPageLoader.jsx";
+import EmployeeDashboard from "../components/dashboard/EmployeeDashboard.jsx";
 
 export default function Dashboard() {
     // Hook
@@ -69,18 +70,20 @@ export default function Dashboard() {
             
             <Intro/>
 
-            <SummaryCard dashboardSummary={dashboardSummary}/>
-
-            <ChartGrid />
-
-            {canSeeAdminWidgets && (
+            {canSeeAdminWidgets ? (
                 <>
+                    <SummaryCard dashboardSummary={dashboardSummary}/>
+        
+                    <ChartGrid />
+                    
                     <OrderStatictisCard dashboardSummary={dashboardSummary}/>
 
                     <CustomerProductList/>
 
                     <OrderList/>
                 </>
+            ) : (
+                <EmployeeDashboard/>
             )}
         </div>
     )

@@ -12,17 +12,36 @@ const Sidebar = ({ onMenuSelect }) => {
 
   const can = (permission) => permissions?.includes(permission);
 
+  const userManagementSubmenus = [
+    can('users-read') && { label: "Customers", path: "/customer" },
+    can('users-read') && { label: "Management", path: "/management" },
+    can('users-read') && { label: "Employee", path: "/employee" },
+    can('roles-read') && { label: "Roles", path: "/roles" },
+  ].filter(Boolean);
+
+  const reportSubmenus = [
+    can('reports-read') && { label: "Order Report", path: "/report/orders" },
+    can('reports-read') && { label: "Sell Report", path: "/sales/report" },
+    can('reports-read') && { label: "Customer Report", path: "/all/customer/report" },
+    can('reports-read') && { label: "Upsell Report", path: "/upsell/report" },
+    can('reports-read') && { label: "Downsell Report", path: "/downsell/report" },
+    can('reports-read') && { label: "Followup Report", path: "/followup/report" },
+    can('reports-read') && { label: "Stock Report", path: "/stock/report" },
+    can('reports-read') && { label: "Cross Sell Report", path: "/cross/sell/report" },
+    can('reports-read') && { label: "Return Report", path: "/return/report" },
+    can('reports-read') && { label: "Cancel Report", path: "/cancel/report" },
+    can('reports-read') && { label: "Product Report", path: "/product/report" },
+    can('reports-read') && { label: "Location Report", path: "/location/report" },
+    can('reports-read') && { label: "Courier Report", path: "/courier/report" },
+  ].filter(Boolean);
+
   const menus = [
     { title: "Dashboard", icon: "🏠", path: "/dashboard" },
-    {
+
+    userManagementSubmenus.length > 0 && {
       title: "User Management",
       icon: "👥",
-      submenus: [
-        { label: "Customers", path: "/customer" },
-        { label: "Management", path: "/management" },
-        { label: "Employee", path: "/employee" },
-        { label: "Roles", path: "/roles" },
-      ],
+      submenus: userManagementSubmenus,
     },
     {
       title: "Product Management",
@@ -44,32 +63,32 @@ const Sidebar = ({ onMenuSelect }) => {
       title: "Marketing Tools",
       icon: <ToolOutlined />,
       submenus: [
-        { label: "Product Catelog", path: "/product/catalogs" },
-        { label: "GTM Manage", path: "/gtm-manage" },
-        { label: "Microsoft Clarity", path: "/clarity-id" },
-        { label: "Google Analytical", path: "/google-analytical" },
-        { label: "Facebook Meta Pixel", path: "/facebook/meta/pixel" },
-        { label: "Pusher Setup", path: "/pusher/settings" },
-      ],
+        can('product-catalogs-read') && { label: "Product Catelog", path: "/product/catalogs" },
+        can('gtm-read') && { label: "GTM Manage", path: "/gtm-manage" },
+        can('microsoft-clarity') && { label: "Microsoft Clarity", path: "/clarity-id" },
+        can('google-analytical') && { label: "Google Analytical", path: "/google-analytical" },
+        can('facebook-meta-pixel') && { label: "Facebook Meta Pixel", path: "/facebook/meta/pixel" },
+        can('pusher') && { label: "Pusher Setup", path: "/pusher/settings" },
+      ].filter(Boolean),
     },
     {
       title: "Order Management",
       icon: <PropertySafetyOutlined />,
       submenus: [
-        { label: "Orders", path: "/orders" },
-        { label: "Incomplete", path: "/incomplete/orders" },
-        { label: "Follow Up Order", path: "/followup-sell" },
-        { label: "Cancel Reason", path: "/cancel-reasons" },
-        { label: "Delivery Charge", path: "/delivery/charge" },
-        { label: "Free Delivery", path: "/free/delivery" },
-        { label: "Payment Gateway", path: "/payment-gateways" },
-        { label: "Payment Discount", path: "/online-payment/discounts" },
-        { label: "Order Status", path: "/statuses" },
-        { label: "Coupon", path: "/coupons" },
-        { label: "Order Tag", path: "/order-tag" },
-        { label: "Customer Type", path: "/types/customer" },
-        { label: "Delivery Man", path: "/couriers" },
-      ],
+        can('orders-read') && { label: "Orders", path: "/orders" },
+        can('incomplete-orders-read') && { label: "Incomplete", path: "/incomplete/orders" },
+        can('follow-up-read') && { label: "Follow Up Order", path: "/followup-sell" },
+        can('cancel-reasons-read') && { label: "Cancel Reason", path: "/cancel-reasons" },
+        can('delivery-gateways') && { label: "Delivery Charge", path: "/delivery/charge" },
+        can('free-delivery-read') && { label: "Free Delivery", path: "/free/delivery" },
+        can('payment-gateways-read') && { label: "Payment Gateway", path: "/payment-gateways" },
+        can('online-payment-discounts-read') && { label: "Payment Discount", path: "/online-payment/discounts" },
+        can('statuses-read') && { label: "Order Status", path: "/statuses" },
+        can('coupons-read') && { label: "Coupon", path: "/coupons" },
+        can('order-froms-read') && { label: "Order Tag", path: "/order-tag" },
+        can('customer-types-read') && { label: "Customer Type", path: "/types/customer" },
+        can('couriers-read') && { label: "Delivery Man", path: "/couriers" },
+      ].filter(Boolean),
     },
     {
       title: "Media Management",
@@ -82,58 +101,42 @@ const Sidebar = ({ onMenuSelect }) => {
       title: "Courier Management",
       icon: <DeliveredProcedureOutlined />,
       submenus: [
-        { label: "All", path: "/all/couriers" },
-        { label: "SteadFast", path: "/steadfast" },
-        { label: "Pathao", path: "/pathao" },
-        { label: "Redx", path: "/redx" },
-        { label: "Settings", path: "/courier/settings" },
-      ],
+        can('couriers-read') && { label: "All", path: "/all/couriers" },
+        can('stead-fast-read') && { label: "SteadFast", path: "/steadfast" },
+        can('pathao-read') && { label: "Pathao", path: "/pathao" },
+        can('redx-read') && { label: "Redx", path: "/redx" },
+        can('couriers-settings-read') && { label: "Settings", path: "/courier/settings" },
+      ].filter(Boolean),
     },
-
     {
       title: "Fake Order Solution",
       icon: <FallOutlined />,
       submenus: [
-        { label: "Block List", path: "/block-users" },
-        { label: "Block Settings", path: "/block-settings" },
+        can('order-guards-read') && { label: "Block List", path: "/block-users" },
+        can('order-guards-read') && { label: "Block Settings", path: "/block-settings" },
         { label: "Fraud Checker", path: "/currier-report" },
       ],
     },
-
-    {
+    reportSubmenus.length > 0 && {
       title: "Report",
       icon: <BarChartOutlined />,
-      submenus: [
-        { label: "Order Report", path: "/report/orders" },
-        { label: "Sell Report", path: "/sales/report" },
-        { label: "Customer Report", path: "/all/customer/report" },
-        { label: "Upsell Report", path: "/all/upsell/report" },
-        { label: "Downsell Report", path: "/downsell/report" },
-        { label: "Followup Report", path: "/followup/report" },
-        { label: "Stock Report", path: "/stock/report" },
-        { label: "Cross Sell Report", path: "/cross/sell/report" },
-        { label: "Return Report", path: "/return/report" },
-        { label: "Cancel Report", path: "/cancel/report" },
-        { label: "Product Report", path: "/product/report" },
-        { label: "Location Report", path: "/location/report" },
-        { label: "Courier Report", path: "/courier/report" },
-      ],
+      submenus: reportSubmenus,
     },
 
     {
       title: "Blog Management",
       icon: <PropertySafetyOutlined />,
       submenus: [
-        { label: "Blog Post", path: "/blogs" },
-        { label: "Add Blog Post", path: "/add/blog" },
-        { label: "Blog Category", path: "/blog/categories" },
-        { label: "Blog Tags", path: "/blog/tag" },
+        can('blog-posts-read') && { label: "Blog Post", path: "/blogs" },
+        can('blog-posts-create') && { label: "Add Blog Post", path: "/add/blog" },
+        can('blog-post-categories-read') && { label: "Blog Category", path: "/blog/categories" },
+        can('tags-read') && { label: "Blog Tags", path: "/blog/tag" },
       ],
     },
 
-    { title: "Seo Pages", icon: <FileTextOutlined />, path: "/seo-pages" },
+    can('seo-pages-read') && { title: "Seo Pages", icon: <FileTextOutlined />, path: "/seo-pages" },
 
-    { title: "Campaigns", icon: <NotificationOutlined />, path: "/campaigns" },
+    can('campaigns-read') && { title: "Campaigns", icon: <NotificationOutlined />, path: "/campaigns" },
 
     {
       title: "CMS",
@@ -148,7 +151,7 @@ const Sidebar = ({ onMenuSelect }) => {
       ],
     },
 
-    { title: "Settings", icon: "⚙️", path: "/settings" },
+    can('settings-read') && { title: "Settings", icon: "⚙️", path: "/settings" },
 
     { title: "Tutorial", icon: <BulbOutlined />, path: "/tutorial" },
   ];
