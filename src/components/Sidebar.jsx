@@ -107,7 +107,7 @@ const Sidebar = ({ onMenuSelect }) => {
         { label: "Order Report", path: "/report/orders" },
         { label: "Sell Report", path: "/sales/report" },
         { label: "Customer Report", path: "/all/customer/report" },
-        { label: "Upsell Report", path: "/upsell/report" },
+        { label: "Upsell Report", path: "/all/upsell/report" },
         { label: "Downsell Report", path: "/downsell/report" },
         { label: "Followup Report", path: "/followup/report" },
         { label: "Stock Report", path: "/stock/report" },

@@ -378,7 +378,7 @@ function App() {
           <Route path="/all/customer/report" element={<CustomerReport />} />
           <Route path="/sales/report" element={<SaleReport />} />
           <Route path="/report/orders" element={<OrderReport />} />
-          <Route path="/upsell/report" element={<UpsellReport />} />
+          <Route path="/all/upsell/report" element={<UpsellReport />} />
           <Route path="/downsell/report" element={<DownsellReport />} />
           <Route path="/followup/report" element={<FollowupReport />} />
           <Route path="/stock/report" element={<StockReport />} />
