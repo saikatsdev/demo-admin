@@ -229,11 +229,11 @@ export default function Order() {
     const getUserInformation = async () => {
         try {
             const data = await cachedFetch("users", async () => {
-                const res = await getDatas("/admin/users");
-                return res?.success ? res.result : [];
+                const res = await getDatas("/admin/users/list");
+                return res?.success ? res?.result?.data : [];
             });
 
-            setUsers(data);
+            setUsers(Array.isArray(data) ? data : []);
 
         } catch (error) {
             console.error("Error fetching users:", error);
@@ -268,7 +268,7 @@ export default function Order() {
     const getEmployees = async () => {
         try {
             const data = await cachedFetch("employees", async () => {
-                const res = await getDatas("/admin/users", { user_category_id: 3 });
+                const res = await getDatas("/admin/users/list", { user_category_id: 3 });
                 return res?.success ? res.result.data : [];
             });
 
@@ -612,7 +612,7 @@ export default function Order() {
 
     const getCourierWiseOrder = (id = "") => {
         setCourierId(id);
-        getOrders(1, { courier_id: id });
+        getOrders(1, { courier_id: id, courier_status_id : null });
     };
 	
 	const getCourierStatusWiseOrder = (id = "") => {
@@ -2798,7 +2798,7 @@ export default function Order() {
 
             <Modal title="Order Assign User" open={handleselectedActionOrderAssignModal} onCancel={() => setHandleselectedActionOrderAssignModal(false)} onOk={orderAssignUpdate} width={300}>
                 <Select value={orderAssign} onChange={(value) => setOrderAssign(value)} style={{ width: "100%" }}>
-                    {users?.data?.map((user, index) => (
+                    {users?.map((user, index) => (
                         <Option key={index} value={user?.id}>
                             {user?.username}
                         </Option>
