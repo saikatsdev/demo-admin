@@ -82,20 +82,20 @@ export default function Product() {
             try {
                 const [brands, categories, subCategories, productTypes, subSubCategories, attributeValues] =
                 await Promise.all([
-                    cachedFetch("brands", () => getDatas("/admin/brands")),
-                    cachedFetch("categories", () => getDatas("/admin/categories")),
-                    cachedFetch("subCategories", () => getDatas("/admin/sub-categories")),
-                    cachedFetch("productTypes", () => getDatas("/admin/product-types")),
-                    cachedFetch("subSubCategories", () => getDatas("/admin/sub-sub-categories")),
-                    cachedFetch("attributeValues", () => getDatas("/admin/attribute-values")),
+                    cachedFetch("brands", () => getDatas("/admin/brands/list")),
+                    cachedFetch("categories", () => getDatas("/admin/categories/list")),
+                    cachedFetch("subCategories", () => getDatas("/admin/sub-categories/list")),
+                    cachedFetch("productTypes", () => getDatas("/admin/product-types/list")),
+                    cachedFetch("subSubCategories", () => getDatas("/admin/sub-sub-categories/list")),
+                    cachedFetch("attributeValues", () => getDatas("/admin/attribute-values/list")),
                 ]);
 
-                setBrands(brands?.result?.data || brands?.result || brands || []);
-                setCategories(categories?.result?.data || categories?.result || categories || []);
-                setSubCategories(subCategories?.result?.data || subCategories?.result || subCategories || []);
-                setProductTypes(productTypes?.result?.data || productTypes?.result || productTypes || []);
-                setSubSubCategories(subSubCategories?.result?.data || subSubCategories?.result || subSubCategories || []);
-                setAttributeValues(attributeValues?.result?.data || attributeValues?.result || attributeValues || []);
+                setBrands(brands?.result || []);
+                setCategories(categories?.result || []);
+                setSubCategories(subCategories?.result || []);
+                setProductTypes(productTypes?.result || []);
+                setSubSubCategories(subSubCategories?.result || []);
+                setAttributeValues(attributeValues?.result || []);
 
             } catch (error) {
                 console.error("Error loading filter options:", error);
@@ -168,12 +168,16 @@ export default function Product() {
                                 <span style={{ fontWeight: 300 }}>{record.brand.name}</span>
                             </p>
                         )}
-                        {record.category?.name && (
+
+                        {record.categories?.length > 0 && (
                             <p style={{ margin: 0, fontWeight: 700 }}>
                                 Category:{" "}
-                                <span style={{ fontWeight: 300 }}>{record.category.name}</span>
+                                <span style={{ fontWeight: 300 }}>
+                                    {record.categories.map(cat => cat.name).join(", ")}
+                                </span>
                             </p>
                         )}
+
                         {record.sub_category?.name && (
                             <p style={{ margin: 0, fontWeight: 700 }}>
                                 Sub Category:{" "}
@@ -1331,7 +1335,7 @@ export default function Product() {
                 
                                     {/* Brand Filter */}
                                     <Select mode="multiple" value={brandIds} onChange={setBrandIds} placeholder="Select Brand" style={{ width: 180 }} allowClear>
-                                        {brands.map((b) => (
+                                        {brands?.map((b) => (
                                             <Option key={b.id} value={b.id}>
                                                 {b.name}
                                             </Option>

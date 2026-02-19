@@ -145,7 +145,7 @@ export default function ProductEdit() {
 
                 const p = res.result;
 
-                const categoryIds = Array.isArray(p.category) && p.category.length? p.category.map(c => c.id) : p.category?.id ? [p.category.id] : [];
+                const categoryIds = Array.isArray(p.categories) && p.categories.length? p.categories.map(c => c.id) : p.categories?.id ? [p.categories.id] : [];
 
                 setTitle(p.name || "");
                 setCategoryId(categoryIds);
@@ -908,6 +908,11 @@ export default function ProductEdit() {
         },
     };
 
+    const regular = Number(regularPrice);
+    const offer   = Number(offerPrice);
+
+    const isInvalidOffer = offerPrice !== "" && regularPrice !== "" && !Number.isNaN(regular) && !Number.isNaN(offer) && offer > regular;
+
     return (
         <div style={{ padding: 16 }}>
             {contextHolder}
@@ -1355,7 +1360,7 @@ export default function ProductEdit() {
 
                                     <Col xs={24} lg={8}>
                                         <Form layout="vertical">
-                                            <Form.Item label="Offer Price">
+                                            <Form.Item label="Offer Price" validateStatus={isInvalidOffer ? "error" : ""} help={isInvalidOffer ? "Offer price cannot be greater than regular price" : "" }>
                                                 <Input placeholder="Enter Offer Price" value={offerPrice} onChange={(e) => setOfferPrice(e.target.value)}/>
                                             </Form.Item>
                                         </Form>
@@ -1366,7 +1371,7 @@ export default function ProductEdit() {
                         )}
         
                         <Row justify="end" style={{ marginTop: 16 }}>
-                            <Button type="primary" size="large" onClick={handleSubmit} loading={loading}>
+                            <Button type="primary" size="large" onClick={handleSubmit} loading={loading} disabled={isInvalidOffer}>
                                 Update Product
                             </Button>
                         </Row>

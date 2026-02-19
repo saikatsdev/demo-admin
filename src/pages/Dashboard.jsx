@@ -65,12 +65,13 @@ export default function Dashboard() {
 
             {canSeeAdminWidgets ? (
                 <>
+                    <OrderStatictisCard/>
+
+                    <ChartGrid />
+
                     <SummaryCard dashboardSummary={dashboardSummary}/>
         
-                    <ChartGrid />
                     
-                    <OrderStatictisCard dashboardSummary={dashboardSummary}/>
-
                     <CustomerProductList/>
 
                     <OrderList/>

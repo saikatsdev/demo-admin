@@ -1,164 +1,79 @@
-import { Calendar, CheckSquare, CreditCard, Package, RotateCcw, ShoppingCart, Truck, Users } from "lucide-react";
+import {ShoppingCart,CheckCircle,FileText,Truck,PauseCircle,Package,XCircle,RotateCcw,AlertTriangle,Clock,Archive} from "lucide-react";
+import { getDatas } from "../../api/common/common";
+import { useEffect, useState } from "react";
+import DateFilter from "../filter/DateFilter";
+import useDateFilter from "../../hooks/DateFilter";
 
 
-export default function OrderStatictisCard({dashboardSummary}) {
+export default function OrderStatictisCard() {
+    const [statuses, setStatuses] = useState([]);
+
+    const orderFilter         = useDateFilter("today");
+
+    const statusIcons = {
+        "new-order"       : ShoppingCart,
+        "approved"        : CheckCircle,
+        "invoiced"        : FileText,
+        "in-courier"      : Truck,
+        "on-hold"         : PauseCircle,
+        "stock-pending"   : Clock,
+        "delivered"       : Package,
+        "canceled"        : XCircle,
+        "pending-returned": RotateCcw,
+        "returned"        : RotateCcw,
+        "partial-returned": RotateCcw,
+        "damaged"         : AlertTriangle,
+        "courier-pending" : Archive,
+        "courier-received": Archive,
+    };
+
+    const fetchedOrderStatus = async () => {
+        const res = await getDatas('/admin/statuses');
+
+        if(res && res?.success){
+            setStatuses(res?.result?.data);
+        }
+    }
+
+    useEffect(() => {
+        fetchedOrderStatus();
+    }, []);
+
     return (
         <>
-            <div className="order-stats-container">
-                {/* Total Order */}
-                <div className="order-stats-card">
-                    <div className="order-stats-content">
-                        <span className="order-stats-title">Total Order</span>
-                        <span className="order-stats-value">
-                            {dashboardSummary?.order_report?.order_count || 0}
-                        </span>
-                        <span className="order-stats-subvalue">
-                            {dashboardSummary?.order_report?.order_value || "0.00"} ৳
-                        </span>
-                    </div>
-                    <div className="order-stats-icon-container">
-                        <ShoppingCart size={20} color="#36cfc9" />
-                    </div>
-                </div>
-
-                {/* New Order */}
-                <div className="order-stats-card">
-                    <div className="order-stats-content">
-                        <span className="order-stats-title">New Order</span>
-                        <span className="order-stats-value">
-                            {dashboardSummary?.order_report?.submitted_order || 0}
-                        </span>
-                        <span className="order-stats-subvalue">
-                            {dashboardSummary?.order_report?.submitted_order_value || "0.00"}{" "}৳
-                        </span>
-                    </div>
-                    <div className="order-stats-icon-container">
-                        <ShoppingCart size={20} color="#52c41a" />
-                    </div>
-                </div>
-
-                {/* Cancel Order */}
-                <div className="order-stats-card">
-                    <div className="order-stats-content">
-                        <span className="order-stats-title">Cancel Order</span>
-                        <span className="order-stats-value">
-                            {dashboardSummary?.order_report?.canceled_order || 0}
-                        </span>
-                        <span className="order-stats-subvalue">
-                            {dashboardSummary?.order_report?.canceled_order_value || "0.00"} ৳
-                        </span>
-                    </div>
-                    <div className="order-stats-icon-container">
-                        <RotateCcw size={20} color="#f5222d" />
-                    </div>
-                </div>
-
-                {/* Confirm Order */}
-                <div className="order-stats-card">
-                    <div className="order-stats-content">
-                        <span className="order-stats-title">Confirm Order</span>
-                        <span className="order-stats-value">
-                            {dashboardSummary?.order_report?.confirm_order || 0}
-                        </span>
-                        <span className="order-stats-subvalue">
-                            {dashboardSummary?.order_report?.confirm_order_value || "0.00"} ৳
-                        </span>
-                    </div>
-                    <div className="order-stats-icon-container">
-                        <CheckSquare size={20} color="#faad14" />
-                    </div>
-                </div>
-
-                {/* Return Order */}
-                <div className="order-stats-card">
-                    <div className="order-stats-content">
-                        <span className="order-stats-title">Return Order</span>
-                        <span className="order-stats-value">
-                            {dashboardSummary?.order_report?.returned_order || 0}
-                        </span>
-                        <span className="order-stats-subvalue">
-                            {dashboardSummary?.order_report?.returned_order_value || "0.00"} ৳
-                        </span>
-                    </div>
-                    <div className="order-stats-icon-container">
-                        <RotateCcw size={20} color="#eb2f96" />
-                    </div>
-                </div>
-
-                {/* Delivered Order */}
-                <div className="order-stats-card">
-                    <div className="order-stats-content">
-                        <span className="order-stats-title">Delivered Order</span>
-                        <span className="order-stats-value">
-                            {dashboardSummary?.order_report?.delivered_order || 0}
-                        </span>
-                        <span className="order-stats-subvalue">
-                            {dashboardSummary?.order_report?.delivered_order_value || "0.00"}{" "}৳
-                        </span>
-                    </div>
-                    <div className="order-stats-icon-container">
-                        <Truck size={20} color="#1890ff" />
-                    </div>
-                </div>
-
-                {/* Paid Order */}
-                <div className="order-stats-card">
-                    <div className="order-stats-content">
-                        <span className="order-stats-title">Paid Order</span>
-                        <span className="order-stats-value">
-                            {dashboardSummary?.order_report?.paid_order || 0}
-                        </span>
-                        <span className="order-stats-subvalue">
-                            {dashboardSummary?.order_report?.paid_order_value || "0.00"} ৳
-                        </span>
-                    </div>
-                    <div className="order-stats-icon-container">
-                        <CreditCard size={20} color="#8c8c8c" />
-                    </div>
-                </div>
-
-                {/* Unpaid Order */}
-                <div className="order-stats-card">
-                    <div className="order-stats-content">
-                        <span className="order-stats-title">Unpaid Order</span>
-                        <span className="order-stats-value">
-                            {dashboardSummary?.order_report?.unpaid_order || 0}
-                        </span>
-                        <span className="order-stats-subvalue">
-                            {dashboardSummary?.order_report?.unpaid_order_value || "0.00"} ৳
-                        </span>
-                    </div>
-                    <div className="order-stats-icon-container">
-                        <Calendar size={20} color="#722ed1" />
-                    </div>
-                </div>
-
-                {/* Total User */}
-                <div className="order-stats-card">
-                    <div className="order-stats-content">
-                        <span className="order-stats-title">Total User</span>
-                        <span className="order-stats-value">
-                            {dashboardSummary?.total_users || 0}
-                        </span>
-                    </div>
-                    <div className="order-stats-icon-container">
-                        <Users size={20} color="#13c2c2" />
-                    </div>
-                </div>
-
-                {/* Total Products */}
-                <div className="order-stats-card">
-                    <div className="order-stats-content">
-                        <span className="order-stats-title">Total Products</span>
-                        <span className="order-stats-value">
-                            {dashboardSummary?.total_products || 0}
-                        </span>
-                    </div>
-                    <div className="order-stats-icon-container">
-                        <Package size={20} color="#13c2c2" />
-                    </div>
-                </div>
+            <div className="cust-product">
+                <h4></h4>
+                
+                <DateFilter value={orderFilter.filter} range={orderFilter.range} onChange={orderFilter.setFilter} onRangeChange={orderFilter.setRange}/>
             </div>
+            
+            <div className="order-stats-container">
+                {statuses.length > 0 &&
+                    statuses.map((item) => {
+                        const Icon = statusIcons[item.slug] || ShoppingCart;
+
+                        return (
+                            <div className="order-stats-card" key={item.id}>
+                                <div className="order-stats-content">
+                                    <span className="order-stats-title">{item.name}</span>
+
+                                    <span className="order-stats-value">
+                                        {item.orders_count || 0}
+                                    </span>
+
+                                    <span className="order-stats-subvalue">
+                                        {item.total_amount || 0} ৳
+                                    </span>
+                                </div>
+
+                                <div className="order-stats-icon-container" style={{ background: item.bg_color }}>
+                                    <Icon size={20} color={item.text_color} />
+                                </div>
+                            </div>
+                        );
+                    })}
+            </div>
+
         </>
     )
 }
