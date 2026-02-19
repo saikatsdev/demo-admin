@@ -96,16 +96,17 @@ const InvoiceA4 = ({ order, settings }) => {
     const totalPriceInWords = `${numberToWords(Number(order?.payable_price) || 0)} Taka`;
     const formattedDate = getToday();
 
-    const payablePrice    = Number(order?.payable_price || 0);
+    const deliveryCharge  = Number(order?.delivery_charge || 0);
     const advancedPayment = Number(order?.advance_payment || 0);
-    const finalPayable    = advancedPayment > 0 ? payablePrice - advancedPayment : payablePrice;
     const specialDiscount = Number(order?.special_discount || 0);
 
     const subTotal = order?.details?.reduce((sum, item) => {
-        const price = Number(item?.sell_price || 0);
+        const price = Number(item?.product?.sell_price || 0);
         const qty = Number(item?.quantity || 0);
         return sum + price * qty;
-    }, 0);
+    }, 0) || 0;
+
+    const finalPayable = subTotal + deliveryCharge - specialDiscount - advancedPayment;
 
     return (
         <div className="invoice-a4 invoice-section">
@@ -223,10 +224,10 @@ const InvoiceA4 = ({ order, settings }) => {
 
                             <td style={{ border: `1px solid ${BC}`, textAlign: "center" }}>{item?.quantity}</td>
 
-                            <td style={{ border: `1px solid ${BC}`, textAlign: "right", paddingRight: 10 }}>{item?.sell_price} Tk</td>
+                            <td style={{ border: `1px solid ${BC}`, textAlign: "right", paddingRight: 10 }}>{item?.product?.sell_price} Tk</td>
 
                             <td style={{ border: `1px solid ${BC}`, textAlign: "right", paddingRight: 10 }}>
-                                {(Number(item?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk
+                                {(Number(item?.product?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk
                             </td>
                         </tr>
                     ))}
@@ -285,16 +286,17 @@ const InvoiceA5 = ({ order, settings }) => {
     const totalPriceInWords = `${numberToWords(Number(order?.payable_price) || 0)} Taka`;
     const formattedDate = getToday();
 
-    const payablePrice    = Number(order?.payable_price || 0);
+    const deliveryCharge  = Number(order?.delivery_charge || 0);
     const advancedPayment = Number(order?.advance_payment || 0);
-    const finalPayable    = advancedPayment > 0 ? payablePrice - advancedPayment : payablePrice;
     const specialDiscount = Number(order?.special_discount || 0);
 
     const subTotal = order?.details?.reduce((sum, item) => {
-        const price = Number(item?.sell_price || 0);
+        const price = Number(item?.product?.sell_price || 0);
         const qty = Number(item?.quantity || 0);
         return sum + price * qty;
-    }, 0);
+    }, 0) || 0;
+
+    const finalPayable = subTotal + deliveryCharge - specialDiscount - advancedPayment;
 
     return (
         <div className="invoice-a5 invoice-section">
@@ -399,10 +401,10 @@ const InvoiceA5 = ({ order, settings }) => {
 
                             <td style={{ border: `1px solid ${BC}`, textAlign: "center", fontSize: 11 }}>{item?.quantity}</td>
 
-                            <td style={{ border: `1px solid ${BC}`, textAlign: "right", fontSize: 11, paddingRight: 10 }}>{item?.sell_price} Tk</td>
+                            <td style={{ border: `1px solid ${BC}`, textAlign: "right", fontSize: 11, paddingRight: 10 }}>{item?.product?.sell_price} Tk</td>
 
                             <td style={{ border: `1px solid ${BC}`, textAlign: "right", fontSize: 11, paddingRight: 10 }}>
-                                {(Number(item?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk
+                                {(Number(item?.product?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk
                             </td>
                         </tr>
                     ))}
@@ -461,16 +463,17 @@ const InvoiceA5 = ({ order, settings }) => {
 const InvoicePos = ({ order, settings }) => {
     const formattedDate = getToday();
 
-    const payablePrice    = Number(order?.payable_price || 0);
+    const deliveryCharge  = Number(order?.delivery_charge || 0);
     const advancedPayment = Number(order?.advance_payment || 0);
-    const finalPayable    = advancedPayment > 0 ? payablePrice - advancedPayment : payablePrice;
     const specialDiscount = Number(order?.special_discount || 0);
 
     const subTotal = order?.details?.reduce((sum, item) => {
-        const price = Number(item?.sell_price || 0);
+        const price = Number(item?.product?.sell_price || 0);
         const qty = Number(item?.quantity || 0);
         return sum + price * qty;
-    }, 0);
+    }, 0) || 0;
+
+    const finalPayable = subTotal + deliveryCharge - specialDiscount - advancedPayment;
 
     return (
         <div className="invoice-pos invoice-section">
@@ -543,7 +546,7 @@ const InvoicePos = ({ order, settings }) => {
                                 {item?.attribute_value_3 && <div style={{ fontSize: 10 }}>[{item?.attribute_value_3?.attribute?.name}: {item?.attribute_value_3?.value}]</div>}
                             </td>
                             <td style={{ textAlign: "right" }}>{item?.quantity}</td>
-                            <td style={{ textAlign: "right" }}>{(Number(item?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk</td>
+                            <td style={{ textAlign: "right" }}>{(Number(item?.product?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk</td>
                         </tr>
                     ))}
                 </tbody>
@@ -665,14 +668,13 @@ export default function MultipleInvoices() {
     const handleDownload = async () => {
         if (!printSectionRef.current) return;
 
-        // px helpers (96dpi)
         const mmToPx = (mm) => Math.round(mm * (96 / 25.4));
         const EXPORT_W = { A4: mmToPx(200), A5: mmToPx(138), POS: mmToPx(80) };
 
         const makePdf = () => {
             if (activeLayout === "A4") return new jsPDF("p", "mm", "a4");
             if (activeLayout === "A5") return new jsPDF("p", "mm", "a5");
-            return new jsPDF("p", "mm", "a4"); // POS on A4
+            return new jsPDF("p", "mm", "a4");
         };
 
         try {

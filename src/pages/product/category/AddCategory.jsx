@@ -23,6 +23,7 @@ export default function AddCategory() {
     const [form]                                = Form.useForm();
     const [messageApi, contextHolder]           = message.useMessage();
     const [gallery, setGallery]                 = useState([]);
+	const [errors, setErros]                    = useState({});
 
 
     useEffect(() => {
@@ -89,6 +90,8 @@ export default function AddCategory() {
                 setTimeout(() => {
                     navigate("/categories");
                 }, 400);
+            }else{
+                setErros(res?.errors);
             }
         } catch (error) {
             console.log("Something went wrong", error);
@@ -128,6 +131,7 @@ export default function AddCategory() {
                     <Form layout="vertical" form={form} onFinish={handleSubmit} initialValues={{width:450, height:450}}>
                         <Form.Item label="Category Name" name="name">
                             <AntInput placeholder="Enter name" />
+							{errors.name && <p style={{ color: "red" }}>{errors.name[0]}</p>}
                         </Form.Item>
 
                         <ImagePicker form={form} name="image" label="Image" gallery={gallery}  hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)}/>

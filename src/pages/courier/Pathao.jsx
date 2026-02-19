@@ -147,6 +147,16 @@ export default function Pathao() {
 
                 <div>
                     <WebhookDisplay settings={settings} service="pathao"/>
+
+                    <div style={{marginTop: 12, padding: "12px 16px",background: "#f0f9ff",border: "1px solid #bae6fd",borderRadius: 8,display: "flex",alignItems: "center",gap: 10,fontSize: 14,color: "#0c4a6e"}}>
+                        <span style={{ fontSize: 18 }}>🔐</span>
+
+                        <span>
+                            For authentication, use your
+                            <strong style={{ marginLeft: 4 }}>Client Secret Key </strong>
+                            as the Secret.
+                        </span>
+                    </div>
                 </div>
 
             </div>

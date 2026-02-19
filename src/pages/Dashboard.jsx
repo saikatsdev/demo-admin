@@ -8,24 +8,28 @@ import OrderStatictisCard from "../components/dashboard/OrderStatictisCard.jsx";
 import SummaryCard from "../components/dashboard/SummaryCard.jsx";
 import Ticker from "../components/dashboard/Ticker.jsx";
 import useTitle from "../hooks/useTitle.js";
-import {useRole} from "../hooks/useRole.js";
-
 import "./DashboardStyles.css";
 import FullPageLoader from "../components/loader/FullPageLoader.jsx";
+import {useRole} from "../hooks/useRole.js";
 import EmployeeDashboard from "../components/dashboard/EmployeeDashboard.jsx";
+import { useAppSettings } from "../contexts/useAppSettings.js";
 
 export default function Dashboard() {
     // Hook
     useTitle("Admin Dashboard");
 
-    const { hasAnyRole } = useRole();
+    const { settings } = useAppSettings();
 
+    const { hasAnyRole } = useRole();
+    
     const canSeeAdminWidgets = hasAnyRole(["superadmin", "admin"]);
 
     // State
     const [dashboardSummary, setDashboardSummary] = useState({});
     const [loading, setLoading]                   = useState(false);
-    const [bulletin, setBulletin]                 = useState(false);
+
+    const bulletin = Number(settings?.dashboard_bulletin);
+
 
     // Method
     const getDashboardSummary = async () => {
@@ -34,7 +38,7 @@ export default function Dashboard() {
             const res = await getDatas("/admin/dashboard");
 
             if(res && res.success){
-                setDashboardSummary(res.result || {});
+				setDashboardSummary(res.result || {});
             }
         } catch (error) {
             console.log(error);
@@ -43,28 +47,17 @@ export default function Dashboard() {
         }
     };
 
-    const getSettings = async () => {
-        const res = await getDatas("/admin/settings/list", { key: 'dashboard_bulletin' });
-
-        if (res?.success) {
-            const bulletinData = res?.result || [];
-
-            const value = Number(bulletinData[0]?.value);
-
-            setBulletin(value === 1);
-        }
-    };
-
     useEffect(() => {
-        getDashboardSummary();
-        getSettings();
-    }, []);
+        if (canSeeAdminWidgets) {
+            getDashboardSummary();
+        }
+    }, [canSeeAdminWidgets]);
 
     return (
         <div className="dashboard-container">
             {loading && <FullPageLoader />}
 
-            {bulletin &&
+            {bulletin === 1 &&
                 <Ticker/>
             }
             

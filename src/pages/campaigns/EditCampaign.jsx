@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message } from "antd";
+import {Input as AntInput, Breadcrumb, Button, Form, Select, Space, message } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
@@ -87,18 +87,6 @@ export default function EditCampaign() {
         }
     }, [campaign]);
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setPreviewImage(URL.createObjectURL(file));
-        }
-    };
-
-    const handleRemoveImage = () => {
-        setPreviewImage(null);
-        form.setFieldValue("image", null);
-    };
-
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
         if (query.trim() !== "") {
@@ -150,7 +138,7 @@ export default function EditCampaign() {
         formData.append("width", values.width);
         formData.append("height", values.height);
 
-        if (values.image) {
+        if (values.image instanceof File) {
             formData.append("image", values.image);
         }
 
@@ -212,7 +200,7 @@ export default function EditCampaign() {
                 </Space>
             </div>
 
-            <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" initialValues={{width:"1800", height:"960", start_date: new Date().toISOString().split("T")[0]}}>
+            <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" initialValues={{width:"3600", height:"1920", start_date: new Date().toISOString().split("T")[0]}}>
                 <div className="form-container">
                     <div className="form-left">
                         <div className="left-side-product" onClick={() => setShowInput(!showInput)}>
@@ -245,9 +233,9 @@ export default function EditCampaign() {
                             </div>
                         )}
 
-                        {selectedProducts.length > 0 && (
+                        {selectedProducts?.length > 0 && (
                             <div className="search-product-section" style={{ marginTop: "20px" }}>
-                                {selectedProducts.map((item) => (
+                                {selectedProducts?.map((item) => (
                                     <div key={item.id} className="product-card">
                                         <div className="product-card-top">
                                             <img src={item.image || item.img_path} alt={item.name || "Product"} className="camp-product-image"/>
@@ -300,21 +288,18 @@ export default function EditCampaign() {
                                     <Select options={[{ value: "active", label: "Active" },{ value: "inactive", label: "Inactive" }]}/>
                                 </Form.Item>
 
-                                <Form.Item name="image" label="Banner Image" getValueFromEvent={(e) => e?.target?.files?.[0]} valuePropName="file">
-                                    <>
-                                        <AntInput type="file" id="image" onChange={handleImageChange} />
-
-                                        {previewImage && (
-                                            <div className="edit-campaign-img">
-                                                <img src={previewImage} alt="Campaign Preview" className="preview-img" />
-                                                <button type="button" onClick={handleRemoveImage} className="preview-img-button" title="Remove Image">
-                                                    ✕
-                                                </button>
-                                            </div>
-                                        )}
-                                    </>
+                                <Form.Item name="image" label="Banner Image" valuePropName="file" getValueFromEvent={(e) => {const file = e.target.files[0];
+                                    if (file) {setPreviewImage(URL.createObjectURL(file));} return file;
+                                }}
+                                >
+                                    <input type="file" accept="image/*" />
                                 </Form.Item>
 
+                                {previewImage && (
+                                    <div className="edit-campaign-img">
+                                        <img src={previewImage} alt="Preview" style={{width: 200,height: "auto",marginTop: 10,borderRadius: 6,border: "1px solid #ddd"}}/>
+                                    </div>
+                                )}
 
                                 <Form.Item name="width" label="Width" rules={[{ required: true }]}>
                                     <AntInput type="number" />

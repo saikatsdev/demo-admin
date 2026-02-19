@@ -1,5 +1,5 @@
-import { Input as AntInput, Breadcrumb, Button, Form, Space, message } from "antd";
-import { PlusOutlined, MinusOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Space, Typography,message } from "antd";
+import { PlusOutlined, MinusOutlined,CopyOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
 import { useEffect, useState } from "react";
@@ -60,6 +60,15 @@ export default function SteadFast() {
         }
     }
 
+    const copyBearer = () => {
+        navigator.clipboard.writeText("Bearer");
+        
+        messageApi.open({
+            type: "success",
+            content: "Bearer copied!",
+        });
+    };
+
     return (
         <>
             {contextHolder}
@@ -116,6 +125,16 @@ export default function SteadFast() {
 
                     <div>
                         <WebhookDisplay settings={settings} service="stead-fast"/>
+                        <div style={{display: "inline-flex",alignItems: "center",gap: 12,padding: "10px 14px",background: "#f6f8fa",borderRadius: 8,border: "1px solid #e5e7eb", marginTop:"5px"}}>
+                            <Typography.Text>
+                                For Auth Token use:
+                                <Typography.Text code style={{ marginLeft: 8, fontWeight: 600 }}>
+                                    Bearer
+                                </Typography.Text>
+                            </Typography.Text>
+
+                            <Button icon={<CopyOutlined />} size="small" onClick={copyBearer}/>
+                        </div>
                     </div>
 
                 </div>

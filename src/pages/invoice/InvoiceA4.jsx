@@ -71,17 +71,6 @@ export default function InvoiceA4() {
         }
     };
 
-    const payablePrice    = Number(orderDetails?.payable_price || 0);
-    const advancedPayment = Number(orderDetails?.advance_payment || 0);
-    const finalPayable    = advancedPayment > 0 ? payablePrice - advancedPayment : payablePrice;
-    const specialDiscount = Number(orderDetails?.special_discount || 0);
-
-    const subTotal = orderDetails?.details?.reduce((sum, item) => {
-        const price = Number(item?.sell_price || 0);
-        const qty = Number(item?.quantity || 0);
-        return sum + price * qty;
-    }, 0);
-
     if (loading)
         return (
         <div className="a4-invoice-loader">
@@ -91,6 +80,18 @@ export default function InvoiceA4() {
     );
 
     if (!orderDetails) return <div style={{ padding: 24 }}>No data found.</div>;
+
+    const deliveryCharge  = Number(orderDetails?.delivery_charge || 0);
+    const advancedPayment = Number(orderDetails?.advance_payment || 0);
+    const specialDiscount = Number(orderDetails?.special_discount || 0);
+
+    const subTotal = orderDetails?.details?.reduce((sum, item) => {
+        const price = Number(item?.product?.sell_price || 0);
+        const qty = Number(item?.quantity || 0);
+        return sum + price * qty;
+    }, 0) || 0;
+
+    const finalPayable = subTotal + deliveryCharge - specialDiscount - advancedPayment;
 
     return (
         <div style={{ margin: 0, padding: 0, fontFamily: '"Lato", sans-serif', color: "black" }}>
@@ -206,11 +207,11 @@ export default function InvoiceA4() {
                                 </td>
 
                                 <td className="pe-3" style={{ border:"1px solid #555555ff", textAlign:"right", padding:"6px 10px", paddingRight:"12px" }}>
-                                    {Number(item?.sell_price || 0).toFixed(2)} Tk
+                                    {Number(item?.product?.sell_price || 0).toFixed(2)} Tk
                                 </td>
 
                                 <td className="pe-3" style={{ border:"1px solid #555555ff", textAlign:"right", padding:"6px 10px", paddingRight:"12px" }}>
-                                    {(Number(item?.sell_price || 0) * Number(item?.quantity || 0)).toFixed(2)} Tk
+                                    {(Number(item?.product?.sell_price || 0) * Number(item?.quantity || 0)).toFixed(2)} Tk
                                 </td>
                             </tr>
                         ))}

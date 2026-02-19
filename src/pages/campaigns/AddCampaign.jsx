@@ -27,6 +27,7 @@ export default function AddCampaign() {
     const [loadingMore, setLoadingMore]             = useState(false);
     const [loading, setLoading]                     = useState(false);
     const [gallery, setGallery]                     = useState([]);
+	const [errors, setErros]                        = useState({});
 
     useEffect(() => {
         fetchMedia(page);
@@ -141,6 +142,8 @@ export default function AddCampaign() {
                 setTimeout(() => {
                     navigate("/campaigns");
                 }, 500);
+            }else{
+                setErros(res?.errors);
             }
         } catch (error) {
             console.log(error);
@@ -251,6 +254,7 @@ export default function AddCampaign() {
                             <>
                                 <Form.Item name="title" label="Campaign Title" rules={[{ required: true }]}>
                                     <AntInput placeholder="Campaign Name" />
+									{errors.title && <p style={{ color: "red" }}>{errors.title[0]}</p>}
                                 </Form.Item>
 
                                 <Form.Item name="start_date" label="Campaign Start Date" rules={[{ required: true }]}>

@@ -1,4 +1,4 @@
-import {CopyOutlined,DeleteFilled,DeleteOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined} from "@ant-design/icons";
+import {CopyOutlined,DeleteFilled,DeleteOutlined,TransactionOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined} from "@ant-design/icons";
 import {Badge,Button,Col,DatePicker,Dropdown,Form,Input,InputNumber,message,Modal,Popover,Row,Select,Space,Spin,Table,Tag,Tooltip} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
@@ -6,7 +6,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
 import {deleteData,getDatas,postData} from "../../api/common/common";
-import { useAuth } from "../../hooks/useAuth";
 import useAxios from "../../hooks/useAxios";
 import useTitle from "../../hooks/useTitle";
 import "./Order.css";
@@ -20,6 +19,7 @@ import { formatCourierData } from "../../helpers/courier.helper";
 import { cachedFetch } from "../../utils/cacheApi";
 import { useSelector } from "react-redux";
 import CourierStatusModal from "../../components/order/CourierStatusModal";
+import DigitalSaleModal from "../../components/order/DigitalSaleModal";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -33,7 +33,6 @@ export default function Order() {
     // Variable
     const navigate        = useNavigate();
     const location        = useLocation();
-    const { user }        = useAuth();
     const initialStatusId = location.state?.statusId ?? sessionStorage.getItem("orderStatusId");
 
     useAxios();
@@ -60,7 +59,7 @@ export default function Order() {
     const [orderCurrentStatus, setOrderCurrentStatus]                                                  = useState("");
     const [orderAssign, setOrderAssign]                                                                = useState("");
     const [printInvoice, setPrintInvoice]                                                              = useState("");
-    const [users, setUsers]                                                                            = useState("");
+    const [users, setUsers]                                                                            = useState([]);
     const [orderWiseProducts, setOrderWiseProducts]                                                    = useState("");
     const [returnAndDamageOrderStatus, setReturnAndDamageOrderStatus]                                  = useState("");
     const [returnAndDamageOrderType, setReturnAndDamageOrderType]                                      = useState("");
@@ -124,6 +123,8 @@ export default function Order() {
     const [courierLogs, setCourierLogs]                                                                = useState([]);
     const [pageSize, setPageSize]                                                                      = useState(orders?.per_page);
     const [bulkLoading, setBulLoading]                                                                 = useState(false);
+	const [digitalModalOpen, setDigitalModalOpen]                                                      = useState(false);
+    const [selectedDigitalOrderId, setSelectedDigitalOrderId]                                          = useState(null);
 
     // Redux State
     const orderTagList  = useSelector((state) => state.orderFrom.list);
@@ -1440,6 +1441,8 @@ export default function Order() {
             render: (id, record) => {
                 const printedStatus = Number(record?.is_invoice_printed ?? 1);
                 const products = record?.products ?? [];
+				
+				const isPayment = !!record?.transaction?.payment_id;
         
                 return(
                     <div>
@@ -1540,13 +1543,13 @@ export default function Order() {
                         
                         <div style={{marginTop: 6,display: "flex",gap: 4,flexWrap: "wrap"}}>
                             {products.map((p, index) => (
-                                <img key={index} src={p.img} alt=""
+                                <img key={index} src={p.img_path} alt=""
                                     onMouseEnter={(e) => {const rect = e.target.getBoundingClientRect();
                                     setPos({
                                         x: rect.right + 10,
                                         y: rect.top - 50,
                                     });
-                                    setPreviewSrc(p.img);
+                                    setPreviewSrc(p.img_path);
                                     }}
                                     onMouseLeave={() => setPreviewSrc(null)}
                                     style={{width: 40,height: 40,borderRadius: "50%",objectFit: "fill",border: "1px solid #f0f0f0",cursor: "pointer",}}
@@ -1556,6 +1559,13 @@ export default function Order() {
                 
                         {previewSrc && (
                             <img src={previewSrc} className="order_invoice_columns_img" style={{ top: pos.y, left: pos.x }}/>
+                        )}
+						
+						{isPayment && (
+                            <span style={{ color: "#52c41a", fontWeight: 500 }}>
+                                <TransactionOutlined style={{ marginRight: 6 }} onClick={() => openDigitalProductInfo(record.id)}/>
+                                View Payment
+                            </span>
                         )}
                     </div>
                 );
@@ -1715,16 +1725,25 @@ export default function Order() {
             key: "payment_info",
             width: 180,
 			render: (_, record) => {
-				const specialDiscount = Number(record.special_discount || 0);
-				
                 const products = record?.products ?? [];
+
+                const advance = Number(record.advance_payment || 0);
+                const delivery = Number(record.delivery_charge || 0);
+                const specialDiscount = Number(record.special_discount || 0);
+
                 const money = (v) => `৳ ${Number(v || 0).toLocaleString('en-BD')}`;
+
+                const subTotal = products.reduce((sum, p) => {
+                    return sum + Number(p.sell_price) * Number(p.quantity);
+                }, 0);
+
+                const payable = subTotal + delivery - advance - specialDiscount;
 
                 return (
                     <div>
                         <p style={{ marginBottom: 5 }}>
                             <span style={{ fontWeight: "bold" }}>Advanced Payment:</span>
-                            {money(record.advance_payment)}
+                            {money(advance)}
                         </p>
 
                         <p style={{ marginBottom: 5 }}>
@@ -1734,25 +1753,30 @@ export default function Order() {
 
                         <p style={{ marginBottom: 5 }}>
                             <span style={{ fontWeight: "bold" }}>Delivery Charge:</span>
-                            {money(record.delivery_charge)}
+                            {money(delivery)}
                         </p>
-						
-						{specialDiscount > 0 && (
+
+                        {specialDiscount > 0 && (
                             <p style={{ marginBottom: 5 }}>
                                 <span style={{ fontWeight: "bold" }}>Special Discount:</span>
                                 {money(specialDiscount)}
                             </p>
                         )}
 
-                        {products.map((p, index) => (
-                            <p key={index} style={{ marginBottom: 5 }}>
-                                <strong>Sell Price:</strong> {money(p.sell_price)}
-                            </p>
-                        ))}
+                        {products.map((p, index) => {
+                            const lineTotal = Number(p.sell_price) * Number(p.quantity);
+
+                            return (
+                                <p key={index} style={{ marginBottom: 4 }}>
+                                    {money(p.sell_price)} × {p.quantity} ={" "}
+                                    <strong>{money(lineTotal)}</strong>
+                                </p>
+                            );
+                        })}
                         
                         <p style={{ marginBottom: 5 }}>
                             <span style={{ fontWeight: "bold" }}>Payable Amount:</span>{" "}
-                            {record.payable_price > 0 ? record.payable_price - (record.advance_payment || 0) : record.payable_price}
+                            {payable}
                         </p>
                     </div>
                 );
@@ -1825,6 +1849,16 @@ export default function Order() {
         setSelectedOrderId(orderId);
         form.resetFields();
         setIsNoteModalOpen(true);
+    };
+	
+	const openDigitalProductInfo = (orderId) => {
+        setSelectedDigitalOrderId(orderId);
+        setDigitalModalOpen(true);
+    };
+
+    const closeDigitalModal = () => {
+        setDigitalModalOpen(false);
+        setSelectedOrderId(null);
     };
 
     const openEditNoteModal = (noteRecord) => {
@@ -2900,6 +2934,8 @@ export default function Order() {
             <OrderHistoryModal orderId={selectedOrderId} open={historyModalOpen} onClose={() => setHistoryModalOpen(false)}/>
 
             <CourierStatusModal open={isCourierModalOpen} onClose={() => setIsCourierModalOpen(false)} data={courierLogs}/>
+			
+			<DigitalSaleModal open={digitalModalOpen} onClose={closeDigitalModal} orderId={selectedDigitalOrderId}/>
         </>
     )
 }

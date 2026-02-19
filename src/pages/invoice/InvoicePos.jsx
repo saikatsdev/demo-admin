@@ -51,16 +51,17 @@ export default function InvoicePos() {
 
     const companyNote = settings?.invoice_text || "প্রোডাক্ট হাতে পেয়ে কুরিয়ার ম্যানের সামনে চেক করে নিন। কোনো সমস্যা থাকলে সাথে সাথে আমাদের কল সেন্টারে জানান।";
 
-    const payablePrice    = Number(orderDetails?.payable_price || 0);
+    const deliveryCharge  = Number(orderDetails?.delivery_charge || 0);
     const advancedPayment = Number(orderDetails?.advance_payment || 0);
-    const finalPayable    = advancedPayment > 0 ? payablePrice - advancedPayment : payablePrice;
     const specialDiscount = Number(orderDetails?.special_discount || 0);
 
     const subTotal = orderDetails?.details?.reduce((sum, item) => {
-        const price = Number(item?.sell_price || 0);
+        const price = Number(item?.product?.sell_price || 0);
         const qty = Number(item?.quantity || 0);
         return sum + price * qty;
-    }, 0);
+    }, 0) || 0;
+
+    const finalPayable = subTotal + deliveryCharge - specialDiscount - advancedPayment;
 
     if (loading)
     return (
@@ -179,7 +180,7 @@ export default function InvoicePos() {
                                     </td>
 
                                     <td className="pe-3" style={{textAlign: "right",padding: "3px 6px",paddingRight: "12px"}}>
-                                        {Number(item?.sell_price) * Number(item?.quantity)} Tk
+                                        {Number(item?.product?.sell_price) * Number(item?.quantity)} Tk
                                     </td>
                                 </tr>
                             ))}
