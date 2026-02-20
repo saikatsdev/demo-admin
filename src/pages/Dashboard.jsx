@@ -13,6 +13,7 @@ import FullPageLoader from "../components/loader/FullPageLoader.jsx";
 import {useRole} from "../hooks/useRole.js";
 import EmployeeDashboard from "../components/dashboard/EmployeeDashboard.jsx";
 import { useAppSettings } from "../contexts/useAppSettings.js";
+import OrderByStatus from "../components/dashboard/OrderByStatus.jsx";
 
 export default function Dashboard() {
     // Hook
@@ -67,11 +68,12 @@ export default function Dashboard() {
                 <>
                     <OrderStatictisCard/>
 
+                    <OrderByStatus/>
+
                     <ChartGrid />
 
                     <SummaryCard dashboardSummary={dashboardSummary}/>
         
-                    
                     <CustomerProductList/>
 
                     <OrderList/>
