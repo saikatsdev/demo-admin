@@ -396,13 +396,27 @@ export default function InCompleteOrder() {
         const res = await getDatas(`/admin/incomplete-orders/${record.id}`);
 
         if (res && res?.success) {
+
+            const itemsWithVariations = res.result.items.map(item => {
+                const variations = [
+                    item.attribute_value_1,
+                    item.attribute_value_2,
+                    item.attribute_value_3
+                ].filter(Boolean);
+
+                return {
+                    ...item,
+                    variations
+                };
+            });
+
             const orderData = {
                 id           : record.id,
                 name         : record.name,
                 phone_number : record.phone_number,
                 address      : record.address,
                 status       : record.status,
-                items        : res?.result?.items,
+                items        : itemsWithVariations,
                 is_incomplete: 1
             };
 

@@ -83,11 +83,36 @@ export default function OrderAdd() {
         setCustomerName(orderData.name);
         setPhoneNumber(orderData.phone_number);
         setAddress(orderData.address);
-        if(orderData.is_incomplete === 1){
+
+        if (orderData.is_incomplete === 1) {
             setIsIncomplte(true);
         }
 
-        const products = (orderData.items || []).map((item) => ({...item.product,quantity: 1,}));
+        const products = (orderData.items || []).map((item) => {
+            const baseProduct = {
+                ...item.product,
+                quantity: item.quantity || 1,
+            };
+
+            const hasVariation =
+                item.attribute_value_1 || item.attribute_value_2 || item.attribute_value_3;
+
+            if (hasVariation) {
+                return {
+                    ...baseProduct,
+                    variation_1: item.attribute_value_1 || null,
+                    variation_2: item.attribute_value_2 || null,
+                    variation_3: item.attribute_value_3 || null,
+                    variations: [
+                        item.attribute_value_1,
+                        item.attribute_value_2,
+                        item.attribute_value_3,
+                    ].filter((v) => v !== null),
+                };
+            }
+
+            return baseProduct;
+        });
 
         setCartItems(products);
     }, [orderData]);
@@ -290,9 +315,9 @@ export default function OrderAdd() {
                         mrp        : selectedVariation.mrp,
                         offer_price: selectedVariation.offer_price,
                         discount   : selectedVariation.discount,
-                        variation_1: selectedVariation?.attribute_value_1,
-                        variation_2: selectedVariation?.attribute_value_2,
-                        variation_3: selectedVariation?.attribute_value_3,
+                        variation_1: selectedVariation?.attribute_value1,
+                        variation_2: selectedVariation?.attribute_value2,
+                        variation_3: selectedVariation?.attribute_value3,
                         quantity   : quantity,
                         variations : product.variations,
                     }
@@ -827,16 +852,16 @@ export default function OrderAdd() {
                                                     {productInfo.variations.map((variation, idx) => {
                                                         const displayText = [];
 
-                                                        if (variation?.attribute_value_1?.attribute_id) {
-                                                            displayText.push(`${attributeName(variation.attribute_value_1.attribute_id)}: ${variation.attribute_value_1.value}`)
+                                                        if (variation?.attribute_value1?.attribute_id) {
+                                                            displayText.push(`${attributeName(variation.attribute_value1.attribute_id)}: ${variation.attribute_value1.value}`)
                                                         }
 
-                                                        if (variation?.attribute_value_2?.attribute_id) {
-                                                            displayText.push(`${attributeName(variation.attribute_value_2.attribute_id)}: ${variation.attribute_value_2.value}`)
+                                                        if (variation?.attribute_value2?.attribute_id) {
+                                                            displayText.push(`${attributeName(variation.attribute_value2.attribute_id)}: ${variation.attribute_value2.value}`)
                                                         }
 
-                                                        if (variation?.attribute_value_3?.attribute_id) {
-                                                            displayText.push(`${attributeName(variation.attribute_value_3.attribute_id)}: ${variation.attribute_value_3.value}`)
+                                                        if (variation?.attribute_value3?.attribute_id) {
+                                                            displayText.push(`${attributeName(variation.attribute_value3.attribute_id)}: ${variation.attribute_value3.value}`)
                                                         }
                                                         
                                                         return (
