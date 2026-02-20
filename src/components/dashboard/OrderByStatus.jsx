@@ -34,7 +34,11 @@ export default function OrderByStatus() {
                     <div className="chart3 summary-card-top">
 
                         <div style={{display:"flex", justifyContent:"space-between"}}>
-                            <div></div>
+                            <div>
+                                <h6>
+                                    Order By Status
+                                </h6>
+                            </div>
                             <DateFilter value={orderCancelFilter.filter} range={orderCancelFilter.range} onChange={orderCancelFilter.setFilter} onRangeChange={orderCancelFilter.setRange}/>
                         </div>
 

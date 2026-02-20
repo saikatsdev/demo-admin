@@ -14,6 +14,7 @@ import SettingCategory from "../../components/settings/SettingCategory";
 import TopHeader from "../../components/settings/TopHeader";
 import useTitle from "../../hooks/useTitle";
 import { useSelector } from "react-redux";
+import DashboardSetting from "../../components/settings/DashboardSetting";
 
 export default function Settings() {
     // Hook
@@ -89,8 +90,8 @@ export default function Settings() {
 
                 {user.phone_number === "01700000017" && (
                     <>
-                        <button className={activeIndex === 7 ? 'active' : ''} onClick={() => handleIndex(7)}>Setting Category</button>
-                        <button className={activeIndex === 8 ? 'active' : ''} onClick={() => handleIndex(8)}>All Settings</button>
+                        <button className={activeIndex === 8 ? 'active' : ''} onClick={() => handleIndex(8)}>Setting Category</button>
+                        <button className={activeIndex === 9 ? 'active' : ''} onClick={() => handleIndex(9)}>All Settings</button>
                     </>
                 )}
             </div>
@@ -103,37 +104,41 @@ export default function Settings() {
 
                     <div className="body-content">
                         {activeIndex === 0 && (
-                            <GeneralSetting formatText={formatText}/>
+                            <DashboardSetting formatText={formatText}/>
                         )}
 
                         {activeIndex === 1 && (
-                            <Logo formatText={formatText}/>
+                            <GeneralSetting formatText={formatText}/>
                         )}
 
                         {activeIndex === 2 && (
-                            <ProductSetting formatText={formatText}/>
+                            <Logo formatText={formatText}/>
                         )}
 
                         {activeIndex === 3 && (
-                            <HeaderFooter formatText={formatText}/>
+                            <ProductSetting formatText={formatText}/>
                         )}
 
                         {activeIndex === 4 && (
-                            <TopHeader formatText={formatText}/>
+                            <HeaderFooter formatText={formatText}/>
                         )}
 
                         {activeIndex === 5 && (
-                            <FrontendTheme formatText={formatText}/>
+                            <TopHeader formatText={formatText}/>
                         )}
 
                         {activeIndex === 6 && (
+                            <FrontendTheme formatText={formatText}/>
+                        )}
+
+                        {activeIndex === 7 && (
                             <CheckoutSetting formatText={formatText}/>
                         )}
 
                         {user.phone_number === "01700000017" && (
                             <>
-                                {activeIndex === 7 && <SettingCategory />}
-                                {activeIndex === 8 && <AllSettings />}
+                                {activeIndex === 8 && <SettingCategory />}
+                                {activeIndex === 9 && <AllSettings />}
                             </>
                         )}
                     </div>
