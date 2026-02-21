@@ -43,7 +43,7 @@ import OrderAdd from "./pages/order/OrderAdd";
 import OrderEdit from "./pages/order/OrderEdit";
 import OrderStatus from "./pages/order/OrderStatus";
 import OrderTag from "./pages/order/OrderTag";
-import PaymentGateway from "./pages/order/PaymentGateway";
+import PaymentGateway from "./pages/order/payment_gateway/PaymentGateway";
 import Attribute from "./pages/product/attribute/Attribute";
 import SectionBanner from "./pages/product/banner/SectionBanner";
 import Brand from "./pages/product/brand/Brand";
@@ -85,8 +85,8 @@ import Review from "./pages/product/review/Review";
 import AddReview from "./pages/product/review/AddReview";
 import EditReview from "./pages/product/review/EditReview";
 import EditCustomer from "./pages/auth/EditCustomer";
-import AddPaymentGateway from "./pages/order/incomplete/AddPaymentGateway";
-import EditPaymentGateway from "./pages/order/incomplete/EditPaymentGateway";
+import AddPaymentGateway from "./pages/order/payment_gateway/AddPaymentGateway";
+import EditPaymentGateway from "./pages/order/payment_gateway/EditPaymentGateway";
 import Gallary from "./pages/gallary/Gallary";
 import AddSubCategory from "./pages/product/subcategory/AddSubCategory";
 import EditSubCategory from "./pages/product/subcategory/EditSubCategory";
@@ -152,6 +152,7 @@ import EditPrivacy from "./pages/cms/privacy/EditPrivacy";
 import TermsCondition from "./pages/cms/terms&condition/TermsCondition";
 import AddTermsCondition from "./pages/cms/terms&condition/AddTermsCondition";
 import EditTermsCondition from "./pages/cms/terms&condition/EditTermsCondition";
+import TrashCourierList from "./pages/order/courier/TrashCourierList";
 
 function App() {
 
@@ -290,6 +291,7 @@ function App() {
           <Route path="/cancel-reasons" element={<CancelReason />} />
 
           <Route path="/couriers" element={<Courier />} />
+          <Route path="/trash/courier" element={<TrashCourierList />} />
           <Route path="/add/courier" element={<AddCourier />} />
           <Route path="/edit/courier/:id" element={<EditCourier />} />
 

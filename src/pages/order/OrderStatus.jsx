@@ -20,21 +20,29 @@ export default function OrderStatus() {
     const [editingItems, setEditingItems] = useState(null);
     const [filteredData, setFilteredData] = useState(orderStatus);
     const [form]                          = Form.useForm();
+    const [pagination, setPagination] = useState({current: 1,pageSize: 10});
+
+    const protectedIds = [7, 8, 9, 10, 13, 14];
 
     //Table Columns
     const columns = [
         {
             title: "SL",
-            key:"sl",
-            width: 10,
-            render: (_,__, index) => (
-                index + 1
-            )
+            key: "sl",
+            width: 80,
+            render: (_, __, index) => {
+                return (pagination.current - 1) * pagination.pageSize + index + 1;
+            }
         },
         {
             title: "Name",
             dataIndex: "name",
-            key: "name"
+            key: "name",
+            render: (_, record) => (
+                <Tag style={{backgroundColor: record.bg_color,color: record.text_color,border: "none",fontWeight: 500,padding: "4px 12px",borderRadius: "6px"}}>
+                    {record.name}
+                </Tag>
+            )
         },
         {
             title: "BG Color",
@@ -73,18 +81,22 @@ export default function OrderStatus() {
             title: "Action",
             key: "operation",
             width:170,
-            render: (_, record) => (
-                <Space>
-                    <Button size="small" type="primary" onClick={() => onEdit(record)}>
-                        Edit
-                    </Button>
-                    <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Button size="small" danger>
-                            Delete
+            render: (_, record) => {
+                const isDisabled = protectedIds.includes(record.id);
+
+                return (
+                    <Space>
+                        <Button size="small" type="primary" onClick={() => onEdit(record)} disabled={isDisabled}>
+                            Edit
                         </Button>
-                    </Popconfirm>
-                </Space>
-            )
+                        <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
+                            <Button size="small" disabled={isDisabled} danger>
+                                Delete
+                            </Button>
+                        </Popconfirm>
+                    </Space>
+                )
+            }
         },
     ];
 
@@ -138,6 +150,7 @@ export default function OrderStatus() {
             isMounted = false;
         }
     }, []);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -216,7 +229,20 @@ export default function OrderStatus() {
                 </Space>
             </div>
 
-            <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
+            <Table bordered loading={loading} columns={columns} dataSource={filteredData} rowKey="id"
+                pagination={{
+                    current: pagination.current,
+                    pageSize: pagination.pageSize,
+                    total: filteredData.length,
+                    showSizeChanger: true,
+                    onChange: (page, pageSize) => {
+                        setPagination({
+                            current: page,
+                            pageSize: pageSize,
+                        });
+                    },
+                }}
+            />
 
             <div>
                 <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"} confirmLoading={loading}
@@ -260,7 +286,6 @@ export default function OrderStatus() {
                     </div>
                 </Modal>
             </div>
-
         </>
     )
 }

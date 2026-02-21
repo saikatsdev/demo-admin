@@ -110,9 +110,9 @@ export default function EditCourier() {
         formData.append('height', values.height);
         formData.append('_method', "PUT");
 
-        setLoading(true);
-
         try {
+            setLoading(true);
+
             const res = await postData(`/admin/couriers/${id}`, formData);
 
             if(res && res?.success){
@@ -182,8 +182,8 @@ export default function EditCourier() {
                         </div>
 
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block>
-                                {loading ? "Updating..." : "Update"}
+                            <Button type="primary" htmlType="submit" loading={loading} block>
+                                Update
                             </Button>
                         </Form.Item>
                     </Form>

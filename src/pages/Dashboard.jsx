@@ -29,8 +29,13 @@ export default function Dashboard() {
     const [dashboardSummary, setDashboardSummary] = useState({});
     const [loading, setLoading]                   = useState(false);
 
-    const bulletin = Number(settings?.dashboard_bulletin);
-
+    const bulletin             = Number(settings?.dashboard_bulletin);
+    const statusBlock          = Number(settings?.status_block);
+    const statusGraph          = Number(settings?.status_graph);
+    const statusSourceBlock    = Number(settings?.status_and_source_block);
+    const orderDetailsBlock    = Number(settings?.order_details_block);
+    const customerSellingBlock = Number(settings?.customer_and_selling_block);
+    const orderReportBlock     = Number(settings?.order_report_block);
 
     // Method
     const getDashboardSummary = async () => {
@@ -66,17 +71,30 @@ export default function Dashboard() {
 
             {canSeeAdminWidgets ? (
                 <>
-                    <OrderStatictisCard/>
+                    {statusBlock === 1 && 
+                        <OrderStatictisCard/>
+                    }
 
-                    <OrderByStatus/>
+                    {statusGraph === 1 && 
+                        <OrderByStatus/>
+                    }
 
-                    <ChartGrid />
+                    {orderDetailsBlock === 1 &&
+                        <SummaryCard dashboardSummary={dashboardSummary}/>
+                    }
 
-                    <SummaryCard dashboardSummary={dashboardSummary}/>
+                    {statusSourceBlock === 1 && 
+                        <ChartGrid />
+                    }
+
+                    {customerSellingBlock === 1 && 
+                        <CustomerProductList/>
+                    }
         
-                    <CustomerProductList/>
+                    {orderReportBlock === 1 &&
+                        <OrderList/>
+                    }
 
-                    <OrderList/>
                 </>
             ) : (
                 <EmployeeDashboard/>

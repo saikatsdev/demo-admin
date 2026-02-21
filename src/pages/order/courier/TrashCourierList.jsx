@@ -1,17 +1,16 @@
-import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, BackwardOutlined, PlusOutlined } from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button,Popconfirm, Space, Table, Tag, message } from "antd";
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { deleteData, getDatas } from "../../../api/common/common";
+import { useEffect, useState } from 'react'
+import { deleteData, getDatas, postData } from '../../../api/common/common';
 import useTitle from "../../../hooks/useTitle";
+import { Link, useNavigate } from "react-router-dom";
 
-export default function Courier() {
+export default function TrashCourierList() {
     // Hook
-    useTitle("Delivery Man");
-
+    useTitle("All Courier List");
     // State
-    const [couriers, setCouriers]     = useState([]);
-    const [loading, setLoading]       = useState(false);
+    const [trashList, setTrashList] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
 
     // Variable
@@ -71,10 +70,10 @@ export default function Courier() {
             width: 160,
             render: (_, record) => (
                 <Space>
-                    <Button size="small" type="primary" onClick={() => onEdit(record)}>
-                        Edit
+                    <Button size="small" type="primary" onClick={() => restoreData(record.id)}>
+                        Restore
                     </Button>
-                    <Popconfirm title="Delete Courier?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
+                    <Popconfirm title="Permanent Delete Courier?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
                         <Button size="small" danger>
                             Delete
                         </Button>
@@ -84,49 +83,51 @@ export default function Courier() {
         }
     ];
 
-    const openCreate = () => {
-        navigate("/add/courier");
-    }
+    const fetchedTrashedList = async () => {
+        try {
+            setLoading(true);
 
-    const onEdit = (record) => {
-        navigate(`/edit/courier/${record.id}`);
-    }
+            const res = await getDatas('/admin/couriers/trash');
 
-    const openTrash = () => {
-        navigate('/trash/courier');
-    }
+            if(res && res?.success){
+                setTrashList(res?.result?.data || []);
+            }
 
-    const onDelete = async (id) => {
-        const res = await deleteData(`/admin/couriers/${id}`);
-
-        if(res?.success){
-            const refresh = await getDatas("/admin/couriers");
-            setCouriers(refresh?.result?.data || []);
-
-            messageApi.open({
-                type: "success",
-                content: res.msg,
-            });
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setLoading(false);
         }
     }
 
     useEffect(() => {
-        let isMounted = true;
-
-        const fetchCouriers = async () => {
-            setLoading(false);
-            const res = await getDatas("/admin/couriers");
-            const list = res?.result?.data;
-
-            if(isMounted){
-                setCouriers(list);
-            }
-
-            setLoading(false);
-        }
-
-        fetchCouriers();
+        fetchedTrashedList();
     }, []);
+
+    const onDelete = async (id) => {
+        const res = await deleteData(`/admin/couriers/${id}/permanent-delete`);
+
+        if(res && res?.success){
+            messageApi.open({
+                type: "success",
+                content: res.msg,
+            });
+
+            fetchedTrashedList();
+        }
+    }
+
+    const restoreData = async (id) => {
+        const res = await postData(`/admin/couriers/${id}/restore`, {_method: "PUT"});
+
+        if(res && res?.success){
+            messageApi.open({
+                type: "success",
+                content: res.msg,
+            });
+            fetchedTrashedList();
+        }
+    }
 
     return (
         <>
@@ -148,13 +149,12 @@ export default function Courier() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }}/>
                 <Space>
-                    <Button size="small" icon={<DeleteOutlined />} onClick={openTrash}>Trash</Button>
-                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
+                    <Button size="small" icon={<BackwardOutlined />} onClick={() => navigate('/couriers')}>Back To List</Button>
                     <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
                 </Space>
             </div>
 
-            <Table loading={loading} columns={columns} dataSource={couriers} />
+            <Table loading={loading} columns={columns} dataSource={trashList} />
         </>
-    );
+    )
 }

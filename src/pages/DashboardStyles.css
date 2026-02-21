@@ -130,7 +130,6 @@
 }
 
 .summary-card-top .summary-card h3 {
-  margin: 0;
   font-size: 17px;
   font-weight: 700;
   color: #111827;
@@ -304,7 +303,9 @@
 
 .modern-card {
   border-radius: 10px !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   background-color: #fff;
   border: none !important;
 }
@@ -637,7 +638,6 @@
 .chart4 .chart-container:hover {
   transform: translateY(-3px);
 }
-
 
 .chart4 .chart-header h4 {
   font-size: 18px;
