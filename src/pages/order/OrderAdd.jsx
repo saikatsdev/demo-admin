@@ -315,9 +315,9 @@ export default function OrderAdd() {
                         mrp        : selectedVariation.mrp,
                         offer_price: selectedVariation.offer_price,
                         discount   : selectedVariation.discount,
-                        variation_1: selectedVariation?.attribute_value1,
-                        variation_2: selectedVariation?.attribute_value2,
-                        variation_3: selectedVariation?.attribute_value3,
+                        variation_1: selectedVariation?.attribute_value_1,
+                        variation_2: selectedVariation?.attribute_value_1,
+                        variation_3: selectedVariation?.attribute_value_1,
                         quantity   : quantity,
                         variations : product.variations,
                     }
@@ -852,16 +852,16 @@ export default function OrderAdd() {
                                                     {productInfo.variations.map((variation, idx) => {
                                                         const displayText = [];
 
-                                                        if (variation?.attribute_value1?.attribute_id) {
-                                                            displayText.push(`${attributeName(variation.attribute_value1.attribute_id)}: ${variation.attribute_value1.value}`)
+                                                        if (variation?.attribute_value_1?.attribute_id) {
+                                                            displayText.push(`${attributeName(variation.attribute_value_1.attribute_id)}: ${variation.attribute_value_1.value}`)
                                                         }
 
-                                                        if (variation?.attribute_value2?.attribute_id) {
-                                                            displayText.push(`${attributeName(variation.attribute_value2.attribute_id)}: ${variation.attribute_value2.value}`)
+                                                        if (variation?.attribute_value_2?.attribute_id) {
+                                                            displayText.push(`${attributeName(variation.attribute_value_2.attribute_id)}: ${variation.attribute_value_2.value}`)
                                                         }
 
-                                                        if (variation?.attribute_value3?.attribute_id) {
-                                                            displayText.push(`${attributeName(variation.attribute_value3.attribute_id)}: ${variation.attribute_value3.value}`)
+                                                        if (variation?.attribute_value_3?.attribute_id) {
+                                                            displayText.push(`${attributeName(variation.attribute_value_3.attribute_id)}: ${variation.attribute_value_3.value}`)
                                                         }
                                                         
                                                         return (
