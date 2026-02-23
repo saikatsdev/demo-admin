@@ -1,10 +1,10 @@
 
 
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, message, Modal, Popconfirm, Select, Space, Table, Tag,ColorPicker } from "antd";
+import { Input as AntInput, Breadcrumb, Button, Form, message, Modal, Select, Space, Table, Tag,ColorPicker } from "antd";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { deleteData, getDatas, postData } from "../../api/common/common";
+import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 
 export default function OrderStatus() {
@@ -89,11 +89,6 @@ export default function OrderStatus() {
                         <Button size="small" type="primary" onClick={() => onEdit(record)} disabled={isDisabled}>
                             Edit
                         </Button>
-                        <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                            <Button size="small" disabled={isDisabled} danger>
-                                Delete
-                            </Button>
-                        </Popconfirm>
                     </Space>
                 )
             }
@@ -188,21 +183,6 @@ export default function OrderStatus() {
             setLoading(false);
             setIsModalOpen(false);
         }, 500);
-    }
-
-    const onDelete = async (id) => {
-        const res = await deleteData(`/admin/statuses/${id}`);
-
-        if(res?.success){
-            const refreshed = await getDatas("/admin/statuses");
-
-            setItems(refreshed?.result?.data);
-
-            messageApi.open({
-              type: "success",
-              content: res.msg,
-            });
-        }
     }
 
     return (

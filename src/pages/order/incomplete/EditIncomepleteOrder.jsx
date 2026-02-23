@@ -128,8 +128,10 @@ export default function EditIncomepleteOrder() {
 
         const delayDebounce = setTimeout(async () => {
             try {
-                const res = await getDatas(`/admin/products/list?search_key=${query}`);
-                setResults(res.result || []);
+                const res = await getDatas('/admin/products/search', {search_key : query});
+                if(res && res?.success){
+                    setResults(res.result || []);
+                }
             } catch (err) {
                 console.error(err);
             }
@@ -146,6 +148,8 @@ export default function EditIncomepleteOrder() {
             const res = await getDatas(`/admin/incomplete-orders/${id}`);
             const list = res?.result || [];
 
+            console.log(list);
+
             if(isMounted){
                 setInCompleteOrders(list);
                 form.setFieldsValue({
@@ -154,7 +158,7 @@ export default function EditIncomepleteOrder() {
                     ip_address  : list.ip_address || "",
                     address     : list.address || "",
                     created_at  : list.created_at || "",
-                    status      : list.status?.id || undefined
+                    status      : list.status.id || undefined
                 });
 
                 setLoading(false);
@@ -260,9 +264,9 @@ export default function EditIncomepleteOrder() {
 
                                 <Form.Item name="status" label="Status" rules={[{ required: true }]}>
                                     <Select placeholder="Select Status">
-                                        <Select.Option value="approved">Approved</Select.Option>
-                                        <Select.Option value="pending">Pending</Select.Option>
-                                        <Select.Option value="canceled">Canceled</Select.Option>
+                                        <Select.Option value={3}>Approved</Select.Option>
+                                        <Select.Option value={1}>Pending</Select.Option>
+                                        <Select.Option value={8}>Canceled</Select.Option>
                                     </Select>
                                 </Form.Item>
                             </div>

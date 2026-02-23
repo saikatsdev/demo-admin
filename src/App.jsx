@@ -153,6 +153,7 @@ import TermsCondition from "./pages/cms/terms&condition/TermsCondition";
 import AddTermsCondition from "./pages/cms/terms&condition/AddTermsCondition";
 import EditTermsCondition from "./pages/cms/terms&condition/EditTermsCondition";
 import TrashCourierList from "./pages/order/courier/TrashCourierList";
+import TrashPaymentGatewayList from "./pages/order/payment_gateway/TrashPaymentGatewayList";
 
 function App() {
 
@@ -280,6 +281,7 @@ function App() {
           <Route path="/free/delivery" element={<FreeDelivery />} />
 
           <Route path="/payment-gateways" element={<PaymentGateway />} />
+          <Route path="/payment/gateway/trash" element={<TrashPaymentGatewayList />} />
           <Route path="/add/payment/gateway" element={<AddPaymentGateway />} />
           <Route path="/edit/payment/gateway/:id" element={<EditPaymentGateway />} />
 
