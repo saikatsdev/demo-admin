@@ -94,6 +94,12 @@ export default function ProductEdit() {
     const [reviewImagePreview, setReviewImagePreview]               = useState([]);
     const [deletedGalleryIds, setDeletedGalleryIds]                 = useState([]);
     const [deletedReviewIds, setDeletedReviewIds]                   = useState([]);
+    const [thumbnailWidth, setThumbnailWidth]                       = useState(null);
+    const [thumbnailHeight, setThumbnailHeight]                     = useState(null);
+    const [galleryWidths, setGalleryWidths]                         = useState([]);
+    const [galleryHeights, setGalleryHeights]                       = useState([]);
+    const [reviewWidths, setReviewWidths]                           = useState([]);
+    const [reviewHeights, setReviewHeights]                         = useState([]);
 
     const galleryProcessedFiles = useRef(new Set());
     const reviewProcessedFiles  = useRef(new Set());
@@ -416,6 +422,19 @@ export default function ProductEdit() {
         }
 
         setThumbnail(file);
+
+        const img = new window.Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        img.onload = function () {
+            setThumbnailWidth(img.width);
+            setThumbnailHeight(img.height);
+
+            URL.revokeObjectURL(objectUrl);
+        };
+
+        img.src = objectUrl;
+
         const reader = new FileReader();
         reader.onload = (e) => {
             setThumbnailPreview(e.target.result);
@@ -433,7 +452,9 @@ export default function ProductEdit() {
         });
 
         if (unprocessedFiles.length > 0) {
-            const validImages = unprocessedFiles.filter((file) =>/\.(jpe?g|png|webp|gif)$/i.test(file.name));
+            const validImages = unprocessedFiles.filter((file) =>
+                /\.(jpe?g|png|webp|gif)$/i.test(file.name)
+            );
 
             if (validImages.length !== unprocessedFiles.length) {
                 message.error("Some files are not valid image formats");
@@ -444,6 +465,17 @@ export default function ProductEdit() {
                 galleryProcessedFiles.current.add(fileKey);
 
                 setImages((prev) => [...prev, file.originFileObj]);
+
+                const img = new window.Image();
+                const objectUrl = URL.createObjectURL(file.originFileObj);
+
+                img.onload = function () {
+                    setGalleryWidths((prev) => [...prev, img.width]);
+                    setGalleryHeights((prev) => [...prev, img.height]);
+                    URL.revokeObjectURL(objectUrl);
+                };
+
+                img.src = objectUrl;
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -458,14 +490,15 @@ export default function ProductEdit() {
         const { fileList } = info;
         const newFiles = fileList.filter((file) => file.originFileObj);
 
-        // Only process files that haven't been processed before
         const unprocessedFiles = newFiles.filter((file) => {
             const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
             return !reviewProcessedFiles.current.has(fileKey);
         });
 
         if (unprocessedFiles.length > 0) {
-            const validImages = unprocessedFiles.filter((file) => /\.(jpe?g|png|webp|gif)$/i.test(file.name));
+            const validImages = unprocessedFiles.filter((file) =>
+                /\.(jpe?g|png|webp|gif)$/i.test(file.name)
+            );
 
             if (validImages.length !== unprocessedFiles.length) {
                 message.error("Some files are not valid image formats");
@@ -476,6 +509,17 @@ export default function ProductEdit() {
                 reviewProcessedFiles.current.add(fileKey);
 
                 setReviewImages((prev) => [...prev, file.originFileObj]);
+
+                const img = new window.Image();
+                const objectUrl = URL.createObjectURL(file.originFileObj);
+
+                img.onload = function () {
+                    setReviewWidths((prev) => [...prev, img.width]);
+                    setReviewHeights((prev) => [...prev, img.height]);
+                    URL.revokeObjectURL(objectUrl);
+                };
+
+                img.src = objectUrl;
 
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -783,9 +827,23 @@ export default function ProductEdit() {
             formData.append("video_url", videoUrl || "");
             formData.append("_method", "put");
 
-            if (thumbnail) formData.append("image", thumbnail);
-            images.forEach((img) => formData.append("gallery_images[]", img));
-            reviewImages.forEach((img) => formData.append("review_images[]", img));
+            if (thumbnail) {
+                formData.append("image", thumbnail);
+                formData.append("width", thumbnailWidth || "1000");
+                formData.append("height", thumbnailHeight || "1000");
+            }
+
+            images.forEach((image, index) => {
+                formData.append("gallery_images[]", image);
+                formData.append("gallery_widths[]", galleryWidths[index] || "");
+                formData.append("gallery_heights[]", galleryHeights[index] || "");
+            });
+
+            reviewImages.forEach((reviewImage, index) => {
+                formData.append("review_images[]", reviewImage);
+                formData.append("review_widths[]", reviewWidths[index] || "");
+                formData.append("review_heights[]", reviewHeights[index] || "");
+            });
 
             const uniqueAttributes = [...new Set(attributeValue.flat().filter((x) => x?.attribute_id).map((x) => x.attribute_id)),];
 
