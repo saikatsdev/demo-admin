@@ -601,8 +601,8 @@ export default function ProductAdd() {
             formData.append("meta_keywords", metaKeywords || "");
             formData.append("meta_description", metaDescription || "");
             formData.append("sku", sku || "");
-            formData.append("width", width || "1000");
-            formData.append("height", height || "1000");
+            // formData.append("width", width || "1000");
+            // formData.append("height", height || "1000");
             formData.append("video_url", videoUrl || "");
 
             if (thumbnail) {
