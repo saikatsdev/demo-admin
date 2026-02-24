@@ -55,7 +55,7 @@ export default function CustomerProductList() {
 
         if (response.success) {
             setTopSellingProduct(
-                response.result.map((item, index) => ({
+                response.result.data.map((item, index) => ({
                     key: index + 1,
                     id: item.id,
                     name: item.name,
@@ -108,7 +108,7 @@ export default function CustomerProductList() {
                                     <img src={product.image} alt={product.name} className="product-image"/>
 
                                     <div className="product-info">
-                                        <h4>{product.name}</h4>
+                                        <h6>{product.name}</h6>
                                         <p>৳ {product.price}</p>
                                         <p>Stock: {product.stock}</p>
                                         <p>Orders: {product.orderCount}</p>

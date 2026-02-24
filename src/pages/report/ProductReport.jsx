@@ -97,44 +97,44 @@ export default function ProductReport() {
         },
     ];
 
-    useEffect(() => {
-        setPagination((prev) => ({ ...prev, current: 1 }));
-    }, [dateFilter, dateRange]);
-
     const getOrderReport = async () => {
 
         let params = {};
 
-        if (dateFilter && dateFilter !== "custom") {
+        if (dateFilter !== "custom") {
             params.filter = dateFilter;
-        } else if (dateFilter === "custom" && dateRange[0] !== null && dateRange[1] !== null) {
-            params.start_date = dateRange[0].format("YYYY-MM-DD");
-            params.end_date = dateRange[1].format("YYYY-MM-DD");
+        } else {
+            if (!dateRange[0] || !dateRange[1]) return;
+            params.from_date = dateRange[0].format("YYYY-MM-DD");
+            params.to_date = dateRange[1].format("YYYY-MM-DD");
         }
 
         params.page = pagination.current;
         params.limit = pagination.pageSize;
 
-        const query = new URLSearchParams(params).toString();
-
         try {
             setLoading(true);
+
+            const query = new URLSearchParams(params).toString();
             const res = await getDatas(`/admin/order/reports/by-selling?${query}`);
 
-            if(res && res?.success){
-                setOrders(res?.result);
+            if (res?.success) {
+                const page = res.result;
 
-                setPagination((prev) => ({
+                setOrders(page.data);
+
+                setPagination(prev => ({
                     ...prev,
-                    total: res?.result?.length || 0,
+                    total: page.total,
+                    current: page.current_page,
+                    pageSize: page.per_page
                 }));
             }
-        } catch (error) {
-            console.log(error)
-        }finally{
+
+        } finally {
             setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
         getOrderReport();
@@ -174,7 +174,17 @@ export default function ProductReport() {
                         <Input.Search placeholder="Search by phone / category ..." allowClear value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} style={{ width: 300 }}/>
 
                         <Space wrap>
-                            <Select value={dateFilter} style={{ width: 150 }} onChange={(val) => setDateFilter(val)}>
+                            <Select value={dateFilter} style={{ width: 150 }}
+                                onChange={(val) => {
+                                    setDateFilter(val);
+
+                                    setPagination(prev => ({...prev,current: 1}));
+
+                                    if (val !== "custom") {
+                                        setDateRange([null, null]);
+                                    }
+                                }}
+                            >
                                 <Option value="today">Today</Option>
                                 <Option value="yesterday">Yesterday</Option>
                                 <Option value="last7days">Last 7 Days</Option>
@@ -185,7 +195,16 @@ export default function ProductReport() {
                             </Select>
 
                             {dateFilter === "custom" && (
-                                <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear/>
+                                <RangePicker value={dateRange} allowClear
+                                    onChange={(dates) => {
+                                        setDateRange(dates);
+
+                                        setPagination(prev => ({
+                                            ...prev,
+                                            current: 1
+                                        }));
+                                    }}
+                                />
                             )}
                         </Space>
                     </Space>
@@ -201,18 +220,21 @@ export default function ProductReport() {
                     </Space>
                 </Space>
 
-                {/* ===== Table ===== */}
                 <Table
                     rowKey="id"
                     columns={columns}
-                    dataSource={filteredOrders}
+                    dataSource={orders}
                     loading={loading}
                     pagination={{
                         current: pagination.current,
                         pageSize: pagination.pageSize,
                         total: pagination.total,
                         onChange: (page, pageSize) => {
-                            setPagination((prev) => ({ ...prev, current: page, pageSize }));
+                            setPagination(prev => ({
+                                ...prev,
+                                current: page,
+                                pageSize
+                            }));
                         },
                     }}
                 />
