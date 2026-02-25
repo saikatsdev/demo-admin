@@ -1400,13 +1400,13 @@ export default function ProductEdit() {
                                 </Space>
 
                                 <Row gutter={12} style={{ marginTop: 12 }}>
-                                    <Col xs={24} lg={8}>
+                                    {/* <Col xs={24} lg={8}>
                                         <Form layout="vertical">
                                             <Form.Item label="Buy Price" required>
                                                 <Input placeholder="Enter Buy Price" value={buyPrice} onChange={(e) => setBuyPrice(e.target.value)}/>
                                             </Form.Item>
                                         </Form>
-                                    </Col>
+                                    </Col> */}
 
                                     <Col xs={24} lg={8}>
                                         <Form layout="vertical">

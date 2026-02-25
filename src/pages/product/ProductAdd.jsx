@@ -109,16 +109,16 @@ export default function ProductAdd() {
 
     useEffect(() => {
         const init = async () => {
-          const catRes = await getDatas("/admin/categories");
+          const catRes = await getDatas("/admin/categories/list");
           if (catRes?.success) setCategories(catRes.result);
     
-          const brandRes = await getDatas("/admin/brands");
+          const brandRes = await getDatas("/admin/brands/list");
           if (brandRes?.success) setBrands(brandRes.result);
     
-          const typeRes = await getDatas("/admin/product-types");
+          const typeRes = await getDatas("/admin/product-types/list");
           if (typeRes?.success) setProductTypes(typeRes.result);
     
-          const variationRes = await getDatas("/admin/attributes");
+          const variationRes = await getDatas("/admin/attributes/list");
           if (variationRes?.success) setAllVariations(variationRes.result);
         };
         init();
@@ -143,8 +143,6 @@ export default function ProductAdd() {
 
                 if (Array.isArray(res.result)) {
                     categories = res.result;
-                } else if (res.result && typeof res.result === "object" && res.result.id) {
-                    categories = [res.result];
                 }
 
                 setSubCategories(categories);
@@ -168,17 +166,13 @@ export default function ProductAdd() {
     
         setSubSubCategoryLoading(true);
         try {
-            const res = await getDatas("/admin/sub-sub-categories", {sub_category_id:value});
+            const res = await getDatas("/admin/sub-sub-categories/list", {sub_category_id:value});
         
             if (res?.success && res?.result) {
                 let categories = [];
         
                 if (Array.isArray(res.result)) {
                     categories = res.result;
-                }else if (res.result.data && Array.isArray(res.result.data)) {
-                    categories = res.result.data;
-                }else if (typeof res.result === "object" && res.result.id) {
-                    categories = [res.result];
                 }
         
                 setSubSubCategories(categories);
@@ -602,7 +596,7 @@ export default function ProductAdd() {
             formData.append("meta_description", metaDescription || "");
             formData.append("sku", sku || "");
             // formData.append("width", width || "1000");
-            // formData.append("height", height || "1000");
+            // formData.append("height", height || "1000"); 
             formData.append("video_url", videoUrl || "");
 
             if (thumbnail) {
@@ -794,7 +788,7 @@ export default function ProductAdd() {
                 
                                     <Col span={8}>
                                         <Form.Item label="Category" validateStatus={errors?.category_id ? "error" : ""} help={errors?.category_id?.[0]} required>
-                                            <Select mode="multiple" placeholder="Categories" value={categoryId || undefined} loading={categories === null} onChange={handleCategoryChange} options={(categories?.data || []).map((c) => ({label: c.name,value: c.id,}))}/>
+                                            <Select mode="multiple" placeholder="Categories" value={categoryId || undefined} loading={categories === null} onChange={handleCategoryChange} options={(categories || []).map((c) => ({label: c.name,value: c.id,}))}/>
                                         </Form.Item>
                                     </Col>
 
@@ -817,7 +811,7 @@ export default function ProductAdd() {
 
                                     <Col span={8}>
                                         <Form.Item label="Brand">
-                                            <Select placeholder="Brand" value={brandId || undefined} onChange={setBrandId} options={(brands?.data || []).map((b) => ({label: b.name,value: b.id,}))}/>
+                                            <Select placeholder="Brand" value={brandId || undefined} onChange={setBrandId} options={(brands|| []).map((b) => ({label: b.name,value: b.id,}))}/>
                                         </Form.Item>
                                     </Col>
 
@@ -829,7 +823,7 @@ export default function ProductAdd() {
 
                                     <Col span={8}>
                                         <Form.Item label="Product Type">
-                                            <Select placeholder="Select" value={productTypeId || undefined} onChange={setProductTypeId} options={(productTypes?.data || []).map((t) => ({label: t.name,value: t.   id,}))}/>
+                                            <Select placeholder="Select" value={productTypeId || undefined} onChange={setProductTypeId} options={(productTypes || []).map((t) => ({label: t.name,value: t.   id,}))}/>
                                         </Form.Item>
                                     </Col>
                 
@@ -1180,13 +1174,13 @@ export default function ProductAdd() {
                                     </Space>
 
                                     <Row gutter={12} style={{ marginTop: 12 }}>
-                                        <Col xs={24} lg={8}>
+                                        {/* <Col xs={24} lg={8}>
                                             <Form layout="vertical">
                                                 <Form.Item label="Buy Price" validateStatus={errors?.variations ? "error" : ""} help={errors?.variations?.[0]}>
                                                     <Input placeholder="Enter Buy Price" value={buyPrice} onChange={(e) => setBuyPrice(e.target.value)}/>
                                                 </Form.Item>
                                             </Form>
-                                        </Col>
+                                        </Col> */}
 
                                         <Col xs={24} lg={8}>
                                             <Form layout="vertical">

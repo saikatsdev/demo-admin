@@ -320,19 +320,13 @@ export default function Product() {
             render: (_, record) => (
                 <div style={{overflow: "hidden",whiteSpace: "nowrap",textOverflow: "ellipsis"}}>
                     <p style={{ margin: 0, fontWeight: 700 }}>
-                        Buy Price:{" "}
-                        <span style={{ fontWeight: 300 }}>{record.buy_price}</span>
-                    </p>
-                    <p style={{ margin: 0, fontWeight: 700 }}>
-                        MRP: <span style={{ fontWeight: 300 }}>{record.mrp}</span>
+                        Regular Price: <span style={{ fontWeight: 800 }}>{record.mrp}</span>
                     </p>
                     <p style={{ margin: 0, fontWeight: 700 }}>
                         Offer Price:{" "}
-                        <span style={{ fontWeight: 300 }}>{record.offer_price}</span>
-                    </p>
-                    <p style={{ margin: 0, fontWeight: 700 }}>
-                        Sell Price:{" "}
-                        <span style={{ fontWeight: 300 }}>{record.sell_price}</span>
+                        <span style={{ fontWeight: 800, color: "#FFA500" /* orange highlight */ }}>
+                            {record.offer_price}
+                        </span>
                     </p>
                 </div>
             ),
