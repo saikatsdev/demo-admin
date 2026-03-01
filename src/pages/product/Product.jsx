@@ -73,6 +73,7 @@ export default function Product() {
     const [settingsData, setSettingsData]           = useState(null);
     const [isModalOpen, setIsModalOpen]             = useState(false);
     const [selectedProduct, setSelectedProduct]     = useState(null);
+	const [copyLoadingId, setCopyLoadingId]         = useState(null);
 
     // Debounced search query
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -119,7 +120,7 @@ export default function Product() {
             key: "image",
             width: 110,
             render: (src, record) => (
-                <img src={src} alt={record.name} style={{width: "95px",height: "95px",objectFit: "cover",borderRadius: "4px",cursor: "pointer",}} onClick={() => handleImagePreview(src)}/>
+                <img src={src} alt={record.name} style={{width: "95px",height: "95px",objectFit: "fill",borderRadius: "4px",cursor: "pointer",}} onClick={() => handleImagePreview(src)}/>
             ),
         },
         {
@@ -261,7 +262,7 @@ export default function Product() {
                                                 </p>
                                                 <p style={{ margin: 0, fontWeight: 700 }}>
                                                     Total Sell Qty:{" "}
-                                                    <span style={{ fontWeight: 300 }}>
+                                                    <span style={{ fontWeight: 800, color: "green" }}>
                                                         {variation.total_sell_qty}
                                                     </span>
                                                 </p>
@@ -339,19 +340,19 @@ export default function Product() {
                 <div style={{overflow: "hidden",whiteSpace: "nowrap",textOverflow: "ellipsis"}}>
                     <p style={{ margin: 0, fontWeight: 700 }}>
                         Total Current Stock:{" "}
-                        <span style={{ fontWeight: 300 }}>
+                        <span style={{ fontWeight: 800, color:"darkred" }}>
                             {record.current_stock_range?.total_current_stock}
                         </span>
                     </p>
                     <p style={{ margin: 0, fontWeight: 700 }}>
                         Total Purchase Qty:{" "}
-                        <span style={{ fontWeight: 300 }}>
+                        <span style={{ fontWeight: 800, color:"blue" }}>
                             {record.current_stock_range?.total_purchase_qty}
                         </span>
                     </p>
                     <p style={{ margin: 0, fontWeight: 700 }}>
                         Total Sell Qty:{" "}
-                        <span style={{ fontWeight: 300 }}>
+                        <span style={{ fontWeight: 800, color:"green" }}>
                             {record?.total_sell_qty}
                         </span>
                     </p>
@@ -377,7 +378,7 @@ export default function Product() {
         
                     {productCreate && (
                         <Tooltip title="Product Duplicate">
-                            <Button size="small" icon={<CopyOutlined />} onClick={() => handleCopy(record.id)}/>
+                            <Button size="small" icon={<CopyOutlined />} onClick={() => handleCopy(record.id)} loading={copyLoadingId === record.id}/>
                         </Tooltip>
                     )}
 
@@ -400,7 +401,7 @@ export default function Product() {
             });
         } catch {
             messageApi.open({
-                type: "success",
+                type: "error",
                 content: "Copy failed",
             });
         }
@@ -560,6 +561,8 @@ export default function Product() {
     const handleCopy = async (id) => {
         if (productCreate) {
             try {
+                setCopyLoadingId(id);
+
                 const res = await postData(`/admin/products/copy/${id}`);
                 if (res?.success) {
                     
@@ -567,11 +570,13 @@ export default function Product() {
                         type: "success",
                         content: "Product copied successfully",
                     });
-                    
+
                     window.location.reload();
                 }
             } catch {
                 message.error("Error copying product");
+            }finally{
+                setCopyLoadingId(null);
             }
         } else {
             message.error("You don't have permission to copy Product");
@@ -1600,7 +1605,7 @@ export default function Product() {
 
                                                 {productCreate && (
                                                     <Tooltip title="Product Copy">
-                                                        <Button size="small" icon={<CopyOutlined />} onClick={() => handleCopy(item.id)}/>
+                                                        <Button size="small" icon={<CopyOutlined />} onClick={() => handleCopy(item.id)} loading={copyLoadingId === item.id}/>
                                                     </Tooltip>
                                                 )}
 

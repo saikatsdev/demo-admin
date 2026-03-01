@@ -42,8 +42,6 @@ export default function ProductAdd() {
     const [metaTitle, setMetaTitle]                             = useState("");
     const [metaKeywords, setMetaKeywords]                       = useState("");
     const [metaDescription, setMetaDescription]                 = useState("");
-    const [width, setWidth]                                     = useState("1000");
-    const [height, setHeight]                                   = useState("1000");
     const [isSubCategoryShow, setIsSubCategoryShow]             = useState(false);
     const [isSubSubCategoryShow, setIsSubSubCategoryShow]       = useState(false);
     const [buyPrice, setBuyPrice]                               = useState("");
@@ -76,10 +74,8 @@ export default function ProductAdd() {
     const [multiStock, setMultiStock]                           = useState("");
     const [multiIsDefault, setMultiIsDefault]                   = useState(0);
     const [imagePreview, setImagePreview]                       = useState([]);
-    const [reviewImagePreview, setReviewImagePreview]           = useState([]);
     const [thumbnailPreview, setThumbnailPreview]               = useState("");
     const [images, setImages]                                   = useState([]);
-    const [reviewImages, setReviewImages]                       = useState([]);
     const [thumbnail, setThumbnail]                             = useState(null);
     const [errors, setErrors]                                   = useState({});
     const [loading, setLoading]                                 = useState(false);
@@ -89,13 +85,10 @@ export default function ProductAdd() {
     const [thumbnailHeight, setThumbnailHeight]                 = useState(null);
     const [galleryWidths, setGalleryWidths]                     = useState([]);
     const [galleryHeights, setGalleryHeights]                   = useState([]);
-    const [reviewWidths, setReviewWidths]                       = useState([]);
-    const [reviewHeights, setReviewHeights]                     = useState([]);
     
     // Ref:
     const debounceRef           = useRef(null);
     const galleryProcessedFiles = useRef(new Set());
-    const reviewProcessedFiles  = useRef(new Set());
 
     useEffect(() => {
         if (!settings) return;
@@ -262,50 +255,6 @@ export default function ProductAdd() {
         }
     };
 
-    const handleReviewImageFileChange = (info) => {
-        const { fileList } = info;
-        const newFiles = fileList.filter((file) => file.originFileObj);
-
-        const unprocessedFiles = newFiles.filter((file) => {
-            const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
-            return !reviewProcessedFiles.current.has(fileKey);
-        });
-
-        if (unprocessedFiles.length > 0) {
-            const validImages = unprocessedFiles.filter((file) =>
-                /\.(jpe?g|png|webp|gif)$/i.test(file.name)
-            );
-
-            if (validImages.length !== unprocessedFiles.length) {
-                message.error("Some files are not valid image formats");
-            }
-
-            validImages.forEach((file) => {
-                const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
-                reviewProcessedFiles.current.add(fileKey);
-
-                setReviewImages((prev) => [...prev, file.originFileObj]);
-
-                const img = new window.Image();
-                const objectUrl = URL.createObjectURL(file.originFileObj);
-
-                img.onload = function () {
-                    setReviewWidths((prev) => [...prev, img.width]);
-                    setReviewHeights((prev) => [...prev, img.height]);
-                    URL.revokeObjectURL(objectUrl);
-                };
-
-                img.src = objectUrl;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    setReviewImagePreview((prev) => [...prev, e.target.result]);
-                };
-                reader.readAsDataURL(file.originFileObj);
-            });
-        }
-    };
-
     const deleteImg = (index) => {
         setImagePreview((prev) => {
         const newPreview = prev.filter((_, i) => i !== index);
@@ -315,17 +264,6 @@ export default function ProductAdd() {
             return newPreview;
         });
         setImages((prev) => prev.filter((_, i) => i !== index));
-    };
-
-    const deleteReviewImg = (index) => {
-        setReviewImagePreview((prev) => {
-            const newPreview = prev.filter((_, i) => i !== index);
-            if (newPreview.length === 0) {
-                reviewProcessedFiles.current.clear();
-            }
-            return newPreview;
-        });
-        setReviewImages((prev) => prev.filter((_, i) => i !== index));
     };
 
     const clearThumbnail = () => {
@@ -595,8 +533,6 @@ export default function ProductAdd() {
             formData.append("meta_keywords", metaKeywords || "");
             formData.append("meta_description", metaDescription || "");
             formData.append("sku", sku || "");
-            // formData.append("width", width || "1000");
-            // formData.append("height", height || "1000"); 
             formData.append("video_url", videoUrl || "");
 
             if (thumbnail) {
@@ -609,12 +545,6 @@ export default function ProductAdd() {
                 formData.append("gallery_images[]", image);
                 formData.append("gallery_widths[]", galleryWidths[index] || "");
                 formData.append("gallery_heights[]", galleryHeights[index] || "");
-            });
-
-            reviewImages.forEach((reviewImage, index) => {
-                formData.append("review_images[]", reviewImage);
-                formData.append("review_widths[]", reviewWidths[index] || "");
-                formData.append("review_heights[]", reviewHeights[index] || "");
             });
 
             const uniqueAttributes = [...new Set(attributeValue.flat().filter((x) => x?.attribute_id).map((x) => x.attribute_id)),];
@@ -884,22 +814,6 @@ export default function ProductAdd() {
                             <Space direction="vertical" size={16} style={{ width: "100%" }}>
                                 <div>
                                     <Text strong style={{ display: "block", marginBottom: 8 }}>
-                                        Image Width & Height
-                                    </Text>
-
-                                    <Row gutter={8}>
-                                        <Col span={12}>
-                                            <Input placeholder="Width" value={width} onChange={(e) => setWidth(e.target.value)} style={{ width: "100%" }}/>
-                                        </Col>
-
-                                        <Col span={12}>
-                                            <Input placeholder="Height" value={height} onChange={(e) => setHeight(e.target.value)} style={{ width: "100%" }}/>
-                                        </Col>
-                                    </Row>
-                                </div>
-                
-                                <div>
-                                    <Text strong style={{ display: "block", marginBottom: 8 }}>
                                         Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
                                     </Text>
 
@@ -955,43 +869,7 @@ export default function ProductAdd() {
                                         </div>
                                     )}
                                 </div>
-                
-                                <div>
-                                    <Text strong style={{ display: "block", marginBottom: 8 }}>
-                                        Review Images
-                                    </Text>
-
-                                    <Upload multiple showUploadList={false} beforeUpload={() => false} onChange={handleReviewImageFileChange} accept="image/*">
-                                        <Button type="dashed" style={{ width: "100%" }}>
-                                            Choose Files
-                                        </Button>
-                                    </Upload>
-
-                                    {reviewImagePreview.length > 0 && (
-                                        <div style={{marginTop: 12,display: "flex",flexWrap: "wrap",gap: 8,}}>
-                                            {reviewImagePreview.map((image, index) => (
-                                                <div key={index} style={{position: "relative",display: "inline-block",}}>
-                                                    <Image src={image} alt={`Review ${index + 1}`} style={{width: 80,height: 80, objectFit: "fill", borderRadius: 8,}}/>
-
-                                                    <Button type="text" danger icon={<DeleteOutlined />} onClick={() => deleteReviewImg(index)}
-                                                        style={{position: "absolute",top: -8,right: -8,background: "#ff4d4f",color: "white",borderRadius: "50%",width: 20,height: 20,minWidth: 20,display: "flex",alignItems: "center",justifyContent: "center",fontSize: 10,}}
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
                             </Space>
-                        </Card>
-
-                        <Divider />
-
-                        <Card title="Cross Sell Products" bordered>
-                            <Form layout="vertical">
-                                <Form.Item label="Search Cross Sell Product">
-                                <Input placeholder="Search Your Product" />
-                                </Form.Item>
-                            </Form>
                         </Card>
                     </Col>
                 </Row>
@@ -1174,18 +1052,18 @@ export default function ProductAdd() {
                                     </Space>
 
                                     <Row gutter={12} style={{ marginTop: 12 }}>
-                                        {/* <Col xs={24} lg={8}>
-                                            <Form layout="vertical">
-                                                <Form.Item label="Buy Price" validateStatus={errors?.variations ? "error" : ""} help={errors?.variations?.[0]}>
-                                                    <Input placeholder="Enter Buy Price" value={buyPrice} onChange={(e) => setBuyPrice(e.target.value)}/>
-                                                </Form.Item>
-                                            </Form>
-                                        </Col> */}
-
                                         <Col xs={24} lg={8}>
                                             <Form layout="vertical">
                                                 <Form.Item label="Regular Price" required>
-                                                    <Input placeholder="Enter Regular Price" value={regularPrice} onChange={(e) => setRegularPrice(e.target.value)}/>
+                                                    <Input placeholder="Enter Regular Price" value={regularPrice} onChange={(e) => setRegularPrice(e.target.value)} status={errors?.mrp ? "error" : ""}/>
+
+                                                    {errors?.mrp && (
+                                                        <div style={{ color: "#ff4d4f", marginTop: 4 }}>
+                                                            {errors.mrp.map((error, index) => (
+                                                                <div key={index}>{error}</div>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </Form.Item>
                                             </Form>
                                         </Col>

@@ -47,8 +47,6 @@ export default function ProductEdit() {
     const [metaTitle, setMetaTitle]                                 = useState("");
     const [metaKeywords, setMetaKeywords]                           = useState("");
     const [metaDescription, setMetaDescription]                     = useState("");
-    const [width, setWidth]                                         = useState("1000");
-    const [height, setHeight]                                       = useState("1000");
     const [categories, setCategories]                               = useState(null);
     const [subCategories, setSubCategories]                         = useState([]);
     const [subSubCategories, setSubSubCategories]                   = useState([]);
@@ -90,19 +88,13 @@ export default function ProductEdit() {
     const [thumbnail, setThumbnail]                                 = useState(null);
     const [images, setImages]                                       = useState([]);
     const [imagePreview, setImagePreview]                           = useState([]);
-    const [reviewImages, setReviewImages]                           = useState([]);
-    const [reviewImagePreview, setReviewImagePreview]               = useState([]);
     const [deletedGalleryIds, setDeletedGalleryIds]                 = useState([]);
-    const [deletedReviewIds, setDeletedReviewIds]                   = useState([]);
     const [thumbnailWidth, setThumbnailWidth]                       = useState(null);
     const [thumbnailHeight, setThumbnailHeight]                     = useState(null);
     const [galleryWidths, setGalleryWidths]                         = useState([]);
     const [galleryHeights, setGalleryHeights]                       = useState([]);
-    const [reviewWidths, setReviewWidths]                           = useState([]);
-    const [reviewHeights, setReviewHeights]                         = useState([]);
 
     const galleryProcessedFiles = useRef(new Set());
-    const reviewProcessedFiles  = useRef(new Set());
 
     useEffect(() => {
         const init = async () => {
@@ -244,15 +236,6 @@ export default function ProductEdit() {
                         type: "old"
                     }))
                 );
-
-                setReviewImagePreview(
-                    p.review_images.map(img => ({
-                        id  : img.id,
-                        url : img.image,
-                        type: "old"
-                    }))
-                );
-
 
                 if (p.variations?.length > 0) setProductData(p);
             }
@@ -486,81 +469,17 @@ export default function ProductEdit() {
         }
     };
 
-    const handleReviewImageFileChange = (info) => {
-        const { fileList } = info;
-        const newFiles = fileList.filter((file) => file.originFileObj);
-
-        const unprocessedFiles = newFiles.filter((file) => {
-            const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
-            return !reviewProcessedFiles.current.has(fileKey);
-        });
-
-        if (unprocessedFiles.length > 0) {
-            const validImages = unprocessedFiles.filter((file) =>
-                /\.(jpe?g|png|webp|gif)$/i.test(file.name)
-            );
-
-            if (validImages.length !== unprocessedFiles.length) {
-                message.error("Some files are not valid image formats");
-            }
-
-            validImages.forEach((file) => {
-                const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
-                reviewProcessedFiles.current.add(fileKey);
-
-                setReviewImages((prev) => [...prev, file.originFileObj]);
-
-                const img = new window.Image();
-                const objectUrl = URL.createObjectURL(file.originFileObj);
-
-                img.onload = function () {
-                    setReviewWidths((prev) => [...prev, img.width]);
-                    setReviewHeights((prev) => [...prev, img.height]);
-                    URL.revokeObjectURL(objectUrl);
-                };
-
-                img.src = objectUrl;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    setReviewImagePreview((prev) => [...prev, e.target.result]);
-                };
-                reader.readAsDataURL(file.originFileObj);
-            });
-        }
-    };
-
     const deleteImg = (index) => {
-        setImagePreview(prev => {
-            const target = prev[index];
+        const target = imagePreview[index];
 
-            if (target.type === "old") {
-                setDeletedGalleryIds(d => [...d, target.id]);
-            }
+        if (target?.type === "old" && target?.id) {
+            setDeletedGalleryIds(prev =>
+                prev.includes(target.id) ? prev : [...prev, target.id]
+            );
+        }
 
-            return prev.filter((_, i) => i !== index);
-        });
-
+        setImagePreview(prev => prev.filter((_, i) => i !== index));
         setImages(prev => prev.filter((_, i) => i !== index));
-    };
-
-    const deleteReviewImg = (index) => {
-        setReviewImagePreview(prev => {
-            const target = prev[index];
-
-            if (target.type === "old") {
-                setDeletedReviewIds(d => [...d, target.id]);
-            }
-
-            return prev.filter((_, i) => i !== index);
-        });
-
-        setReviewImages(prev => prev.filter((_, i) => i !== index));
-    };
-
-    const clearThumbnail = () => {
-        setThumbnailPreview("");
-        setThumbnail(null);
     };
 
     const addVariationField = () => {
@@ -839,12 +758,6 @@ export default function ProductEdit() {
                 formData.append("gallery_heights[]", galleryHeights[index] || "");
             });
 
-            reviewImages.forEach((reviewImage, index) => {
-                formData.append("review_images[]", reviewImage);
-                formData.append("review_widths[]", reviewWidths[index] || "");
-                formData.append("review_heights[]", reviewHeights[index] || "");
-            });
-
             const uniqueAttributes = [...new Set(attributeValue.flat().filter((x) => x?.attribute_id).map((x) => x.attribute_id)),];
 
             const attributeSlotMap = {};
@@ -906,10 +819,6 @@ export default function ProductEdit() {
 
             deletedGalleryIds.forEach(id =>
                 formData.append("delete_gallery_image_ids[]", id)
-            );
-
-            deletedReviewIds.forEach(id =>
-                formData.append("delete_review_image_ids[]", id)
             );
 
             const res = await postData(`/admin/products/${id}`, formData, {headers: { "Content-Type": "multipart/form-data" },});
@@ -1104,21 +1013,6 @@ export default function ProductEdit() {
                         <Space direction="vertical" size={16} style={{ width: "100%" }}>
                             <div>
                                 <Text strong style={{ display: "block", marginBottom: 8 }}>
-                                    Image Width & Height
-                                </Text>
-                                <Row gutter={8}>
-                                    <Col span={12}>
-                                        <Input placeholder="Width" value={width} onChange={(e) => setWidth(e.target.value)} style={{ width: "100%" }}/>
-                                    </Col>
-
-                                    <Col span={12}>
-                                        <Input placeholder="Height" value={height} onChange={(e) => setHeight(e.target.value)} style={{ width: "100%" }}/>
-                                    </Col>
-                                </Row>
-                            </div>
-            
-                            <div>
-                                <Text strong style={{ display: "block", marginBottom: 8 }}>
                                     Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
                                 </Text>
                                 <input type="file" id="thumbnail-upload" accept="image/*" onChange={singleFileChange} style={{ display: "none" }}/>
@@ -1144,9 +1038,7 @@ export default function ProductEdit() {
 
                                         <Image src={thumbnailPreview} alt="Thumbnail preview" style={{width: 100,height: 100, objectFit: "fill", borderRadius: 8}}/>
 
-                                        <Button type="text" danger icon={<DeleteOutlined />} onClick={clearThumbnail}
-                                            style={{position: "absolute",top: -8,right: -8,background: "#ff4d4f",color: "white",borderRadius: "50%",width: 24,height: 24,minWidth: 24,display: "flex",alignItems: "center",justifyContent: "center"}}
-                                        />
+                                        <Button type="text"/>
                                     </div>
                                 )}
                             </div>
@@ -1176,43 +1068,7 @@ export default function ProductEdit() {
                                     </div>
                                 )}
                             </div>
-            
-                            <div>
-                                <Text strong style={{ display: "block", marginBottom: 8 }}>
-                                    Review Images
-                                </Text>
-
-                                <Upload multiple showUploadList={false} beforeUpload={() => false} onChange={handleReviewImageFileChange} accept="image/*">
-                                    <Button type="dashed" style={{ width: "100%" }}>
-                                        Choose Files
-                                    </Button>
-                                </Upload>
-
-                                {reviewImagePreview.length > 0 && (
-                                    <div style={{marginTop: 12,display: "flex",flexWrap: "wrap",gap: 8}}>
-                                        {reviewImagePreview.map((image, index) => (
-                                            <div key={index} style={{position: "relative",display: "inline-block"}}>
-                                                <Image src={image.url} alt={`Review ${index + 1}`} style={{width: 80,height: 80,objectFit: "cover",borderRadius: 8}}/>
-
-                                                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => deleteReviewImg(index)}
-                                                    style={{position: "absolute",top: -8,right: -8,background: "#ff4d4f",color: "white",borderRadius: "50%",width: 20,height: 20,minWidth: 20,display: "flex",alignItems: "center",justifyContent: "center",fontSize: 10}}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
                         </Space>
-                    </Card>
-        
-                    <Divider />
-        
-                    <Card title="Cross Sell Products" bordered>
-                        <Form layout="vertical">
-                            <Form.Item label="Search Cross Sell Product">
-                                <Input placeholder="Search Your Product" />
-                            </Form.Item>
-                        </Form>
                     </Card>
                 </Col>
             </Row>
@@ -1400,18 +1256,18 @@ export default function ProductEdit() {
                                 </Space>
 
                                 <Row gutter={12} style={{ marginTop: 12 }}>
-                                    {/* <Col xs={24} lg={8}>
-                                        <Form layout="vertical">
-                                            <Form.Item label="Buy Price" required>
-                                                <Input placeholder="Enter Buy Price" value={buyPrice} onChange={(e) => setBuyPrice(e.target.value)}/>
-                                            </Form.Item>
-                                        </Form>
-                                    </Col> */}
-
                                     <Col xs={24} lg={8}>
                                         <Form layout="vertical">
                                             <Form.Item label="Regular Price" required>
-                                                <Input placeholder="Enter Regular Price" value={regularPrice} onChange={(e) => setRegularPrice(e.target.value)}/>
+                                                <Input placeholder="Enter Regular Price" value={regularPrice} onChange={(e) => setRegularPrice(e.target.value)} status={errors?.mrp ? "error" : ""}/>
+
+                                                {errors?.mrp && (
+                                                    <div style={{ color: "#ff4d4f", marginTop: 4 }}>
+                                                        {errors.mrp.map((error, index) => (
+                                                            <div key={index}>{error}</div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </Form.Item>
                                         </Form>
                                     </Col>
