@@ -154,6 +154,7 @@ import AddTermsCondition from "./pages/cms/terms&condition/AddTermsCondition";
 import EditTermsCondition from "./pages/cms/terms&condition/EditTermsCondition";
 import TrashCourierList from "./pages/order/courier/TrashCourierList";
 import TrashPaymentGatewayList from "./pages/order/payment_gateway/TrashPaymentGatewayList";
+import Profile from "./pages/auth/user/Profile";
 
 function App() {
 
@@ -219,6 +220,9 @@ function App() {
           <Route path="/employee" element={<Employee />} />
           <Route path="/add/employee" element={<AddEmployee />} />
           <Route path="/edit/employee/:id" element={<EditEmployee />} />
+
+          {/* Profile Management */}
+          <Route path="/system/user-management" element={<Profile />} />
 
           {/* For Product Management */}
           <Route path="/brands" element={<Brand />} />

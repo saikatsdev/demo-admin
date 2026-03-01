@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePermission } from "../hooks/usePermission";
 import { useRole } from "../hooks/useRole";
+import { useAppSettings } from "../contexts/useAppSettings";
 
 const Sidebar = ({ onMenuSelect }) => {
   const navigate                    = useNavigate();
@@ -11,11 +12,15 @@ const Sidebar = ({ onMenuSelect }) => {
 
   const {permissions} = usePermission();
 
+  const {settings} = useAppSettings();
+
   const can = (permission) => permissions?.includes(permission);
 
   const { hasAnyRole } = useRole();
       
   const canSeeMedia = hasAnyRole(["superadmin", "admin"]);
+
+  const canShowTutorial = hasAnyRole(["superadmin", "admin"]) || settings.tutorial_show === "1";
 
   const userManagementSubmenus = [
     can('users-read') && { label: "Customers", path: "/customer" },
@@ -181,8 +186,8 @@ const Sidebar = ({ onMenuSelect }) => {
 
     can('settings-read') && { title: "Settings", icon: "⚙️", path: "/settings" },
 
-    { title: "Tutorial", icon: <BulbOutlined />, path: "/tutorial" },
-  ];
+    canShowTutorial && { title: "Tutorial", icon: <BulbOutlined />, path: "/tutorial" },
+  ].filter(Boolean);
 
   const handleMenuClick = (menu) => {
     setActiveMenu(menu.title);

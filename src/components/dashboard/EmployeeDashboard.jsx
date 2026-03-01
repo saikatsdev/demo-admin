@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import "./css/EmployeeDashboard.css";
+import { useNavigate } from "react-router-dom";
 
 export default function EmployeeDashboard() {
     const { user } = useAuth();
     const data = user ?? {};
+
+    const navigate = useNavigate();
 
     const {id,username,phone_number,email,status,salary,is_verified,image,login_at,logout_at,roles} = data;
 
@@ -141,7 +144,7 @@ export default function EmployeeDashboard() {
                         <div className="ed-sidebarSection">
                             <div className="ed-sectionTitle">QUICK ACTIONS</div>
                             <div className="ed-actionsCol">
-                                <button type="button" className="ed-btn ed-btn--primary" onClick={() => console.log("View profile clicked")}>
+                                <button type="button" className="ed-btn ed-btn--primary" onClick={() => navigate('/system/user-management')}>
                                     VIEW PROFILE
                                 </button>
                                 <button type="button" className="ed-btn ed-btn--ghost" onClick={() => console.log("Support clicked")}>
