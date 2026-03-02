@@ -20,6 +20,7 @@ import { cachedFetch } from "../../utils/cacheApi";
 import { useSelector } from "react-redux";
 import CourierStatusModal from "../../components/order/CourierStatusModal";
 import DigitalSaleModal from "../../components/order/DigitalSaleModal";
+import { usePermission } from "../../hooks/usePermission";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -29,6 +30,9 @@ export default function Order() {
     // Hook
     useTitle("All Orders");
     const { settings} = useAppSettings();
+    const {permissions} = usePermission();
+    
+    const can = (permission) => permissions?.includes(permission);
 
     // Variable
     const navigate        = useNavigate();
@@ -45,7 +49,6 @@ export default function Order() {
     const [statusId, setStatusId]                                                                      = useState(null);
     const [orderStatus, setOrderStatus]                                                                = useState([]);
     const [loading, setLoading]                                                                        = useState(false);
-    const [authPermission, setAuthPermission]                                                          = useState([]);
     const [isPaid, setIsPaid]                                                                          = useState(null);
     const [orders, setOrders]                                                                          = useState(null);
     const [orderTagId, setOrderTagId]                                                                  = useState(null);
@@ -131,36 +134,6 @@ export default function Order() {
     const cancelReasons = useSelector((state) => state.cancelReason.list)
     const districtList  = useSelector((state) => state.districts.list);
     const couriers        = useSelector((s) => s.courier.list);
-
-    const authenticateUserPermission = async () => {
-        try {
-            const auth = localStorage.getItem("auth");
-            if (auth) {
-                try {
-                    const parsedAuth = JSON.parse(auth);
-                    if (parsedAuth?.user?.roles?.[0]?.permissions) {
-                        const permissions = parsedAuth.user.roles[0].permissions;
-                        setAuthPermission(permissions);
-                        return;
-                    }
-                } catch (parseError) {
-                    console.error("Error parsing auth from localStorage:", parseError);
-                }
-            }
-        
-            const res = await getDatas("/admin/user/permissions");
-        
-            if (res?.success) {
-                const permissions = res?.result || [];
-        
-                setAuthPermission(permissions);
-            } else {
-                console.error("API returned success=false:", res);
-          }
-        } catch (error) {
-          console.error("Error fetching permissions:", error);
-        }
-    };
 
     const getOrders = async (page = 1, overrides = {}) => {
         setLoading(true);
@@ -327,7 +300,6 @@ export default function Order() {
     };
 
     useEffect(() => {
-        authenticateUserPermission();
         getCustomerType();
         getOrders(1);
         getEmployees();
@@ -368,8 +340,7 @@ export default function Order() {
     }, [settings]);
 
     const addOrder = () => {
-        if (
-            authPermission.some((permission) => permission?.name === "orders-create")
+        if (can("orders-create")
         ) {
             navigate("/order-add");
         } else {
@@ -396,7 +367,7 @@ export default function Order() {
             if (res?.result?.locked_by_id) {
                 setLargeModal(true);
             } else {
-                if (authPermission.some((permission) => permission?.name === "orders-update")) {
+                if (can("orders-update")) {
                     await postData(`/admin/orders/locked/${orderInfo.id}`);
                     navigate(`/order-edit/${orderInfo.id}`, {state: {statusId}});
                 } else {
@@ -409,7 +380,7 @@ export default function Order() {
     };
 
     const overwrite = async () => {
-        if (authPermission.some((permission) => permission?.name === "orders-update")) {
+        if (can("orders-update")) {
             try {
                 const res = await postData(
                     `/admin/orders/locked/${lockedInfo?.order_id}`
@@ -1128,7 +1099,7 @@ export default function Order() {
 
     const processScan = async (orderId) => {
         try {
-            const canUpdate = authPermission.some((p) => p?.name === "orders-update");
+            const canUpdate = can("orders-update");
             if (!canUpdate) {
                 message.error("You don't have permission to update Order status");
                 return;
@@ -1816,8 +1787,7 @@ export default function Order() {
                             <div style={{ marginBottom: 8, marginTop: 15, }}>
                                 <Space>
                                     <Button size="small" icon={<EyeOutlined />} onClick={() => openPreview(record)}/>
-                                    {authPermission &&
-                                        authPermission.some((permission) => permission?.name === "orders-create") && (
+                                    {can("orders-create") && (
                                         <Button size="small" icon={record?.locked_by_id ? (<LockOutlined />) : (<EditOutlined />)} onClick={() => handleEdit(record)}>
                                             {!record?.locked_by_id && "Edit"}
                                         </Button>
@@ -2044,7 +2014,7 @@ export default function Order() {
                                     )}
                                 </div>
 
-                                {authPermission?.some((p) => p?.name === "orders-create") && (
+                                {can("orders-create") && (
                                     <Button type="primary" onClick={addOrder} icon={<PlusOutlined/>}>
                                         Add
                                     </Button>
