@@ -1,6 +1,6 @@
 import { ArrowLeftOutlined, DeleteOutlined, InboxOutlined, PlusOutlined } from "@ant-design/icons";
 import {Button,Card,Col,Divider,Form,Image,Input,message,Modal,Row,Select,Space,Table,Tag,Typography,Upload} from "antd";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useMemo,useState } from "react";
 import { useNavigate, useParams,useSearchParams } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
@@ -845,7 +845,7 @@ export default function ProductEdit() {
         }
     };
 
-    const modules = {
+    const modules = useMemo(() => ({
         toolbar: {
             container: [
                 [{ header: [1, 2, 3, false] }],
@@ -873,7 +873,12 @@ export default function ProductEdit() {
                 },
             },
         },
-    };
+        history: {
+            delay: 500,
+            maxStack: 100,
+            userOnly: true,
+        },
+    }), []);
 
     const regular = Number(regularPrice);
     const offer   = Number(offerPrice);

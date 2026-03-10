@@ -574,12 +574,18 @@ export default function Product() {
                     window.location.reload();
                 }
             } catch {
-                message.error("Error copying product");
+                messageApi.open({
+                    type: "error",
+                    content: "Error copying product",
+                });
             }finally{
                 setCopyLoadingId(null);
             }
         } else {
-            message.error("You don't have permission to copy Product");
+            messageApi.open({
+                type: "warning",
+                content: "You don't have permission to copy Product",
+            });
         }
     };
 

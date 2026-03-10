@@ -1,4 +1,4 @@
-import {BarChartOutlined,DeliveredProcedureOutlined,FallOutlined,HeartTwoTone,NotificationOutlined,ProductOutlined,PropertySafetyOutlined,ToolOutlined,FileTextOutlined,BulbOutlined,PictureOutlined,} from "@ant-design/icons";
+import {BarChartOutlined,DeliveredProcedureOutlined,FallOutlined,NotificationOutlined,ProductOutlined,PropertySafetyOutlined,ToolOutlined,FileTextOutlined,BulbOutlined,PictureOutlined,} from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePermission } from "../hooks/usePermission";
@@ -51,10 +51,10 @@ const Sidebar = ({ onMenuSelect }) => {
   const marketingSubmenus = [
     can('product-catalogs-read') && { label: "Product Catelog", path: "/product/catalogs" },
     can('gtm-read') && { label: "GTM Manage", path: "/gtm-manage" },
-    can('microsoft-clarity') && { label: "Microsoft Clarity", path: "/clarity-id" },
-    can('google-analytical') && { label: "Google Analytical", path: "/google-analytical" },
-    can('facebook-meta-pixel') && { label: "Facebook Meta Pixel", path: "/facebook/meta/pixel" },
-    can('pusher') && { label: "Pusher Setup", path: "/pusher/settings" },
+    can('microsoft-clarity-read') && { label: "Microsoft Clarity", path: "/clarity-id" },
+    can('google-analytical-read') && { label: "Google Analytical", path: "/google-analytical" },
+    can('facebook-meta-pixel-read') && { label: "Facebook Meta Pixel", path: "/facebook/meta/pixel" },
+    can('pusher-read') && { label: "Pusher Setup", path: "/pusher/settings" },
   ].filter(Boolean);
 
   const mediaMenu = canSeeMedia && {

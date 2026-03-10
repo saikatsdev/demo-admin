@@ -27,7 +27,7 @@ export default function CourierSetting() {
 
                 setCouriers(data);
 
-                const defaultCourier = data.find(c => c.is_default === 1);
+                const defaultCourier = data.find(c => c.is_default === "1");
 
                 if (defaultCourier) {
                     form.setFieldsValue({
