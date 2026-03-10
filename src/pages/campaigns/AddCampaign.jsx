@@ -26,8 +26,10 @@ export default function AddCampaign() {
     const [hasMore, setHasMore]                     = useState(true);
     const [loadingMore, setLoadingMore]             = useState(false);
     const [loading, setLoading]                     = useState(false);
-    const [gallery, setGallery]                     = useState([]);
-	const [errors, setErros]                        = useState({});
+    const [gallery, setGallery]                     = useState();
+    const [errors, setErros]                        = useState({});
+    const [addedProductIds, setAddedProductIds]     = useState(new Set());
+    const [applyToAll, setApplyToAll]               = useState({});
 
     useEffect(() => {
         fetchMedia(page);
@@ -83,26 +85,82 @@ export default function AddCampaign() {
         }
     };
 
-    const handleSelectProduct = (product) => {
-        if (!selectedProducts.find((p) => p.id === product.id)) {
-            setSelectedProducts((prev) => [...prev, product]);
-        }
+    const handleAddProduct = (product) => {
+        setSelectedProducts(sp => {
+            const exists = sp.find(p => p.id === product.id);
 
-        setQuery("");
-        setSearchProducts([]);
+            if (exists) {
+                return sp.filter(p => p.id !== product.id);
+            } else {
+                return [...sp, product];
+            }
+        });
+
+        setAddedProductIds(prev => {
+            const next = new Set(prev);
+            if (next.has(product.id)) {
+                next.delete(product.id);
+            } else {
+                next.add(product.id);
+            }
+            return next;
+        });
     };
 
     const handleRemoveProduct = (productId) => {
-        setSelectedProducts((prev) => prev.filter((p) => p.id !== productId));
+        setSelectedProducts(sp => sp.filter(p => p.id !== productId));
+        setAddedProductIds(prev => {
+            const next = new Set(prev);
+            next.delete(productId);
+            return next;
+        });
+    };
+
+    const handleDiscountChange = (item, variation, value) => {
+
+        const isApplyAll = applyToAll[item.id];
+
+        const currentKey = `discount_value_${item.id}_${variation?.id || "default"}`;
+
+        form.setFieldValue(currentKey, value);
+
+        if (!isApplyAll) return;
+
+        if (item.variations && item.variations.length > 0) {
+            item.variations.forEach((varItem) => {
+
+                if (varItem.id === variation.id) return;
+
+                const key = `discount_value_${item.id}_${varItem.id}`;
+
+                form.setFieldValue(key, value);
+            });
+        }
+    };
+
+    const handleTypeChange = (item, variation, value) => {
+
+        const isApplyAll = applyToAll[item.id];
+
+        const currentKey = `discount_type_${item.id}_${variation?.id || "default"}`;
+
+        form.setFieldValue(currentKey, value);
+
+        if (!isApplyAll) return;
+
+        if (item.variations && item.variations.length > 0) {
+            item.variations.forEach((varItem) => {
+
+                if (varItem.id === variation.id) return;
+
+                const key = `discount_type_${item.id}_${varItem.id}`;
+
+                form.setFieldValue(key, value);
+            });
+        }
     };
 
     const handleSubmit = async (values) => {
-        const items = selectedProducts.map((product) => ({
-            product_id: product.id,
-            discount: values[`discount_value_${product.id}`],
-            discount_type: values[`discount_type_${product.id}`],
-        }));
-
         const formData = new FormData();
 
         formData.append("title", values.title);
@@ -111,21 +169,40 @@ export default function AddCampaign() {
         formData.append("status", values.status);
 
         const image = values.image?.[0];
-        
         if (image) {
             if (image.originFileObj) {
-                formData.append('image', image.originFileObj);
+                formData.append("image", image.originFileObj);
             } else if (image.isFromGallery) {
-                formData.append('image', image.galleryPath);
+                formData.append("image", image.galleryPath);
                 formData.append("width", values.width);
                 formData.append("height", values.height);
             }
         }
 
-        items.forEach((item, index) => {
-            Object.entries(item).forEach(([key, value]) => {
-                formData.append(`items[${index}][${key}]`, value);
-            });
+        selectedProducts.forEach((product, index) => {
+            formData.append(`items[${index}][product_id]`, product.id);
+
+            // product with variations
+            if (product.variations && product.variations.length > 0) {
+                formData.append(`items[${index}][discount]`, 0);
+                formData.append(`items[${index}][discount_type]`, "");
+
+                product.variations.forEach((variation, vIndex) => {
+                    const discountValue = values[`discount_value_${product.id}_${variation.id}`];
+                    const discountType = values[`discount_type_${product.id}_${variation.id}`];
+
+                    formData.append(`items[${index}][variations][${vIndex}][variation_id]`, variation.id);
+                    formData.append(`items[${index}][variations][${vIndex}][discount]`,discountValue ?? 0);
+                    formData.append(`items[${index}][variations][${vIndex}][discount_type]`,discountType ?? "");
+                });
+            } else {
+                // normal product
+                const discountValue = values[`discount_value_${product.id}_default`];
+                const discountType = values[`discount_type_${product.id}_default`];
+
+                formData.append(`items[${index}][discount]`, discountValue ?? 0);
+                formData.append(`items[${index}][discount_type]`, discountType ?? "");
+            }
         });
 
         try {
@@ -133,7 +210,7 @@ export default function AddCampaign() {
 
             const res = await postData("/admin/campaigns", formData);
 
-            if (res && res?.success) {
+            if (res && res.success) {
                 messageApi.open({
                     type: "success",
                     content: res.msg,
@@ -142,12 +219,12 @@ export default function AddCampaign() {
                 setTimeout(() => {
                     navigate("/campaigns");
                 }, 500);
-            }else{
-                setErros(res?.errors);
+            } else {
+                setErros(res?.errors || {});
             }
         } catch (error) {
-            console.log(error);
-        }finally{
+            console.error("Campaign submission error:", error);
+        } finally {
             setLoading(false);
         }
     };
@@ -162,12 +239,7 @@ export default function AddCampaign() {
                     </h1>
                 </div>
                 <div className="head-actions">
-                    <Breadcrumb
-                        items={[
-                        { title: <Link to="/dashboard">Dashboard</Link> },
-                        { title: "Campaign Add" },
-                        ]}
-                    />
+                    <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> },{ title: "Campaign Add" }]}/>
                 </div>
             </div>
 
@@ -180,7 +252,7 @@ export default function AddCampaign() {
                 </Space>
             </div>
 
-            <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" initialValues={{width:"1800", height:"960", start_date: new Date().toISOString().split("T")[0]}}>
+            <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" initialValues={{width:"3600", height:"1920", start_date: new Date().toISOString().split("T")[0]}}>
                 <div className="form-container">
                     <div className="form-left">
                         <div className="left-side-product" onClick={() => setShowInput(!showInput)}>
@@ -198,48 +270,121 @@ export default function AddCampaign() {
                                 <input type="text" placeholder="Search Product..." className="campaign-input" value={query} onChange={(e) => setQuery(e.target.value)}/>
 
                                 {searchProducts.length > 0 && (
-                                    <ul className="campaingn-ul">
-                                        {searchProducts.map((product) => (
-                                            <li className="campaign-ul-li" key={product.id} onClick={() => handleSelectProduct(product)}>
-                                                <img src={product.img_path} alt="Product" className="campaign-product-img"/>
-                                                <div>
-                                                    {product.name} <br />
-                                                    {product?.category?.name}
-                                                </div>
-                                            </li>
-                                        ))}
+                                    <ul className="campaign-ul">
+                                        {searchProducts.map((product) => {
+                                            const isAdded = addedProductIds.has(product.id);
+
+                                            const categoryNames = product.categories?.length ? product.categories.map((c) => c.name).join(", ") : "No Category";
+
+                                            return (
+                                                <li key={product.id} className="campaign-ul-li">
+                                                    <img src={product.img_path} alt={product.name} className="campaign-product-img"/>
+                                                    <div className="product-info">
+                                                        <strong>{product.name}</strong> <br />
+                                                        <small>{categoryNames}</small>
+                                                    </div>
+                                                    <button onClick={() => handleAddProduct(product)} className="campaign-product-btn">
+                                                        {isAdded ? 'Added' : 'Add'}
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
                                     </ul>
                                 )}
                             </div>
                         )}
 
                         {selectedProducts.length > 0 && (
-                            <div className="search-product-section" style={{ marginTop: "20px" }}>
+                            <div className="campaign-search-product-section">
                                 {selectedProducts.map((item) => (
-                                    <div key={item.id} className="product-card">
-                                        <div className="product-card-top">
-                                            <img src={item.img_path || "/free.jpg"} alt={item.name || "Product"} className="camp-product-image"/>
-                                            <h2 className="product-name">{item.name}</h2>
-                                            <button className="delete-btn" type="button" onClick={() => handleRemoveProduct(item.id)}>
+                                    <div key={item.id} className="campaign-product-card">
+
+                                        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+
+                                            <img src={item.img_path || "/free.jpg"} alt={item.name || "Product"} className="campaign-product-image"/>
+
+                                            <h2 style={{ flex: 1, margin: 0, fontSize: 16 }}>
+                                                {item.name}
+                                            </h2>
+
+                                            <button type="button" onClick={() => handleRemoveProduct(item.id)} className="campaign-product-button">
                                                 <DeleteOutlined />
                                             </button>
+
                                         </div>
 
-                                        <div className="product-card-bottom">
-                                            <Form.Item name={`discount_value_${item.id}`} label="Discount Value" rules={[{ required: true, message: "Enter discount value" }]}>
-                                                <input type="number" placeholder="Enter Value" />
-                                            </Form.Item>
+                                        {item.variations && item.variations.length > 0 && (
+                                            <div style={{ marginBottom: 8, marginTop: 8 }}>
+                                                <label>
+                                                    <input type="checkbox" checked={!!applyToAll[item.id]} onChange={(e) =>
+                                                            setApplyToAll((prev) => ({
+                                                                ...prev,
+                                                                [item.id]: e.target.checked,
+                                                            }))
+                                                        }
+                                                    />
+                                                    Apply same discount to all variations
+                                                </label>
+                                            </div>
 
-                                            <Form.Item  name={`discount_type_${item.id}`} label="Type" rules={[{ required: true, message: "Select type" }]}>
-                                                <select>
-                                                    <option value="">Select One</option>
-                                                    <option value="percentage">Percentage</option>
-                                                    <option value="fixed">Fixed</option>
-                                                </select>
-                                            </Form.Item>
-                                        </div>
+                                        )}
+
+                                        {(item.variations && item.variations.length > 0 ? item.variations : [null]).map((v, idx) => {
+                                            const hasVariation = !!v;
+
+                                            const fieldDiscount = `discount_value_${item.id}_${v?.id || "default"}`;
+
+                                            const fieldType = `discount_type_${item.id}_${v?.id || "default"}`;
+
+                                            return (
+                                                <div className="campaign-variations-block" key={v?.id || idx}>
+                                                    <div style={{ flex: 2 }}>
+                                                        {hasVariation ? (
+                                                            <>
+                                                                <strong>
+                                                                    {v.attribute_value_1?.value || "Default"}
+                                                                </strong>
+
+                                                                <div style={{ fontSize: 14, color: "magenta", marginTop: 4 }}>
+                                                                    MRP: <span>৳{v.mrp}</span>
+                                                                </div>
+
+                                                            </>
+                                                        ) : (
+
+                                                            <>
+                                                                <strong style={{color:"maroon"}}>Main Product</strong>
+
+                                                                <div style={{ fontSize: 14, marginTop: 4, marginBottom:10, color:"magenta" }}>
+                                                                    MRP: <span>৳{item.mrp}</span>
+                                                                </div>
+                                                            </>
+
+                                                        )}
+
+                                                    </div>
+
+                                                    <div style={{ flex: 1, display: "flex", gap: 8 }}>
+                                                        <Form.Item name={fieldDiscount} rules={[{ required: true, message: "Enter discount value" }]} style={{ flex: 1 }}>
+                                                            <input type="number" placeholder="Discount" className="campaign-input-discount" onChange={(e) => handleDiscountChange(item, v, e.target.value)}/>
+                                                        </Form.Item>
+
+                                                        <Form.Item name={fieldType} initialValue="fixed" rules={[{ required: true, message: "Select type" }]} style={{ flex: 1 }}>
+                                                            <select className="campaign-select-box" onChange={(e) => handleTypeChange(item, v, e.target.value)}>
+                                                                <option value="">Type</option>
+                                                                <option value="percentage">Percentage</option>
+                                                                <option value="fixed">Fixed</option>
+                                                            </select>
+                                                        </Form.Item>
+                                                    </div>
+                                                </div>
+
+                                            );
+                                        })}
                                     </div>
+
                                 ))}
+
                             </div>
                         )}
                     </div>
@@ -254,7 +399,7 @@ export default function AddCampaign() {
                             <>
                                 <Form.Item name="title" label="Campaign Title" rules={[{ required: true }]}>
                                     <AntInput placeholder="Campaign Name" />
-									{errors.title && <p style={{ color: "red" }}>{errors.title[0]}</p>}
+                                    {errors.title && <p style={{ color: "red" }}>{errors.title[0]}</p>}
                                 </Form.Item>
 
                                 <Form.Item name="start_date" label="Campaign Start Date" rules={[{ required: true }]}>

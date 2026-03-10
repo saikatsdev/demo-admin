@@ -26,6 +26,8 @@ export default function EditCampaign() {
     const [messageApi, contextHolder]               = message.useMessage();
     const [previewImage, setPreviewImage]           = useState(null);
     const [loading, setLoading]                     = useState(false);
+    const [applyToAll, setApplyToAll]               = useState({});
+    const [addedProductIds, setAddedProductIds]     = useState(new Set());
 
     // Get Campaign
     useEffect(() => {
@@ -36,7 +38,6 @@ export default function EditCampaign() {
 
             if(isMounted){
                 setCampaign(res?.result);
-                setSelectedProducts(res?.result?.campaign_products);
             }
         }
 
@@ -45,7 +46,7 @@ export default function EditCampaign() {
         return () => {
             isMounted = false;
         }
-    }, []);
+    }, [id]);
 
     useEffect(() => {
         if (campaign) {
@@ -66,22 +67,28 @@ export default function EditCampaign() {
             if (campaign.campaign_products && Array.isArray(campaign.campaign_products)) {
                 setSelectedProducts(
                     campaign.campaign_products.map((item) => ({
-                        id            : item.product.id,
-                        name          : item.product.name,
-                        image         : item.product.img_path,
-                        category      : item.product.category,
-                        discount_value: item.discount,
-                        discount_type : item.discount_type,
+                        ...item.product,
+                        image: item.product.img_path,
+                        mrp: item.mrp,
                     }))
                 );
 
                 const discountFields = {};
 
                 campaign.campaign_products.forEach((item) => {
-                    discountFields[`discount_value_${item.product.id}`] = item.discount;
-                    discountFields[`discount_type_${item.product.id}`] = item.discount_type;
+                    const product = item.product;
+
+                    if (product.variations && product.variations.length > 0) {
+                        product.variations.forEach((v) => {
+                            discountFields[`discount_value_${product.id}_${v.id}`] = v.discount;
+                            discountFields[`discount_type_${product.id}_${v.id}`] = v.discount_type;
+                        });
+                    } else {
+                        discountFields[`discount_value_${product.id}_default`] = item.discount;
+                        discountFields[`discount_type_${product.id}_default`] = item.discount_type;
+                    }
                 });
-                
+
                 form.setFieldsValue(discountFields);
             }
         }
@@ -109,43 +116,119 @@ export default function EditCampaign() {
         }
     };
 
-    const handleSelectProduct = (product) => {
-        if (!selectedProducts.find((p) => p.id === product.id)) {
-            setSelectedProducts((prev) => [...prev, product]);
-        }
+    const handleAddProduct = (product) => {
+        setSelectedProducts(sp => {
+            const exists = sp.find(p => p.id === product.id);
 
-        setQuery("");
-        setSearchProducts([]);
+            if (exists) {
+                return sp.filter(p => p.id !== product.id);
+            } else {
+                return [...sp, product];
+            }
+        });
+
+        setAddedProductIds(prev => {
+            const next = new Set(prev);
+            if (next.has(product.id)) {
+                next.delete(product.id);
+            } else {
+                next.add(product.id);
+            }
+            return next;
+        });
     };
 
     const handleRemoveProduct = (productId) => {
         setSelectedProducts((prev) => prev.filter((p) => p.id !== productId));
     };
 
-    const handleSubmit = async (values) => {
-        const items = selectedProducts.map((product) => ({
-            product_id: product.id,
-            discount: values[`discount_value_${product.id}`],
-            discount_type: values[`discount_type_${product.id}`],
-        }));
+    const handleDiscountChange = (item, variation, value) => {
 
+        const isApplyAll = applyToAll[item.id];
+
+        const currentKey = `discount_value_${item.id}_${variation?.id || "default"}`;
+
+        form.setFieldValue(currentKey, value);
+
+        if (!isApplyAll) return;
+
+        if (item.variations && item.variations.length > 0) {
+            item.variations.forEach((varItem) => {
+
+                if (varItem.id === variation.id) return;
+
+                const key = `discount_value_${item.id}_${varItem.id}`;
+
+                form.setFieldValue(key, value);
+            });
+        }
+    };
+
+    const handleTypeChange = (item, variation, value) => {
+
+        const isApplyAll = applyToAll[item.id];
+
+        const currentKey = `discount_type_${item.id}_${variation?.id || "default"}`;
+
+        form.setFieldValue(currentKey, value);
+
+        if (!isApplyAll) return;
+
+        if (item.variations && item.variations.length > 0) {
+            item.variations.forEach((varItem) => {
+
+                if (varItem.id === variation.id) return;
+
+                const key = `discount_type_${item.id}_${varItem.id}`;
+
+                form.setFieldValue(key, value);
+            });
+        }
+    };
+
+    const handleSubmit = async (values) => {
         const formData = new FormData();
 
         formData.append("title", values.title);
         formData.append("start_date", values.start_date);
         formData.append("end_date", values.end_date);
         formData.append("status", values.status);
-        formData.append("width", values.width);
-        formData.append("height", values.height);
 
-        if (values.image instanceof File) {
-            formData.append("image", values.image);
+        const image = values.image?.[0];
+        if (image) {
+            if (image.originFileObj) {
+                formData.append("image", image.originFileObj);
+            } else if (image.isFromGallery) {
+                formData.append("image", image.galleryPath);
+                formData.append("width", values.width);
+                formData.append("height", values.height);
+            }
         }
 
-        items.forEach((item, index) => {
-            Object.entries(item).forEach(([key, value]) => {
-                formData.append(`items[${index}][${key}]`, value);
-            });
+        selectedProducts.forEach((product, index) => {
+            formData.append(`items[${index}][product_id]`, product.id);
+
+            // product with variations
+            if (product.variations && product.variations.length > 0) {
+                formData.append(`items[${index}][discount]`, 0);
+                formData.append(`items[${index}][discount_type]`, "");
+
+                product.variations.forEach((variation, vIndex) => {
+                    const discountValue = values[`discount_value_${product.id}_${variation.id}`];
+                    const discountType = values[`discount_type_${product.id}_${variation.id}`];
+
+                    formData.append(`items[${index}][variations][${vIndex}][variation_id]`, variation.id);
+                    formData.append(`items[${index}][variations][${vIndex}][discount]`,discountValue ?? 0);
+                    formData.append(`items[${index}][variations][${vIndex}][discount_type]`,discountType ?? "");
+                });
+            } else {
+                // normal product
+                const discountValue = values[`discount_value_${product.id}_default`];
+                const discountType = values[`discount_type_${product.id}_default`];
+
+                formData.append(`items[${index}][discount]`, discountValue ?? 0);
+                formData.append(`items[${index}][discount_type]`, discountType ?? "");
+            }
         });
 
         formData.append('_method','PUT');
@@ -218,48 +301,118 @@ export default function EditCampaign() {
                                 <input type="text" placeholder="Search Product..." className="campaign-input" value={query} onChange={(e) => setQuery(e.target.value)}/>
 
                                 {searchProducts.length > 0 && (
-                                    <ul className="campaingn-ul">
-                                        {searchProducts.map((product) => (
-                                            <li className="campaign-ul-li" key={product.id} onClick={() => handleSelectProduct(product)}>
-                                                <img src={product.image || product.img_path} alt="Product" className="campaign-product-img"/>
-                                                <div>
-                                                    {product.name} <br />
-                                                    {product.category?.name}
-                                                </div>
-                                            </li>
-                                        ))}
+                                    <ul className="campaign-ul">
+                                        {searchProducts.map((product) => {
+                                            const isAdded = addedProductIds.has(product.id);
+                                            return (
+                                                <li key={product.id} className="campaign-ul-li">
+                                                    <img src={product.img_path} alt={product.name} className="campaign-product-img"/>
+                                                    <div className="product-info">
+                                                        <strong>{product.name}</strong> <br />
+                                                        <small>{product.category_name || 'No Category'}</small>
+                                                    </div>
+                                                    <button onClick={() => handleAddProduct(product)} className="campaign-product-btn">
+                                                        {isAdded ? 'Added' : 'Add'}
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
                                     </ul>
                                 )}
                             </div>
                         )}
 
-                        {selectedProducts?.length > 0 && (
-                            <div className="search-product-section" style={{ marginTop: "20px" }}>
-                                {selectedProducts?.map((item) => (
-                                    <div key={item.id} className="product-card">
-                                        <div className="product-card-top">
-                                            <img src={item.image || item.img_path} alt={item.name || "Product"} className="camp-product-image"/>
-                                            <h2 className="product-name">{item.name}</h2>
-                                            <button className="delete-btn" type="button" onClick={() => handleRemoveProduct(item.id)}>
+                        {selectedProducts.length > 0 && (
+                            <div className="campaign-search-product-section">
+                                {selectedProducts.map((item) => (
+                                    <div key={item.id} className="campaign-product-card">
+
+                                        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+
+                                            <img src={item.img_path || item.image} alt={item.name || "Product"} className="campaign-product-image"/>
+
+                                            <h2 style={{ flex: 1, margin: 0, fontSize: 16 }}>
+                                                {item.name}
+                                            </h2>
+
+                                            <button type="button" onClick={() => handleRemoveProduct(item.id)} className="campaign-product-button">
                                                 <DeleteOutlined />
                                             </button>
+
                                         </div>
 
-                                        <div className="product-card-bottom">
-                                            <Form.Item name={`discount_value_${item.id}`} label="Discount Value" rules={[{ required: true, message: "Enter discount value" }]}>
-                                                <input type="number" placeholder="Enter Value" />
-                                            </Form.Item>
+                                        {item.variations && item.variations.length > 0 && (
+                                            <div style={{ marginBottom: 8, marginTop: 8 }}>
+                                                <label>
+                                                    <input type="checkbox" checked={!!applyToAll[item.id]} onChange={(e) =>
+                                                            setApplyToAll((prev) => ({
+                                                                ...prev,
+                                                                [item.id]: e.target.checked,
+                                                            }))
+                                                        }
+                                                    />
+                                                    Apply same discount to all variations
+                                                </label>
+                                            </div>
 
-                                            <Form.Item  name={`discount_type_${item.id}`} label="Type" rules={[{ required: true, message: "Select type" }]}>
-                                                <select>
-                                                    <option value="">Select One</option>
-                                                    <option value="percentage">Percentage</option>
-                                                    <option value="fixed">Fixed</option>
-                                                </select>
-                                            </Form.Item>
-                                        </div>
+                                        )}
+
+                                        {(item.variations && item.variations.length > 0 ? item.variations : [null]).map((v, idx) => {
+                                            const hasVariation = !!v;
+
+                                            const fieldDiscount = `discount_value_${item.id}_${v?.id || "default"}`;
+
+                                            const fieldType = `discount_type_${item.id}_${v?.id || "default"}`;
+
+                                            return (
+                                                <div className="campaign-variations-block" key={v?.id || idx}>
+                                                    <div style={{ flex: 2 }}>
+                                                        {hasVariation ? (
+                                                            <>
+                                                                <strong>
+                                                                    {v.attribute_value_1?.value || "Default"}
+                                                                </strong>
+
+                                                                <div style={{ fontSize: 14, color: "magenta", marginTop: 4 }}>
+                                                                    MRP: <span>৳{v.mrp}</span>
+                                                                </div>
+
+                                                            </>
+                                                        ) : (
+
+                                                            <>
+                                                                <strong style={{color:"maroon"}}>Main Product</strong>
+
+                                                                <div style={{ fontSize: 14, marginTop: 4, marginBottom:10, color:"magenta" }}>
+                                                                    MRP: <span>৳{item.mrp}</span>
+                                                                </div>
+                                                            </>
+
+                                                        )}
+
+                                                    </div>
+
+                                                    <div style={{ flex: 1, display: "flex", gap: 8 }}>
+                                                        <Form.Item name={fieldDiscount} rules={[{ required: true, message: "Enter discount value" }]} style={{ flex: 1 }}>
+                                                            <input type="number" placeholder="Discount" className="campaign-input-discount" onChange={(e) => handleDiscountChange(item, v, e.target.value)}/>
+                                                        </Form.Item>
+
+                                                        <Form.Item name={fieldType} initialValue="fixed" rules={[{ required: true, message: "Select type" }]} style={{ flex: 1 }}>
+                                                            <select className="campaign-select-box" onChange={(e) => handleTypeChange(item, v, e.target.value)}>
+                                                                <option value="">Type</option>
+                                                                <option value="percentage">Percentage</option>
+                                                                <option value="fixed">Fixed</option>
+                                                            </select>
+                                                        </Form.Item>
+                                                    </div>
+                                                </div>
+
+                                            );
+                                        })}
                                     </div>
+
                                 ))}
+
                             </div>
                         )}
                     </div>

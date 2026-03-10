@@ -81,21 +81,17 @@ export default function Product() {
     useEffect(() => {
         const fetchFilterOptions = async () => {
             try {
-                const [brands, categories, subCategories, productTypes, subSubCategories, attributeValues] =
+                const [brands, categories, productTypes, attributeValues] =
                 await Promise.all([
                     cachedFetch("brands", () => getDatas("/admin/brands/list")),
                     cachedFetch("categories", () => getDatas("/admin/categories/list")),
-                    cachedFetch("subCategories", () => getDatas("/admin/sub-categories/list")),
                     cachedFetch("productTypes", () => getDatas("/admin/product-types/list")),
-                    cachedFetch("subSubCategories", () => getDatas("/admin/sub-sub-categories/list")),
                     cachedFetch("attributeValues", () => getDatas("/admin/attribute-values/list")),
                 ]);
 
                 setBrands(brands?.result || []);
                 setCategories(categories?.result || []);
-                setSubCategories(subCategories?.result || []);
                 setProductTypes(productTypes?.result || []);
-                setSubSubCategories(subSubCategories?.result || []);
                 setAttributeValues(attributeValues?.result || []);
 
             } catch (error) {
@@ -105,6 +101,43 @@ export default function Product() {
 
         fetchFilterOptions();
     }, []);
+
+    const handleCategoryChange = async (selectedIds) => {
+        setCategoryIds(selectedIds);
+        setSubCategoryIds([]);
+
+        if (selectedIds.length > 0) {
+            try {
+                const res = await getDatas(`/admin/sub-categories/list?category_ids=${selectedIds.join(',')}`);
+                setSubCategories(res?.result || []);
+            } catch (err) {
+                console.error("Failed to fetch subcategories:", err);
+                setSubCategories([]);
+            }
+        } else {
+            setSubCategories([]);
+        }
+    };
+
+    const handleSubCategoryChange = async (selectedIds) => {
+        setSubCategoryIds(selectedIds);
+
+        setSubSubCategoryIds([]);
+
+        if (selectedIds.length === 0) {
+            setSubSubCategories([]);
+            return;
+        }
+
+        try {
+            const res = await getDatas(`/admin/sub-sub-categories/list?sub_category_ids=${selectedIds.join(",")}`);
+
+            setSubSubCategories(res?.result || []);
+        } catch (err) {
+            console.error("Failed to fetch sub sub categories:", err);
+            setSubSubCategories([]);
+        }
+    };
 
     const columns = 
     [
@@ -551,12 +584,48 @@ export default function Product() {
     };
 
     const handleEdit = (record) => {
-        if (productUpdate) {
-            navigate(`/product-edit/${record.id}`);
-        } else {
-            message.error("You don't have permission to edit Product");
+        const params = new URLSearchParams();
+        params.append("page", currentPage);
+        params.append("paginate_size", pageSize);
+        if (searchQuery) params.append("search", searchQuery);
+        if (productStatus) params.append("status", productStatus);
+        if (brandIds.length) params.append("brands", brandIds.join(","));
+        if (categoryIds.length) params.append("categories", categoryIds.join(","));
+        if (subCategoryIds.length) params.append("sub_categories", subCategoryIds.join(","));
+        if (subSubCategoryIds.length) params.append("sub_sub_categories", subSubCategoryIds.join(","));
+        if (attributeValueIds.length) params.append("attributes", attributeValueIds.join(","));
+        if (minPrice) params.append("min_price", minPrice);
+        if (maxPrice) params.append("max_price", maxPrice);
+        if (dateRange && dateRange.length === 2) {
+            params.append("start_date", dateRange[0].format("YYYY-MM-DD"));
+            params.append("end_date", dateRange[1].format("YYYY-MM-DD"));
         }
+
+        navigate(`/product-edit/${record.id}?${params.toString()}`);
     };
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+
+        setCurrentPage(parseInt(params.get("page")) || 1);
+        setPageSize(parseInt(params.get("paginate_size")) || 10);
+        setSearchQuery(params.get("search") || "");
+        setProductStatus(params.get("status") || "");
+        setBrandIds(params.get("brands") ? params.get("brands").split(",").map(Number) : []);
+
+        const categoriesFromQuery = params.get("categories") ? params.get("categories").split(",").map(Number) : [];
+        if (categoriesFromQuery.length > 0) {
+            handleCategoryChange(categoriesFromQuery);
+            setCategoryIds(categoriesFromQuery);
+        }
+
+        setSubCategoryIds(params.get("sub_categories") ? params.get("sub_categories").split(",").map(Number) : []);
+        setSubSubCategoryIds(params.get("sub_sub_categories") ? params.get("sub_sub_categories").split(",").map(Number) : []);
+        setAttributeValueIds(params.get("attributes") ? params.get("attributes").split(",").map(Number) : []);
+        setDateRange(params.get("start_date") && params.get("end_date") ? [dayjs(params.get("start_date")), dayjs(params.get("end_date"))] : []);
+        setMinPrice(params.get("min_price") ? Number(params.get("min_price")) : undefined);
+        setMaxPrice(params.get("max_price") ? Number(params.get("max_price")) : undefined);
+    }, [location.search]);
 
     const handleCopy = async (id) => {
         if (productCreate) {
@@ -606,27 +675,25 @@ export default function Product() {
             zIndex: 2000,
             onOk: async () => {
                 try {
-                    const res = await deleteData(`/admin/products/${record.id}`,{},"DELETE");
+                    const res = await deleteData(`/admin/products/${record.id}`, {}, "DELETE");
+
                     if (res?.success) {
                         messageApi.open({
                             type: "success",
                             content: "Product deleted successfully",
                         });
 
-                        setLoading(true);
-
-                        try {
-                            const params = {page: currentPage,paginate_size: pageSize,search_key: debouncedSearchQuery,status: productStatus};
-
-                            const refreshed = await getDatas("/admin/products", params);
-
-                            if (refreshed?.success) {
-                                setTableData(refreshed.result);
-                                setProducts(refreshed.result?.data || []);
-                            }
-                        } finally {
-                            setLoading(false);
+                        if (products.length === 1 && currentPage > 1) {
+                            setCurrentPage((p) => p - 1);
                         }
+
+                        setProducts((prev) => prev.filter((p) => p.id !== record.id));
+
+                        setTableData((prev) => ({
+                            ...prev,
+                            total: prev.total - 1,
+                        }));
+
                     } else {
                         message.error(res?.message || "Delete failed");
                     }
@@ -634,7 +701,7 @@ export default function Product() {
                     console.error(e);
                     message.error("Error deleting product");
                 }
-            },
+            }
         });
     };
 
@@ -1348,18 +1415,29 @@ export default function Product() {
                                     </Select>
                 
                                     {/* Category Filter */}
-                                    <Select mode="multiple" value={categoryIds} onChange={setCategoryIds} placeholder="Select Category" style={{ width: 180 }} allowClear>
-                                        {categories.map((c) => (
+                                    <Select mode="multiple" value={categoryIds} onChange={handleCategoryChange} placeholder="Select Category" style={{ width: 180 }} allowClear>
+                                        {Array.isArray(categories) &&
+                                            categories.map((c) => (
                                             <Option key={c.id} value={c.id}>
                                                 {c.name}
                                             </Option>
                                         ))}
                                     </Select>
                 
-                                    <Select mode="multiple" value={subCategoryIds} onChange={setSubCategoryIds} placeholder="Select Sub Category" style={{ width: 180 }} allowClear>
-                                        {subCategories.map((s) => (
+                                    <Select mode="multiple" value={subCategoryIds} onChange={handleSubCategoryChange} placeholder="Select Sub Category" style={{ width: 180 }} allowClear>
+                                        {Array.isArray(subCategories) &&
+                                            subCategories.map((s) => (
                                             <Option key={s.id} value={s.id}>
                                                 {s.name}
+                                            </Option>
+                                        ))}
+                                    </Select>
+
+                                    <Select mode="multiple" value={subSubCategoryIds} onChange={setSubSubCategoryIds} placeholder="Select Sub Sub Category" style={{ width: 200 }} allowClear>
+                                        {Array.isArray(subCategories) && 
+                                            subSubCategories.map((ssc) => (
+                                            <Option key={ssc.id} value={ssc.id}>
+                                                {ssc.name}
                                             </Option>
                                         ))}
                                     </Select>
@@ -1368,14 +1446,6 @@ export default function Product() {
                                         {productTypes.map((t) => (
                                             <Option key={t.id} value={t.id}>
                                                 {t.name}
-                                            </Option>
-                                        ))}
-                                    </Select>
-                
-                                    <Select mode="multiple" value={subSubCategoryIds} onChange={setSubSubCategoryIds} placeholder="Select Sub Sub Category" style={{ width: 200 }} allowClear>
-                                        {subSubCategories.map((ssc) => (
-                                            <Option key={ssc.id} value={ssc.id}>
-                                                {ssc.name}
                                             </Option>
                                         ))}
                                     </Select>

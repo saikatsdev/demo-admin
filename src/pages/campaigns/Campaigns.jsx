@@ -218,6 +218,8 @@ export default function Campaigns() {
                             const product = item.product;
                             const variations = product?.variations || [];
 
+                            const categories = product?.categories;
+
                             return (
                                 <Col span={24} key={item.id}>
                                     <Card style={{ borderRadius: 10 }} bodyStyle={{ padding: 16 }}>
@@ -232,13 +234,27 @@ export default function Campaigns() {
                                                 </h3>
 
                                                 <div style={{ marginBottom: 10 }}>
-                                                    <Tag color="blue">
-                                                        {product?.category?.name}
-                                                    </Tag>
+                                                    {Array.isArray(categories) && categories.length > 0 ? (
+                                                        categories.map((c) => (
+                                                            <Tag key={c.id} color="blue">
+                                                                {c.name}
+                                                            </Tag>
+                                                        ))
+                                                    ) : (
+                                                        <Tag>N/A</Tag>
+                                                    )}
 
-                                                    <Tag color="red">
-                                                        {item.discount_type === "percentage" ? `${Math.round(item.discount)}% OFF` : `Save ${money(Math.round(item.discount))}`}
-                                                    </Tag>
+                                                    {variations.length == 0 && (
+                                                        <Space>
+                                                            <Tag color="blue" style={{textTransform:"capitalize"}}>
+                                                                {item.discount_type}
+                                                            </Tag>
+
+                                                            <Tag color="green">
+                                                                {item.discount_type === "percentage" ? `${Math.round(item.discount)}% OFF` : `Save ${money(Math.round(item.discount))}`}
+                                                            </Tag>  
+                                                        </Space>
+                                                    )}
                                                 </div>
 
                                                 {variations.length > 0 ? (
@@ -271,13 +287,27 @@ export default function Campaigns() {
                                                                                     </span>
                                                                                 </div>
 
-                                                                                {saveAmount > 0 && (
+                                                                                <Space>
                                                                                     <div style={{ marginTop: 4 }}>
-                                                                                        <Tag color="volcano">
-                                                                                            Save {money(Math.round(saveAmount))}
+                                                                                        <Tag color="blue" style={{textTransform:"capitalize"}}>
+                                                                                            Type : {v.discount_type}
                                                                                         </Tag>
                                                                                     </div>
-                                                                                )}
+
+                                                                                    <div style={{ marginTop: 4 }}>
+                                                                                        <Tag color="purple">
+                                                                                            Discount : {v.discount}{v.discount_type === "percentage" ? "%" : ""}
+                                                                                        </Tag>
+                                                                                    </div>
+
+                                                                                    {saveAmount > 0 && (
+                                                                                        <div style={{ marginTop: 4 }}>
+                                                                                            <Tag color="green">
+                                                                                                Save {money(Math.round(saveAmount))}
+                                                                                            </Tag>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </Space>
                                                                             </Col>
                                                                         </Row>
                                                                     </Card>
@@ -287,8 +317,6 @@ export default function Campaigns() {
                                                     </div>
                                                 ) : (
                                                     (() => {
-                                                        const saveAmount = Number(item.mrp || 0) - Number(item.offer_price || 0);
-
                                                         return (
                                                             <div style={{ marginBottom: 10 }}>
                                                                 <span style={{textDecoration: "line-through", color: "#999"}}>
@@ -298,12 +326,6 @@ export default function Campaigns() {
                                                                 <span style={{marginLeft: 12,fontSize: 18,fontWeight: "bold",color: "#52c41a"}}>
                                                                     {money(item.offer_price)}
                                                                 </span>
-
-                                                                {saveAmount > 0 && (
-                                                                    <Tag color="volcano" style={{ marginLeft: 4 }}>
-                                                                        Save {money(Math.round(saveAmount))}
-                                                                    </Tag>
-                                                                )}
                                                             </div>
                                                         );
                                                     })()

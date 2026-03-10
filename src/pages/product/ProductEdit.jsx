@@ -369,7 +369,7 @@ export default function ProductEdit() {
 
         setSubSubCategoryLoading(true);
         try {
-            const res = await getDatas("/admin/sub-sub-categories", {sub_category_id:value});
+            const res = await getDatas("/admin/sub-sub-categories", {sub_category_ids:value});
 
             if (res?.success && res?.result) {
                 let categories = [];
