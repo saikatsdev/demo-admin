@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import useTitle from "../../../hooks/useTitle";
 import { getDatas } from "../../../api/common/common";
 import "./css/fraud-check.css";
-import { formatCourierData } from "../../../helpers/courier.helper";
 
 export default function FraudCheck() {
     // Hook
@@ -26,9 +25,12 @@ export default function FraudCheck() {
             const res = await getDatas("/admin/orders/courier/delivery/report", {phone_number: phoneNumber});
 
             if (res?.success) {
-                const report = res?.result?.courier_delivery_report || {};
-                setCourierData(report?.summary || null);
-                setCourierList(formatCourierData(report));
+                const report = res?.result || {};
+
+                setCourierData(report || null);
+
+                // array set করো
+                setCourierList(report?.courier_delivery_report || []);
             } else {
                 setCourierData(null);
                 setCourierList([]);
@@ -49,11 +51,16 @@ export default function FraudCheck() {
 
         const totalCanceled = courierList.reduce((sum, i) => sum + Number(i.canceled_parcels || 0),0);
 
-        const overallSuccess = courierData?.success_ratio !== undefined ? Math.round(Number(courierData.success_ratio || 0)) : totalOrders > 0 ? Math.round((totalDelivered / totalOrders) * 100) : 0;
+        const overallSuccess =
+            courierData?.overall_success_percentage !== undefined
+                ? Math.round(Number(courierData.overall_success_percentage || 0))
+                : totalOrders > 0
+                ? Math.round((totalDelivered / totalOrders) * 100)
+                : 0;
 
         const hasOrders = totalOrders > 0;
 
-        return {totalOrders,totalDelivered,totalCanceled,overallSuccess,hasOrders};
+        return { totalOrders, totalDelivered, totalCanceled, overallSuccess, hasOrders };
     }, [courierData, courierList]);
 
     const hasOrders = totals.hasOrders;

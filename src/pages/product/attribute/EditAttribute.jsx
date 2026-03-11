@@ -52,7 +52,10 @@ export default function EditAttribute() {
     const handleAdd = () => {
         setModalMode("add");
         setCurrentValue(null);
-        form.resetFields();
+        form.setFieldsValue({
+            attribute_id: Number(id) || null,
+            value: "",
+        });
         setIsModalVisible(true);
     };
 
@@ -60,7 +63,12 @@ export default function EditAttribute() {
     const handleUpdate = (value) => {
         setModalMode("update");
         setCurrentValue(value);
-        form.setFieldsValue({ id:value.id,value: value.value, slug: value.slug });
+        form.setFieldsValue({
+            id: value.id,
+            value: value.value,
+            slug: value.slug,
+            attribute_id: value.attribute_id,
+        });
         setIsModalVisible(true);
     };
 
@@ -215,7 +223,7 @@ export default function EditAttribute() {
                     </Form.Item>
 
                     <Form.Item name="attribute_id" label="Attribute" rules={[{ required: true }]}>
-                        <Select options={allAttributes?.map(attr => ({value: attr.id,label: attr.name}))} placeholder="Select attribute"/>
+                        <Select  options={allAttributes?.map(attr => ({ value: attr.id, label: attr.name }))} placeholder="Select attribute"/>
                     </Form.Item>
 
                     <Form.Item label="Value" name="value" rules={[{ required: true, message: "Please input the value!" }]}>

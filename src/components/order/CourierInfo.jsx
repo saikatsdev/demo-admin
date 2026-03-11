@@ -154,7 +154,7 @@ export default function CourierInfo({record,name,loading,courierData,courierData
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <Progress percent={Math.round(curierDeliveryReports?.success_ratio ?? 0)} strokeColor="#1C558B" strokeWidth={10} className="custom-progress" format={(percent) => `${percent}%`}/>
+                                            <Progress percent={Math.round(curierDeliveryReports ?? 0)} strokeColor="#1C558B" strokeWidth={10} className="custom-progress" format={(percent) => `${percent}%`}/>
                                         </Col>
                                     </Row>
 

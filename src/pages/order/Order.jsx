@@ -15,7 +15,6 @@ import autoTable from "jspdf-autotable";
 import OrderHistoryModal from "../../components/order/OrderHistoryModal";
 import {useAppSettings} from "../../contexts/useAppSettings";
 import CourierInfo from "../../components/order/CourierInfo";
-import { formatCourierData } from "../../helpers/courier.helper";
 import { cachedFetch } from "../../utils/cacheApi";
 import { useSelector } from "react-redux";
 import CourierStatusModal from "../../components/order/CourierStatusModal";
@@ -70,15 +69,11 @@ export default function Order() {
     const [orderId, setOrderId]                                                                        = useState("");
     const [pickingList, setPickingList]                                                                = useState("");
     const [curierDeliveryReports, setCurierDeliveryReports]                                            = useState({});
-
-
-    const [selectedCourier, setSelectedCourier] = useState(null);
-    const [minPrice, setMinPrice] = useState(null);
-    const [maxPrice, setMaxPrice] = useState(null);
-    const [minInvoice, setMinInvoice] = useState();
-    const [maxInvoice, setMaxInvoice] = useState();
-
-
+    const [selectedCourier, setSelectedCourier]                                                        = useState(null);
+    const [minPrice, setMinPrice]                                                                      = useState(null);
+    const [maxPrice, setMaxPrice]                                                                      = useState(null);
+    const [minInvoice, setMinInvoice]                                                                  = useState();
+    const [maxInvoice, setMaxInvoice]                                                                  = useState();
     const [startDate, setStartDate]                                                                    = useState();
     const [endDate, setEndDate]                                                                        = useState();
     const [errors, setErrors]                                                                          = useState("");
@@ -102,7 +97,7 @@ export default function Order() {
     const [customerTypeList, setCustomerTypeList]                                                      = useState([]);
     const [selectedCustomerTypeId, setSelectedCustomerTypeId]                                          = useState(null);
     const [courierId, setCourierId]                                                                    = useState(null);
-	const [courierStatusId, setCourierStatusId]                                                        = useState(null);
+    const [courierStatusId, setCourierStatusId]                                                        = useState(null);
     const scanEnabled                                                                                  = true;
     const scanBufferRef                                                                                = useRef("");
     const scanTimerRef                                                                                 = useRef(null);
@@ -135,7 +130,7 @@ export default function Order() {
     const [courierLogs, setCourierLogs]                                                                = useState([]);
     const [pageSize, setPageSize]                                                                      = useState(orders?.per_page);
     const [bulkLoading, setBulLoading]                                                                 = useState(false);
-	const [digitalModalOpen, setDigitalModalOpen]                                                      = useState(false);
+    const [digitalModalOpen, setDigitalModalOpen]                                                      = useState(false);
     const [selectedDigitalOrderId, setSelectedDigitalOrderId]                                          = useState(null);
 
     // Redux State
@@ -813,13 +808,13 @@ export default function Order() {
             const res = await getDatas("/admin/orders/courier/delivery/report", {phone_number: phoneNumber});
 
             if (res.success) {
-                setCurierDeliveryReports(res?.result?.courier_delivery_report?.summary);
+                setCurierDeliveryReports(res?.result?.overall_success_percentage);
 
                 const deliveryReport = res.result?.courier_delivery_report || [];
 
                 setLocalOrderSummary(res?.result?.order_summary);
 
-                setCourierData(formatCourierData(deliveryReport));
+                setCourierData(deliveryReport);
             }
         } catch (error) {
             console.error("Error fetching courier delivery reports:", error);
