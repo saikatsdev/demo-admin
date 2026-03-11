@@ -94,6 +94,8 @@ export default function ProductEdit() {
     const [galleryWidths, setGalleryWidths]                         = useState([]);
     const [galleryHeights, setGalleryHeights]                       = useState([]);
 
+    const [variationIds, setVariationIds] = useState([]);
+
     const galleryProcessedFiles = useRef(new Set());
 
     useEffect(() => {
@@ -238,6 +240,9 @@ export default function ProductEdit() {
                 );
 
                 if (p.variations?.length > 0) setProductData(p);
+
+                const ids = p.variations.map(v => v.id || null);
+                setVariationIds(ids);
             }
         };
         init();
@@ -741,8 +746,6 @@ export default function ProductEdit() {
             formData.append("meta_keywords", metaKeywords || "");
             formData.append("meta_description", metaDescription || "");
             formData.append("sku", sku || "");
-            // formData.append("width", width || "1000");
-            // formData.append("height", height || "1000");
             formData.append("video_url", videoUrl || "");
             formData.append("_method", "put");
 
@@ -820,6 +823,12 @@ export default function ProductEdit() {
             deletedGalleryIds.forEach(id =>
                 formData.append("delete_gallery_image_ids[]", id)
             );
+
+            variationIds.forEach((vid, i) => {
+                if (vid) {
+                    formData.append(`variations[${i}][id]`, vid);
+                }
+            });
 
             const res = await postData(`/admin/products/${id}`, formData, {headers: { "Content-Type": "multipart/form-data" },});
 
@@ -1174,7 +1183,7 @@ export default function ProductEdit() {
                                         dataIndex: "buyPrice",
                                         width: 120,
                                         render: (_, record) => (
-                                            <Input placeholder="0" value={variationBuyPrice[record.index]} onChange={(e) =>updateVariationField(record.index,"buyPrice",e.target.value)}/>
+                                            <Input placeholder="0" value={variationBuyPrice[record.index]} onChange={(e) => updateVariationField(record.index,"buyPrice",e.target.value)}/>
                                         ),
                                     },
                                     {

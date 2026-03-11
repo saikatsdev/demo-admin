@@ -180,10 +180,10 @@ export default function AllSettings() {
             key: "action",
             render: (_, record) => (
                 <Space>
-                <Button type="primary" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
-                <Popconfirm title="Are you sure to delete?" onConfirm={() => handleDelete(record.id)} okText="Yes" cancelText="No">
-                    <Button danger size="small" icon={<DeleteOutlined />} />
-                </Popconfirm>
+                    <Button type="primary" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
+                    <Popconfirm title="Are you sure to delete?" onConfirm={() => handleDelete(record.id)} okText="Yes" cancelText="No">
+                        <Button danger size="small" icon={<DeleteOutlined />} />
+                    </Popconfirm>
                 </Space>
             )
         }
@@ -225,9 +225,11 @@ export default function AllSettings() {
                 <label style={{ display: "block", marginBottom: 6, fontWeight: 500 }}>
                     Settings Type
                 </label>
+                
                 <Select style={{ width: "100%", marginBottom:"10px" }} value={editType} onChange={(value) => setEditType(value)} placeholder="Select a Setting Type">
                     <Option value="" disabled>Select One</Option>
                     <Option value="switch-button">Switch Button</Option>
+                    <Option value="dropdown">Dropdown</Option>
                     <Option value="input">Input Field</Option>
                     <Option value="image">Image</Option>
                     <Option value="description">Description</Option>

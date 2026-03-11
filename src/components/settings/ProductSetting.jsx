@@ -112,6 +112,44 @@ export default function ProductSetting({formatText}) {
                                                 </label>
                                             );
 
+                                        case "dropdown":
+                                            return (
+                                                <select className="custom-input" name={product.key} value={product.value || ""} onChange={(e) => handleInputChange(product.id, e.target.value)}>
+                                                    <option value="">Select an option</option>
+                                                        <option value="price_low_to_high">
+                                                            Price Low To High
+                                                        </option>
+
+                                                        <option value="price_high_to_low">
+                                                            Price High To Low
+                                                        </option>
+
+                                                        <option value="stock_low_to_high">
+                                                            Stock Low To High
+                                                        </option>
+
+                                                        <option value="stock_high_to_low">
+                                                            Stock High To Low
+                                                        </option>
+
+                                                        <option value="oldest">
+                                                            Oldest
+                                                        </option>
+
+                                                        <option value="latest">
+                                                            Latest
+                                                        </option>
+
+                                                        <option value="sell_low_to_high">
+                                                            Sell Low To High
+                                                        </option>
+
+                                                        <option value="sell_high_to_low">
+                                                            Sell High To Low
+                                                        </option>
+                                                </select>
+                                            );
+
                                         case "input":
                                             return (
                                                 <input className="custom-input" type="text" name={product.key} value={product.value || ""} onChange={(e) => handleInputChange(product.id, e.target.value)}/>

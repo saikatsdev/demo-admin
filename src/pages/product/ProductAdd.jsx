@@ -103,16 +103,16 @@ export default function ProductAdd() {
     useEffect(() => {
         const init = async () => {
           const catRes = await getDatas("/admin/categories/list");
-          if (catRes?.success) setCategories(catRes.result);
+          if (catRes?.success) setCategories(catRes?.result || []);
     
           const brandRes = await getDatas("/admin/brands/list");
-          if (brandRes?.success) setBrands(brandRes.result);
+          if (brandRes?.success) setBrands(brandRes?.result || []);
     
           const typeRes = await getDatas("/admin/product-types/list");
-          if (typeRes?.success) setProductTypes(typeRes.result);
+          if (typeRes?.success) setProductTypes(typeRes?.result || []);
     
-          const variationRes = await getDatas("/admin/attributes/list");
-          if (variationRes?.success) setAllVariations(variationRes.result);
+          const variationRes = await getDatas("/admin/attributes");
+          if (variationRes?.success) setAllVariations(variationRes?.result?.data);
         };
         init();
     }, []);
@@ -359,13 +359,14 @@ export default function ProductAdd() {
 
     const handleAttributeValue = (index, selectedIds = null) => {
         const attributeIds = selectedIds || selectedAttributeId[index] || [];
-        const newAttributes = allVariations?.data?.filter((i) => attributeIds.includes(i.id)) || [];
+        const newAttributes = allVariations?.filter((i) => attributeIds.includes(i.id)) || [];
 
         let updated = [...attributes];
         updated[index] = newAttributes;
         setAttributes(updated);
 
         let attrVal = [...attributeValue];
+
         if (!attrVal[index]) attrVal[index] = [];
 
         const currentValues = attrVal[index] || [];
@@ -933,7 +934,7 @@ export default function ProductAdd() {
                                                 <Space direction="vertical" style={{ width: "100%" }}>
                                                     <Select mode="multiple" placeholder="Select Attributes" style={{ width: "100%" }} value={selectedAttributeId[record.index]}
                                                     onChange={(val) => {let updated = [...selectedAttributeId];updated[record.index] = val;setSelectedAttributeId(updated);handleAttributeValue(record.index, val);}}
-                                                    options={(allVariations?.data || []).map((v) => ({label: v.name,value: v.id,}))}/>
+                                                    options={(allVariations || []).map((v) => ({label: v.name,value: v.id,}))}/>
                                                     {attributes[record.index]?.map((attr, i) => (
                                                         <Select key={i} placeholder={`Select ${attr.name}`} style={{ width: "100%" }} value={attributeValue[record.index]?.find((val) => val.attribute_id === attr.id)?.id}
                                                             onChange={(val) => {
@@ -1124,7 +1125,7 @@ export default function ProductAdd() {
                                         setSelectedVariationValues((prev) => prev.filter((val) => !removedAttributeIds.includes(val.attribute_id)));
                                     }
                                 }}
-                                options={(allVariations?.data || []).map((v) => ({label: v.name,value: v.id,}))} style={{ width: "100%" }}
+                                options={(allVariations || []).map((v) => ({label: v.name,value: v.id,}))} style={{ width: "100%" }}
                             />
                         </Form.Item>
             
