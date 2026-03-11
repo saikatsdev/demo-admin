@@ -70,6 +70,15 @@ export default function Order() {
     const [orderId, setOrderId]                                                                        = useState("");
     const [pickingList, setPickingList]                                                                = useState("");
     const [curierDeliveryReports, setCurierDeliveryReports]                                            = useState({});
+
+
+    const [selectedCourier, setSelectedCourier] = useState(null);
+    const [minPrice, setMinPrice] = useState(null);
+    const [maxPrice, setMaxPrice] = useState(null);
+    const [minInvoice, setMinInvoice] = useState();
+    const [maxInvoice, setMaxInvoice] = useState();
+
+
     const [startDate, setStartDate]                                                                    = useState();
     const [endDate, setEndDate]                                                                        = useState();
     const [errors, setErrors]                                                                          = useState("");
@@ -150,9 +159,13 @@ export default function Order() {
                 cancel_reason_id  : "cancel_reason_id" in overrides ? overrides.cancel_reason_id    : cancelReasonId,
                 start_date        : "start_date" in overrides ? overrides.start_date                : startDate ? dayjs(startDate).format("YYYY-MM-DD"): "",
                 end_date          : "end_date" in overrides ? overrides.end_date                    : endDate ? dayjs(endDate).format("YYYY-MM-DD")    : "",
+                min_price         : "min_price" in overrides ? overrides.min_price                  : minPrice,
+                max_price         : "max_price" in overrides ? overrides.max_price                  : maxPrice,
+                min_invoice       : "min_invoice" in overrides ? overrides.min_invoice              : minInvoice,
+                max_invoice       : "max_invoice" in overrides ? overrides.max_invoice              : maxInvoice,
                 is_duplicate      : "is_duplicate" in overrides ? overrides.is_duplicate            : duplicateOrder,
                 courier_id        : "courier_id" in overrides ? overrides.courier_id                : courierId,
-				courier_status_id : "courier_status_id" in overrides ? overrides.courier_status_id  : courierStatusId,
+                courier_status_id : "courier_status_id" in overrides ? overrides.courier_status_id  : courierStatusId,
                 is_invoice_printed: "is_invoice_printed" in overrides ? overrides.is_invoice_printed: invoiceStatus,
             });
             
@@ -163,7 +176,7 @@ export default function Order() {
                 setCurrentPage(res?.result?.orders?.meta?.current_page);
                 setPageSize(res?.result?.orders?.meta?.per_page);
         
-                const keysToCheck = ["paid_status", "order_from_id","start_date", "end_date", "is_invoice_printed", "customer_type_id"];
+                const keysToCheck = ["paid_status", "order_from_id","start_date", "end_date", "district_id","is_invoice_printed", "customer_type_id", "min_price", "max_price", "min_invoice", "max_invoice"];
                 const hasRelevantOverride = keysToCheck.some(key => key in overrides);
 
                 if (hasRelevantOverride && statusId) {
@@ -2074,6 +2087,51 @@ export default function Order() {
                                         ))}
                                     </Select>
                                 </div>
+
+                                <div className="filter-item">
+                                    <label className="filter-label">Courier</label>
+                                    <Select value={selectedCourier} onChange={(value) => {setSelectedCourier(value);getOrders(1, { courier_id: value });}} placeholder="Courier" style={{ width: 170, height: 40 }}
+                                    allowClear>
+                                        {couriers?.map((item) => (
+                                            <Option key={item.id} value={item.id}>
+                                                {item.name}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </div>
+
+                                <div className="filter-item">
+                                    <label className="filter-label">District</label>
+                                    <Select value={selectedDistrictId} onChange={(value) => {setSelectedDistrictId(value); getOrders(1, { district_id: value });}} placeholder="District"
+                                    style={{ width: 170, height: 40 }} allowClear>
+                                        {districtList?.map((item) => (
+                                            <Option key={item.id} value={item.id}>
+                                                {item.name}
+                                            </Option>
+                                        ))}
+                                    </Select>
+                                </div>
+
+                                <div className="filter-item">
+                                    <label className="filter-label">Min Price</label>
+                                    <Input value={minPrice} onChange={(e) => {setMinPrice(e.target.value);getOrders(1, { min_price: e.target.value });}} placeholder="Min Price"style={{ width: 170, height: 40 }}/>
+                                </div>
+
+                                <div className="filter-item">
+                                    <label className="filter-label">Max Price</label>
+                                    <Input value={maxPrice} onChange={(e) => {setMaxPrice(e.target.value);getOrders(1, { max_price: e.target.value });}} placeholder="Max Price" style={{ width: 170, height: 40 }}/>
+                                </div>
+
+                                <div className="filter-item">
+                                    <label className="filter-label">Start Invoice</label>
+                                    <Input value={minInvoice} onChange={(e) => {setMinInvoice(e.target.value); getOrders(1, { min_invoice: e.target.value });}} placeholder="Start Invoice"style={{ width: 170, height: 40 }}/>
+                                </div>
+
+                                <div className="filter-item">
+                                    <label className="filter-label">End Invoice</label>
+                                    <Input value={maxInvoice} onChange={(e) => {setMaxInvoice(e.target.value); getOrders(1, { max_invoice: e.target.value });}} placeholder="End Invoice" style={{ width: 170, height: 40 }}
+                                    />
+                                </div>
         
                                 <div className="filter-item">
                                     <label className="filter-label">Start Date</label>
@@ -2137,6 +2195,37 @@ export default function Order() {
                                 {employeeId && (
                                     <Tag closable onClose={() => {setEmployeeId(null);getOrders(1);}}>
                                         Employee:{employeeList?.find((e) => e.id === employeeId)?.name || "N/A"}
+                                    </Tag>
+                                )}
+
+                                {selectedCourier && (
+                                    <Tag closable onClose={() => {setSelectedCourier(null);getOrders(1);}}>
+                                        Courier: {couriers?.find((c) => c.id === selectedCourier) ?.name || "N/A"}
+                                    </Tag>
+                                )}
+
+                                {minPrice && (
+                                    <Tag closable onClose={() => {setMinPrice(""); getOrders(1);}}>
+                                        Min Price: ৳{minPrice}
+                                    </Tag>
+                                )}
+
+                                {maxPrice && (
+                                    <Tag closable onClose={() => {setMaxPrice(""); getOrders(1);}}>
+                                        Max Price: ৳{maxPrice}
+                                    </Tag>
+                                )}
+
+                                {minInvoice && (
+                                    <Tag closable onClose={() => {setMinInvoice("");getOrders(1);}}>
+                                        Invoice Start: {minInvoice}
+                                    </Tag>
+                                )}
+
+                                {/* Max Invoice */}
+                                {maxInvoice && (
+                                    <Tag closable onClose={() => {setMaxInvoice(""); getOrders(1);}}>
+                                        Invoice End: {maxInvoice}
                                     </Tag>
                                 )}
             
