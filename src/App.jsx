@@ -157,300 +157,264 @@ import TrashPaymentGatewayList from "./pages/order/payment_gateway/TrashPaymentG
 import Profile from "./pages/auth/user/Profile";
 
 function App() {
+    const dispatch         = useDispatch();
+    const auth             = useSelector(state => state.auth);
+    const districts        = useSelector((state) => state.districts.list);
+    const orderFromList    = useSelector((state) => state.orderFrom.list);
+    const customerTypes    = useSelector((s) => s.customerType.list);
+    const cancelReasons    = useSelector((s) => s.cancelReason.list);
+    const paymentGateways  = useSelector((s) => s.paymentGateway.list);
+    const couriers         = useSelector((s) => s.courier.list);
+    const statuses         = useSelector((s) => s.status.list);
+    const deliveryGateways = useSelector((s) => s.deliveryGateway.list);
 
-  const dispatch         = useDispatch();
-  const auth             = useSelector(state => state.auth);
-  const districts        = useSelector((state) => state.districts.list);
-  const orderFromList    = useSelector((state) => state.orderFrom.list);
-  const customerTypes    = useSelector((s) => s.customerType.list);
-  const cancelReasons    = useSelector((s) => s.cancelReason.list);
-  const paymentGateways  = useSelector((s) => s.paymentGateway.list);
-  const couriers         = useSelector((s) => s.courier.list);
-  const statuses         = useSelector((s) => s.status.list);
-  const deliveryGateways = useSelector((s) => s.deliveryGateway.list);
+    useEffect(() => {
+        if (!auth?.token) return;
 
-  useEffect(() => {
-    if (!auth?.token) return;
+        if (!districts.length) dispatch(fetchDistricts());
+        if (!orderFromList.length) dispatch(fetchOrderFromList());
+        if (!customerTypes.length) dispatch(fetchCustomerTypes());
+        if (!cancelReasons.length) dispatch(fetchCancelReasons());
+        if (!paymentGateways.length) dispatch(fetchPaymentGateways());
+        if (!couriers.length) dispatch(fetchCouriers());
+        if (!statuses.length) dispatch(fetchStatuses());
+        if (!deliveryGateways.length) dispatch(fetchDeliveryGateways());
+    }, [auth]);
 
-    if (!districts.length) dispatch(fetchDistricts());
-    if (!orderFromList.length) dispatch(fetchOrderFromList());
-    if (!customerTypes.length) dispatch(fetchCustomerTypes());
-    if (!cancelReasons.length) dispatch(fetchCancelReasons());
-    if (!paymentGateways.length) dispatch(fetchPaymentGateways());
-    if (!couriers.length) dispatch(fetchCouriers());
-    if (!statuses.length) dispatch(fetchStatuses());
-    if (!deliveryGateways.length) dispatch(fetchDeliveryGateways());
-  }, [auth]);
+    return (
+        <Routes>
+            <Route path="/login"
+                element={
+                    <RedirectIfAuth>
+                        <Login />
+                    </RedirectIfAuth>
+                }
+            />
 
-  return (
-    <Routes>
-      <Route
-        path="/login"
-        element={
-          <RedirectIfAuth>
-            <Login />
-          </RedirectIfAuth>
-        }
-      />
-      <Route
-        path="/register"
-        element={
-          <RedirectIfAuth>
-            <Register />
-          </RedirectIfAuth>
-        }
-      />
+            <Route path="/register"
+                element={
+                    <RedirectIfAuth>
+                        <Register />
+                    </RedirectIfAuth>
+                }
+            />
 
-      <Route element={<RequireAuth />}>
-        <Route element={<AdminLayout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/users" element={<User />} />
-          <Route path="/roles" element={<Role />} />
-          <Route path="/customer" element={<Customer />} />
-          <Route path="/add/customer" element={<AddCustomer />} />
-          <Route path="/edit/customer/:id" element={<EditCustomer />} />
+            <Route element={<RequireAuth />}>
+                <Route element={<AdminLayout />}>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/users" element={<User />} />
+                    <Route path="/roles" element={<Role />} />
+                    <Route path="/customer" element={<Customer />} />
+                    <Route path="/add/customer" element={<AddCustomer />} />
+                    <Route path="/edit/customer/:id" element={<EditCustomer />} />
 
-          {/* Management */}
-          <Route path="/management" element={<Management />} />
-          <Route path="/add/management" element={<AddManagement />} />
-          <Route path="/edit/management/:id" element={<EditManagement />} />
+                    <Route path="/management" element={<Management />} />
+                    <Route path="/add/management" element={<AddManagement />} />
+                    <Route path="/edit/management/:id" element={<EditManagement />} />
 
-          {/* Employee */}
-          <Route path="/employee" element={<Employee />} />
-          <Route path="/add/employee" element={<AddEmployee />} />
-          <Route path="/edit/employee/:id" element={<EditEmployee />} />
+                    <Route path="/employee" element={<Employee />} />
+                    <Route path="/add/employee" element={<AddEmployee />} />
+                    <Route path="/edit/employee/:id" element={<EditEmployee />} />
 
-          {/* Profile Management */}
-          <Route path="/system/user-management" element={<Profile />} />
+                    <Route path="/system/user-management" element={<Profile />} />
 
-          {/* For Product Management */}
-          <Route path="/brands" element={<Brand />} />
-          <Route path="/add/brand" element={<AddBrand />} />
-          <Route path="/edit/brand/:id" element={<EditBrand />} />
+                    <Route path="/brands" element={<Brand />} />
+                    <Route path="/add/brand" element={<AddBrand />} />
+                    <Route path="/edit/brand/:id" element={<EditBrand />} />
 
-          <Route path="/product-types" element={<ProductType />} />
-          <Route path="/add/product-type" element={<AddProductType />} />
-          <Route path="/edit/product-type/:id" element={<EditProductType />} />
+                    <Route path="/product-types" element={<ProductType />} />
+                    <Route path="/add/product-type" element={<AddProductType />} />
+                    <Route path="/edit/product-type/:id" element={<EditProductType />} />
 
-          <Route path="/categories" element={<Category />} />
-          <Route path="/add/category" element={<AddCategory />} />
-          <Route path="/edit/category/:id" element={<EditCategory />} />
+                    <Route path="/categories" element={<Category />} />
+                    <Route path="/add/category" element={<AddCategory />} />
+                    <Route path="/edit/category/:id" element={<EditCategory />} />
 
-          <Route path="/subcategories" element={<SubCategory />} />
-          <Route path="/add/subcategory" element={<AddSubCategory />} />
-          <Route path="/edit/subcategory/:id" element={<EditSubCategory />} />
+                    <Route path="/subcategories" element={<SubCategory />} />
+                    <Route path="/add/subcategory" element={<AddSubCategory />} />
+                    <Route path="/edit/subcategory/:id" element={<EditSubCategory />} />
 
-          <Route path="/subsubcategories" element={<SubSubCategory />} />
-          <Route path="/add/sub/subcategory" element={<AddSubSubCategory />} />
-          <Route path="/edit/sub/subcategory/:id" element={<EditSubSubCategory />} />
+                    <Route path="/subsubcategories" element={<SubSubCategory />} />
+                    <Route path="/add/sub/subcategory" element={<AddSubSubCategory />} />
+                    <Route path="/edit/sub/subcategory/:id" element={<EditSubSubCategory />} />
 
-          <Route path="/attributes" element={<Attribute />} />
-          <Route path="/attributes/config/:id" element={<EditAttribute/>} />
-          <Route path="/products" element={<Product />} />
-          <Route path="/product-add" element={<ProductAdd />} />
-          <Route path="/product-edit/:id" element={<ProductEdit />} />
-          <Route path="/upsell" element={<UpSell />} />
-          <Route path="/add/upsell" element={<AddUpSell />} />
-          <Route path="/edit/upsell/:id" element={<EditUpSell />} />
-          <Route path="/upsell/settings" element={<UpsellSetting />} />
-          <Route path="/add/down-sell" element={<AddDownSell />} />
+                    <Route path="/attributes" element={<Attribute />} />
+                    <Route path="/attributes/config/:id" element={<EditAttribute/>} />
+                    <Route path="/products" element={<Product />} />
+                    <Route path="/product-add" element={<ProductAdd />} />
+                    <Route path="/product-edit/:id" element={<ProductEdit />} />
+                    <Route path="/upsell" element={<UpSell />} />
+                    <Route path="/add/upsell" element={<AddUpSell />} />
+                    <Route path="/edit/upsell/:id" element={<EditUpSell />} />
+                    <Route path="/upsell/settings" element={<UpsellSetting />} />
+                    <Route path="/add/down-sell" element={<AddDownSell />} />
 
-          <Route path="/edit/downsell/:id" element={<EditDownSell />} />
+                    <Route path="/edit/downsell/:id" element={<EditDownSell />} />
 
-          <Route path="/review" element={<Review />} />
-          <Route path="/add/review" element={<AddReview />} />
-          <Route path="/edit/review/:id" element={<EditReview />} />
+                    <Route path="/review" element={<Review />} />
+                    <Route path="/add/review" element={<AddReview />} />
+                    <Route path="/edit/review/:id" element={<EditReview />} />
 
-          <Route path="/section-banner" element={<SectionBanner />} />
-          {/* For Product Management */}
+                    <Route path="/section-banner" element={<SectionBanner />} />
 
-          {/* For Catelog Management */}
-          <Route path="/product/catalogs" element={<ProductCatelog />} />
-          <Route path="/add/prodcut/catelog" element={<AddProductCatelog />} />
-          <Route path="/edit/prodcut/catelog/:id" element={<EditProductCatelog />}/>
+                    <Route path="/product/catalogs" element={<ProductCatelog />} />
+                    <Route path="/add/prodcut/catelog" element={<AddProductCatelog />} />
+                    <Route path="/edit/prodcut/catelog/:id" element={<EditProductCatelog />}/>
 
-          <Route path="/gtm-manage" element={<GtmSetting />} />
-          <Route path="/clarity-id" element={<Clarity />} />
-          <Route path="/google-analytical" element={<GoogleAnalytic />} />
-          <Route path="/facebook/meta/pixel" element={<FacebookMeta />} />
+                    <Route path="/gtm-manage" element={<GtmSetting />} />
+                    <Route path="/clarity-id" element={<Clarity />} />
+                    <Route path="/google-analytical" element={<GoogleAnalytic />} />
+                    <Route path="/facebook/meta/pixel" element={<FacebookMeta />} />
 
-          <Route path="/pusher/settings" element={<Pusher />} />
-          {/* For Catelog Management */}
+                    <Route path="/pusher/settings" element={<Pusher />} />
 
-          {/* For Order Management */}
-          <Route path="/incomplete/orders" element={<InCompleteOrder />} />
-          <Route path="/edit/incomplete-order/:id" element={<EditIncomepleteOrder />}/>
-          <Route path="/delivery/charge" element={<DeliveryCharge />} />
-          <Route path="/free/delivery" element={<FreeDelivery />} />
+                    <Route path="/incomplete/orders" element={<InCompleteOrder />} />
+                    <Route path="/edit/incomplete-order/:id" element={<EditIncomepleteOrder />}/>
+                    <Route path="/delivery/charge" element={<DeliveryCharge />} />
+                    <Route path="/free/delivery" element={<FreeDelivery />} />
 
-          <Route path="/payment-gateways" element={<PaymentGateway />} />
-          <Route path="/payment/gateway/trash" element={<TrashPaymentGatewayList />} />
-          <Route path="/add/payment/gateway" element={<AddPaymentGateway />} />
-          <Route path="/edit/payment/gateway/:id" element={<EditPaymentGateway />} />
+                    <Route path="/payment-gateways" element={<PaymentGateway />} />
+                    <Route path="/payment/gateway/trash" element={<TrashPaymentGatewayList />} />
+                    <Route path="/add/payment/gateway" element={<AddPaymentGateway />} />
+                    <Route path="/edit/payment/gateway/:id" element={<EditPaymentGateway />} />
 
-          <Route path="/online-payment/discounts" element={<OnlinePaymentDiscount />}/>
-          <Route path="/statuses" element={<OrderStatus />} />
-          <Route path="/coupons" element={<MarketCoupon />} />
-          <Route path="/order-tag" element={<OrderTag />} />
-          <Route path="/types/customer" element={<CustomerType />} />
-          <Route path="/cancel-reasons" element={<CancelReason />} />
+                    <Route path="/online-payment/discounts" element={<OnlinePaymentDiscount />}/>
+                    <Route path="/statuses" element={<OrderStatus />} />
+                    <Route path="/coupons" element={<MarketCoupon />} />
+                    <Route path="/order-tag" element={<OrderTag />} />
+                    <Route path="/types/customer" element={<CustomerType />} />
+                    <Route path="/cancel-reasons" element={<CancelReason />} />
 
-          <Route path="/couriers" element={<Courier />} />
-          <Route path="/trash/courier" element={<TrashCourierList />} />
-          <Route path="/add/courier" element={<AddCourier />} />
-          <Route path="/edit/courier/:id" element={<EditCourier />} />
+                    <Route path="/couriers" element={<Courier />} />
+                    <Route path="/trash/courier" element={<TrashCourierList />} />
+                    <Route path="/add/courier" element={<AddCourier />} />
+                    <Route path="/edit/courier/:id" element={<EditCourier />} />
 
-          <Route path="/orders" element={<Order />} />
-          <Route path="/order-add" element={<OrderAdd />} />
-          <Route path="/order-edit/:id" element={<OrderEdit />} />
-          <Route path="/downsell-coupon" element={<DownSellCoupon />} />
+                    <Route path="/orders" element={<Order />} />
+                    <Route path="/order-add" element={<OrderAdd />} />
+                    <Route path="/order-edit/:id" element={<OrderEdit />} />
+                    <Route path="/downsell-coupon" element={<DownSellCoupon />} />
 
 
-          <Route path="/trash/list" element={<TrashList />} />
-          {/* For Order Management */}
+                    <Route path="/trash/list" element={<TrashList />} />
 
-          {/* Invoice Pages Routes */}
-          <Route path="/invoice/:id" element={<InvoiceA4 />} />
-          <Route path="/a5-invoice/:id" element={<InvoiceA5 />} />
-          <Route path="/pos-invoice/:id" element={<InvoicePos />} />
-          <Route path="/admin/multi-invoice" element={<MultipleInvoice />} />
-          {/* Invoice Pages Routes */}
+                    <Route path="/invoice/:id" element={<InvoiceA4 />} />
+                    <Route path="/a5-invoice/:id" element={<InvoiceA5 />} />
+                    <Route path="/pos-invoice/:id" element={<InvoicePos />} />
+                    <Route path="/admin/multi-invoice" element={<MultipleInvoice />} />
 
-          {/* For Courier Management */}
-          <Route path="/all/couriers" element={<Courier />} />
+                    <Route path="/all/couriers" element={<Courier />} />
 
-          <Route path="/steadfast" element={<SteadFast />} />
+                    <Route path="/steadfast" element={<SteadFast />} />
 
-          <Route path="/pathao" element={<Pathao />} />
-          <Route path="/store/create" element={<StoreCreate />} />
-          <Route path="/all/store" element={<PathaStore />} />
+                    <Route path="/pathao" element={<Pathao />} />
+                    <Route path="/store/create" element={<StoreCreate />} />
+                    <Route path="/all/store" element={<PathaStore />} />
 
-          <Route path="/courier/settings" element={<CourierSetting />} />
+                    <Route path="/courier/settings" element={<CourierSetting />} />
 
-          <Route path="/redx" element={<REDX />} />
-          {/* For Courier Management */}
+                    <Route path="/redx" element={<REDX />} />
 
-          {/* For Blog Management */}
-          <Route path="/blogs" element={<Blog />} />
-          <Route path="/add/blog" element={<AddBlog />} />
-          <Route path="/edit/blog/:id" element={<EditBlog />} />
-          <Route path="/blog/tag" element={<BlogTag />} />
-          <Route path="/blog/categories" element={<BlogCategory />} />
-          <Route path="/create/blog/category" element={<AddBlogCategory />} />
-          <Route path="/edit/blog/category/:id" element={<EditBlogCategory />} />
-          {/* For Blog Management */}
+                    <Route path="/blogs" element={<Blog />} />
+                    <Route path="/add/blog" element={<AddBlog />} />
+                    <Route path="/edit/blog/:id" element={<EditBlog />} />
+                    <Route path="/blog/tag" element={<BlogTag />} />
+                    <Route path="/blog/categories" element={<BlogCategory />} />
+                    <Route path="/create/blog/category" element={<AddBlogCategory />} />
+                    <Route path="/edit/blog/category/:id" element={<EditBlogCategory />} />
 
-          {/* For Follow Up Sell */}
-          <Route path="/followup-sell" element={<FollowupSell />} />
-          {/* For Follow Up Sell */}
+                    <Route path="/followup-sell" element={<FollowupSell />} />
 
-          {/* For CMS Management */}
-          <Route path="/edit/banner/:id" element={<EditBanner />} />
+                    <Route path="/edit/banner/:id" element={<EditBanner />} />
 
-          <Route path="/sliders" element={<Slider />} />
-          <Route path="/add/slider" element={<AddSlider />} />
-          <Route path="/slider/edit/:id" element={<EditSlider />} />
+                    <Route path="/sliders" element={<Slider />} />
+                    <Route path="/add/slider" element={<AddSlider />} />
+                    <Route path="/slider/edit/:id" element={<EditSlider />} />
 
-          <Route path="/about" element={<About />} />
-          <Route path="/add/about" element={<AddAbout />} />
-          <Route path="/edit/about/:id" element={<EditAbout />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/add/about" element={<AddAbout />} />
+                    <Route path="/edit/about/:id" element={<EditAbout />} />
 
-          <Route path="/contacts" element={<Contact />} />
-          <Route path="/add/contact" element={<AddContact />} />
-          <Route path="/edit/contact/:id" element={<EditContact />} />
+                    <Route path="/contacts" element={<Contact />} />
+                    <Route path="/add/contact" element={<AddContact />} />
+                    <Route path="/edit/contact/:id" element={<EditContact />} />
 
-          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-          <Route path="/add/privacy" element={<AddPrivacy />} />
-          <Route path="/edit/privacy/:id" element={<EditPrivacy />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/add/privacy" element={<AddPrivacy />} />
+                    <Route path="/edit/privacy/:id" element={<EditPrivacy />} />
 
-          <Route path="/terms-and-conditions" element={<TermsCondition />} />
-          <Route path="/add/terms" element={<AddTermsCondition />} />
-          <Route path="/edit/terms-condition/:id" element={<EditTermsCondition />} />
-          {/* For CMS Management */}
+                    <Route path="/terms-and-conditions" element={<TermsCondition />} />
+                    <Route path="/add/terms" element={<AddTermsCondition />} />
+                    <Route path="/edit/terms-condition/:id" element={<EditTermsCondition />} />
 
-          {/* For Fake Order Management */}
-          <Route path="/block-users" element={<BlockList />} />
-          <Route path="/add-block-user" element={<AddBlockUser />} />
-          <Route path="/block-settings" element={<BlockSettings />} />
-          <Route path="/currier-report" element={<FraudCheck />} />
-          {/* For Fake Order Management */}
+                    <Route path="/block-users" element={<BlockList />} />
+                    <Route path="/add-block-user" element={<AddBlockUser />} />
+                    <Route path="/block-settings" element={<BlockSettings />} />
+                    <Route path="/currier-report" element={<FraudCheck />} />
 
-          {/* For Campaigns Management */}
-          <Route path="/campaigns" element={<Campaigns />} />
-          <Route path="/add/campaign" element={<AddCampaign />} />
-          <Route path="/edit/campaign/:id" element={<EditCampaign />} />
-          {/* For Campaigns Management */}
+                    <Route path="/campaigns" element={<Campaigns />} />
+                    <Route path="/add/campaign" element={<AddCampaign />} />
+                    <Route path="/edit/campaign/:id" element={<EditCampaign />} />
 
-          {/* report */}
-          <Route path="/all/customer/report" element={<CustomerReport />} />
-          <Route path="/sales/report" element={<SaleReport />} />
-          <Route path="/report/orders" element={<OrderReport />} />
-          <Route path="/all/upsell/report" element={<UpsellReport />} />
-          <Route path="/downsell/report" element={<DownsellReport />} />
-          <Route path="/followup/report" element={<FollowupReport />} />
-          <Route path="/stock/report" element={<StockReport />} />
-          <Route path="/cross/sell/report" element={<CrossSellReport />} />
-          <Route path="/return/report" element={<ReturnReport />} />
-          <Route path="/cancel/report" element={<CancelReport />} />
-          <Route path="/product/report" element={<ProductReport />} />
-          <Route path="/location/report" element={<LocationReport />} />
-          <Route path="/courier/report" element={<CourierReport />} />
-          {/* report */}
+                    <Route path="/all/customer/report" element={<CustomerReport />} />
+                    <Route path="/sales/report" element={<SaleReport />} />
+                    <Route path="/report/orders" element={<OrderReport />} />
+                    <Route path="/all/upsell/report" element={<UpsellReport />} />
+                    <Route path="/downsell/report" element={<DownsellReport />} />
+                    <Route path="/followup/report" element={<FollowupReport />} />
+                    <Route path="/stock/report" element={<StockReport />} />
+                    <Route path="/cross/sell/report" element={<CrossSellReport />} />
+                    <Route path="/return/report" element={<ReturnReport />} />
+                    <Route path="/cancel/report" element={<CancelReport />} />
+                    <Route path="/product/report" element={<ProductReport />} />
+                    <Route path="/location/report" element={<LocationReport />} />
+                    <Route path="/courier/report" element={<CourierReport />} />
 
-          <Route path="/seo-pages" element={<SEO />} />
+                    <Route path="/seo-pages" element={<SEO />} />
 
-          <Route path="/gallary" element={<Gallary />} />
+                    <Route path="/gallary" element={<Gallary />} />
 
-          {/* Section & Product Management */}
-          <Route path="/section-list" element={<SectionProdcut />} />
-          <Route path="/add/section" element={<AddSection />} />
-          <Route path="/edit/section/:id" element={<EditSection />} />
-          {/* Section & Product Management */}
+                    <Route path="/section-list" element={<SectionProdcut />} />
+                    <Route path="/add/section" element={<AddSection />} />
+                    <Route path="/edit/section/:id" element={<EditSection />} />
 
-          {/* For Catgeory Section */}
-          <Route path="/category-section-list" element={<CategorySection />} />
-          <Route path="/add/category/section" element={<AddCategorySection />}/>
-          <Route path="/edit/section-category/:id" element={<EditCategorySection />}/>
-          {/* For Catgeory Section */}
+                    <Route path="/category-section-list" element={<CategorySection />} />
+                    <Route path="/add/category/section" element={<AddCategorySection />}/>
+                    <Route path="/edit/section-category/:id" element={<EditCategorySection />}/>
 
-          {/* For Settings */}
-          <Route path="/settings" element={<Settings />} />
-          {/* For Settings */}
+                    <Route path="/settings" element={<Settings />} />
 
-          {/* For Settings */}
-          <Route path="/Tutorial" element={<Tutorial />} />
-          {/* For Settings */}
+                    <Route path="/Tutorial" element={<Tutorial />} />
 
-          
-          <Route
-            path="/system/basic-setting"
-            element={
-              <div className="empty">
-                <h1>Basic Setting</h1>
-              </div>
-            }
-          />
-          <Route
-            path="/system/user-management"
-            element={
-              <div className="empty">
-                <h1>User Management</h1>
-              </div>
-            }
-          />
-          <Route
-            path="*"
-            element={
-              <div className="empty">
-                <h1>Not Found</h1>
-              </div>
-            }
-          />
-        </Route>
-      </Route>
-    </Routes>
-  );
+                
+                    <Route path="/system/basic-setting"
+                        element={
+                            <div className="empty">
+                                <h1>Basic Setting</h1>
+                            </div>
+                        }
+                    />
+
+                    <Route path="/system/user-management"
+                        element={
+                            <div className="empty">
+                                <h1>User Management</h1>
+                            </div>
+                        }
+                    />
+
+                    <Route path="*"
+                        element={
+                            <div className="empty">
+                                <h1>Not Found</h1>
+                            </div>
+                        }
+                    />
+                </Route>
+            </Route>
+        </Routes>
+    );
 }
 
 export default App;
