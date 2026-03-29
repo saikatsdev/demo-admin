@@ -9,21 +9,21 @@ import { store } from "./store.js";
 import AppSettingsProvider from "./contexts/AppSettingsProvider.jsx";
 
 export const Root = () => {
-  return (
-    <Provider store={store}>
-      <AppSettingsProvider>
-        <BrowserRouter>
-          <NotificationWrapper>
-            <App />
-          </NotificationWrapper>
-        </BrowserRouter>
-      </AppSettingsProvider>
-    </Provider>
-  );
+    return (
+        <Provider store={store}>
+            <AppSettingsProvider>
+                <BrowserRouter>
+                    <NotificationWrapper>
+                        <App />
+                    </NotificationWrapper>
+                </BrowserRouter>
+            </AppSettingsProvider>
+        </Provider>
+    );
 };
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <Root />
-  </StrictMode>
+    <StrictMode>
+        <Root />
+    </StrictMode>
 );

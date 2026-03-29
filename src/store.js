@@ -13,29 +13,29 @@ import deliveryGatewayReducer from "./features/deliveryGateway/deliveryGatewaySl
 const PERSIST_KEY = 'auth';
 
 const preloadedAuth = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(PERSIST_KEY));
-  } catch {
-    return null;
-  }
+    try {
+        return JSON.parse(localStorage.getItem(PERSIST_KEY));
+    } catch {
+        return null;
+    }
 })();
 
 export const store = configureStore({
-  reducer: {
-    auth: authReducer,
-    districts: districtReducer,
-    orderFrom: orderFromReducer,
-    customerType: customerTypeReducer,
-    cancelReason: cancelReasonReducer,
-    paymentGateway: paymentGatewayReducer,
-    courier: courierReducer,
-    status: statusReducer,
-    deliveryGateway: deliveryGatewayReducer,
-  },
-  preloadedState: preloadedAuth ? { auth: preloadedAuth } : undefined,
+    reducer: {
+        auth           : authReducer,
+        districts      : districtReducer,
+        orderFrom      : orderFromReducer,
+        customerType   : customerTypeReducer,
+        cancelReason   : cancelReasonReducer,
+        paymentGateway : paymentGatewayReducer,
+        courier        : courierReducer,
+        status         : statusReducer,
+        deliveryGateway: deliveryGatewayReducer,
+    },
+    preloadedState: preloadedAuth ? { auth: preloadedAuth } : undefined,
 });
 
 store.subscribe(() => {
-  const { auth } = store.getState();
-  localStorage.setItem(PERSIST_KEY, JSON.stringify(auth));
+    const { auth } = store.getState();
+    localStorage.setItem(PERSIST_KEY, JSON.stringify(auth));
 });

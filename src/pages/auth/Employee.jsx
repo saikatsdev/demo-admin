@@ -23,13 +23,13 @@ export default function Employee() {
     const columns = 
     [
         {
-        title: "Image",
-        dataIndex: "image",
-        key: "image",
-        width: 70,
-        render: (src, record) => (
-            <img src={src} alt={record.username} style={{ width: 32, height: 32, borderRadius: 4, objectFit: "cover" }}/>
-        ),
+            title: "Image",
+            dataIndex: "image",
+            key: "image",
+            width: 70,
+            render: (src, record) => (
+                <img src={src} alt={record.username} style={{ width: 32, height: 32, borderRadius: 4, objectFit: "cover" }}/>
+            ),
         },
         {
             title: "Username",

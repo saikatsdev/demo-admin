@@ -12,29 +12,29 @@ const AdminLayout = ({ children }) => {
     const [activeSubmenus, setActiveSubmenus] = useState([]);
 
     const handleMenuSelect = (menu) => {
-      setActiveSubmenus(menu);
+        setActiveSubmenus(menu);
     };
 
     return (
-      <MenuProvider>
-        <input id="sidebar-toggle" type="checkbox" className="visually-hidden" />
-        <input id="theme-toggle" type="checkbox" className="visually-hidden" />
+        <MenuProvider>
+            <input id="sidebar-toggle" type="checkbox" className="visually-hidden" />
+            <input id="theme-toggle" type="checkbox" className="visually-hidden" />
 
-        <div className="layout admin">
-          <Header submenus={activeSubmenus} />
+            <div className="layout admin">
+                <Header submenus={activeSubmenus} />
 
-          <div className="sidewrap">
-            <Sidebar onMenuSelect={handleMenuSelect} />
-          </div>
+                <div className="sidewrap">
+                    <Sidebar onMenuSelect={handleMenuSelect} />
+                </div>
 
-          <main className="content" id="main-content" tabIndex={-1}>
-            {children}
-            <Outlet />
-          </main>
+                <main className="content" id="main-content" tabIndex={-1}>
+                    {children}
+                    <Outlet />
+                </main>
 
-          <label htmlFor="sidebar-toggle" className="scrim" aria-hidden="true"></label>
-        </div>
-      </MenuProvider>
+                <label htmlFor="sidebar-toggle" className="scrim" aria-hidden="true"></label>
+            </div>
+        </MenuProvider>
     );
 };
 
