@@ -877,6 +877,14 @@ export default function ProductAdd() {
                                 </div>
                             </Space>
                         </Card>
+
+                        <Divider/>
+
+                        <Card title="Product Categories" bordered>
+                            <p>
+                                Add Product Categories,SubCategories,Sub Sub Categories Option.
+                            </p>
+                        </Card>
                     </Col>
                 </Row>
             

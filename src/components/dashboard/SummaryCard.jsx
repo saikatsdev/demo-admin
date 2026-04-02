@@ -7,7 +7,7 @@ export default function SummaryCard({dashboardSummary}) {
             [
                 { title: "Today", value: dashboardSummary?.today_orders || 0},
                 { title: "This Month", value: dashboardSummary?.this_month_orders || 0 },
-                { title: "This Year", value: dashboardSummary?.this_month_orders || 0 },
+                { title: "This Year", value: dashboardSummary?.this_year_sales || 0 },
                 { title: "All Time", value: dashboardSummary?.order_report?.order_count || 0 },
             ],
         "Total Sales": 

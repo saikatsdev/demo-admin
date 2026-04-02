@@ -1,7 +1,7 @@
 import {ArrowLeftOutlined,CopyOutlined,DeleteOutlined,EditOutlined,EyeOutlined,FilterOutlined,InfoCircleOutlined,PlusOutlined} from "@ant-design/icons";
-import {Input as AntInput,Typography,Breadcrumb,Tabs,Button,Col,DatePicker,Empty,Flex,InputNumber,Modal,Popover,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
+import {Input as AntInput,Typography,Breadcrumb,Tabs,Button,Col,DatePicker,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
 import dayjs from "dayjs";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {deleteData,getDatas,postData,putData} from "../../api/common/common";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -9,6 +9,8 @@ import useTitle from "../../hooks/useTitle";
 import "./Product.css";
 import { cachedFetch } from "../../utils/cacheApi";
 import { usePermission } from "../../hooks/usePermission";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 
 const { Option } = Select;
 
@@ -60,7 +62,9 @@ export default function Product() {
     const [brands, setBrands]                       = useState([]);
     const [categories, setCategories]               = useState([]);
     const [subCategories, setSubCategories]         = useState([]);
+    const [subCategoryList, setSubCategoryList]       = useState([]);
     const [subSubCategories, setSubSubCategories]   = useState([]);
+    const [subSubCategoryList, setSubSubCategoryList] = useState([]);
     const [attributeValues, setAttributeValues]     = useState([]);
     const [productTypes, setProductTypes]           = useState([]);
     const [modal, modalContextHolder]               = Modal.useModal();
@@ -74,6 +78,13 @@ export default function Product() {
     const [isModalOpen, setIsModalOpen]             = useState(false);
     const [selectedProduct, setSelectedProduct]     = useState(null);
 	const [copyLoadingId, setCopyLoadingId]         = useState(null);
+    const [quickEditOpen, setQuickEditOpen]           = useState(false);
+    const [editingProduct, setEditingProduct]         = useState(null);
+    const [quickEditLoading, setQuickEditLoading]     = useState(false);
+    const [slugLoading, setSlugLoading]               = useState(false);
+    const [form]                                      = Form.useForm();
+
+    const slugTimer = useRef(null);
 
     // Debounced search query
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -117,6 +128,19 @@ export default function Product() {
         } else {
             setSubCategories([]);
         }
+    };
+
+    const handleModalCategoryChange = (categoryId) => {
+        form.setFieldValue("sub_category_id", null);
+        form.setFieldValue("sub_sub_category_id", null);
+
+        getSubCategories(categoryId);
+    };
+
+    const handleModalSubSubCategoryChange = (subCategoryId) => {
+        form.setFieldValue("sub_sub_category_id", null);
+
+        getSubSubCategories(subCategoryId);
     };
 
     const handleSubCategoryChange = async (selectedIds) => {
@@ -233,121 +257,6 @@ export default function Product() {
             ),
         },
         {
-            title: "Variation Price Range",
-            key: "variation_price_range",
-            width: 190,
-            render: (_, record) => {
-                if (!record.variations || record.variations.length === 0) {
-                    return (
-                        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No Variations" style={{ fontSize: "12px" }}/>
-                    );
-                }
-        
-                return (
-                    <Popover
-                        content={
-                        <div style={{ maxHeight: "400px", overflow: "auto", width: "600px" }}>
-                            <Table dataSource={record.variations} pagination={false} size="small" scroll={{ y: 300 }}
-                            columns={
-                                [
-                                    {
-                                        title: "Variations Name",
-                                        width: 150,
-                                        render: (_, variation) => (
-                                            <div>
-                                                {variation.attribute_value_1 && (
-                                                    <Tag color="red" style={{ marginBottom: 2 }}>
-                                                        {variation.attribute_value_1.attribute?.name} -{" "}
-                                                        {variation.attribute_value_1.value}
-                                                    </Tag>
-                                                )}
-                                                {variation.attribute_value_2 && (
-                                                    <Tag color="red" style={{ marginBottom: 2 }}>
-                                                        {variation.attribute_value_2.attribute?.name} -{" "}
-                                                        {variation.attribute_value_2.value}
-                                                    </Tag>
-                                                )}
-                                                {variation.attribute_value_3 && (
-                                                    <Tag color="red" style={{ marginBottom: 2 }}>
-                                                        {variation.attribute_value_3.attribute?.name} -{" "}
-                                                        {variation.attribute_value_3.value}
-                                                    </Tag>
-                                                )}
-                                            </div>
-                                        ),
-                                    },
-                                    {
-                                        title: "Stock Report",
-                                        width: 200,
-                                        render: (_, variation) => (
-                                            <div>
-                                                <p style={{ margin: 0, fontWeight: 700 }}>
-                                                    Total Current Stock:{" "}
-                                                    <span style={{ fontWeight: 300 }}>
-                                                        {variation.total_current_stock}
-                                                    </span>
-                                                </p>
-                                                <p style={{ margin: 0, fontWeight: 700 }}>
-                                                    Total Purchase Qty:{" "}
-                                                    <span style={{ fontWeight: 300 }}>
-                                                        {variation.total_purchase_qty}
-                                                    </span>
-                                                </p>
-                                                <p style={{ margin: 0, fontWeight: 700 }}>
-                                                    Total Sell Qty:{" "}
-                                                    <span style={{ fontWeight: 800, color: "green" }}>
-                                                        {variation.total_sell_qty}
-                                                    </span>
-                                                </p>
-                                            </div>
-                                        ),
-                                    },
-                                    {
-                                        title: "Variation Prices",
-                                        width: 200,
-                                        render: (_, variation) => (
-                                            <div>
-                                                <p style={{ margin: 0, fontWeight: 700 }}>
-                                                    Buy Price:{" "}
-                                                    <span style={{ fontWeight: 300 }}>
-                                                        {variation.buy_price}
-                                                    </span>
-                                                </p>
-                                                <p style={{ margin: 0, fontWeight: 700 }}>
-                                                    MRP:{" "}
-                                                    <span style={{ fontWeight: 300 }}>
-                                                        {variation.mrp}
-                                                    </span>
-                                                </p>
-                                                <p style={{ margin: 0, fontWeight: 700 }}>
-                                                    Offer Price:{" "}
-                                                    <span style={{ fontWeight: 300 }}>
-                                                        {variation.offer_price}
-                                                    </span>
-                                                </p>
-                                                <p style={{ margin: 0, fontWeight: 700 }}>
-                                                    Sell Price:{" "}
-                                                    <span style={{ fontWeight: 300 }}>
-                                                        {variation.sell_price}
-                                                    </span>
-                                                </p>
-                                            </div>
-                                        ),
-                                    },
-                                ]}
-                            />
-                        </div>
-                        } title="Product Variations" trigger="click" placement="right">
-                        <span style={{color: "#52c41a",cursor: "pointer",overflow: "hidden",whiteSpace: "nowrap",textOverflow: "ellipsis",display: "block"}}>
-                            {record.variation_price_range?.min_price} --{" "}
-                            {record.variation_price_range?.max_price}
-                            <InfoCircleOutlined style={{ marginLeft: 8 }} />
-                        </span>
-                    </Popover>
-                );
-            },
-        },
-        {
             title: "Product Prices",
             key: "product_prices",
             width: 200,
@@ -399,6 +308,10 @@ export default function Product() {
             fixed: "right",
             render: (_, record) => (
                 <Space size="small">
+                    <Tooltip title="Quick Edit">
+                        <Button size="small" icon={<img src='/editing.png' alt="edit" style={{ width: 14, height: 14 }} />} onClick={() => handleQuickEdit(record)}/>
+                    </Tooltip>
+
                     <Tooltip title="Product View">
                         <Button size="small" icon={<EyeOutlined />} onClick={() => handlePreview(record)}/>
                     </Tooltip>
@@ -521,6 +434,54 @@ export default function Product() {
             ),
         },
     ];
+
+    const handleQuickEdit = async (item) => {
+        setEditingProduct(item);
+        setQuickEditOpen(true);
+        setQuickEditLoading(true);
+
+        form.setFieldsValue({
+            name               : item?.name,
+            slug               : item?.slug,
+            sku                : item?.sku,
+            category_id        : item?.category?.id,
+            sub_category_id    : item?.sub_category?.id,
+            sub_sub_category_id: item?.sub_sub_category?.id,
+            brand_id           : item?.brand?.id,
+            current_stock      : item?.current_stock,
+            total_sell_qty     : item?.total_sell_qty,
+            minimum_qty        : item?.minimum_qty,
+            video_url          : item?.video_url,
+            status             : item?.status,
+            mrp                : item?.mrp,
+            offer_price        : item?.offer_price,
+            sell_price         : item?.sell_price,
+            description        : item?.description,
+            short_description  : item?.short_description,
+        });
+
+        try {
+            if (item?.category?.id) {
+                await getSubCategories(item.category.id);
+            }
+
+            if (item?.sub_category?.id) {
+                await getSubSubCategories(item.sub_category.id);
+            }
+        } finally {
+            setQuickEditLoading(false);
+        }
+    };
+
+    const getSubCategories = async (categoryId) => {
+        const res = await getDatas("/admin/sub-categories/list", {category_ids : categoryId});
+        setSubCategoryList(res.result);
+    };
+
+    const getSubSubCategories = async (subCategoryId) => {
+        const res = await getDatas("/admin/sub-sub-categories/list", {sub_category_ids : subCategoryId});
+        setSubSubCategoryList(res.result);
+    };
 
     const handleSearch = (value) => {
         const cleaned = value.trim();
@@ -1264,6 +1225,119 @@ export default function Product() {
         }
     }, [isTrashView, loading, trashData, trashTableMeta]);
 
+    const handleQuickUpdate = async (values) => {
+        const formData = new FormData();
+
+        if(values.name) formData.append('name', values.name);
+        if(values.slug) formData.append('slug', values.slug);
+        if(values.sku) formData.append('sku', values.sku);
+        if(values.category_id) formData.append('category_id', values.category_id);
+        if(values.sub_category_id) formData.append('sub_category_id', values.sub_category_id);
+        if(values.sub_sub_category_id) formData.append('sub_sub_category_id', values.sub_sub_category_id);
+        if(values.brand_id) formData.append('brand_id', values.brand_id);
+        if(values.current_stock) formData.append('current_stock', values.current_stock);
+        if(values.video_url) formData.append('video_url', values.video_url);
+        if(values.total_sell_qty) formData.append('total_sell_qty', values.total_sell_qty);
+        if(values.minimum_qty) formData.append('minimum_qty', values.minimum_qty);
+        if(values.mrp) formData.append('mrp', values.mrp);
+        if(values.offer_price) formData.append('offer_price', values.offer_price);
+        if(values.description) formData.append('description', values.description);
+        if(values.short_description) formData.append('short_description', values.short_description);
+        if(values.status) formData.append('status', values.status);
+
+        formData.append('_method', 'PUT');
+
+        try {
+            setQuickEditLoading(true);
+
+            const res = await postData(`/admin/products/${editingProduct.id}`, formData);
+
+            if(res && res?.success){
+                const updatedProduct = res.result;
+
+                setProducts(prevData => prevData.map(product =>
+                    product.id === updatedProduct.id ? updatedProduct : product
+                ));
+
+                messageApi.open({
+                    type: "success",
+                    content: res?.msg,
+                });
+            }else{
+               messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                }); 
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setQuickEditLoading(false);
+            setQuickEditOpen(false);
+        }
+    };
+
+    const handleSlugChange = (e) => {
+        const value = e.target.value;
+
+        setSlugLoading(true);
+
+        clearTimeout(slugTimer.current);
+
+        slugTimer.current = setTimeout(() => {
+            console.log("Typing finished:", value);
+
+            checkSlugFromDB(value);
+        }, 600);
+    };
+
+    const checkSlugFromDB = async (slug) => {
+        try {
+            const res = await getDatas(`/admin/products/check-slug?slug=${slug}`);
+
+            const finalSlug = res.result;
+
+            form.setFieldValue("slug", finalSlug);
+        } finally {
+            setSlugLoading(false);
+        }
+    };
+
+    const modules = useMemo(() => ({
+        toolbar: {
+            container: [
+                [{ header: [1, 2, 3, false] }],
+                ["bold", "italic", "underline"],
+                [{ list: "ordered" }, { list: "bullet" }],
+                ["link", "image"],
+            ],
+            handlers: {
+                image: function () {
+                    const input = document.createElement("input");
+                    input.setAttribute("type", "file");
+                    input.setAttribute("accept", "image/*");
+                    input.click();
+
+                    input.onchange = () => {
+                        const file = input.files[0];
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const quill = this.quill;
+                            const range = quill.getSelection();
+                            quill.insertEmbed(range.index, "image", reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                    };
+                },
+            },
+        },
+        history: {
+            delay: 500,
+            maxStack: 100,
+            userOnly: true,
+        },
+    }), []);
+
     return (
         <>
             {modalContextHolder}
@@ -1852,6 +1926,130 @@ export default function Product() {
                 ) : (
                     <Text type="secondary">No product selected.</Text>
                 )}
+            </Modal>
+
+            <Modal title="Quick Edit Product" open={quickEditOpen} onCancel={() => setQuickEditOpen(false)} onOk={() => form.submit()} width={900} loading={quickEditLoading}>
+                <Form layout="vertical" form={form} onFinish={handleQuickUpdate}>
+                    <Row gutter={12}>
+                        <Col span={12}>
+                            <Form.Item name="name" label="Product Name" required>
+                                <AntInput />
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={12}>
+                            <Form.Item name="slug" label="Slug">
+                                <AntInput onChange={handleSlugChange} suffix={slugLoading ? <Spin size="small" /> : null}/>
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={8}>
+                            <Form.Item name="sku" label="SKU">
+                                <AntInput />
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={8}>
+                            <Form.Item name="category_id" label="Category">
+                                <Select mode="multiple" onChange={handleModalCategoryChange}
+                                    options={categories?.map(item => ({
+                                        label: item.name,
+                                        value: item.id
+                                    }))}
+                                />
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={8}>
+                            <Form.Item name="sub_category_id" label="Sub Category">
+                                <Select placeholder="Select Sub Category" onChange={handleModalSubSubCategoryChange} options={subCategoryList?.map(item => ({
+                                    label: item.name,
+                                    value:item.id
+                                }))}/>
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={8}>
+                            <Form.Item name="sub_sub_category_id" label="Sub Sub Category">
+                                <Select placeholder="Select Sub Sub Category" options={subSubCategoryList?.map(item => ({
+                                    label: item?.name,
+                                    value: item?.id
+                                }))}/>
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={8}>
+                            <Form.Item name="brand_id" label="Brand">
+                                <Select placeholder="Select Brand" options={brands?.map(item => ({
+                                    label: item.name,
+                                    value:item.id
+                                }))}/>
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={8}>
+                            <Form.Item name="current_stock" label="Current Stock">
+                                <AntInput placeholder="0"/>
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={8}>
+                            <Form.Item name="total_sell_qty" label="Sold Quantity">
+                                <AntInput placeholder="0"/>
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={8}>
+                            <Form.Item name="minimum_qty" label="Minimum Quantity">
+                                <AntInput placeholder="0"/>
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={8}>
+                            <Form.Item name="video_url" label="Video Url">
+                                <AntInput placeholder="Add Video Url"/>
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={8}>
+                            <Form.Item name="status" label="Status">
+                                <Select placeholder="Select" options={[{ label: "Active", value: "active" },{ label: "Inactive", value: "inactive" },]}/>
+                            </Form.Item>
+                        </Col>
+
+                        {editingProduct?.variations?.length === 0 && (
+                            <>
+                                <Col span={8}>
+                                    <Form.Item name="mrp" label="Regular Price">
+                                        <AntInput />
+                                    </Form.Item>
+                                </Col>
+
+                                <Col span={8}>
+                                    <Form.Item name="offer_price" label="Offer Price">
+                                        <AntInput />
+                                    </Form.Item>
+                                </Col>
+                            </>
+                        )}
+
+                        {editingProduct?.variations?.length === 0 && (
+                            <>
+                                <Col span={24}>
+                                    <Form.Item name="short_description" label="Short Description">
+                                        <ReactQuill theme="snow" placeholder="Write your short description..." modules={modules} style={{backgroundColor: "#fff",borderRadius: 5,height: "300px",marginBottom: "20px"}}/>
+                                    </Form.Item>
+                                </Col>
+
+                                <Col span={24}>
+                                    <Form.Item name="description" label="Description">
+                                        <ReactQuill theme="snow" placeholder="Write your description..." modules={modules} style={{backgroundColor: "#fff",borderRadius: 5,height: "300px",marginBottom: "20px",}}/>
+                                    </Form.Item>
+                                </Col>
+                            </>
+                        )}
+                    </Row>
+                </Form>
             </Modal>
         </>
     )
