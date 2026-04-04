@@ -1,6 +1,6 @@
-import { ArrowLeftOutlined, DeleteOutlined, InboxOutlined, PlusOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, DeleteOutlined,PlusOutlined } from "@ant-design/icons";
 import {Button,Card,Col,Divider,Form,Image,Input,message,Modal,Row,Select,Space,Table,Tag,Typography,Checkbox,Upload} from "antd";
-import { useEffect, useRef, useMemo,useState } from "react";
+import { useEffect, useMemo,useState } from "react";
 import { useNavigate, useParams,useSearchParams } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
@@ -8,6 +8,8 @@ import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import {useAppSettings} from "../../contexts/useAppSettings";
 import Permalink from "../../components/products/Permalink";
+import ProductImagePicker from "../../components/image/ProductImagePicker";
+import ProductGalleryPicker from "../../components/image/ProductGalleryPicker";
 
 const { Title, Text } = Typography;
 
@@ -89,14 +91,44 @@ export default function ProductEdit() {
     const [images, setImages]                                       = useState([]);
     const [imagePreview, setImagePreview]                           = useState([]);
     const [deletedGalleryIds, setDeletedGalleryIds]                 = useState([]);
-    const [thumbnailWidth, setThumbnailWidth]                       = useState(null);
-    const [thumbnailHeight, setThumbnailHeight]                     = useState(null);
-    const [galleryWidths, setGalleryWidths]                         = useState([]);
-    const [galleryHeights, setGalleryHeights]                       = useState([]);
+    const [loadingMore, setLoadingMore]                             = useState(false);
+    const [gallery, setGallery]                                     = useState([]);
+    const [gallaryPage, setGallaryPage]                             = useState(1);
+    const [hasMore, setHasMore]                                     = useState(true);
 
     const [variationIds, setVariationIds] = useState([]);
 
-    const galleryProcessedFiles = useRef(new Set());
+    const fetchMedia = async (pageNumber = 1) => {
+        try {
+            if (pageNumber === 1) setLoading(true);
+            setLoadingMore(true);
+
+            const res = await getDatas(`/admin/gallary?page=${pageNumber}`);
+
+            if (res && res?.success) {
+                const data = res.result.data;
+
+                if (pageNumber > 1) {
+                    setGallery(prev => [...prev, ...data]);
+                } else {
+                    setGallery(data);
+                }
+
+                const meta = res.result.meta;
+                setGallaryPage(meta.current_page);
+                setHasMore(meta.current_page < meta.last_page);
+            }
+        } catch (error) {
+            console.error("Failed to load gallery:", error);
+        } finally {
+            setLoading(false);
+            setLoadingMore(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchMedia(gallaryPage);
+    }, []);
 
     useEffect(() => {
         const init = async () => {
@@ -230,7 +262,6 @@ export default function ProductEdit() {
                 setMetaDescription(p.meta_description || "");
                 setThumbnailPreview(p.image || "");
 
-                // Images
                 setImagePreview(
                     p.images.map(img => ({
                         id  : img.id,
@@ -400,77 +431,31 @@ export default function ProductEdit() {
         }
     };
 
-    const singleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    const handleImageChange = ({ file, width, height, galleryPath }) => {
+        setThumbnailPreview("");
+        if (file) {
+            setThumbnail({file: file,path: null,width,height});
+        } else {
+            setThumbnail({file: null,path: galleryPath,width,height});
+        }
+    };
 
-        if (!/\.(jpe?g|png|webp|gif)$/i.test(file.name)) {
-            message.error("Please select a valid image file (jpg, jpeg, png, webp, gif)");
+    const handleGalleryImageFileChange = ({file,width,height,galleryPath,uid,remove}) => {
+        if (remove) {
+            setImages(prev => prev.filter(img => img.uid !== uid));
             return;
         }
 
-        setThumbnail(file);
-
-        const img = new window.Image();
-        const objectUrl = URL.createObjectURL(file);
-
-        img.onload = function () {
-            setThumbnailWidth(img.width);
-            setThumbnailHeight(img.height);
-
-            URL.revokeObjectURL(objectUrl);
-        };
-
-        img.src = objectUrl;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            setThumbnailPreview(e.target.result);
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const handleGalleryImageFileChange = (info) => {
-        const { fileList } = info;
-        const newFiles = fileList.filter((file) => file.originFileObj);
-
-        const unprocessedFiles = newFiles.filter((file) => {
-            const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
-            return !galleryProcessedFiles.current.has(fileKey);
-        });
-
-        if (unprocessedFiles.length > 0) {
-            const validImages = unprocessedFiles.filter((file) =>
-                /\.(jpe?g|png|webp|gif)$/i.test(file.name)
-            );
-
-            if (validImages.length !== unprocessedFiles.length) {
-                message.error("Some files are not valid image formats");
-            }
-
-            validImages.forEach((file) => {
-                const fileKey = `${file.name}-${file.size}-${file.lastModified}`;
-                galleryProcessedFiles.current.add(fileKey);
-
-                setImages((prev) => [...prev, file.originFileObj]);
-
-                const img = new window.Image();
-                const objectUrl = URL.createObjectURL(file.originFileObj);
-
-                img.onload = function () {
-                    setGalleryWidths((prev) => [...prev, img.width]);
-                    setGalleryHeights((prev) => [...prev, img.height]);
-                    URL.revokeObjectURL(objectUrl);
-                };
-
-                img.src = objectUrl;
-
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    setImagePreview((prev) => [...prev, e.target.result]);
-                };
-                reader.readAsDataURL(file.originFileObj);
-            });
+        if (file) {
+            setImages(prev => [
+                ...prev,
+                {uid,file,path: null,width,height}
+            ]);
+        } else {
+            setImages(prev => [
+                ...prev,
+                {uid,file: null,path: galleryPath,width,height}
+            ]);
         }
     };
 
@@ -749,16 +734,31 @@ export default function ProductEdit() {
             formData.append("video_url", videoUrl || "");
             formData.append("_method", "put");
 
-            if (thumbnail) {
-                formData.append("image", thumbnail);
-                formData.append("width", thumbnailWidth || "1000");
-                formData.append("height", thumbnailHeight || "1000");
+            if (thumbnail?.file || thumbnail?.path) {
+                if (thumbnail.file) {
+                    formData.append("image", thumbnail.file);
+                } else if (thumbnail.path) {
+                    formData.append("image", thumbnail.path);
+                }
+
+                if (thumbnail.width) {
+                    formData.append("width", thumbnail.width);
+                }
+
+                if (thumbnail.height) {
+                    formData.append("height", thumbnail.height);
+                }
             }
 
-            images.forEach((image, index) => {
-                formData.append("gallery_images[]", image);
-                formData.append("gallery_widths[]", galleryWidths[index] || "");
-                formData.append("gallery_heights[]", galleryHeights[index] || "");
+            images.forEach((img) => {
+                if (img.file) {
+                    formData.append("gallery_images[]", img.file);
+                } else {
+                    formData.append("gallery_images[]", img.path);
+                }
+
+                formData.append("gallery_widths[]", img.width || "");
+                formData.append("gallery_heights[]", img.height || "");
             });
 
             const uniqueAttributes = [...new Set(attributeValue.flat().filter((x) => x?.attribute_id).map((x) => x.attribute_id)),];
@@ -1029,14 +1029,8 @@ export default function ProductEdit() {
                                 <Text strong style={{ display: "block", marginBottom: 8 }}>
                                     Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
                                 </Text>
-                                <input type="file" id="thumbnail-upload" accept="image/*" onChange={singleFileChange} style={{ display: "none" }}/>
-
-                                <label htmlFor="thumbnail-upload">
-                                    <div style={{border: "2px dashed #d9d9d9",borderRadius: 8,padding: "20px",textAlign: "center",cursor: "pointer",background: "#fafafa", transition: "all 0.3s",borderColor: errors?.image ? "#ff4d4f" : "#d9d9d9",}}>
-                                        <InboxOutlined style={{fontSize: 48,color: "#bfbfbf",marginBottom: 16}}/>
-                                        <div style={{ color: "#666" }}>Choose File</div>
-                                    </div>
-                                </label>
+                                
+                                <ProductImagePicker name="image" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={handleImageChange}/>
 
                                 {errors?.image && (
                                     <div style={{ color: "#ff4d4f", marginTop: 4 }}>
@@ -1051,8 +1045,6 @@ export default function ProductEdit() {
                                     <div style={{marginTop: 12,position: "relative",display: "inline-block"}}>
 
                                         <Image src={thumbnailPreview} alt="Thumbnail preview" style={{width: 100,height: 100, objectFit: "fill", borderRadius: 8}}/>
-
-                                        <Button type="text"/>
                                     </div>
                                 )}
                             </div>
@@ -1062,11 +1054,7 @@ export default function ProductEdit() {
                                     Gallery Images
                                 </Text>
 
-                                <Upload multiple showUploadList={false} beforeUpload={() => false} onChange={handleGalleryImageFileChange} accept="image/*">
-                                    <Button type="dashed" style={{ width: "100%" }}>
-                                        Choose Files
-                                    </Button>
-                                </Upload>
+                                <ProductGalleryPicker name="gallery_images" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={handleGalleryImageFileChange}/>
 
                                 {imagePreview.length > 0 && (
                                     <div style={{marginTop: 12,display: "flex",flexWrap: "wrap",gap: 8}}>
