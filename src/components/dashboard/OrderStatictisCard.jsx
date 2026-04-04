@@ -34,7 +34,13 @@ export default function OrderStatictisCard() {
         try {
             setLoading(true);
 
-            const res = await getDatas("/admin/statuses");
+            const params = {
+                filter: orderFilter.filter,
+                start_date: orderFilter.range?.[0]?.format("YYYY-MM-DD"),
+                end_date: orderFilter.range?.[1]?.format("YYYY-MM-DD"),
+            };
+
+            const res = await getDatas("/admin/statuses", params);
 
             if (res && res.success) {
                 setStatuses(res.result?.data || []);
@@ -49,7 +55,7 @@ export default function OrderStatictisCard() {
 
     useEffect(() => {
         fetchedOrderStatus();
-    }, []);
+    }, [orderFilter.filter, orderFilter.range]);
 
     return (
         <>
