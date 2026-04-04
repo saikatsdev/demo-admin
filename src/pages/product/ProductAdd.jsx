@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, DeleteOutlined, InboxOutlined, PlusOutlined } from "@ant-design/icons";
-import {Button,Card,Col,Divider,Form,Image,Input,message,Modal,Row,Select,Space,Table,Tag,Typography,Upload} from "antd";
+import {Button,Card,Col,Divider,Form,Image,Input,message,Modal,Row,Select,Checkbox,Space,Table,Tag,Typography,Upload} from "antd";
 import { useEffect, useRef, useMemo,useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
@@ -21,7 +21,7 @@ export default function ProductAdd() {
     // State
     const [title, setTitle]                                     = useState("");
     const [soldQty, setSoldQty]                                 = useState("");
-    const [categories, setCategories]                           = useState(null);
+    const [categories, setCategories]                           = useState([]);
     const [categoryId, setCategoryId]                           = useState([]);
     const [subCategories, setSubCategories]                     = useState([]);
     const [subCategoryId, setSubCategoryId]                     = useState("");
@@ -102,17 +102,17 @@ export default function ProductAdd() {
 
     useEffect(() => {
         const init = async () => {
-          const catRes = await getDatas("/admin/categories/list");
-          if (catRes?.success) setCategories(catRes?.result || []);
-    
-          const brandRes = await getDatas("/admin/brands/list");
-          if (brandRes?.success) setBrands(brandRes?.result || []);
-    
-          const typeRes = await getDatas("/admin/product-types/list");
-          if (typeRes?.success) setProductTypes(typeRes?.result || []);
-    
-          const variationRes = await getDatas("/admin/attributes");
-          if (variationRes?.success) setAllVariations(variationRes?.result?.data);
+            const catRes = await getDatas("/admin/categories/list");
+            if (catRes?.success) setCategories(catRes?.result || []);
+        
+            const brandRes = await getDatas("/admin/brands/list");
+            if (brandRes?.success) setBrands(brandRes?.result || []);
+        
+            const typeRes = await getDatas("/admin/product-types/list");
+            if (typeRes?.success) setProductTypes(typeRes?.result || []);
+        
+            const variationRes = await getDatas("/admin/attributes");
+            if (variationRes?.success) setAllVariations(variationRes?.result?.data);
         };
         init();
     }, []);
@@ -881,9 +881,45 @@ export default function ProductAdd() {
                         <Divider/>
 
                         <Card title="Product Categories" bordered>
-                            <p>
-                                Add Product Categories,SubCategories,Sub Sub Categories Option.
-                            </p>
+                            <div style={{maxHeight: 400,overflowY: "auto",paddingRight: 10}}>
+                                <Checkbox.Group style={{ width: "100%" }}>
+                                    {categories?.map(category => (
+                                        <div key={category.id} style={{ marginBottom: 12 }}>
+
+                                            <div>
+                                                <Checkbox value={`cat-${category.id}`}>
+                                                    <strong>{category.name}</strong>
+                                                </Checkbox>
+                                            </div>
+
+                                            {/* Sub Categories */}
+                                            <div style={{ marginLeft: 20, marginTop: 5 }}>
+                                                {category.sub_categories?.map(sub => (
+                                                    <div key={sub.id} style={{ marginBottom: 5 }}>
+
+                                                        <Checkbox value={`sub-${sub.id}`}>
+                                                            {sub.name}
+                                                        </Checkbox>
+
+                                                        {/* Sub Sub */}
+                                                        <div style={{ marginLeft: 20, marginTop: 3 }}>
+                                                            {sub.sub_sub_categories?.map(subsub => (
+                                                                <div key={subsub.id}>
+                                                                    <Checkbox value={`subsub-${subsub.id}`}>
+                                                                        {subsub.name}
+                                                                    </Checkbox>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                        </div>
+                                    ))}
+                                </Checkbox.Group>
+                            </div>
                         </Card>
                     </Col>
                 </Row>

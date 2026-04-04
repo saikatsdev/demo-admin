@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, DeleteOutlined, InboxOutlined, PlusOutlined } from "@ant-design/icons";
-import {Button,Card,Col,Divider,Form,Image,Input,message,Modal,Row,Select,Space,Table,Tag,Typography,Upload} from "antd";
+import {Button,Card,Col,Divider,Form,Image,Input,message,Modal,Row,Select,Space,Table,Tag,Typography,Checkbox,Upload} from "antd";
 import { useEffect, useRef, useMemo,useState } from "react";
 import { useNavigate, useParams,useSearchParams } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
@@ -47,7 +47,7 @@ export default function ProductEdit() {
     const [metaTitle, setMetaTitle]                                 = useState("");
     const [metaKeywords, setMetaKeywords]                           = useState("");
     const [metaDescription, setMetaDescription]                     = useState("");
-    const [categories, setCategories]                               = useState(null);
+    const [categories, setCategories]                               = useState([]);
     const [subCategories, setSubCategories]                         = useState([]);
     const [subSubCategories, setSubSubCategories]                   = useState([]);
     const [subCategoryLoading, setSubCategoryLoading]               = useState(false);
@@ -1083,6 +1083,50 @@ export default function ProductEdit() {
                                 )}
                             </div>
                         </Space>
+                    </Card>
+
+                    <Divider/>
+
+                    <Card title="Product Categories" bordered>
+                        <div style={{maxHeight: 400,overflowY: "auto",paddingRight: 10}}>
+                            <Checkbox.Group style={{ width: "100%" }}>
+                                {categories?.map(category => (
+                                    <div key={category.id} style={{ marginBottom: 12 }}>
+
+                                        <div>
+                                            <Checkbox value={`cat-${category.id}`}>
+                                                <strong>{category.name}</strong>
+                                            </Checkbox>
+                                        </div>
+
+                                        {/* Sub Categories */}
+                                        <div style={{ marginLeft: 20, marginTop: 5 }}>
+                                            {category.sub_categories?.map(sub => (
+                                                <div key={sub.id} style={{ marginBottom: 5 }}>
+
+                                                    <Checkbox value={`sub-${sub.id}`}>
+                                                        {sub.name}
+                                                    </Checkbox>
+
+                                                    {/* Sub Sub */}
+                                                    <div style={{ marginLeft: 20, marginTop: 3 }}>
+                                                        {sub.sub_sub_categories?.map(subsub => (
+                                                            <div key={subsub.id}>
+                                                                <Checkbox value={`subsub-${subsub.id}`}>
+                                                                    {subsub.name}
+                                                                </Checkbox>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                    </div>
+                                ))}
+                            </Checkbox.Group>
+                        </div>
                     </Card>
                 </Col>
             </Row>
