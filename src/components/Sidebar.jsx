@@ -70,7 +70,7 @@ const Sidebar = ({ onMenuSelect }) => {
         can('incomplete-orders-read') && { label: "Incomplete", path: "/incomplete/orders" },
         can('follow-up-read') && { label: "Follow Up Order", path: "/followup-sell" },
         can('cancel-reasons-read') && { label: "Cancel Reason", path: "/cancel-reasons" },
-        can('delivery-gateways') && { label: "Delivery Charge", path: "/delivery/charge" },
+        can('delivery-gateways-read') && { label: "Delivery Charge", path: "/delivery/charge" },
         can('free-delivery-read') && { label: "Free Delivery", path: "/free/delivery" },
         can('payment-gateways-read') && { label: "Payment Gateway", path: "/payment-gateways" },
         can('online-payment-discounts-read') && { label: "Payment Discount", path: "/online-payment/discounts" },

@@ -5,11 +5,15 @@ import { useEffect, useState } from "react";
 import DateFilter from "../filter/DateFilter";
 import useDateFilter from "../../hooks/DateFilter";
 import { Skeleton } from "antd";
+import { useNavigate } from "react-router-dom";
 
 export default function OrderStatictisCard() {
     // State
+    const [loading, setLoading]   = useState(false);
     const [statuses, setStatuses] = useState([]);
-    const [loading, setLoading] = useState(false);
+
+    // Variable
+    const navigate = useNavigate();
 
     const orderFilter = useDateFilter("today");
 
@@ -57,6 +61,10 @@ export default function OrderStatictisCard() {
         fetchedOrderStatus();
     }, [orderFilter.filter, orderFilter.range]);
 
+    const handleCardClick = (statusId) => {
+        navigate("/orders", { state: { statusId } });
+    };
+
     return (
         <>
             <div className="cust-product">
@@ -90,7 +98,7 @@ export default function OrderStatictisCard() {
                     const Icon = statusIcons[item.slug] || ShoppingCart;
 
                     return (
-                        <div className="order-stats-card" key={item.id}>
+                        <div className="order-stats-card" key={item.id} onClick={handleCardClick.bind(null, item.id)} style={{ cursor: "pointer" }}>
 
                             <div className="order-stats-content">
                                 <span className="order-stats-title">{item.name}</span>

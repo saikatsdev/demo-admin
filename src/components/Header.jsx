@@ -119,7 +119,37 @@ export default function Header({ submenus }) {
                             <div className="u-avatar"></div>
                             <div className="u-meta">
                                 <strong style={{textTransform:"capitalize"}}>{user?.username ?? "User Name"}</strong>
-                                <span className="muted">{user?.email ?? ""}</span>
+                                <div style={{ marginTop: "4px", display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                                    {user?.roles?.map((role) => (
+                                        <span
+                                            key={role.id}
+                                            style={{
+                                                background  : "#e6f4ff",
+                                                color       : "#1677ff",
+                                                padding     : "2px 8px",
+                                                borderRadius: "12px",
+                                                fontSize    : "12px",
+                                                fontWeight  : 500
+                                            }}
+                                        >
+                                            {role.display_name}
+                                        </span>
+                                    ))}
+
+                                    {user?.email && (
+                                        <span
+                                            style={{
+                                                background  : "#f5f5f5",
+                                                color       : "#555",
+                                                padding     : "2px 8px",
+                                                borderRadius: "12px",
+                                                fontSize    : "12px"
+                                            }}
+                                        >
+                                            {user.email}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                         <button onClick={goProfile} className="dropdown-item">
