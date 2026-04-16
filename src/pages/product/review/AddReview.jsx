@@ -16,7 +16,6 @@ export default function AddReview() {
     const navigate = useNavigate();
 
     // State
-    const [loading, setLoading]         = useState(false);
     const [formLoading, setFormLoading] = useState(false);
     const [products, setProducts]       = useState([]);
     const [messageApi, contextHolder]   = message.useMessage();
@@ -24,7 +23,6 @@ export default function AddReview() {
     // Method
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true);
 
             try {
                 const productRes = await getDatas("/admin/products/list");
@@ -32,8 +30,6 @@ export default function AddReview() {
                 setProducts(productRes?.result || []);
             } catch (error) {
                 console.error("Error fetching data:", error);
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -71,6 +67,11 @@ export default function AddReview() {
                 setTimeout(() => {
                     navigate("/review");
                 }, 400);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);
@@ -151,8 +152,8 @@ export default function AddReview() {
                     </Form.Item>
 
                     <Form.Item>
-                        <Button type="primary" htmlType="submit" loading={loading}>
-                            {formLoading ? "Submiting..." : "Submit Review"}
+                        <Button type="primary" htmlType="submit" loading={formLoading}>
+                            Submit Review
                         </Button>
                     </Form.Item>
                 </Form>

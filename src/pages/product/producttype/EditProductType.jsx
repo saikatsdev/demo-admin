@@ -1,5 +1,6 @@
-import useTitle from "../../../hooks/useTitle"
+import useTitle from "../../../hooks/useTitle";
 
+import { ArrowLeftOutlined } from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button, Form, message,Select } from "antd";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
@@ -56,7 +57,12 @@ export default function EditProductType() {
 
                 setTimeout(() => {
                     navigate("/product-types");
-                }, 400);
+                }, 300);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);
@@ -83,9 +89,15 @@ export default function EditProductType() {
             </div>
 
             <div className="blog-form">
-                <h2 style={{ textAlign: "center", color: "#000", fontSize: "2rem" }}>
-                    Edit Product Type
-                </h2>
+                <div className="form-head-wrapper">
+                    <h2 className="form-head-title">Edi Product Type</h2>
+
+                    <button className="form-head-btn" type="button" onClick={() => window.history.back()}>
+                        <ArrowLeftOutlined className="form-head-btn-icon" />
+                        <span>Back</span>
+                    </button>
+                </div>
+
                 <div className="blog-form-layout">
                     <Form layout="vertical" form={form} onFinish={handleSubmit}>
                         <Form.Item label="Name" name="name">
@@ -97,8 +109,8 @@ export default function EditProductType() {
                         </Form.Item>
 
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block>
-                                {loading ? "Updating..." : "Update"}
+                            <Button type="primary" htmlType="submit" block loading={loading}>
+                                Update
                             </Button>
                         </Form.Item>
                     </Form>

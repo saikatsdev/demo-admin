@@ -84,6 +84,11 @@ export default function AddBrand() {
                 setTimeout(() => {
                     navigate("/brands");
                 }, 400);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);
@@ -141,8 +146,8 @@ export default function AddBrand() {
                         </div>
 
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block>
-                                {loading ? "Submiting..." : "Submit"}
+                            <Button type="primary" htmlType="submit" block loading={loading}>
+                                Submit
                             </Button>
                         </Form.Item>
                     </Form>

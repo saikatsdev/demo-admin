@@ -207,7 +207,7 @@ export default function CancelReason() {
             <div>
                 <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"} confirmLoading={loading} onCancel={() => setIsModalOpen(false)}>
                     <div>
-                        <Form form={form} layout="s" initialValues={{width:"960", height:"1200"}}>
+                        <Form form={form} layout="vertical" initialValues={{width:"960", height:"1200"}}>
                             <div>
                                 <Form.Item name="name" label="Name" rules={[{ required: true }]}>
                                     <AntInput placeholder="Enter Name" />

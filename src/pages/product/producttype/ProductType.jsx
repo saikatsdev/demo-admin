@@ -117,8 +117,13 @@ export default function ProductType() {
             setItems(refreshed?.result?.data);
 
             messageApi.open({
-              type: "success",
-              content: res.msg,
+                type: "success",
+                content: res.msg,
+            });
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
             });
         }
     }
@@ -142,6 +147,7 @@ export default function ProductType() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
+                    
                 <Space>
                     <Button type="primary" danger ghost size="small" icon={<DeleteOutlined />}>Trash</Button>
                     <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>

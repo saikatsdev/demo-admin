@@ -35,9 +35,9 @@ export default function Settings() {
                 setSettingCategories(data);
 
                 if (data.length > 0) {
-                  setIndexTitle(data[0].name);
+                    setIndexTitle(data[0].name);
                 } else {
-                  setIndexTitle("General Setting");
+                    setIndexTitle("General Setting");
                 }
             }else{
                 setIndexTitle("General Setting");
@@ -49,12 +49,13 @@ export default function Settings() {
 
     const handleIndex = (index) => {
         setActiveIndex(index);
+        
         if (settingCategories[index]) {
-          setIndexTitle(settingCategories[index].name);
+            setIndexTitle(settingCategories[index].name);
         } else if (index === 7) {
-          setIndexTitle("Settings Category Data");
+            setIndexTitle("Settings Category Data");
         } else if (index === 8) {
-          setIndexTitle("All Settings");
+            setIndexTitle("All Settings");
         }
     }
 

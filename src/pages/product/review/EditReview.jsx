@@ -17,7 +17,6 @@ export default function EditReview() {
     const {id} = useParams();
 
     // State
-    const [loading, setLoading]       = useState(false);
     const [products, setProducts]     = useState([]);
     const [formLoading, setFormLoading] = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
@@ -58,16 +57,12 @@ export default function EditReview() {
     // Method
     useEffect(() => {
         const fetchData = async () => {
-            setLoading(true);
-
             try {
                 const productRes = await getDatas("/admin/products/list");
 
                 setProducts(productRes?.result || []);
             } catch (error) {
                 console.error("Error fetching data:", error);
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -112,6 +107,11 @@ export default function EditReview() {
                 setTimeout(() => {
                     navigate("/review");
                 }, 400);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);
@@ -192,8 +192,8 @@ export default function EditReview() {
                     </Form.Item>
 
                     <Form.Item>
-                        <Button type="primary" htmlType="submit" loading={loading}>
-                            {formLoading ? "Updating..." : "Update Review"}
+                        <Button type="primary" htmlType="submit" loading={formLoading}>
+                            Update Review
                         </Button>
                     </Form.Item>
                 </Form>

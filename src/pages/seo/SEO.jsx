@@ -151,6 +151,7 @@ export default function SEO() {
 
         try {
             setLoading(true);
+            
             if(editMode){
                 const res = await postData(`/admin/seo/${editingData.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 

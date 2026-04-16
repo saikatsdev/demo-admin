@@ -35,8 +35,7 @@ export default function Brand() {
             key: "image",
             width: 70,
             render: (src, record) => (
-                <img src={src} alt={record.name} style={{width: 32,height: 32,borderRadius: 4,objectFit: "cover",}}
-            />
+                <img src={src} alt={record.name} style={{width: 32,height: 32,borderRadius: 4,objectFit: "cover"}}/>
             ),
         },
         {
@@ -61,6 +60,7 @@ export default function Brand() {
                     <Button size="small" type="primary" onClick={() => onEdit(record)}>
                         Edit
                     </Button>
+
                     <Popconfirm title="Delete brand?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
                         <Button size="small" danger>
                             Delete
@@ -88,9 +88,13 @@ export default function Brand() {
         const fetchBrands = async () => {
             setLoading(true)
             const params = { params: { page: current, per_page: pageSize, search_key: debouncedQuery || undefined } }
-            const res = await getDatas('/admin/brands', params)
-            const list = res?.result?.data || []
-            const meta = res?.result?.meta
+
+            const res = await getDatas('/admin/brands', params);
+
+            const list = res?.result?.data || [];
+
+            const meta = res?.result?.meta;
+
             if (isMounted) {
                 setBrands(list);
                 if (meta) {
@@ -103,7 +107,9 @@ export default function Brand() {
             }
             setLoading(false)
         }
+
         fetchBrands();
+
         return () => {
           isMounted = false
         }
@@ -111,14 +117,15 @@ export default function Brand() {
 
     const filteredData = useMemo(() => {
         if (!query) return brands;
+
         const lowerQuery = query.toLowerCase();
-        return brands.filter(
-            (b) => b.name?.toLowerCase().includes(lowerQuery)
-        );
+
+        return brands.filter((b) => b.name?.toLowerCase().includes(lowerQuery));
     }, [brands, query]);
 
     const onDelete = async (id) => {
         const res = await deleteData(`/admin/brands/${id}`);
+        
         if (res && res?.success) {
             messageApi.open({
                 type: "success",
@@ -130,6 +137,11 @@ export default function Brand() {
             setBrands(refreshed?.result?.data || [])
             const meta = refreshed?.result?.meta
             if (meta) setPagination((p) => ({ ...p, total: meta.total || p.total }))
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
+            });
         }
     }
 
@@ -160,9 +172,10 @@ export default function Brand() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
+                    
                 <Space>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
-                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+                    <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
+                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
                 </Space>
             </div>
 

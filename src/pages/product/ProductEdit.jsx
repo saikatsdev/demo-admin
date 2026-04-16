@@ -29,9 +29,7 @@ export default function ProductEdit() {
     const [errors, setErrors]                                       = useState({});
     const [title, setTitle]                                         = useState("");
     const [productId, setProductId]                                 = useState("");
-    const [categoryId, setCategoryId]                               = useState([]);
-    const [subCategoryId, setSubCategoryId]                         = useState("");
-    const [subSubCategoryId, setSubSubCategoryId]                   = useState("");
+    const [categoryIds, setCategoryIds]                               = useState([]);
     const [brandId, setBrandId]                                     = useState("");
     const [status, setStatus]                                       = useState("");
     const [productTypeId, setProductTypeId]                         = useState("");
@@ -50,14 +48,8 @@ export default function ProductEdit() {
     const [metaKeywords, setMetaKeywords]                           = useState("");
     const [metaDescription, setMetaDescription]                     = useState("");
     const [categories, setCategories]                               = useState([]);
-    const [subCategories, setSubCategories]                         = useState([]);
-    const [subSubCategories, setSubSubCategories]                   = useState([]);
-    const [subCategoryLoading, setSubCategoryLoading]               = useState(false);
-    const [subSubCategoryLoading, setSubSubCategoryLoading]         = useState(false);
     const [brands, setBrands]                                       = useState(null);
     const [productTypes, setProductTypes]                           = useState(null);
-    const [isSubCategoryShow, setIsSubCategoryShow]                 = useState(false);
-    const [isSubSubCategoryShow, setIsSubSubCategoryShow]           = useState(false);
     const [isStockMaintain, setIsStockMaintain]                     = useState(false);
     const [isStockMaintainWithDirect, setIsStockMaintainWithDirect] = useState(false);
     const [dynamicInputs, setDynamicInputs]                         = useState([]);
@@ -177,73 +169,20 @@ export default function ProductEdit() {
 
                 const p = res.result;
 
-                const categoryIds = Array.isArray(p.categories) && p.categories.length? p.categories.map(c => c.id) : p.categories?.id ? [p.categories.id] : [];
+                const catIds = p.categories?.map(c => `cat-${c.id}`) || [];
+                const subIds = p.sub_categories?.map(s => `sub-${s.id}`) || [];
+                const subSubIds = p.sub_sub_categories?.map(s => `subsub-${s.id}`) || [];
+
+                // merge all
+                const allSelected = [...catIds, ...subIds, ...subSubIds];
+
+                setCategoryIds(allSelected);
 
                 setTitle(p.name || "");
-                setCategoryId(categoryIds);
                 setSoldQty(p.total_sell_qty);
                 setSlug(p.slug);
 
-                if (categoryIds.length > 0) {
-                    try {
-                        const subRes = await getDatas("/admin/sub-categories/list", {category_ids: categoryIds});
-                        if (subRes?.success && subRes?.result) {
-                            let categories = [];
-
-                            if (Array.isArray(subRes.result)) {
-                                categories = subRes.result;
-                            } else if (
-                                subRes.result.data &&
-                                Array.isArray(subRes.result.data)
-                            ) {
-                                categories = subRes.result.data;
-                            } else if (
-                                typeof subRes.result === "object" &&
-                                subRes.result.id
-                            ) {
-                                categories = [subRes.result];
-                            }
-
-                            setSubCategories(categories);
-                        }
-                    } catch (error) {
-                        console.error("Error loading subcategories:", error);
-                        setSubCategories([]);
-                    }
-                }
-
-                if (p.sub_category?.id) {
-                    try {
-                        const subSubRes = await getDatas("/admin/sub-sub-categories", {sub_category_id : p.sub_category.id});
-                        
-                        if (subSubRes?.success && subSubRes?.result) {
-                            let categories = [];
-
-                            if (Array.isArray(subSubRes.result)) {
-                                categories = subSubRes.result;
-                            } else if (
-                                subSubRes.result.data &&
-                                Array.isArray(subSubRes.result.data)
-                            ) {
-                                categories = subSubRes.result.data;
-                            } else if (
-                                typeof subSubRes.result === "object" &&
-                                subSubRes.result.id
-                            ) {
-                                categories = [subSubRes.result];
-                            }
-
-                            setSubSubCategories(categories);
-                        }
-                    } catch (error) {
-                        console.error("Error loading sub-subcategories:", error);
-                        setSubSubCategories([]);
-                    }
-                }
-
                 setProductId(p.id || "");
-                setSubCategoryId(p.sub_category?.id);
-                setSubSubCategoryId(p.sub_sub_category?.id || "");
                 setBrandId(p.brand?.id || "");
                 setStatus(p.status || "");
                 setProductTypeId(p.product_type?.id || "");
@@ -282,13 +221,9 @@ export default function ProductEdit() {
     useEffect(() => {
         if (!settings) return;
 
-        const subShow             = settings.is_sub_category_show;
-        const subSubShow          = settings.is_sub_sub_category_show;
         const stockMaintain       = settings.is_stock_maintain;
         const stockMaintainDirect = settings.is_stock_maintain_with_direct_product;
 
-        setIsSubCategoryShow(subShow === "1");
-        setIsSubSubCategoryShow(subSubShow === "1");
         setIsStockMaintain(stockMaintain === "1");
         setIsStockMaintainWithDirect(stockMaintainDirect === "1");
     }, [settings]);
@@ -358,78 +293,6 @@ export default function ProductEdit() {
             setAttributes(attrData);
         }
     }, [allVariations?.data, productData]);
-
-    const handleCategoryChange = async (values) => {
-        setCategoryId(values);
-        setSubCategoryId("");
-        setSubSubCategoryId("");
-        setSubCategories([]);
-        setSubSubCategories([]);
-
-        if (!values || values.length === 0) return;
-
-        setSubCategoryLoading(true);
-
-        try {
-            const res = await getDatas("/admin/sub-categories/list", {category_ids:values});
-
-            if (res?.success && res?.result) {
-                let categories = [];
-
-                if (Array.isArray(res.result)) {
-                    categories = res.result;
-                }else if (res.result && Array.isArray(res.result || [])) {
-                    categories = res.result;
-                }else if (typeof res.result === "object" && res.result.id) {
-                    categories = [res.result];
-                }
-
-                setSubCategories(categories);
-            } else {
-                setSubCategories([]);
-            }
-        } catch (error) {
-            console.error("Error fetching subcategories:", error);
-            setSubCategories([]);
-            message.error("Failed to load subcategories");
-        } finally {
-            setSubCategoryLoading(false);
-        }
-    };
-
-    const handleSubCategoryChange = async (value) => {
-        setSubCategoryId(value);
-        setSubSubCategoryId("");
-        setSubSubCategories([]);
-        if (!value) return;
-
-        setSubSubCategoryLoading(true);
-        try {
-            const res = await getDatas("/admin/sub-sub-categories", {sub_category_ids:value});
-
-            if (res?.success && res?.result) {
-                let categories = [];
-
-                if (Array.isArray(res.result)) {
-                    categories = res.result;
-                }else if (res.result.data && Array.isArray(res.result.data)) {
-                    categories = res.result.data;
-                }else if (typeof res.result === "object" && res.result.id) {
-                    categories = [res.result];
-                }
-
-                setSubSubCategories(categories);
-            } else {
-                setSubSubCategories([]);
-            }
-        } catch (error) {
-            console.error("Error fetching sub-subcategories:", error);
-            setSubSubCategories([]);
-            message.error("Failed to load sub-subcategories");
-        } finally {
-            setSubSubCategoryLoading(false);
-        }
-    };
 
     const handleImageChange = ({ file, width, height, galleryPath }) => {
         setThumbnailPreview("");
@@ -583,26 +446,21 @@ export default function ProductEdit() {
         setAttributeValue(attrVal);
     };
 
-    const handleColorImageChange = (e, index) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        if (!/\.(jpe?g|png|webp|gif)$/i.test(file.name)) {
-            message.error("Please select a valid image file (jpg, jpeg, png, webp, gif)");
-            return;
-        }
-
+    const handleColorImageChange = (data, index) => {
         const newImages = [...colorImages];
-        newImages[index] = file;
-        setColorImages(newImages);
+        const newPreview = [...colorImagePreview];
 
-        const reader = new FileReader();
-        reader.onload = () => {
-            const newPreview = [...colorImagePreview];
-            newPreview[index] = reader.result;
-            setColorImagePreview(newPreview);
+        newImages[index] = {
+            file: data.file || null,
+            path: data.galleryPath || null,
         };
-        reader.readAsDataURL(file);
+
+        newPreview[index] = data.file
+            ? URL.createObjectURL(data.file)
+            : data.galleryPath;
+
+        setColorImages(newImages);
+        setColorImagePreview(newPreview);
     };
 
     const updateVariationField = (index, field, value) => {
@@ -710,12 +568,22 @@ export default function ProductEdit() {
             formData.append("name", title);
             formData.append("brand_id", brandId || "");
 
-            categoryId.forEach(id => {
-                formData.append("category_ids[]", id);
+            const category_ids = [];
+            const sub_category_ids = [];
+            const sub_sub_category_ids = [];
+
+            categoryIds.forEach(item => {
+                const [type, id] = item.split("-");
+
+                if (type === "cat") category_ids.push(id);
+                if (type === "sub") sub_category_ids.push(id);
+                if (type === "subsub") sub_sub_category_ids.push(id);
             });
 
-            formData.append("sub_category_id", subCategoryId || "");
-            formData.append("sub_sub_category_id", subSubCategoryId || "");
+            category_ids.forEach(id => formData.append("category_ids[]", id));
+            sub_category_ids.forEach(id => formData.append("sub_category_ids[]", id));
+            sub_sub_category_ids.forEach(id => formData.append("sub_sub_category_ids[]", id));
+
             formData.append("minimum_qty", minimumQuantity || "1");
             formData.append("free_shipping", isFreeShipping || "0");
             formData.append("status", status || "active");
@@ -809,8 +677,11 @@ export default function ProductEdit() {
             });
 
             colorImages.forEach((img, i) => {
-                if (img) {
-                    formData.append(`variations[${i}][image]`, img);
+                if (img?.file) {
+                    formData.append(`variations[${i}][image]`, img.file);
+                } 
+                else if (img?.path) {
+                    formData.append(`variations[${i}][image]`, img.path);
                 }
             });
 
@@ -830,7 +701,7 @@ export default function ProductEdit() {
                 }
             });
 
-            const res = await postData(`/admin/products/${id}`, formData, {headers: { "Content-Type": "multipart/form-data" },});
+            const res = await postData(`/admin/products/${id}`, formData);
 
             if (res?.success) {
                 messageApi.open({
@@ -925,31 +796,6 @@ export default function ProductEdit() {
                                     </Form.Item>
                                 </Col>
             
-                                <Col span={8}>
-                                    <Form.Item label="Category" validateStatus={errors?.category_id ? "error" : ""} help={errors?.category_id?.[0]} required>
-                                        <Select mode="multiple" placeholder="Categories" value={categoryId || undefined} loading={categories === null} onChange={handleCategoryChange} options={(categories || []).map((c) => ({label: c.name,value: c.id,}))}
-                                        />
-                                    </Form.Item>
-                                </Col>
-            
-                                {isSubCategoryShow && (
-                                    <Col span={8}>
-                                        <Form.Item label="Sub Category">
-                                            <Select placeholder="Sub Categories" value={subCategoryId} loading={subCategoryLoading} onChange={handleSubCategoryChange} options={(subCategories || []).map((sc) => ({label: sc.name,value: sc.id,}))}
-                                        />
-                    
-                                        </Form.Item>
-                                    </Col>
-                                )}
-            
-                                {isSubSubCategoryShow && (
-                                    <Col span={8}>
-                                        <Form.Item label="Sub Sub Category">
-                                            <Select placeholder="Sub Sub Categories" value={subSubCategoryId || undefined} loading={subSubCategoryLoading} onChange={(v) => setSubSubCategoryId(v)} options={(subSubCategories || []).map((ssc) => ({label: ssc.name,value: ssc.id}))}/>
-                                        </Form.Item>
-                                    </Col>
-                                )}
-
                                 <Col span={8}>
                                     <Form.Item label="Brand">
                                         <Select placeholder="Brand" value={brandId || undefined} onChange={setBrandId} options={(brands || []).map((b) => ({label: b.name,value: b.id,}))}/>
@@ -1077,7 +923,7 @@ export default function ProductEdit() {
 
                     <Card title="Product Categories" bordered>
                         <div style={{maxHeight: 400,overflowY: "auto",paddingRight: 10}}>
-                            <Checkbox.Group style={{ width: "100%" }}>
+                            <Checkbox.Group style={{ width: "100%" }} value={categoryIds} onChange={(checkedValues) => setCategoryIds(checkedValues)}>
                                 {categories?.map(category => (
                                     <div key={category.id} style={{ marginBottom: 12 }}>
 
@@ -1211,14 +1057,6 @@ export default function ProductEdit() {
                                         ),
                                     },
                                     {
-                                        title: "Buy Price",
-                                        dataIndex: "buyPrice",
-                                        width: 120,
-                                        render: (_, record) => (
-                                            <Input placeholder="0" value={variationBuyPrice[record.index]} onChange={(e) => updateVariationField(record.index,"buyPrice",e.target.value)}/>
-                                        ),
-                                    },
-                                    {
                                         title: "Regular Price",
                                         dataIndex: "regularPrice",
                                         width: 130,
@@ -1256,14 +1094,45 @@ export default function ProductEdit() {
                                         width: 150,
                                         render: (_, record) => (
                                             <Space direction="vertical" style={{ width: "100%" }}>
-                                                <input type="file" accept="image/*" onChange={(e) => handleColorImageChange(e, record.index)} style={{ width: "100%", fontSize: "12px" }}/>
+                                                <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={(data) => handleColorImageChange(data, record.index)}/>
+
                                                 {colorImagePreview[record.index] && (
-                                                    <div style={{position: "relative",display: "inline-block",}}>
-                                                        <Image src={colorImagePreview[record.index]} alt={`Variation ${record.index + 1}`} style={{width: 50,height: 50, objectFit: "cover",borderRadius: 4,}}/>
+                                                    <div style={{ position: "relative", display: "inline-block" }}>
+                                                        <Image src={colorImagePreview[record.index]} alt={`Variation ${record.index + 1}`}
+                                                            style={{
+                                                                width       : 50,
+                                                                height      : 50,
+                                                                objectFit   : "cover",
+                                                                borderRadius: 4,
+                                                            }}
+                                                        />
+
                                                         <Button type="text" danger icon={<DeleteOutlined />}
-                                                        onClick={() => {const newImages = [...colorImages];const newPreview = [...colorImagePreview];newImages[record.index] = null;newPreview[record.index] = null;
-                                                            setColorImages(newImages);setColorImagePreview(newPreview);}}
-                                                            style={{position: "absolute",top: -8,right: -8,background: "#ff4d4f",color: "white",borderRadius: "50%",width: 20,height: 20,minWidth: 20,display: "flex",alignItems: "center",justifyContent: "center",fontSize: 10,}}
+                                                            onClick={() => {
+                                                                const newImages = [...colorImages];
+                                                                const newPreview = [...colorImagePreview];
+
+                                                                newImages[record.index] = null;
+                                                                newPreview[record.index] = null;
+
+                                                                setColorImages(newImages);
+                                                                setColorImagePreview(newPreview);
+                                                            }}
+                                                            style={{
+                                                                position      : "absolute",
+                                                                top           : -8,
+                                                                right         : -8,
+                                                                background    : "#ff4d4f",
+                                                                color         : "white",
+                                                                borderRadius  : "50%",
+                                                                width         : 20,
+                                                                height        : 20,
+                                                                minWidth      : 20,
+                                                                display       : "flex",
+                                                                alignItems    : "center",
+                                                                justifyContent: "center",
+                                                                fontSize      : 10,
+                                                            }}
                                                         />
                                                     </div>
                                                 )}

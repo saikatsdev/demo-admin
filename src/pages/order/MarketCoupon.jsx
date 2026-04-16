@@ -109,15 +109,15 @@ export default function MarketCoupon() {
         setIsModalOpen(true);
 
         form.setFieldsValue({
-          name: record.name,
-          code: record.code,
-          discount_amount: record.discount_amount,
-          min_cart_amount: record.min_cart_amount,
-          discount_type: record.discount_type,
-          started_at: record.started_at ? dayjs(record.started_at) : null,
-          ended_at: record.ended_at ? dayjs(record.ended_at) : null,
-          description: record.description,
-          status: record.status,
+            name           : record.name,
+            code           : record.code,
+            discount_amount: record.discount_amount,
+            min_cart_amount: record.min_cart_amount,
+            discount_type  : record.discount_type,
+            started_at     : record.started_at ? dayjs(record.started_at): null,
+            ended_at       : record.ended_at ? dayjs(record.ended_at)    : null,
+            description    : record.description,
+            status         : record.status,
         });
     }
 
@@ -180,25 +180,36 @@ export default function MarketCoupon() {
 
         const url = editingItems?.id ? `/admin/coupons/${editingItems.id}` : `/admin/coupons`;
 
-        setLoading(true);
+        try {
+            setLoading(true);
 
-        const res = await postData(url, formData);
+            const res = await postData(url, formData);
 
-        if(res?.success){
-            const refreshed = await getDatas("/admin/coupons");
+            if(res?.success){
+                const refreshed = await getDatas("/admin/coupons");
 
-            setItems(refreshed?.result?.data);
+                setItems(refreshed?.result?.data);
 
-            messageApi.open({
-              type: "success",
-              content: res.msg,
-            });
-        }
+                messageApi.open({
+                    type: "success",
+                    content: res.msg,
+                });
 
-        setTimeout(() => {
+                setTimeout(() => {
+                    setLoading(false);
+                    setIsModalOpen(false);
+                }, 300);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
             setLoading(false);
-            setIsModalOpen(false);
-        }, 500);
+        }
     }
 
     const onDelete = async (id) => {
@@ -210,8 +221,13 @@ export default function MarketCoupon() {
             setItems(refreshed?.result?.data);
 
             messageApi.open({
-              type: "success",
-              content: res.msg,
+                type: "success",
+                content: res.msg,
+            });
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
             });
         }
     }
@@ -245,16 +261,11 @@ export default function MarketCoupon() {
             <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
 
             <div>
-                <Modal
-                    title={editingItems ? "Edit Coupon" : "Create New Coupon"}
-                    open={isModalOpen}
-                    onOk={handleSubmit}
-                    okText={editingItems ? "Update" : "Create"}
-                    confirmLoading={loading}
-                    onCancel={() => setIsModalOpen(false)}
+                <Modal title={editingItems ? "Edit Coupon" : "Create New Coupon"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"}
+                    confirmLoading={loading} onCancel={() => setIsModalOpen(false)}
                 >
                     <div>
-                        <Form form={form} layout="s" initialValues={{started_at: editingItems?.started_at ? dayjs(editingItems.started_at) : null, ended_at: editingItems?.ended_at ? dayjs(editingItems.ended_at) : null,}}>
+                        <Form form={form} layout="vertical" initialValues={{started_at: editingItems?.started_at ? dayjs(editingItems.started_at) : null, ended_at: editingItems?.ended_at ? dayjs(editingItems.ended_at) : null,}}>
                             <div>
                                 <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:"16px"}}>
                                     <Form.Item name="name" label="Name" rules={[{ required: true }]}>

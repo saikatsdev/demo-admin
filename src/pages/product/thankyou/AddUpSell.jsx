@@ -38,6 +38,7 @@ export default function AddUpSell() {
         if (!query.trim()) return setStateFn([]);
 
         setLoading(true);
+
         try {
             const res = await getDatas("/admin/products/search", { search_key: query });
 
@@ -157,7 +158,12 @@ export default function AddUpSell() {
 
                 setTimeout(() => {
                     navigate("/upsell");
-                }, 500);
+                }, 300);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);

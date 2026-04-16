@@ -166,6 +166,11 @@ export default function Review() {
 
             const refreshed = await getDatas("/admin/product/reviews");
             setReviews(refreshed?.result?.data || [])
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
+            });
         }
     }
 
@@ -196,7 +201,9 @@ export default function Review() {
 
         try {
             setLoading(true);
+
             const res = await postData("/admin/product/reviews/status/update", payload);
+
             if(res && res?.success){
                 const refreshed = await getDatas("/admin/product/reviews");
 
@@ -208,6 +215,11 @@ export default function Review() {
                 messageApi.open({
                     type: "success",
                     content: res.msg,
+                });
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
                 });
             }
         } catch (error) {
@@ -235,6 +247,11 @@ export default function Review() {
             setReviews(refreshed?.result?.data || [])
 
             setReplyOpen(false);
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
+            });
         }
     };
 

@@ -236,19 +236,20 @@ export default function Product() {
                             </p>
                         )}
 
-                        {record.sub_category?.name && (
+                        {record.sub_categories?.length > 0 && (
                             <p style={{ margin: 0, fontWeight: 700 }}>
                                 Sub Category:{" "}
                                 <span style={{ fontWeight: 300 }}>
-                                    {record.sub_category.name}
+                                    {record.sub_categories.map(item => item.name).join(", ")}
                                 </span>
                             </p>
                         )}
-                        {record.sub_sub_category?.name && (
+
+                        {record.sub_sub_categories?.length > 0 && (
                             <p style={{ margin: 0, fontWeight: 700 }}>
                                 Sub Sub Category:{" "}
                                 <span style={{ fontWeight: 300 }}>
-                                    {record.sub_sub_category.name}
+                                    {record.sub_sub_categories.map(item => item.name).join(", ")}
                                 </span>
                             </p>
                         )}

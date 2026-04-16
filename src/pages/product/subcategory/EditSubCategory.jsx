@@ -83,10 +83,10 @@ export default function EditSubCategory() {
                     : [];
 
                 form.setFieldsValue({
-                    name: subcategory.name,
+                    name       : subcategory.name,
                     category_id: subcategory.category.id,
-                    status: subcategory.status,
-                    image: imageFileList,
+                    status     : subcategory.status,
+                    image      : imageFileList,
                 });
             }
 
@@ -135,6 +135,11 @@ export default function EditSubCategory() {
                 setTimeout(() => {
                     navigate("/subcategories");
                 }, 400);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log("Something went wrong", error);
@@ -202,8 +207,8 @@ export default function EditSubCategory() {
                         </div>
 
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block>
-                                {loading ? "Updating..." : "Update"}
+                            <Button type="primary" htmlType="submit" block loading={loading}>
+                                Update
                             </Button>
                         </Form.Item>
                     </Form>

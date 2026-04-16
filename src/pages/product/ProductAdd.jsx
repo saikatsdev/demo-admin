@@ -6,7 +6,6 @@ import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
-import {useAppSettings} from "../../contexts/useAppSettings";
 import ProductImagePicker from "../../components/image/ProductImagePicker";
 import ProductGalleryPicker from "../../components/image/ProductGalleryPicker";
 
@@ -15,7 +14,6 @@ const { Title, Text } = Typography;
 export default function ProductAdd() {
     // Hook
     useTitle("Add Product");
-    const { settings} = useAppSettings();
 
     // Variable
     const navigate = useNavigate();
@@ -24,13 +22,12 @@ export default function ProductAdd() {
     const [title, setTitle]                                     = useState("");
     const [soldQty, setSoldQty]                                 = useState("");
     const [categories, setCategories]                           = useState([]);
-    const [categoryId, setCategoryId]                           = useState([]);
-    const [subCategories, setSubCategories]                     = useState([]);
-    const [subCategoryId, setSubCategoryId]                     = useState("");
-    const [subCategoryLoading, setSubCategoryLoading]           = useState(false);
-    const [subSubCategories, setSubSubCategories]               = useState([]);
-    const [subSubCategoryId, setSubSubCategoryId]               = useState("");
-    const [subSubCategoryLoading, setSubSubCategoryLoading]     = useState(false);
+    const [categoryIds, setCategoryIds]                           = useState([]);
+
+
+
+
+
     const [brands, setBrands]                                   = useState(null);
     const [brandId, setBrandId]                                 = useState("");
     const [status, setStatus]                                   = useState("");
@@ -44,8 +41,6 @@ export default function ProductAdd() {
     const [metaTitle, setMetaTitle]                             = useState("");
     const [metaKeywords, setMetaKeywords]                       = useState("");
     const [metaDescription, setMetaDescription]                 = useState("");
-    const [isSubCategoryShow, setIsSubCategoryShow]             = useState(false);
-    const [isSubSubCategoryShow, setIsSubSubCategoryShow]       = useState(false);
     const [buyPrice, setBuyPrice]                               = useState("");
     const [regularPrice, setRegularPrice]                       = useState("");
     const [description, setDescription]                         = useState("");
@@ -121,15 +116,6 @@ export default function ProductAdd() {
         fetchMedia(page);
     }, []);
 
-    useEffect(() => {
-        if (!settings) return;
-
-        const subShow             = settings.is_sub_category_show;
-        const subSubShow          = settings.is_sub_sub_category_show;
-
-        setIsSubCategoryShow(subShow === "1");
-        setIsSubSubCategoryShow(subSubShow === "1");
-    }, [settings]);
 
     useEffect(() => {
         const init = async () => {
@@ -147,70 +133,6 @@ export default function ProductAdd() {
         };
         init();
     }, []);
-
-    const handleCategoryChange = async (values) => {
-        setCategoryId(values);
-        setSubCategoryId("");
-        setSubSubCategoryId("");
-        setSubCategories([]);
-        setSubSubCategories([]);
-
-        if (!values || values.length === 0) return;
-
-        setSubCategoryLoading(true);
-
-        try {
-            const res = await getDatas("/admin/sub-categories/list",{category_ids:values});
-
-            if (res?.success && res?.result) {
-                let categories = [];
-
-                if (Array.isArray(res.result)) {
-                    categories = res.result;
-                }
-
-                setSubCategories(categories);
-            } else {
-                setSubCategories([]);
-            }
-        } catch (error) {
-            console.error("Error fetching subcategories:", error);
-            setSubCategories([]);
-            message.error("Failed to load subcategories");
-        } finally {
-            setSubCategoryLoading(false);
-        }
-    };
-
-    const handleSubCategoryChange = async (value) => {
-        setSubCategoryId(value);
-        setSubSubCategoryId("");
-        setSubSubCategories([]);
-        if (!value) return;
-    
-        setSubSubCategoryLoading(true);
-        try {
-            const res = await getDatas("/admin/sub-sub-categories/list", {sub_category_ids:value});
-        
-            if (res?.success && res?.result) {
-                let categories = [];
-        
-                if (Array.isArray(res.result)) {
-                    categories = res.result;
-                }
-        
-                setSubSubCategories(categories);
-            } else {
-                setSubSubCategories([]);
-            }
-        } catch (error) {
-            console.error("Error fetching sub-subcategories:", error);
-            setSubSubCategories([]);
-            message.error("Failed to load sub-subcategories");
-        } finally {
-            setSubSubCategoryLoading(false);
-        }
-    };
 
     const handleImageChange = ({ file, width, height, galleryPath }) => {
         if (file) {
@@ -344,26 +266,21 @@ export default function ProductAdd() {
         setAttributeValue(attrVal);
     };
 
-    const handleColorImageChange = (e, index) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        if (!/\.(jpe?g|png|webp|gif)$/i.test(file.name)) {
-            message.error("Please select a valid image file (jpg, jpeg, png, webp, gif)");
-            return;
-        }
-
+    const handleColorImageChange = (data, index) => {
         const newImages = [...colorImages];
-        newImages[index] = file;
-        setColorImages(newImages);
+        const newPreview = [...colorImagePreview];
 
-        const reader = new FileReader();
-        reader.onload = () => {
-            const newPreview = [...colorImagePreview];
-            newPreview[index] = reader.result;
-            setColorImagePreview(newPreview);
+        newImages[index] = {
+            file: data.file || null,
+            path: data.galleryPath || null,
         };
-        reader.readAsDataURL(file);
+
+        newPreview[index] = data.file
+            ? URL.createObjectURL(data.file)
+            : data.galleryPath;
+
+        setColorImages(newImages);
+        setColorImagePreview(newPreview);
     };
 
     const updateVariationField = (index, field, value) => {
@@ -481,12 +398,28 @@ export default function ProductAdd() {
             formData.append("slug", slug);
             formData.append("brand_id", brandId || "");
 
-            categoryId.forEach(id => {
-                formData.append("category_ids[]", id);
+            const category_ids = [];
+            const sub_category_ids = [];
+            const sub_sub_category_ids = [];
+
+            categoryIds.forEach(item => {
+                const [type, id] = item.split("-");
+
+                if (type === "cat") category_ids.push(id);
+                if (type === "sub") sub_category_ids.push(id);
+                if (type === "subsub") sub_sub_category_ids.push(id);
             });
 
-            formData.append("sub_category_id", subCategoryId || "");
-            formData.append("sub_sub_category_id", subSubCategoryId || "");
+            const appendIfExists = (key, arr) => {
+                if (arr.length) {
+                    arr.forEach(id => formData.append(`${key}[]`, id));
+                }
+            };
+
+            appendIfExists("category_ids", category_ids);
+            appendIfExists("sub_category_ids", sub_category_ids);
+            appendIfExists("sub_sub_category_ids", sub_sub_category_ids);
+
             formData.append("minimum_qty", minimumQuantity || "1");
             formData.append("free_shipping", isFreeShipping || "0");
             formData.append("status", status || "active");
@@ -576,8 +509,11 @@ export default function ProductAdd() {
             });
 
             colorImages.forEach((img, i) => {
-                if (img) {
-                    formData.append(`variations[${i}][image]`, img);
+                if (img?.file) {
+                    formData.append(`variations[${i}][image]`, img.file);
+                } 
+                else if (img?.path) {
+                    formData.append(`variations[${i}][image]`, img.path);
                 }
             });
 
@@ -587,9 +523,9 @@ export default function ProductAdd() {
                 }
             });
 
-            const res = await postData("/admin/products", formData, {headers: {"Content-Type": "multipart/form-data"}});
+            const res = await postData("/admin/products", formData);
 
-            if (res?.success) {
+            if (res && res?.success) {
                 messageApi.open({
                     type: "success",
                     content: res.msg,
@@ -698,29 +634,6 @@ export default function ProductAdd() {
                                             </Form.Item>
                                         )}
                                     </Col>                
-                
-                                    <Col span={8}>
-                                        <Form.Item label="Category" validateStatus={errors?.category_id ? "error" : ""} help={errors?.category_id?.[0]} required>
-                                            <Select mode="multiple" placeholder="Categories" value={categoryId || undefined} loading={categories === null} onChange={handleCategoryChange} options={(categories || []).map((c) => ({label: c.name,value: c.id,}))}/>
-                                        </Form.Item>
-                                    </Col>
-
-                                    {isSubCategoryShow && (
-                                        <Col span={8}>
-                                            <Form.Item label="Sub Category">
-                                                <Select placeholder="Sub Categories" value={subCategoryId || undefined} loading={subCategoryLoading} onChange={handleSubCategoryChange} options={(subCategories || []).map((sc) => ({label: sc.name,value: sc.id,}))}/>
-                                            </Form.Item>
-                                        </Col>
-                                    )}
-
-                                    {isSubSubCategoryShow && (
-                                        <Col span={8}>
-                                            <Form.Item label="Sub Sub Category">
-                                                <Select placeholder="Sub Sub Categories" value={subSubCategoryId || undefined} loading={subSubCategoryLoading} onChange={(v) => setSubSubCategoryId(v)}
-                                                options={(subSubCategories || []).map((ssc) => ({label: ssc.name,value: ssc.id,}))}/>
-                                            </Form.Item>
-                                        </Col>
-                                    )}
 
                                     <Col span={8}>
                                         <Form.Item label="Brand">
@@ -825,7 +738,7 @@ export default function ProductAdd() {
 
                         <Card title="Product Categories" bordered>
                             <div style={{maxHeight: 400,overflowY: "auto",paddingRight: 10}}>
-                                <Checkbox.Group style={{ width: "100%" }}>
+                                <Checkbox.Group style={{ width: "100%" }} value={categoryIds} onChange={(checkedValues) => setCategoryIds(checkedValues)}>
                                     {categories?.map(category => (
                                         <div key={category.id} style={{ marginBottom: 12 }}>
 
@@ -835,7 +748,6 @@ export default function ProductAdd() {
                                                 </Checkbox>
                                             </div>
 
-                                            {/* Sub Categories */}
                                             <div style={{ marginLeft: 20, marginTop: 5 }}>
                                                 {category.sub_categories?.map(sub => (
                                                     <div key={sub.id} style={{ marginBottom: 5 }}>
@@ -941,20 +853,6 @@ export default function ProductAdd() {
                                             ),
                                         },
                                         {
-                                            title: "Buy Price",
-                                            dataIndex: "buyPrice",
-                                            width: 120,
-                                            render: (_, record) => {
-                                                const error = getVariationError(record.index, "buy_price");
-
-                                                return (
-                                                    <Form.Item validateStatus={error ? "error" : ""} help={error} style={{ marginBottom: 0 }}>
-                                                        <Input placeholder="0" value={variationBuyPrice[record.index]} onChange={(e) => updateVariationField(record.index,"buyPrice",e.target.value)}/>
-                                                    </Form.Item>
-                                                );
-                                            }
-                                        },
-                                        {
                                             title: "Regular Price",
                                             dataIndex: "regularPrice",
                                             width: 130,
@@ -998,15 +896,49 @@ export default function ProductAdd() {
                                             width: 150,
                                             render: (_, record) => (
                                                 <Space direction="vertical" style={{ width: "100%" }}>
-                                                    <input type="file" accept="image/*" onChange={(e) =>handleColorImageChange(e, record.index)} style={{ width: "100%", fontSize: "12px" }}/>
+                                                    <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={(data) => handleColorImageChange(data, record.index)}/>
+
                                                     {colorImagePreview[record.index] && (
-                                                        <div style={{position: "relative",display: "inline-block",}}>
+                                                        <div style={{ position: "relative", display: "inline-block" }}>
+                                                            <Image
+                                                                src={colorImagePreview[record.index]}
+                                                                style={{
+                                                                    width: 50,
+                                                                    height: 50,
+                                                                    objectFit: "fill",
+                                                                    borderRadius: 4,
+                                                                }}
+                                                            />
 
-                                                            <Image src={colorImagePreview[record.index]} alt={`Variation ${record.index + 1}`} style={{width: 50,height: 50, objectFit: "fill", borderRadius: 4,}}/>
+                                                            <Button
+                                                                type="text"
+                                                                danger
+                                                                icon={<DeleteOutlined />}
+                                                                onClick={() => {
+                                                                    const newImages = [...colorImages];
+                                                                    const newPreview = [...colorImagePreview];
 
-                                                            <Button type="text" danger icon={<DeleteOutlined />} onClick={() => {const newImages = [...colorImages];const newPreview = [...colorImagePreview];
-                                                                newImages[record.index] = null;newPreview[record.index] = null;setColorImages(newImages);setColorImagePreview(newPreview);}}
-                                                                style={{position: "absolute",top: -8,right: -8,background: "#ff4d4f",color: "white",borderRadius: "50%",width: 20,height: 20,minWidth: 20,display: "flex",alignItems: "center",justifyContent: "center",fontSize: 10,}}
+                                                                    newImages[record.index] = null;
+                                                                    newPreview[record.index] = null;
+
+                                                                    setColorImages(newImages);
+                                                                    setColorImagePreview(newPreview);
+                                                                }}
+                                                                style={{
+                                                                    position: "absolute",
+                                                                    top: -8,
+                                                                    right: -8,
+                                                                    background: "#ff4d4f",
+                                                                    color: "white",
+                                                                    borderRadius: "50%",
+                                                                    width: 20,
+                                                                    height: 20,
+                                                                    minWidth: 20,
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    fontSize: 10,
+                                                                }}
                                                             />
                                                         </div>
                                                     )}

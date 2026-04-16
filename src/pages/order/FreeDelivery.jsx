@@ -214,19 +214,13 @@ export default function FreeDelivery() {
             <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
 
             <div>
-                <Modal style={{textAlign:"center"}}
-                    title={editingItems ? "Edit Info" : "Create New"}
-                    open={isModalOpen}
-                    onOk={handleSubmit}
-                    okText={editingItems ? "Update" : "Create"}
-                    confirmLoading={loading}
-                    onCancel={() => setIsModalOpen(false)}
-                >
+                <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"}
+                    confirmLoading={loading} onCancel={() => setIsModalOpen(false)}>
                     <div>
-                        <Form form={form} layout="s">
+                        <Form form={form} layout="vertical">
                             <div>
                                 <Form.Item name="type" label="Free Shipping Type" rules={[{ required: true }]}>
-                                    <Select options={[{ value: 'quantity', label: 'Quantity' }, { value: 'price', label: 'Price' }]} onChange={(value) => setSelectedType(value)}/>
+                                    <Select placeholder="Select Type" options={[{ value: 'quantity', label: 'Quantity' }, { value: 'price', label: 'Price' }]} onChange={(value) => setSelectedType(value)}/>
                                 </Form.Item>
 
                                 {selectedType === "quantity" && (

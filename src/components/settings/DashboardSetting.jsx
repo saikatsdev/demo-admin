@@ -56,10 +56,17 @@ export default function DashboardSetting({formatText}) {
         try {
             setLoading(true);
             const res = await postData("/admin/settings", JSON.stringify(payload));
-            messageApi.open({
-                type: "success",
-                content: res.msg,
-            });
+            if(res && res?.success){
+                messageApi.open({
+                    type: "success",
+                    content: res.msg,
+                });
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
+            }
         } catch (error) {
             console.error("Error updating settings:", error);
         }finally{

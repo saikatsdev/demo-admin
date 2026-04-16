@@ -42,16 +42,17 @@ export default function EditUpSell() {
         if (!query.trim()) return setStateFn([]);
     
         setLoading(true);
+
         try {
-          const res = await getDatas("/admin/products/search", { search_key: query });
-    
-          if (res && res?.success) {
-            setStateFn(res?.result || []);
-          }
+            const res = await getDatas("/admin/products/search", { search_key: query });
+        
+            if (res && res?.success) {
+                setStateFn(res?.result || []);
+            }
         } catch (error) {
-          console.log(error);
+            console.log(error);
         } finally {
-          setLoading(false);
+            setLoading(false);
         }
     };
     
@@ -114,14 +115,15 @@ export default function EditUpSell() {
             if (res && res?.success && isMounted) {
                 const data = res.result || {};
 
-                const formatDate = (dateTime) =>
-                    dateTime ? dateTime.split(" ")[0] : "";
+                const formatDate = (dateTime) => dateTime ? dateTime.split(" ")[0] : "";
 
                 const getTriggerRule = (data) => {
                     if (data.is_all == 1) return "on_order";
+
                     if (Array.isArray(data.trigger_category_ids) && data.trigger_category_ids.length > 0) {
                         return "on_category";
                     }
+
                     return "on_product";
                 };
 
@@ -271,11 +273,16 @@ export default function EditUpSell() {
                     type: "success",
                     content: res.msg,
                 });
-            }
 
-            setTimeout(() => {
-                navigate("/upsell");
-            }, 400);
+                setTimeout(() => {
+                    navigate("/upsell");
+                }, 300);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
+            }
         } catch (error) {
             console.log(error);
         }finally{

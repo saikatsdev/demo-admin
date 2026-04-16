@@ -131,25 +131,36 @@ export default function OrderTag() {
 
         const url = editingItems?.id ? `/admin/order-froms/${editingItems.id}` : `/admin/order-froms`;
 
-        setLoading(true);
+        try {
+            setLoading(true);
 
-        const res = await postData(url, formData);
+            const res = await postData(url, formData);
 
-        if(res?.success){
-            const refreshed = await getDatas("/admin/order-froms");
+            if(res?.success){
+                const refreshed = await getDatas("/admin/order-froms");
 
-            setItems(refreshed?.result?.data);
+                setItems(refreshed?.result?.data);
 
-            messageApi.open({
-              type: "success",
-              content: res.msg,
-            });
-        }
+                messageApi.open({
+                    type: "success",
+                    content: res.msg,
+                });
 
-        setTimeout(() => {
+                setTimeout(() => {
+                    setLoading(false);
+                    setIsModalOpen(false);
+                }, 300);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
             setLoading(false);
-            setIsModalOpen(false);
-        }, 500);
+        }
     }
 
     const onDelete = async (id) => {
@@ -161,8 +172,13 @@ export default function OrderTag() {
             setItems(refreshed?.result?.data);
 
             messageApi.open({
-              type: "success",
-              content: res.msg,
+                type: "success",
+                content: res.msg,
+            });
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
             });
         }
     }
@@ -186,6 +202,7 @@ export default function OrderTag() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
+
                 <Space>
                     <Button size="small" icon={<DeleteOutlined />}>Trash</Button>
                     <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
@@ -196,16 +213,10 @@ export default function OrderTag() {
             <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
 
             <div>
-                <Modal
-                    title={editingItems ? "Edit Info" : "Create New"}
-                    open={isModalOpen}
-                    onOk={handleSubmit}
-                    okText={editingItems ? "Update" : "Create"}
-                    confirmLoading={loading}
-                    onCancel={() => setIsModalOpen(false)}
-                >
+                <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"}
+                    confirmLoading={loading} onCancel={() => setIsModalOpen(false)}>
                     <div>
-                        <Form form={form} layout="s" initialValues={{width:"960", height:"1200"}}>
+                        <Form form={form} layout="vertical" initialValues={{width:"960", height:"1200"}}>
                             <div>
                                 <Form.Item name="name" label="Name" rules={[{ required: true }]}>
                                     <AntInput placeholder="Enter Name" />

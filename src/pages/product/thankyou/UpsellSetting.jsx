@@ -73,6 +73,11 @@ export default function UpsellSetting() {
                 setTimeout(() => {
                     navigate("/upsell");
                 }, 500);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);

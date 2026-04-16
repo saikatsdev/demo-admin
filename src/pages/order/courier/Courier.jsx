@@ -107,6 +107,11 @@ export default function Courier() {
                 type: "success",
                 content: res.msg,
             });
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
+            });
         }
     }
 

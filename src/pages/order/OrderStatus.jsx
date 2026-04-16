@@ -228,7 +228,7 @@ export default function OrderStatus() {
                 <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"} confirmLoading={loading}
                     onCancel={() => setIsModalOpen(false)}>
                     <div>
-                        <Form form={form} layout="s">
+                        <Form form={form} layout="vertical">
                             <div>
                                 <Form.Item name="name" label="Status Name" rules={[{ required: true }]}>
                                     <AntInput placeholder="Enter Name" />

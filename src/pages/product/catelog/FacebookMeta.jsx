@@ -59,6 +59,11 @@ export default function FacebookMeta() {
                     type: "success",
                     content: res.msg,
                 });
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);
@@ -82,6 +87,11 @@ export default function FacebookMeta() {
                     type: "success",
                     content: res.msg,
                 });
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);
@@ -104,6 +114,11 @@ export default function FacebookMeta() {
                 messageApi.open({
                     type: "success",
                     content: res.msg,
+                });
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
                 });
             }
         } catch (error) {

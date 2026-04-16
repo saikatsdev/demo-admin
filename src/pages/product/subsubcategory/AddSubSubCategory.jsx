@@ -103,7 +103,12 @@ export default function AddSubSubCategory() {
 
                 setTimeout(() => {
                     navigate("/subsubcategories");
-                }, 400);
+                }, 300);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log("Something went wrong", error);
@@ -172,8 +177,8 @@ export default function AddSubSubCategory() {
                         </div>
 
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block>
-                                {loading ? "Submiting..." : "Submit"}
+                            <Button type="primary" htmlType="submit" block loading={loading}>
+                                Submit
                             </Button>
                         </Form.Item>
                     </Form>

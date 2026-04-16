@@ -1,4 +1,4 @@
-import useTitle from "../../../hooks/useTitle"
+import useTitle from "../../../hooks/useTitle";
 
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button, Form, message, Select } from "antd";
@@ -82,8 +82,8 @@ export default function AddProductType() {
                         </Form.Item>
 
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block>
-                                {loading ? "Submiting" : "Submit"}
+                            <Button type="primary" htmlType="submit" block loading={loading}>
+                                Submit
                             </Button>
                         </Form.Item>
                     </Form>

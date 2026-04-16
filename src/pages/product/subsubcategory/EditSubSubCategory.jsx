@@ -69,18 +69,18 @@ export default function EditSubSubCategory() {
                 const imageFileList = data.image
                     ? [
                         {
-                            uid: "-1",
-                            name: "subsubcategory.png",
-                            status: "done",            
-                            url: data.image,
+                            uid   : "-1",
+                            name  : "subsubcategory.png",
+                            status: "done",
+                            url   : data.image,
                         },
                     ]
                     : [];
 
                 form.setFieldsValue({
-                    name: data.name,
-                    status: data.status,
-                    image: imageFileList,
+                    name           : data.name,
+                    status         : data.status,
+                    image          : imageFileList,
                     sub_category_id: data.sub_category_id,
                 });
             }
@@ -135,6 +135,11 @@ export default function EditSubSubCategory() {
                 setTimeout(() => {
                     navigate("/subsubcategories");
                 }, 400);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log("Something went wrong", error);
@@ -202,8 +207,8 @@ export default function EditSubSubCategory() {
                         </div>
 
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block>
-                                {loading ? "Updating..." : "Update"}
+                            <Button type="primary" htmlType="submit" block loading={loading}>
+                                Update
                             </Button>
                         </Form.Item>
                     </Form>

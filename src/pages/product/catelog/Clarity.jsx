@@ -49,6 +49,11 @@ export default function Clarity() {
                     type: "success",
                     content: res.msg,
                 });
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);

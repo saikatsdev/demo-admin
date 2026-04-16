@@ -133,6 +133,11 @@ export default function Category() {
                 type: "success",
                 content: res.msg,
             });
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
+            });
         }
 
         setIsPermalinkModalOpen(false);
@@ -203,6 +208,11 @@ export default function Category() {
             const meta = refreshed?.result?.meta;
             
             if (meta) setPagination((p) => ({ ...p, total: meta.total || p.total }));
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
+            });
         }
     }
 
@@ -240,9 +250,10 @@ export default function Category() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
+
                 <Space>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
-                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+                    <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
+                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
                 </Space>
             </div>
 

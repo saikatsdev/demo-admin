@@ -63,6 +63,10 @@ export default function FrontendTheme({formatText}) {
                 });
             } else {
                 console.error("❌ Update failed:", res);
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.error("⚠️ Error submitting settings:", error);

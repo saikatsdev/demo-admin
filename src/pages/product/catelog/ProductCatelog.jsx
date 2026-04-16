@@ -166,6 +166,11 @@ export default function ProductCatelog() {
                 type: "success",
                 content: res.msg,
             });
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
+            });
         }
     };
 

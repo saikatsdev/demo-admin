@@ -46,8 +46,13 @@ export default function GtmSetting() {
 
             if(res?.success){
                 messageApi.open({
-                type: "success",
-                content: res.msg,
+                    type: "success",
+                    content: res.msg,
+                });
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
                 });
             }
         } catch (error) {

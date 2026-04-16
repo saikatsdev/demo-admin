@@ -124,6 +124,11 @@ export default function EditBrand() {
                 setTimeout(() => {
                     navigate("/brands");
                 }, 400);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log("Something went wrong", error);
@@ -182,8 +187,8 @@ export default function EditBrand() {
                         </div>
 
                         <Form.Item>
-                            <Button type="primary" htmlType="submit" block>
-                                {loading ? "Updating..." : "Update"}
+                            <Button type="primary" htmlType="submit" block loading={loading}>
+                                Update
                             </Button>
                         </Form.Item>
                     </Form>

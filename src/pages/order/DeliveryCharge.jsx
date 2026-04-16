@@ -77,7 +77,7 @@ export default function DeliveryCharge() {
             title: "Status",
             dataIndex: "status",
             render: (status) => (
-                <Tag color={status === "active" ? "green" : "red"}>
+                <Tag style={{textTransform:"capitalize"}} color={status === "active" ? "green" : "red"}>
                     {status}
                 </Tag>
             ),
@@ -267,7 +267,7 @@ export default function DeliveryCharge() {
                 <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"}
                     confirmLoading={loading} onCancel={() => setIsModalOpen(false)}>
                     <div>
-                        <Form form={form} layout="s" initialValues={{width:"960", height:"1200"}}>
+                        <Form form={form} layout="vertical" initialValues={{width:"960", height:"1200"}}>
                             <div>
                                 <Form.Item name="name" label="Name" rules={[{ required: true }]}>
                                     <AntInput placeholder="Enter Name" />

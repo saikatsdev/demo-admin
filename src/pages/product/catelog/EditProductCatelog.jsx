@@ -84,6 +84,10 @@ export default function EditProductCatelog() {
                 }, 500);
             }else{
                 setErrors(res?.errors);
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);

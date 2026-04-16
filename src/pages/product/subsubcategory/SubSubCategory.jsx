@@ -81,7 +81,7 @@ export default function SubSubCategory() {
 
     useEffect(() => {
         const handle = setTimeout(() => {
-        setDebouncedQuery(query);
+            setDebouncedQuery(query);
         }, 500);
         return () => clearTimeout(handle);
     }, [query]);
@@ -116,7 +116,9 @@ export default function SubSubCategory() {
             }
             setLoading(false);
         };
+
         fetchCategories();
+
         return () => {
             isMounted = false;
         };
@@ -151,9 +153,17 @@ export default function SubSubCategory() {
             });
 
             const refreshed = await getDatas("/admin/sub-sub-categories", params);
+
             setSubSubCategories(refreshed?.result?.data || []);
+
             const meta = refreshed?.result?.meta;
+
             if (meta) setPagination((p) => ({ ...p, total: meta.total || p.total }));
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
+            });
         }
     };
 
@@ -175,15 +185,17 @@ export default function SubSubCategory() {
             </div>
 
             <div style={{display: "flex", justifyContent: "space-between",alignItems: "center",marginBottom: 16}}>
-              <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
-              <Space>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-                      Add
-                  </Button>
-                  <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                      Back
-                  </Button>
-              </Space>
+                <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
+
+                <Space>
+                    <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                        Add
+                    </Button>
+
+                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                        Back
+                    </Button>
+                </Space>
             </div>
 
             <Table rowKey="id" loading={loading}
