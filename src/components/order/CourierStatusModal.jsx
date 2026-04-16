@@ -8,15 +8,45 @@ const eventMapBn = {
     },
     "order.updated": {
         title: "অর্ডার আপডেট হয়েছে",
-        color: "orange",
+        color: "volcano",
         note: "অর্ডারের স্ট্যাটাস বা তথ্য পরিবর্তন করা হয়েছে"
     },
-    "order.picked": {
+    "order.assigned-for-pickup": {
+        title: "পিকআপের জন্য নির্ধারিত",
+        color: "orange",
+        note: "কুরিয়ার পিকআপের জন্য অর্ডার নির্ধারণ করেছে"
+    },
+    "order.at-the-sorting-hub": {
+        title: "সোর্টিং হাবে পৌঁছেছে",
+        color: "gold",
+        note: "পণ্য সোর্টিং হাবে প্রক্রিয়াধীন"
+    },
+    "order.received-at-last-mile-hub": {
+        title: "লাস্ট মাইল হাবে এসেছে",
+        color: "lime",
+        note: "ডেলিভারির আগে শেষ ধাপে আছে"
+    },
+    "order.pickup-requested": {
         title: "পণ্য সংগ্রহ করা হয়েছে",
         color: "purple",
         note: "কুরিয়ার পণ্য সংগ্রহ করেছে"
     },
-    "order.in_transit": {
+    "order.paid-return": {
+        title: "পেইড রিটার্ন সম্পন্ন",
+        color: "processing",
+        note: "রিটার্ন করা পণ্যের মূল্য পরিশোধ করা হয়েছে"
+    },
+    "order.assigned-for-delivery": {
+        title: "ডেলিভারির জন্য নির্ধারিত",
+        color: "geekblue",
+        note: "অর্ডারটি ডেলিভারি করার জন্য কুরিয়ার নির্ধারণ করা হয়েছে"
+    },
+    "order.on-hold": {
+        title: "অর্ডার স্থগিত",
+        color: "magenta",
+        note: "অর্ডারটি সাময়িকভাবে স্থগিত রাখা হয়েছে"
+    },
+    "order.in-transit": {
         title: "ডেলিভারির পথে",
         color: "cyan",
         note: "পণ্য ডেলিভারির জন্য পথে রয়েছে"

@@ -61,16 +61,23 @@ export default function Permalink({slug, setSlug,productId, settings }) {
                 slug: slugInput,
             });
 
-            const data = res?.result;
+            if(res && res?.success){
+                const data = res?.result;
 
-            setSlugInput(data.slug);
-            setIsEditing(false);
-            setSlug(data.slug);
+                setSlugInput(data.slug);
+                setIsEditing(false);
+                setSlug(data.slug);
 
-            messageApi.open({
-                type: "success",
-                content: res.msg,
-            });
+                messageApi.open({
+                    type: "success",
+                    content: res.msg,
+                });
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
+            }
         } catch (e) {
             setErrorMessage("Failed to update slug", e);
         }

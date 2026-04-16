@@ -23,12 +23,12 @@ export default function TrashList() {
     const [messageApi, contextHolder]     = message.useMessage();
 
     const [filters, setFilters] = useState({
-        paginate_size: 25,
+        paginate_size    : 25,
         current_status_id: null,
-        paid_status: null,
-        start_date: null,
-        end_date: null,
-        search_key: null,
+        paid_status      : null,
+        start_date       : null,
+        end_date         : null,
+        search_key       : null,
     });
 
 
@@ -182,6 +182,11 @@ export default function TrashList() {
             });
 
             fetchedTrashList();
+        }else{
+            messageApi.open({
+                type: "error",
+                content: "Something Went Wrong",
+            });
         }
     }
 
