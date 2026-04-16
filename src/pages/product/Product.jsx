@@ -11,6 +11,7 @@ import { cachedFetch } from "../../utils/cacheApi";
 import { usePermission } from "../../hooks/usePermission";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
+import { useAppSettings } from "../../contexts/useAppSettings";
 
 const { Option } = Select;
 
@@ -21,6 +22,8 @@ export default function Product() {
     useTitle("All Products");
 
     const {permissions} = usePermission();
+
+    const {settings} = useAppSettings();
 
     const productCreate = permissions?.includes("products-create");
     const productDelete = permissions?.includes("products-delete");
@@ -92,16 +95,20 @@ export default function Product() {
     useEffect(() => {
         const fetchFilterOptions = async () => {
             try {
-                const [brands, categories, productTypes, attributeValues] =
+                const [brands, categories,subCategories, subSubCategories,productTypes, attributeValues] =
                 await Promise.all([
                     cachedFetch("brands", () => getDatas("/admin/brands/list")),
                     cachedFetch("categories", () => getDatas("/admin/categories/list")),
+                    cachedFetch("subCategories", () => getDatas("/admin/sub-categories/list")),
+                    cachedFetch("subSubCategories", () => getDatas("/admin/sub-sub-categories/list")),
                     cachedFetch("productTypes", () => getDatas("/admin/product-types/list")),
                     cachedFetch("attributeValues", () => getDatas("/admin/attribute-values/list")),
                 ]);
 
                 setBrands(brands?.result || []);
                 setCategories(categories?.result || []);
+                setSubCategoryList(subCategories?.result || []);
+                setSubSubCategoryList(subSubCategories?.result || []);
                 setProductTypes(productTypes?.result || []);
                 setAttributeValues(attributeValues?.result || []);
 
@@ -128,19 +135,6 @@ export default function Product() {
         } else {
             setSubCategories([]);
         }
-    };
-
-    const handleModalCategoryChange = (categoryId) => {
-        form.setFieldValue("sub_category_id", null);
-        form.setFieldValue("sub_sub_category_id", null);
-
-        getSubCategories(categoryId);
-    };
-
-    const handleModalSubSubCategoryChange = (subCategoryId) => {
-        form.setFieldValue("sub_sub_category_id", null);
-
-        getSubSubCategories(subCategoryId);
     };
 
     const handleSubCategoryChange = async (selectedIds) => {
@@ -287,12 +281,14 @@ export default function Product() {
                             {record.current_stock_range?.total_current_stock}
                         </span>
                     </p>
+
                     <p style={{ margin: 0, fontWeight: 700 }}>
                         Total Purchase Qty:{" "}
                         <span style={{ fontWeight: 800, color:"blue" }}>
                             {record.current_stock_range?.total_purchase_qty}
                         </span>
                     </p>
+
                     <p style={{ margin: 0, fontWeight: 700 }}>
                         Total Sell Qty:{" "}
                         <span style={{ fontWeight: 800, color:"green" }}>
@@ -441,47 +437,30 @@ export default function Product() {
         setQuickEditOpen(true);
         setQuickEditLoading(true);
 
+        const categoryIds = item?.categories?.map(item => item.id) || [];
+        const subCategoryIds = item?.sub_categories?.map(item => item.id) || [];
+
         form.setFieldsValue({
-            name               : item?.name,
-            slug               : item?.slug,
-            sku                : item?.sku,
-            category_id        : item?.category?.id,
-            sub_category_id    : item?.sub_category?.id,
-            sub_sub_category_id: item?.sub_sub_category?.id,
-            brand_id           : item?.brand?.id,
-            current_stock      : item?.current_stock,
-            total_sell_qty     : item?.total_sell_qty,
-            minimum_qty        : item?.minimum_qty,
-            video_url          : item?.video_url,
-            status             : item?.status,
-            mrp                : item?.mrp,
-            offer_price        : item?.offer_price,
-            sell_price         : item?.sell_price,
-            description        : item?.description,
-            short_description  : item?.short_description,
+            name                : item?.name,
+            slug                : item?.slug,
+            sku                 : item?.sku,
+            category_ids        : categoryIds,
+            sub_category_ids    : subCategoryIds,
+            sub_sub_category_ids: item?.sub_sub_categories?.map(sub => sub.id),
+            brand_id            : item?.brand?.id,
+            current_stock       : item?.current_stock,
+            total_sell_qty      : item?.total_sell_qty,
+            minimum_qty         : item?.minimum_qty,
+            video_url           : item?.video_url,
+            status              : item?.status,
+            mrp                 : item?.mrp,
+            offer_price         : item?.offer_price,
+            sell_price          : item?.sell_price,
+            description         : item?.description,
+            short_description   : item?.short_description,
         });
 
-        try {
-            if (item?.category?.id) {
-                await getSubCategories(item.category.id);
-            }
-
-            if (item?.sub_category?.id) {
-                await getSubSubCategories(item.sub_category.id);
-            }
-        } finally {
-            setQuickEditLoading(false);
-        }
-    };
-
-    const getSubCategories = async (categoryId) => {
-        const res = await getDatas("/admin/sub-categories/list", {category_ids : categoryId});
-        setSubCategoryList(res.result);
-    };
-
-    const getSubSubCategories = async (subCategoryId) => {
-        const res = await getDatas("/admin/sub-sub-categories/list", {sub_category_ids : subCategoryId});
-        setSubSubCategoryList(res.result);
+        setQuickEditLoading(false);
     };
 
     const handleSearch = (value) => {
@@ -512,33 +491,16 @@ export default function Product() {
     };
 
     const handlePreview = async (record) => {
+
         if (!record || !record.id) return;
     
         setPreviewModal(true);
-        setLoading(true);
-    
-        try {
-            const [productRes, settingRes] = await Promise.all([
-                getDatas(`/admin/products/${record.id}`),
-                getDatas("/admin/settings/list", { key: "frontend_base_url" }),
-            ]);
-        
-            if (productRes?.success) {
-                setPreviewData(productRes.result);
-            }
-        
-            if (settingRes?.success) {
-                const baseUrlSetting = settingRes.result.find((item) => item.key === "frontend_base_url");
-        
-                setSettingsData(baseUrlSetting.value || "http://localhost:3000/");
-            }
-        } catch (error) {
-            console.error("Error fetching product preview data:", error);
-            message.error("Failed to fetch product details or setting data");
-        } finally {
-            setLoading(false);
-        }
+
+        setPreviewData(record);
+
+        setSettingsData(settings.frontend_base_url || "http://localhost:3000/");
     };
+
 
     const handleImagePreview = (imageSrc) => {
         setPreviewImage(imageSrc);
@@ -1232,9 +1194,19 @@ export default function Product() {
         if(values.name) formData.append('name', values.name);
         if(values.slug) formData.append('slug', values.slug);
         if(values.sku) formData.append('sku', values.sku);
-        if(values.category_id) formData.append('category_id', values.category_id);
-        if(values.sub_category_id) formData.append('sub_category_id', values.sub_category_id);
-        if(values.sub_sub_category_id) formData.append('sub_sub_category_id', values.sub_sub_category_id);
+
+        values.category_ids?.forEach(id => {
+            formData.append('category_ids[]', id);
+        })
+
+        values.sub_category_ids?.forEach(id => {
+            formData.append('sub_category_ids[]', id);
+        })
+
+        values.sub_sub_category_ids?.forEach(id => {
+            formData.append('sub_sub_category_ids[]', id);
+        })
+
         if(values.brand_id) formData.append('brand_id', values.brand_id);
         if(values.current_stock) formData.append('current_stock', values.current_stock);
         if(values.video_url) formData.append('video_url', values.video_url);
@@ -1383,7 +1355,7 @@ export default function Product() {
             
                         <Col>
                             <Space>
-                                <Button icon={<FilterOutlined />} onClick={() => setFiltersOpen((v) => !v)}>
+                                <Button size="small" icon={<FilterOutlined />} onClick={() => setFiltersOpen((v) => !v)}>
                                     {filtersOpen ? "Hide Filters" : "Show Filters"}
                                 </Button>
             
@@ -1404,23 +1376,23 @@ export default function Product() {
             
                                 {isActionShow && (
                                     <Select value={selectedAction} onChange={handleBulkDelete} placeholder="Action" style={{ width: 150 }}>
-                                    <Option value="bulk-delete">Bulk Delete</Option>
+                                        <Option value="bulk-delete">Bulk Delete</Option>
                                     </Select>
                                 )}
             
                                 {productCreate && (
-                                    <Button type="primary" icon={<PlusOutlined />} onClick={handleProductAdd}>
+                                    <Button size="small" type="primary" icon={<PlusOutlined />} onClick={handleProductAdd}>
                                         Add
                                     </Button>
                                 )}
             
                                 {productDelete && (
-                                    <Button icon={<DeleteOutlined />} onClick={handleToggleTrash}>
+                                    <Button size="small" icon={<DeleteOutlined />} onClick={handleToggleTrash}>
                                         {isTrashView ? "Back to List" : "Trash"}
                                     </Button>
                                 )}
             
-                                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                                <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                                     Back
                                 </Button>
                             </Space>
@@ -1812,7 +1784,7 @@ export default function Product() {
                                     <span className="product-name">{previewData.name}</span>
                 
                                     {previewData.slug && (
-                                        <Button type="primary" icon={<EyeOutlined />} title="View Product" onClick={() => window.open(`${settingsData.replace(/\/$/, "")}/product/${previewData.slug}`,"_blank")}className="view-button">
+                                        <Button type="primary" size="small" icon={<EyeOutlined />} title="View Product" onClick={() => window.open(`${settingsData.replace(/\/$/, "")}/product/${previewData.slug}`,"_blank")}className="view-button">
                                             View
                                         </Button>
                                     )}
@@ -1829,18 +1801,46 @@ export default function Product() {
                                     </Tag>
                                 </p>
             
-                                {previewData.category && previewData.brand && (
+                                {previewData.categories.length > 0 && (
                                     <p>
-                                        <strong>Category:</strong> {previewData.category.name},{" "}
+                                        <strong>Category:</strong> {previewData.categories.map(item => item.name).join(", ")}
+                                    </p>
+                                )}
+
+                                {previewData.sub_categories.length > 0 && (
+                                    <p>
+                                        <strong>Sub Category:</strong> {previewData.sub_categories.map(item => item.name).join(", ")}
+                                    </p>
+                                )}
+
+                                {previewData.sub_sub_categories.length > 0 && (
+                                    <p>
+                                        <strong>Sub Sub Category:</strong> {previewData.sub_sub_categories.map(item => item.name).join(", ")}
+                                    </p>
+                                )}
+
+                                {previewData.brand_id && (
+                                    <p>
                                         <strong>Brand:</strong> {previewData.brand.name}
                                     </p>
                                 )}
             
-                                {previewData.variation_price_range && (
+                                {previewData.variation_price_range.min_price > 0 ? (
                                     <p style={{ fontSize: 18, fontWeight: 600, color: "#27ae60" }}>
                                         {previewData.variation_price_range.min_price} Tk -{" "}
                                         {previewData.variation_price_range.max_price} Tk
                                     </p>
+                                ) : (
+                                   <p style={{ fontSize: 18, fontWeight: 600, color: "#27ae60" }}>
+                                        {previewData.sell_price} Tk 
+                                    </p> 
+                                )}
+            
+                                {previewData.short_description && (
+                                    <div style={{ marginTop: 16 }}>
+                                        <h4>Short Description:</h4>
+                                        <div dangerouslySetInnerHTML={{__html: previewData.short_description}} style={{ maxHeight: 200, overflowY: "auto" }}/>
+                                    </div>
                                 )}
             
                                 {previewData.description && (
@@ -1951,8 +1951,8 @@ export default function Product() {
                         </Col>
 
                         <Col span={8}>
-                            <Form.Item name="category_id" label="Category">
-                                <Select mode="multiple" onChange={handleModalCategoryChange}
+                            <Form.Item name="category_ids" label="Category">
+                                <Select mode="multiple"
                                     options={categories?.map(item => ({
                                         label: item.name,
                                         value: item.id
@@ -1962,8 +1962,8 @@ export default function Product() {
                         </Col>
 
                         <Col span={8}>
-                            <Form.Item name="sub_category_id" label="Sub Category">
-                                <Select placeholder="Select Sub Category" onChange={handleModalSubSubCategoryChange} options={subCategoryList?.map(item => ({
+                            <Form.Item name="sub_category_ids" label="Sub Category">
+                                <Select mode="multiple" placeholder="Select Sub Category" options={subCategoryList?.map(item => ({
                                     label: item.name,
                                     value:item.id
                                 }))}/>
@@ -1971,8 +1971,8 @@ export default function Product() {
                         </Col>
 
                         <Col span={8}>
-                            <Form.Item name="sub_sub_category_id" label="Sub Sub Category">
-                                <Select placeholder="Select Sub Sub Category" options={subSubCategoryList?.map(item => ({
+                            <Form.Item name="sub_sub_category_ids" label="Sub Sub Category">
+                                <Select mode="multiple" placeholder="Select Sub Sub Category" options={subSubCategoryList?.map(item => ({
                                     label: item?.name,
                                     value: item?.id
                                 }))}/>

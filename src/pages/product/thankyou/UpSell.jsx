@@ -172,27 +172,27 @@ export default function UpSell() {
             <div className="page-head-search">
                 <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
                 <Space>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
+                    <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
 
-                    <Button type="primary" icon={<HistoryOutlined style={{ color: "#000" }} />}
+                    <Button size="small" type="primary" icon={<HistoryOutlined style={{ color: "#000" }} />}
                         style={{ backgroundColor: "#fff", borderColor: "#d9d9d9", color: "#000" }} onMouseEnter={(e) => handleHover(e, true)} onMouseLeave={(e) => handleHover(e, false)}>
                         Logs
                     </Button>
 
-                    <Button type="primary" icon={<SettingOutlined style={{ color: "#000" }} />}
+                    <Button size="small" type="primary" icon={<SettingOutlined style={{ color: "#000" }} />}
                         style={{ backgroundColor: "#fff", borderColor: "#d9d9d9", color: "#000", marginLeft: 8 }}
                         onClick={() => navigate("/upsell/settings")} onMouseEnter={(e) => handleHover(e, true)} onMouseLeave={(e) => handleHover(e, false)}
                     >
                         Settings
                     </Button>
 
-                    <Button icon={<BarChartOutlined />} onClick={handleStatistics}
+                    <Button size="small" icon={<BarChartOutlined />} onClick={handleStatistics}
                         style={{ backgroundColor: "#fff", borderColor: "#d9d9d9", color: "#000", marginLeft: 8 }} onMouseEnter={(e) => handleHover(e, true)} onMouseLeave={(e) => handleHover(e, false)}
                     >
                         Statistics
                     </Button>
                     
-                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
                 </Space>
             </div>
 
