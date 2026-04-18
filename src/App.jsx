@@ -155,6 +155,7 @@ import EditTermsCondition from "./pages/cms/terms&condition/EditTermsCondition";
 import TrashCourierList from "./pages/order/courier/TrashCourierList";
 import TrashPaymentGatewayList from "./pages/order/payment_gateway/TrashPaymentGatewayList";
 import Profile from "./pages/auth/user/Profile";
+import ServerTracker from "./pages/product/catelog/ServerTracker";
 
 function App() {
     const dispatch         = useDispatch();
@@ -264,6 +265,7 @@ function App() {
 
                     <Route path="/gtm-manage" element={<GtmSetting />} />
                     <Route path="/clarity-id" element={<Clarity />} />
+                    <Route path="/server-tracker" element={<ServerTracker />} />
                     <Route path="/google-analytical" element={<GoogleAnalytic />} />
                     <Route path="/facebook/meta/pixel" element={<FacebookMeta />} />
 

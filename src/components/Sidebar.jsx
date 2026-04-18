@@ -52,6 +52,7 @@ const Sidebar = ({ onMenuSelect }) => {
         can('product-catalogs-read') && { label: "Product Catelog", path: "/product/catalogs" },
         can('gtm-read') && { label: "GTM Manage", path: "/gtm-manage" },
         can('microsoft-clarity-read') && { label: "Microsoft Clarity", path: "/clarity-id" },
+        can('server-tracker-read') && { label: "Server Tracker", path: "/server-tracker" },
         can('google-analytical-read') && { label: "Google Analytical", path: "/google-analytical" },
         can('facebook-meta-pixel-read') && { label: "Facebook Meta Pixel", path: "/facebook/meta/pixel" },
         can('pusher-read') && { label: "Pusher Setup", path: "/pusher/settings" },
