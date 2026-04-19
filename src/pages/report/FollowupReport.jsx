@@ -78,7 +78,7 @@ export default function FollowupReport() {
             const res = await getDatas(`/admin/order/reports/followup?${query}`);
 
             if(res && res?.success){
-                setOrders(res?.result?.orders.data);
+                setOrders(res?.result);
             }
         } catch (error) {
             console.log(error);

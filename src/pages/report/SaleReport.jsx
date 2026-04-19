@@ -122,7 +122,7 @@ export default function SaleReport() {
             const res = await getDatas(`/admin/order/reports/by-selling?${query}`);
 
             if(res && res?.success){
-                setOrders(res?.result);
+                setOrders(res?.result?.data);
 
                 setPagination((prev) => ({
                     ...prev,
@@ -140,7 +140,7 @@ export default function SaleReport() {
         getOrderReport();
     }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
 
-    const filteredOrders = orders.filter((order) => {
+    const filteredOrders = orders?.filter((order) => {
         if (!localSearch) return true;
         const term = localSearch.toLowerCase();
         return (order.name.toLowerCase().includes(term) || order.slug.toLowerCase().includes(term));

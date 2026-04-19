@@ -125,6 +125,11 @@ export default function EditSection() {
                 setTimeout(() => {
                     navigate("/section-list");
                 }, 500);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);
@@ -245,6 +250,7 @@ export default function EditSection() {
                                                 <span>
                                                     {item?.mrp} tk
                                                 </span>
+
                                                 <span className="result-product-list-another-span">
                                                     {item?.sell_price} tk
                                                 </span>
@@ -285,10 +291,11 @@ export default function EditSection() {
                                             </p>
                                             <div className="s4-pro-dis">
                                                 <span className="s4-pro-dis-span">
-                                                {item?.mrp} tk
+                                                    {item?.mrp} tk
                                                 </span>
+
                                                 <span className="s4-pro-dis-span1">
-                                                {item?.sell_price} tk
+                                                    {item?.sell_price} tk
                                                 </span>
                                             </div>
 

@@ -72,15 +72,12 @@ export default function AddSection() {
     const handleRemove = (item, index) => {
         setLoadingRemoveIndex(index);
 
-        // remove from productIds
         setProductIds((prev) => prev.filter((id) => id !== item.id));
 
-        // remove from addProducts
         setAddProducts((prev) => prev.filter((p) => p.id !== item.id));
 
         setTimeout(() => setLoadingRemoveIndex(null), 500);
     };
-
 
     const handleSubmit = async (values) => {
         const payload = {
@@ -103,6 +100,11 @@ export default function AddSection() {
                 setTimeout(() => {
                     navigate("/section-list");
                 }, 400);
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
             }
         } catch (error) {
             console.log(error);
