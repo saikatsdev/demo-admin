@@ -172,9 +172,10 @@ export default function BlockList() {
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
+
                 <Space>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
-                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
+                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
                 </Space>
             </div>
 

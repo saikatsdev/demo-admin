@@ -1,4 +1,5 @@
-import { Button, Form, Input, Progress, Empty } from "antd";
+import { ArrowLeftOutlined } from "@ant-design/icons";
+import { Button, Form, Input, Progress,Space, Empty } from "antd";
 import { useMemo, useState } from "react";
 import useTitle from "../../../hooks/useTitle";
 import { getDatas } from "../../../api/common/common";
@@ -90,6 +91,13 @@ export default function FraudCheck() {
                 <div className="head-left">
                     <h1 className="title">Fraud Information</h1>
                 </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div></div>
+                <Space>
+                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+                </Space>
             </div>
 
             <div className="fc-shell">

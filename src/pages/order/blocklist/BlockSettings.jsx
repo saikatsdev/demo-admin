@@ -1,5 +1,6 @@
 
-import { Input as AntInput, Breadcrumb, Button, Form, Select,message } from "antd";
+import { ArrowLeftOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Space,Select,message } from "antd";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
@@ -94,6 +95,13 @@ export default function BlockSettings() {
                         ]}
                     />
                 </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div></div>
+                <Space>
+                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+                </Space>
             </div>
 
             <div className="block-settings">
