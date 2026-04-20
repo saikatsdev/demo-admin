@@ -1,5 +1,5 @@
-import {DeleteOutlined,} from "@ant-design/icons";
-import { Breadcrumb,message,Button } from "antd";
+import {DeleteOutlined,PlusOutlined} from "@ant-design/icons";
+import { Breadcrumb,message,Button,Space,Modal,Form,Upload } from "antd";
 import { Link } from "react-router-dom";
 import useTitle from "../../hooks/useTitle";
 import { useEffect, useState, useCallback } from "react";
@@ -13,6 +13,7 @@ export default function Gallary() {
     // State
     const [gallaries, setGallaries]           = useState([]);
     const [page, setPage]                     = useState(1);
+    const [fileList, setFileList]             = useState([]);
     const [hasMore, setHasMore]               = useState(true);
     const [loadingMore, setLoadingMore]       = useState(false);
     const [loading, setLoading]               = useState(true);
@@ -21,6 +22,10 @@ export default function Gallary() {
     const [selectedImages, setSelectedImages] = useState([]);
     const [messageApi, contextHolder]         = message.useMessage();
     const [isTrashView, setIsTrashView]       = useState(false);
+    const [isModalOpen, setIsModalOpen]       = useState(false);
+    const [form]                              = Form.useForm();
+    const [formLoading, setFormLoading]       = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
 
     useEffect(() => {
         fetchMedia(page);
@@ -58,6 +63,9 @@ export default function Gallary() {
         fetchMedia(1, isTrashView);
     }, [isTrashView]);
 
+    const handleChange = ({ fileList: newFileList }) => {
+        setFileList(newFileList);
+    };
 
     const toggleSelectImage = (id) => {
         setSelectedImages(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
@@ -72,7 +80,6 @@ export default function Gallary() {
         setSelectedImages([]);
     };
 
-    // For Gallary Item Delete
     const deleteSelectedImages = async () => {
         if(selectedImages.length === 0) return;
         
@@ -90,6 +97,11 @@ export default function Gallary() {
                 messageApi.open({
                     type: "success",
                     content: res.msg,
+                });
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
                 });
             }
         } catch (err) {
@@ -190,9 +202,129 @@ export default function Gallary() {
 
     const selectedItem = selectedIndex !== null && gallaries[selectedIndex] ? gallaries[selectedIndex] : null;
 
+    const handleAdd = () => {
+        setIsModalOpen(true);
+    }
+
+    const normFile = (e) => {
+        if (Array.isArray(e)) {
+            return e;
+        }
+        return e?.fileList;
+    };
+
+    useEffect(() => {
+        const handleDragOver = (e) => {
+            e.preventDefault();
+            setIsDragging(true);
+        };
+
+        const handleDragLeave = (e) => {
+            e.preventDefault();
+            setIsDragging(false);
+        };
+
+        const handleDrop = (e) => {
+            e.preventDefault();
+            setIsDragging(false);
+
+            const files = e.dataTransfer.files;
+
+            if (files && files.length > 0) {
+                handleDropUpload(files);
+            }
+        };
+
+        window.addEventListener("dragover", handleDragOver);
+        window.addEventListener("dragleave", handleDragLeave);
+        window.addEventListener("drop", handleDrop);
+
+        return () => {
+            window.removeEventListener("dragover", handleDragOver);
+            window.removeEventListener("dragleave", handleDragLeave);
+            window.removeEventListener("drop", handleDrop);
+        };
+    }, []);
+
+    const handleDropUpload = async (files) => {
+        try {
+            const formData = new FormData();
+
+            Array.from(files).forEach((file) => {
+                formData.append("images[]", file);
+            });
+
+            const res = await postData("/admin/gallary", formData);
+
+            if (res?.success) {
+                const data = res?.result?.data || [];
+
+                setGallaries(prev => [...data, ...prev]);
+
+                messageApi.success(res.msg);
+            } else {
+                messageApi.error("Upload failed");
+            }
+        } catch (err) {
+            console.error(err);
+            messageApi.error("Upload error");
+        }
+    };
+
+    const handleSubmit = async (values) => {
+        try {
+            setFormLoading(true);
+            if (!values.images || values.images.length === 0) {
+                message.error("Please upload at least one image");
+                return;
+            }
+
+            const formData = new FormData();
+            
+            values.images.forEach((file) => {
+                formData.append("images[]", file.originFileObj);
+            });
+
+            const res = await postData("/admin/gallary", formData);
+
+            if(res && res?.success){
+                const data = res?.result?.data || [];
+
+                setGallaries(prev => [...data, ...prev]);
+
+                messageApi.open({
+                    type: 'success',
+                    content: res.msg
+                });
+
+                setFileList([]);
+
+                form.resetFields();
+
+                setIsModalOpen(false);
+            }else{
+                messageApi.open({
+                    type: 'error',
+                    content: "Something Went Wrong"
+                });
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setFormLoading(false);
+        }
+    }
+
     return (
         <>
             {contextHolder}
+            {isDragging && (
+                <div className="drag-overlay">
+                    <div className="drag-box">
+                        <p>📤 Drop images to upload</p>
+                    </div>
+                </div>
+            )}
             <div className="pagehead">
                 <div className="head-left">
                     <h1 className="title">Gallery</h1>
@@ -237,9 +369,15 @@ export default function Gallary() {
 
                 <div>
                     <div>
-                        <Button icon={<DeleteOutlined />} onClick={handleToggleTrash}>
-                            {isTrashView ? "Back to List" : "Trash"}
-                        </Button>
+                        <Space>
+                            <Button size="small" icon={<DeleteOutlined />} onClick={handleToggleTrash}>
+                                {isTrashView ? "Back to List" : "Trash"}
+                            </Button>
+
+                            <Button size="small" icon={<PlusOutlined />} type="primary" onClick={handleAdd}>
+                                Add
+                            </Button>
+                        </Space>
 
                         <span style={{marginLeft:"10px"}} className="gallery-count">
                             {gallaries.length} item{gallaries.length > 1 ? "s" : ""}
@@ -360,6 +498,21 @@ export default function Gallary() {
                     </div>
                 </div>
             )}
+
+            <Modal title="Add Images" okText="Add Images" open={isModalOpen} onOk={() => form.submit()} onCancel={() => setIsModalOpen(false)} loading={formLoading}>
+                <Form form={form} onFinish={handleSubmit}>
+                    <Form.Item label="Upload" valuePropName="fileList" name="images" getValueFromEvent={normFile}>
+                        <Upload listType="picture-card" fileList={fileList} onChange={handleChange} multiple beforeUpload={() => false}>
+                            {fileList.length >= 8 ? null : (
+                                <button style={{border: 0,background: "none",cursor: "pointer"}} type="button">
+                                    <PlusOutlined />
+                                    <div style={{ marginTop: 8 }}>Upload</div>
+                                </button>
+                            )}
+                        </Upload>
+                    </Form.Item>
+                </Form>
+            </Modal>
         </>
     )
 }
