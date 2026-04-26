@@ -128,7 +128,7 @@ export default function EditSection() {
             }else{
                 messageApi.open({
                     type: "error",
-                    content: "Something Went Wrong",
+                    content: res.message,
                 });
             }
         } catch (error) {
