@@ -1387,7 +1387,7 @@ export default function Product() {
                                 )}
             
                                 {productDelete && (
-                                    <Button size="small" icon={<DeleteOutlined />} onClick={handleToggleTrash}>
+                                    <Button size="small" danger icon={<DeleteOutlined />} onClick={handleToggleTrash}>
                                         {isTrashView ? "Back to List" : "Trash"}
                                     </Button>
                                 )}
