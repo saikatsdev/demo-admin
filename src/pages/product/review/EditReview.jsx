@@ -1,9 +1,10 @@
-import { Input as AntInput, Breadcrumb, Button, Form,Select,InputNumber, message,Upload,Space } from "antd";
-import {ArrowLeftOutlined,UploadOutlined  } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form,Select,InputNumber, message,Space } from "antd";
+import {ArrowLeftOutlined } from "@ant-design/icons";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
 import { useEffect, useState } from "react";
 import { getDatas, postData } from "../../../api/common/common";
+import ImagePicker from "../../../components/image/ImagePicker";
 
 const { Option } = Select;
 
@@ -20,6 +21,11 @@ export default function EditReview() {
     const [products, setProducts]     = useState([]);
     const [formLoading, setFormLoading] = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
+
+    const [gallery, setGallery] = useState([]);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [page, setPage] = useState(1);
 
     useEffect(() => {
         const getSingleReview = async () => {
@@ -43,7 +49,7 @@ export default function EditReview() {
                               uid: "-1",
                               name: "review-image",
                               status: "done",
-                              url: data.img_path ?? data.img_path, 
+                              url: data.img_path, 
                           },
                       ]
                     : [],
@@ -51,11 +57,6 @@ export default function EditReview() {
             }
         }
 
-        getSingleReview();
-    }, [id]);
-
-    // Method
-    useEffect(() => {
         const fetchData = async () => {
             try {
                 const productRes = await getDatas("/admin/products/list");
@@ -66,8 +67,35 @@ export default function EditReview() {
             }
         };
 
+        getSingleReview();
         fetchData();
-    }, []);
+        fetchMedia(1);
+    }, [id]);
+
+    const fetchMedia = async (pageNumber = 1) => {
+        try {
+            setLoadingMore(true);
+            const res = await getDatas(`/admin/gallary?page=${pageNumber}`);
+
+            if (res && res?.success) {
+                const data = res.result.data;
+
+                if (pageNumber > 1) {
+                    setGallery(prev => [...prev, ...data]);
+                } else {
+                    setGallery(data);
+                }
+
+                const meta = res.result.meta;
+                setPage(meta.current_page);
+                setHasMore(meta.current_page < meta.last_page);
+            }
+        } catch (error) {
+            console.error("Failed to load gallery:", error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
 
     const handleSubmit = async (values) => {
@@ -81,14 +109,15 @@ export default function EditReview() {
         formData.append("review", values.review);
         formData.append("status", values.status);
 
-        if (values.image?.length) {
-            const file = values.image[0];
-
-            if (file.originFileObj) {
-                formData.append("image", file.originFileObj);
-                formData.append('width', 450);
-                formData.append('height', 450);
+        const image = values.image?.[0];
+        if (image) {
+            if (image.originFileObj) {
+                formData.append('image', image.originFileObj);
+            } else if (image.isFromGallery) {
+                formData.append('image', image.galleryPath);
             }
+            formData.append('width', 450);
+            formData.append('height', 450);
         }
 
         formData.append("_method", "PUT");
@@ -125,13 +154,13 @@ export default function EditReview() {
             {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
-                    <h1 className="title">Add Reviews</h1>
+                    <h1 className="title">Edit Review</h1>
                 </div>
                 <div className="head-actions">
                     <Breadcrumb
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Add Reviews" },
+                            { title: "Edit Review" },
                         ]}
                     />
                 </div>
@@ -163,11 +192,16 @@ export default function EditReview() {
                         <InputNumber min={1} max={5} style={{ width: "100%" }} placeholder="Enter rating" />
                     </Form.Item>
 
-                    <Form.Item label="Image" name="image" valuePropName="fileList" getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}>
-                        <Upload beforeUpload={() => false} listType="picture" maxCount={1} accept="image/*">
-                            <Button icon={<UploadOutlined />}>Upload Image</Button>
-                        </Upload>
-                    </Form.Item>
+                    <ImagePicker 
+                        form={form} 
+                        name="image" 
+                        label="Image" 
+                        gallery={gallery}  
+                        hasMore={hasMore} 
+                        loadingMore={loadingMore} 
+                        fetchMore={() => fetchMedia(page + 1)} 
+                        onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])} 
+                    />
 
                     <Form.Item label="Product ID" name="product_id" rules={[{ required: true, message: "Please select a product!" }]}>
                         <Select placeholder="Select Product" showSearch optionFilterProp="children" filterOption={(input, option) =>

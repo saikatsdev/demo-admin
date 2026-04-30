@@ -1,9 +1,10 @@
-import {ArrowLeftOutlined,UploadOutlined  } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, InputNumber, message,Upload } from "antd";
+import {ArrowLeftOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, InputNumber, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
 import { useEffect, useState } from "react";
 import { getDatas, postData } from "../../../api/common/common";
+import ImagePicker from "../../../components/image/ImagePicker";
 
 const { Option } = Select;
 
@@ -20,13 +21,16 @@ export default function AddReview() {
     const [products, setProducts]       = useState([]);
     const [messageApi, contextHolder]   = message.useMessage();
 
+    const [gallery, setGallery] = useState([]);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [page, setPage] = useState(1);
+
     // Method
     useEffect(() => {
         const fetchData = async () => {
-
             try {
                 const productRes = await getDatas("/admin/products/list");
-
                 setProducts(productRes?.result || []);
             } catch (error) {
                 console.error("Error fetching data:", error);
@@ -34,7 +38,33 @@ export default function AddReview() {
         };
 
         fetchData();
+        fetchMedia(1);
     }, []);
+
+    const fetchMedia = async (pageNumber = 1) => {
+        try {
+            setLoadingMore(true);
+            const res = await getDatas(`/admin/gallary?page=${pageNumber}`);
+
+            if (res && res?.success) {
+                const data = res.result.data;
+
+                if (pageNumber > 1) {
+                    setGallery(prev => [...prev, ...data]);
+                } else {
+                    setGallery(data);
+                }
+
+                const meta = res.result.meta;
+                setPage(meta.current_page);
+                setHasMore(meta.current_page < meta.last_page);
+            }
+        } catch (error) {
+            console.error("Failed to load gallery:", error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
 
     const handleSubmit = async (values) => {
@@ -48,8 +78,13 @@ export default function AddReview() {
         formData.append("review", values.review);
         formData.append("status", values.status);
 
-        if (values.image && values.image.length > 0) {
-            formData.append("image", values.image[0].originFileObj);
+        const image = values.image?.[0];
+        if (image) {
+            if (image.originFileObj) {
+                formData.append('image', image.originFileObj);
+            } else if (image.isFromGallery) {
+                formData.append('image', image.galleryPath);
+            }
             formData.append('width', 450);
             formData.append('height', 450);
         }
@@ -123,11 +158,16 @@ export default function AddReview() {
                         <InputNumber min={1} max={5} style={{ width: "100%" }} placeholder="Enter rating" />
                     </Form.Item>
 
-                    <Form.Item label="Image" name="image" valuePropName="fileList" getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}>
-                        <Upload beforeUpload={() => false} listType="picture" maxCount={1} accept="image/*">
-                            <Button icon={<UploadOutlined />}>Upload Image</Button>
-                        </Upload>
-                    </Form.Item>
+                    <ImagePicker 
+                        form={form} 
+                        name="image" 
+                        label="Image" 
+                        gallery={gallery}  
+                        hasMore={hasMore} 
+                        loadingMore={loadingMore} 
+                        fetchMore={() => fetchMedia(page + 1)} 
+                        onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])} 
+                    />
 
                     <Form.Item label="Product ID" name="product_id" rules={[{ required: true, message: "Please select a product!" }]}>
                         <Select placeholder="Select Product" showSearch optionFilterProp="children" filterOption={(input, option) =>

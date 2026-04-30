@@ -183,14 +183,14 @@ export default function EditSubCategory() {
                         <Form.Item name="category_id" label="Select Category" rules={[{ required: true, message: "Please select a category!" }]} >
                             <Select placeholder="Select a category" showSearch optionFilterProp="children" filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
                                 {categoryOptions.map((cat) => (
-                                <Option key={cat.id} value={cat.id}>
-                                    {cat.name}
-                                </Option>
+                                    <Option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </Option>
                                 ))}
                             </Select>
                         </Form.Item>
 
-                        <ImagePicker form={form} name="image" label="Image" gallery={gallery}  hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)}/>
+                        <ImagePicker form={form} name="image" label="Image" gallery={gallery}  hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])} />
 
                         <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">
                             <Select options={[{ value: "active", label: "Active" },{ value: "inactive", label: "Inactive" }]}/>

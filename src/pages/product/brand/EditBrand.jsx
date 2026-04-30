@@ -174,7 +174,7 @@ export default function EditBrand() {
                             <Select options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
                         </Form.Item>
 
-                        <ImagePicker form={form} name="image" label="Image" gallery={gallery}  hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)}/>
+                        <ImagePicker form={form} name="image" label="Image" gallery={gallery}  hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])} />
 
                         <div style={{display:"flex", justifyContent:"space-between"}}>
                             <Form.Item label="Width" name="width">
