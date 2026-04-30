@@ -708,7 +708,7 @@ export default function ProductAdd() {
                                         Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
                                     </Text>
 
-                                    <ProductImagePicker name="image" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={handleImageChange}/>
+                                    <ProductImagePicker name="image" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={handleImageChange} onUploadSuccess={(newImages) => { setGallery(prev => [...newImages, ...prev]);}}/>
 
                                     {errors?.image && (
                                         <div style={{ color: "#ff4d4f", marginTop: 4 }}>
@@ -724,7 +724,7 @@ export default function ProductAdd() {
                                         Gallery Images
                                     </Text>
 
-                                    <ProductGalleryPicker name="gallery_images" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={handleGalleryImageFileChange}/>
+                                    <ProductGalleryPicker gallery={gallery} hasMore={hasMore} fetchMore={() => fetchMedia(page + 1)} loadingMore={loadingMore} onChange={handleGalleryImageFileChange} onUploadSuccess={(newImages) => { setGallery(prev => [...newImages, ...prev]); }}/>
                                 </div>
                             </Space>
                         </Card>
