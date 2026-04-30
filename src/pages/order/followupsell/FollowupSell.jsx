@@ -33,8 +33,8 @@ export default function FollowupSell() {
     const [orderSummary, setOrderSummary]             = useState({});
     const [statusLoader, setStatusLoader]             = useState(false);
 
-    // Columns for AntD Table
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key: "sl",
@@ -130,9 +130,11 @@ export default function FollowupSell() {
                     <Button type="primary" size="small" onClick={() => handleCall(record.order.phone_number)}>
                         <PhoneOutlined />
                     </Button>
+
                     <Button type="default" size="small" onClick={() => handleConvert(record)}>
-                        Convert Order
+                        Convert
                     </Button>
+                    
                     <Button size="small" danger="danger" className="incomplete-delete" onClick={() => handleDelete(record.id)}>
                         {<DeleteOutlined />}
                     </Button>
@@ -262,18 +264,15 @@ export default function FollowupSell() {
 
     const handleUpdateNote = async () => {
         try {
-            const payload = {
-                id: selectedNoteRecord.id,
-                end_date: followupDate,
-                note: noteValue,
-                _method: "PUT"
-            };
+            const formData = new FormData();
+            formData.append("end_date", followupDate);
+            formData.append("note", noteValue);
+            formData.append("_method", "PUT");
 
-            const res = await postData(`/admin/followup/${selectedNoteRecord.id}`, payload);
+            const res = await postData(`/admin/followup/${selectedNoteRecord.id}`, formData);
 
             if(res && res?.success){
-                const refreshed = await getDatas("/admin/followup");
-                setFollowUpOrders(refreshed?.result?.data || []);
+                fetchFollowUpOrders();
                 
                 messageApi.open({
                     type: "success",

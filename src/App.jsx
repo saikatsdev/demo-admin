@@ -156,6 +156,7 @@ import TrashCourierList from "./pages/order/courier/TrashCourierList";
 import TrashPaymentGatewayList from "./pages/order/payment_gateway/TrashPaymentGatewayList";
 import Profile from "./pages/auth/user/Profile";
 import ServerTracker from "./pages/product/catelog/ServerTracker";
+import Feedback from "./pages/order/feedback/Feedback";
 
 function App() {
     const dispatch         = useDispatch();
@@ -327,6 +328,8 @@ function App() {
                     <Route path="/edit/blog/category/:id" element={<EditBlogCategory />} />
 
                     <Route path="/followup-sell" element={<FollowupSell />} />
+
+                    <Route path="/feedback-sell" element={<Feedback />} />
 
                     <Route path="/edit/banner/:id" element={<EditBanner />} />
 

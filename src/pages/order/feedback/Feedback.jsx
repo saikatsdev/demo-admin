@@ -238,7 +238,6 @@ export default function Feedback() {
         );
     });
 
-
     const handleCall = (phone) => {
         message.info(`Call ${phone} ...`);
     };
@@ -265,18 +264,15 @@ export default function Feedback() {
 
     const handleUpdateNote = async () => {
         try {
-            const payload = {
-                id: selectedNoteRecord.id,
-                end_date: feedbackDate,
-                note: noteValue,
-                _method: "PUT"
-            };
+            const formData = new FormData();
+            formData.append("end_date", feedbackDate);
+            formData.append("note", noteValue);
+            formData.append("_method", "PUT");
 
-            const res = await postData(`/admin/feedback/${selectedNoteRecord.id}`, payload);
+            const res = await postData(`/admin/feedback/${selectedNoteRecord.id}`, formData);
 
             if(res && res?.success){
-                const refreshed = await getDatas("/admin/feedback");
-                setFeedbackOrders(refreshed?.result?.data || []);
+                fetchFeedbackOrders();
                 
                 messageApi.open({
                     type: "success",

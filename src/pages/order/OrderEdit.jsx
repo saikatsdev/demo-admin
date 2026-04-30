@@ -1158,7 +1158,7 @@ const OrderEdit = () => {
                                                                                 <Typography.Text strong>{product.name}</Typography.Text>
                                                                                 <br />
                                                                                 <Typography.Text type="secondary">
-                                                                                    Category: {product.category_name}
+                                                                                    Categories: {product.categories?.length > 0 ? product.categories.map(c => c.name).join(', ') : product.category_name}
                                                                                 </Typography.Text>
                                                                             </Col>
                                                                         </Row>
