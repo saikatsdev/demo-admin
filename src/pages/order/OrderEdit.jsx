@@ -80,6 +80,8 @@ const OrderEdit = () => {
     const [shippingError, setShippingError]                 = useState('');
     const [errors, setErrors]                               = useState({});
     const [loading, setLoading]                             = useState(false);
+    const [currentPage, setCurrentPage]                     = useState(1);
+    const [lastPage, setLastPage]                           = useState(1);
     const [isModalVisible, setIsModalVisible]               = useState(false);
     const [customerData, setCustomerData]                   = useState(null);
     const [showHistory, setShowHistory]                     = useState(false);
@@ -235,14 +237,21 @@ const OrderEdit = () => {
         }
     }
 
-    const searchProduct = async () => {
+    const searchProduct = async (page = 1) => {
         if (!searchQuery) return
         
         try {
             setLoading(true);
-            const res = await getDatas('/admin/products/search', { page: 1, per_page: 10, search_key: searchQuery })
+            const res = await getDatas('/admin/products/search', { page: page, per_page: 10, search_key: searchQuery })
             if (res && res?.success) {
-                setProducts(res?.result || [])
+                const newProducts = res?.result?.data || [];
+                if (page === 1) {
+                    setProducts(newProducts);
+                } else {
+                    setProducts((prev) => [...prev, ...newProducts]);
+                }
+                setCurrentPage(res?.result?.current_page || 1);
+                setLastPage(res?.result?.last_page || 1);
                 setHiddenSearchProducts(false)
             }
         } catch (error) {
@@ -1139,7 +1148,7 @@ const OrderEdit = () => {
                                                     <Card size="small" style={{position: 'absolute',top: '100%',left: 0,right: 0,zIndex: 1000,maxHeight: '300px',overflow: 'auto'}}>
                                                         {products?.length > 0 ? (
                                                             <Space direction="vertical" style={{ width: '100%' }}>
-                                                                {products.map((product) => (
+                                                                 {products.map((product) => (
                                                                     <div key={product.id} onClick={() => addProduct(product)} style={{ cursor: 'pointer', padding: '8px' }}>
                                                                         <Row gutter={8}>
                                                                             <Col>
@@ -1149,12 +1158,20 @@ const OrderEdit = () => {
                                                                                 <Typography.Text strong>{product.name}</Typography.Text>
                                                                                 <br />
                                                                                 <Typography.Text type="secondary">
-                                                                                    Category: {product.category?.name}
+                                                                                    Category: {product.category_name}
                                                                                 </Typography.Text>
                                                                             </Col>
                                                                         </Row>
                                                                     </div>
                                                                 ))}
+
+                                                                {currentPage < lastPage && (
+                                                                    <div style={{ textAlign: 'center', padding: '4px' }}>
+                                                                        <Button type="link" size="small" onClick={(e) => { e.stopPropagation(); searchProduct(currentPage + 1); }} loading={loading}>
+                                                                            Show More
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
                                                             </Space>
                                                         ) : (
                                                             <Typography.Text type="danger">No Product Found</Typography.Text>

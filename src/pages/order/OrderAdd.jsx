@@ -72,6 +72,8 @@ export default function OrderAdd() {
     const [errors, setErrors]                               = useState({});
     const [isIncomplte, setIsIncomplte]                     = useState(false);
     const [loading, setLoading]                             = useState(false);
+    const [currentPage, setCurrentPage]                     = useState(1);
+    const [lastPage, setLastPage]                           = useState(1);
     const location                                          = useLocation();
     const orderData                                         = location.state || "{}";
 
@@ -182,14 +184,21 @@ export default function OrderAdd() {
         }
     }
 
-    const searchProduct = async () => {
+    const searchProduct = async (page = 1) => {
         if (!searchQuery) return
         
         try {
             setLoading(true);
-            const res = await getDatas('/admin/products/search', {search_key: searchQuery })
+            const res = await getDatas('/admin/products/search', {search_key: searchQuery, page: page, paginate_size: 10 })
             if (res && res?.success) {
-                setProducts(res?.result || [])
+                const newProducts = res?.result?.data || [];
+                if (page === 1) {
+                    setProducts(newProducts);
+                } else {
+                    setProducts((prev) => [...prev, ...newProducts]);
+                }
+                setCurrentPage(res?.result?.current_page || 1);
+                setLastPage(res?.result?.last_page || 1);
                 setHiddenSearchProducts(false)
             }
         } catch (error) {
@@ -900,12 +909,20 @@ export default function OrderAdd() {
                                                                                 <Typography.Text strong>{product.name}</Typography.Text>
                                                                                 <br />
                                                                                 <Typography.Text type="secondary">
-                                                                                    Category: {product.category?.name}
+                                                                                    Category: {product.category_name}
                                                                                 </Typography.Text>
                                                                             </Col>
                                                                         </Row>
                                                                     </div>
                                                                 ))}
+
+                                                                {currentPage < lastPage && (
+                                                                    <div style={{ textAlign: 'center', padding: '4px' }}>
+                                                                        <Button type="link" size="small" onClick={(e) => { e.stopPropagation(); searchProduct(currentPage + 1); }} loading={loading}>
+                                                                            Show More
+                                                                        </Button>
+                                                                    </div>
+                                                                )}
                                                             </Space>
                                                         ) : loading ? (
                                                             <Typography.Text type="secondary">Loading...</Typography.Text>
