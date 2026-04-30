@@ -23,11 +23,6 @@ export default function ProductAdd() {
     const [soldQty, setSoldQty]                                 = useState("");
     const [categories, setCategories]                           = useState([]);
     const [categoryIds, setCategoryIds]                           = useState([]);
-
-
-
-
-
     const [brands, setBrands]                                   = useState(null);
     const [brandId, setBrandId]                                 = useState("");
     const [status, setStatus]                                   = useState("");

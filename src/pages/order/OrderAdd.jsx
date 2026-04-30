@@ -1,6 +1,7 @@
 import { ArrowLeftOutlined, CloseOutlined, DeleteOutlined, LoadingOutlined, PhoneOutlined, PlusOutlined } from '@ant-design/icons'
-import { AutoComplete, Breadcrumb, Button, Card, Col, Divider, Form, Grid, Image, Input, InputNumber, message, Popconfirm, Row, Select, Space, Spin, Table, Typography } from 'antd'
+import { AutoComplete, Breadcrumb, Button, Card, Col, Divider, Form, Grid, Image, Input, DatePicker, InputNumber, message, Popconfirm, Row, Select, Space, Spin, Table, Typography } from 'antd'
 import { useEffect, useMemo, useState } from 'react';
+import dayjs from "dayjs";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getDatas, postData } from '../../api/common/common';
 import useTitle from '../../hooks/useTitle';
@@ -24,6 +25,8 @@ export default function OrderAdd() {
     const [productInfo, setProductInfo]                     = useState(null);
     const [attributesList, setAttributesList]               = useState([]);
     const [cartItems, setCartItems]                         = useState([]);
+    const [followNote, setFollowNote]                       = useState('');
+    const [feedbackNote, setFeedbackNote]                   = useState('');
     const [phoneNumber, setPhoneNumber]                     = useState('');
     const [phoneOptions, setPhoneOptions]                   = useState([]);
     const [customerName, setCustomerName]                   = useState('');
@@ -53,6 +56,10 @@ export default function OrderAdd() {
     const [submitLoading, setSubmitLoading]                 = useState(false);
     const [isPathao, setIsPathao]                           = useState(false);
     const [isRedx, setIsRedx]                               = useState(false);
+    const [approxStartDate, setApproxStartDate]             = useState('');
+    const [approxEndDate, setApproxEndDate]                 = useState('');
+    const [feedbackStartDate, setFeedbackStartDate]         = useState('');
+    const [feedbackEndDate, setFeedbackEndDate]             = useState('');
     const [pathaoStores, setPathaoStores]                   = useState([]);
     const [pathaoStoreId, setPathaoStoreId]                 = useState('');
     const [pathaoCityOptions, setPathaoCityOptions]         = useState([]);
@@ -441,6 +448,12 @@ export default function OrderAdd() {
             delivery_charge    : changeableChargeValue,
             special_discount   : specialDiscount,
             advance_payment    : advancePayment,
+            approx_start_date  : approxStartDate,
+            approx_end_date    : approxEndDate,
+            follow_note        : followNote,
+            feedback_start_date: feedbackStartDate,
+            feedback_end_date  : feedbackEndDate,
+            feedback_note      : feedbackNote,
             address_details    : address,
             district_id        : district,
             customer_type_id   : customerTypeId,
@@ -658,42 +671,100 @@ export default function OrderAdd() {
                                     </Col>
                                 </Row>
                 
-                                {/* Pathao Fields */}
                                 {isPathao && (
-                                    <Row gutter={[16, 0]}>
-                                        <Col xs={24} sm={12} md={8}>
-                                            <Form.Item label="Pathao Store" required>
-                                                <Select placeholder="Select store" value={pathaoStoreId} onChange={(value) => setPathaoStoreId(value)} showSearch filterOption={(input, option) =>
-                                                    option.children.toLowerCase().includes(input.toLowerCase())}
-                                                >
-                                                    {pathaoStores?.map((store) => (
-                                                        <Select.Option key={store.store_id} value={store.store_id}>
-                                                            {store.store_name}
-                                                        </Select.Option>
-                                                    ))}
-                                                </Select>
-                                            </Form.Item>
-                                        </Col>
-                    
-                                        <Col xs={24} sm={12} md={8}>
-                                            <Form.Item label="Pathao Search Area" required>
-                                                <Select placeholder="Search area" value={selectedSearchArea} onChange={handlePathaoAreaChange} showSearch onSearch={remoteMethod} filterOption={false}notFoundContent={areaLoading ? <Spin size="small" /> : null}>
-                                                    {pathaoCityOptions?.map((item) => (
-                                                        <Select.Option key={item.id} value={item.id}>
-                                                            {item.area_name}
-                                                        </Select.Option>
-                                                    ))}
-                                                </Select>
-                                            </Form.Item>
-                                        </Col>
-                    
-                                        <Col xs={24} sm={12} md={8}>
-                                            <Form.Item label="Item Weight">
-                                                <Input placeholder="Estimated weight" value={itemWeight} onChange={(e) => setItemWeight(e.target.value)}/>
-                                            </Form.Item>
-                                        </Col>
-                                    </Row>
+                                    <Card title="Pathao Information" style={{marginTop: 16,marginBottom: 16,background: "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)",borderRadius: 12,boxShadow: "0 4px 12px rgba(0,0,0,0.05)",border: "1px solid #d9eaf7"}}>
+                                        <Row gutter={[16, 0]}>
+                                            <Col xs={24} sm={12} md={8}>
+                                                <Form.Item label="Pathao Store" required>
+                                                    <Select placeholder="Select store" value={pathaoStoreId} onChange={(value) => setPathaoStoreId(value)} showSearch filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
+                                                        {pathaoStores?.map((store) => (
+                                                            <Select.Option key={store.store_id} value={store.store_id}>
+                                                                {store.store_name}
+                                                            </Select.Option>
+                                                        ))}
+                                                    </Select>
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={12} md={8}>
+                                                <Form.Item label="Pathao Search Area" required>
+                                                    <Select placeholder="Search area" value={selectedSearchArea} onChange={handlePathaoAreaChange} showSearch onSearch={remoteMethod} filterOption={false}
+                                                        notFoundContent={areaLoading ? <Spin size="small" /> : null}>
+                                                        {pathaoCityOptions.map((item) => (
+                                                            <Select.Option key={item.id} value={item.id}>
+                                                                {item.area_name}
+                                                            </Select.Option>
+                                                        ))}
+                                                    </Select>
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={12} md={8}>
+                                                <Form.Item label="Item Weight">
+                                                    <Input placeholder="Estimated weight" value={itemWeight} onChange={(e) => setItemWeight(e.target.value)}/>
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={12} md={8}>
+                                                <Form.Item label="Item Quantity">
+                                                    <Input placeholder="Estimated quantity" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)}/>
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={12} md={8}>
+                                                <Form.Item label="Desc & Prices">
+                                                    <Input placeholder="Description & price" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)}/>
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
+                                    </Card>
                                 )}
+
+                                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
+                                    <Card title="Follow Up" style={{ flex: 1, minWidth: 300, background: "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)", borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #d9eaf7" }}>
+                                        <Row gutter={[16, 0]}>
+                                            <Col xs={24} sm={12} md={12}>
+                                                <Form.Item label="Follow Up Start Date" required name="approx_start_date">
+                                                    <DatePicker style={{ width: "100%" }} value={approxStartDate ? dayjs(approxStartDate) : null} onChange={(date, dateString) => setApproxStartDate(dateString)} />
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={12} md={12}>
+                                                <Form.Item label="Follow Up End Date" required name="approx_end_date">
+                                                    <DatePicker style={{ width: "100%" }} value={approxEndDate ? dayjs(approxEndDate) : null} onChange={(date, dateString) => setApproxEndDate(dateString)} />
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={24} md={24}>
+                                                <Form.Item label="Follow Up Note" required name="followup_note">
+                                                    <Input.TextArea rows={2} placeholder="Follow Up Note" value={followNote} onChange={(e) => setFollowNote(e.target.value)} />
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
+                                    </Card>
+
+                                    <Card style={{ flex: 1, minWidth: 300, background: "linear-gradient(135deg, #f9f0ff 0%, #efdbff 100%)", borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #e4d3ff" }} title="Feed Back">
+                                        <Row gutter={[16, 0]}>
+                                            <Col xs={24} sm={12} md={12}>
+                                                <Form.Item label="Feedback Start Date" required name="feedback_start_date">
+                                                    <DatePicker style={{ width: "100%" }} value={feedbackStartDate ? dayjs(feedbackStartDate) : null} onChange={(date, dateString) => setFeedbackStartDate(dateString)} />
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={12} md={12}>
+                                                <Form.Item label="Feedback End Date" required name="feedback_end_date">
+                                                    <DatePicker style={{ width: "100%" }} value={feedbackEndDate ? dayjs(feedbackEndDate) : null} onChange={(date, dateString) => setFeedbackEndDate(dateString)} />
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={24} md={24}>
+                                                <Form.Item label="Feedback Note" required name="feedback_note">
+                                                    <Input.TextArea rows={2} placeholder="Feedback Note" value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} />
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
+                                    </Card>
+                                </div>
                 
                                 <Row gutter={[16, 0]}>
                                     <Col xs={24} sm={12} md={8}>

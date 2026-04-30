@@ -878,41 +878,102 @@ const OrderEdit = () => {
 
                                 {/* Pathao Fields */}
                                 {isPathao && (
-                                    <Row gutter={[16, 0]}>
-                                        <Col xs={24} sm={12} md={8}>
-                                            <Form.Item label="Pathao Store" required>
-                                                <Select placeholder="Select store" value={pathaoStoreId} onChange={(value) => setPathaoStoreId(value)} showSearch filterOption={(input, option) =>
-                                                    option.children.toLowerCase().includes(input.toLowerCase())}>
-                                                    {pathaoStores?.map((store) => (
-                                                        <Select.Option key={store.store_id} value={store.store_id}>
-                                                            {store.store_name}
-                                                        </Select.Option>
-                                                    ))}
-                                                </Select>
-                                            </Form.Item>
-                                        </Col>
+                                    <Card title="Pathao Information" style={{marginTop: 16,marginBottom: 16,background: "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)",borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #d9eaf7",}}>
+                                        <Row gutter={[16, 0]}>
+                                            <Col xs={24} sm={12} md={8}>
+                                                <Form.Item label="Pathao Store" required>
+                                                    <Select placeholder="Select store" value={pathaoStoreId} onChange={(value) => setPathaoStoreId(value)} showSearch filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
+                                                        {pathaoStores?.map((store) => (
+                                                            <Select.Option key={store.store_id} value={store.store_id}>
+                                                                {store.store_name}
+                                                            </Select.Option>
+                                                        ))}
+                                                    </Select>
+                                                </Form.Item>
+                                            </Col>
 
-                                        <Col xs={24} sm={12} md={8}>
-                                            <Form.Item label="Pathao Search Area" required>
-                                                <Select placeholder="Search area" value={selectedSearchArea} onChange={handlePathaoAreaChange} showSearch onSearch={remoteMethod}
-                                                    filterOption={false} notFoundContent={areaLoading ? <Spin size="small" /> : null}>
-                                                    {pathaoCityOptions.map(item => (
-                                                        <Select.Option key={item.id} value={item.id}>
-                                                            {item.area_name}
-                                                        </Select.Option>
-                                                    ))}
-                                                </Select>
+                                            <Col xs={24} sm={12} md={8}>
+                                                <Form.Item label="Pathao Search Area" required>
+                                                    <Select placeholder="Search area" value={selectedSearchArea} onChange={handlePathaoAreaChange} showSearch onSearch={remoteMethod}
+                                                        filterOption={false} notFoundContent={areaLoading ? <Spin size="small" /> : null}>
+                                                        {pathaoCityOptions.map((item) => (
+                                                            <Select.Option key={item.id} value={item.id}>
+                                                                {item.area_name}
+                                                            </Select.Option>
+                                                        ))}
+                                                    </Select>
+                                                </Form.Item>
+                                            </Col>
 
-                                            </Form.Item>
-                                        </Col>
+                                            <Col xs={24} sm={12} md={8}>
+                                                <Form.Item label="Item Weight">
+                                                    <Input placeholder="Estimated weight" value={itemWeight} onChange={(e) => setItemWeight(e.target.value)}/>
+                                                </Form.Item>
+                                            </Col>
 
-                                        <Col xs={24} sm={12} md={8}>
-                                            <Form.Item label="Item Weight">
-                                                <Input placeholder="Estimated weight" value={itemWeight} onChange={(e) => setItemWeight(e.target.value)}/>
-                                            </Form.Item>
-                                        </Col>
-                                    </Row>
+                                            <Col xs={24} sm={12} md={8}>
+                                                <Form.Item label="Item Quantity">
+                                                    <Input placeholder="Estimated quantity" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)}/>
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={12} md={8}>
+                                                <Form.Item label="Desc & Prices">
+                                                    <Input placeholder="Description & price" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)}/>
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
+                                    </Card>
                                 )}
+
+                                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
+                                    <Card title="Follow Up" style={{ flex: 1, minWidth: 300, background: "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)", borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #d9eaf7" }}>
+                                        <Row gutter={[16, 0]}>
+                                            <Col xs={24} sm={12} md={12}>
+                                                <Form.Item label="Follow Up Start Date" name="approx_start_date" required>
+                                                    <DatePicker style={{ width: "100%" }} />
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={12} md={12}>
+                                                <Form.Item label="Follow Up End Date" name="approx_end_date" required>
+                                                    <DatePicker style={{ width: "100%" }} />
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={24} md={24}>
+                                                <Form.Item label="Follow Up Note" name="followup_note" required>
+                                                    <Input.TextArea rows={2} placeholder="Follow Up Note" />
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
+                                    </Card>
+
+                                    <Card
+                                        style={{ flex: 1, minWidth: 300, background: "linear-gradient(135deg, #f9f0ff 0%, #efdbff 100%)", borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #e4d3ff" }}
+                                        title="Feed Back"
+                                    >
+                                        <Row gutter={[16, 0]}>
+                                            <Col xs={24} sm={12} md={12}>
+                                                <Form.Item label="Feedback Start Date" required name="feedback_start_date">
+                                                    <DatePicker style={{ width: "100%" }} />
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={12} md={12}>
+                                                <Form.Item label="Feedback End Date" required name="feedback_end_date">
+                                                    <DatePicker style={{ width: "100%" }} />
+                                                </Form.Item>
+                                            </Col>
+
+                                            <Col xs={24} sm={24} md={24}>
+                                                <Form.Item label="Feedback Note" required name="feedback_note">
+                                                    <Input.TextArea rows={2} placeholder="Feedback Note" />
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
+                                    </Card>
+                                </div>
 
                                 {/* RedX Fields */}
                                 {isRedx && (
