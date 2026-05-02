@@ -86,14 +86,6 @@ export default function EditManagement() {
         }
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setImage(file);
-        setPreview(URL.createObjectURL(file));
-    };
-
     const fetchGallery = async (pageNum = 1) => {
         try {
             setLoadingMore(true);
@@ -284,23 +276,12 @@ export default function EditManagement() {
                     />
                 </div>
                 <div className="head-actions">
-                    <Button 
-                        icon={<ArrowLeftOutlined />} 
-                        onClick={() => window.history.back()}
-                        style={{ borderRadius: '10px', fontWeight: 500 }}
-                    >
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} style={{ borderRadius: '10px', fontWeight: 500 }}>
                         Back to List
                     </Button>
                 </div>
             </div>
-
-            <Form 
-                form={form}
-                onFinish={handleSubmit}
-                layout="vertical"
-                autoComplete="off"
-                requiredMark={true}
-            >
+            <Form form={form} onFinish={handleSubmit} layout="vertical" autoComplete="off" requiredMark={true}>
                 <Row gutter={[24, 24]}>
                     <Col xs={24} lg={16}>
                         <Card style={styles.card} bodyStyle={{ padding: '32px' }}>
@@ -310,57 +291,25 @@ export default function EditManagement() {
                             
                             <Row gutter={16}>
                                 <Col span={12}>
-                                    <Form.Item 
-                                        name="username" 
-                                        label={<Text strong style={{ color: '#475569' }}>Full Name</Text>}
-                                        rules={[{ required: true, message: 'Please enter name' }]}
-                                    >
-                                        <AntInput 
-                                            size="large" 
-                                            placeholder="Enter name" 
-                                            prefix={<UserOutlined style={{ color: '#94a3b8' }} />} 
-                                            style={styles.input}
-                                        />
+                                    <Form.Item name="username" label={<Text strong style={{ color: '#475569' }}>Full Name</Text>}
+                                        rules={[{ required: true, message: 'Please enter name' }]}>
+                                        <AntInput size="large" placeholder="Enter name" prefix={<UserOutlined style={{ color: '#94a3b8' }} />} style={styles.input} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item 
-                                        name="phone_number" 
-                                        label={<Text strong style={{ color: '#475569' }}>Phone Number</Text>}
-                                        rules={[{ required: true, message: 'Please enter phone number' }]}
-                                    >
-                                        <AntInput 
-                                            size="large" 
-                                            placeholder="e.g. +1 234 567 890" 
-                                            prefix={<PhoneOutlined style={{ color: '#94a3b8' }} />} 
-                                            style={styles.input}
-                                        />
+                                    <Form.Item name="phone_number" label={<Text strong style={{ color: '#475569' }}>Phone Number</Text>}
+                                        rules={[{ required: true, message: 'Please enter phone number' }]}>
+                                        <AntInput size="large" placeholder="e.g. +1 234 567 890" prefix={<PhoneOutlined style={{ color: '#94a3b8' }} />} style={styles.input} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item 
-                                        name="email" 
-                                        label={<Text strong style={{ color: '#475569' }}>Email Address</Text>}
-                                    >
-                                        <AntInput 
-                                            size="large" 
-                                            placeholder="member@company.com" 
-                                            prefix={<MailOutlined style={{ color: '#94a3b8' }} />} 
-                                            style={styles.input}
-                                        />
+                                    <Form.Item name="email" label={<Text strong style={{ color: '#475569' }}>Email Address</Text>}>
+                                        <AntInput size="large" placeholder="member@company.com" prefix={<MailOutlined style={{ color: '#94a3b8' }} />} style={styles.input} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item 
-                                        name="password" 
-                                        label={<Text strong style={{ color: '#475569' }}>Update Password</Text>}
-                                    >
-                                        <AntInput.Password 
-                                            size="large" 
-                                            placeholder="Leave blank to keep current" 
-                                            prefix={<LockOutlined style={{ color: '#94a3b8' }} />} 
-                                            style={styles.input}
-                                        />
+                                    <Form.Item name="password" label={<Text strong style={{ color: '#475569' }}>Update Password</Text>}>
+                                        <AntInput.Password size="large" placeholder="Leave blank to keep current" prefix={<LockOutlined style={{ color: '#94a3b8' }} />} style={styles.input} />
                                     </Form.Item>
                                 </Col>
                             </Row>
@@ -373,59 +322,25 @@ export default function EditManagement() {
 
                             <Row gutter={16}>
                                 <Col span={12}>
-                                    <Form.Item 
-                                        name="role_ids" 
-                                        label={<Text strong style={{ color: '#475569' }}>User Roles</Text>}
-                                        rules={[{ required: true, message: 'Please assign roles' }]}
-                                    >
-                                        <AntSelect 
-                                            mode="multiple" 
-                                            allowClear 
-                                            placeholder="Assign roles" 
-                                            style={{ width: '100%' }}
-                                            size="large"
-                                            options={roleOptions}
-                                        />
+                                    <Form.Item name="role_ids" label={<Text strong style={{ color: '#475569' }}>User Roles</Text>}
+                                        rules={[{ required: true, message: 'Please assign roles' }]}>
+                                        <AntSelect mode="multiple" allowClear placeholder="Assign roles" style={{ width: '100%' }} size="large" options={roleOptions} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item 
-                                        name="salary" 
-                                        label={<Text strong style={{ color: '#475569' }}>Salary</Text>}
-                                    >
-                                        <AntInput 
-                                            size="large" 
-                                            placeholder="0.00" 
-                                            prefix={<DollarCircleOutlined style={{ color: '#94a3b8' }} />} 
-                                            style={styles.input}
-                                        />
+                                    <Form.Item name="salary" label={<Text strong style={{ color: '#475569' }}>Salary</Text>}>
+                                        <AntInput size="large" placeholder="0.00" prefix={<DollarCircleOutlined style={{ color: '#94a3b8' }} />} style={styles.input} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item 
-                                        name="manager_id" 
-                                        label={<Text strong style={{ color: '#475569' }}>Reporting To</Text>}
-                                    >
-                                        <AntSelect 
-                                            placeholder="Select manager" 
-                                            style={{ width: '100%' }}
-                                            size="large"
-                                            options={managerOptions}
-                                        />
+                                    <Form.Item name="manager_id" label={<Text strong style={{ color: '#475569' }}>Reporting To</Text>}>
+                                        <AntSelect placeholder="Select manager" style={{ width: '100%' }} size="large" options={managerOptions} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
-                                    <Form.Item 
-                                        name="user_category_id" 
-                                        label={<Text strong style={{ color: '#475569' }}>User Category</Text>}
-                                        rules={[{ required: true, message: 'Please select category' }]}
-                                    >
-                                        <AntSelect 
-                                            placeholder="Select category" 
-                                            style={{ width: '100%' }}
-                                            size="large"
-                                            options={categoryOptions}
-                                        />
+                                    <Form.Item name="user_category_id" label={<Text strong style={{ color: '#475569' }}>User Category</Text>}
+                                        rules={[{ required: true, message: 'Please select category' }]}>
+                                        <AntSelect placeholder="Select category" style={{ width: '100%' }} size="large" options={categoryOptions} />
                                     </Form.Item>
                                 </Col>
                             </Row>
@@ -437,15 +352,8 @@ export default function EditManagement() {
                             <div style={styles.sectionTitle}>
                                 <CheckCircleOutlined /> Account Status
                             </div>
-                            <Form.Item 
-                                name="status" 
-                                rules={[{ required: true, message: 'Please select status' }]}
-                            >
-                                <AntSelect 
-                                    placeholder="Select Status" 
-                                    style={{ width: '100%' }}
-                                    size="large"
-                                >
+                            <Form.Item name="status" rules={[{ required: true, message: 'Please select status' }]}>
+                                <AntSelect placeholder="Select Status" style={{ width: '100%' }} size="large">
                                     <Option value="active">
                                         <Space><span style={{ color: '#16a34a' }}>●</span> Active</Space>
                                     </Option>
@@ -461,27 +369,10 @@ export default function EditManagement() {
                                 <CameraOutlined /> Profile Picture
                             </div>
                             
-                            <ImagePicker 
-                                form={form}
-                                name="image"
-                                label=""
-                                gallery={gallery}
-                                fetchMore={handleFetchMore}
-                                hasMore={hasMore}
-                                loadingMore={loadingMore}
-                                onUploadSuccess={handleUploadSuccess}
-                            />
+                            <ImagePicker form={form} name="image" label="" gallery={gallery} fetchMore={handleFetchMore} hasMore={hasMore} loadingMore={loadingMore} onUploadSuccess={handleUploadSuccess} />
 
                             <div style={{ marginTop: 32 }}>
-                                <Button 
-                                    type="primary" 
-                                    htmlType="submit" 
-                                    loading={loading} 
-                                    block
-                                    size="large"
-                                    icon={<SaveOutlined />}
-                                    style={styles.submitBtn}
-                                >
+                                <Button type="primary" htmlType="submit" loading={loading} block size="large" icon={<SaveOutlined />} style={styles.submitBtn} >
                                     {loading ? "Updating Profile..." : "Update Management Profile"}
                                 </Button>
                             </div>
