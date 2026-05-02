@@ -1,8 +1,13 @@
-import {Breadcrumb,message, Select } from "antd";
+import { Breadcrumb, message, Select as AntSelect, Card, Row, Col, Input as AntInput, Button, Typography, Space, Divider, Form } from "antd";
+import { UserOutlined, PhoneOutlined, MailOutlined, LockOutlined, DollarCircleOutlined, TeamOutlined, AppstoreOutlined, CheckCircleOutlined, ArrowLeftOutlined, CameraOutlined, SaveOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
 import { getDatas, postData } from "../../../api/common/common";
+import ImagePicker from "../../../components/image/ImagePicker";
+
+const { Title, Text, Paragraph } = Typography;
+const { Option } = AntSelect;
 
 export default function AddManagement() {
     // Hook
@@ -12,27 +17,83 @@ export default function AddManagement() {
     const navigate = useNavigate();
 
     // State
-    const [image, setImage]                     = useState(null);
+    const [messageApi, contextHolder]           = message.useMessage();
+    const [loading, setLoading]                 = useState(false);
     const [roleOptions, setRoleOptions]         = useState([]);
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [managerOptions, setManagerOptions]   = useState([]);
-    const [messageApi, contextHolder]           = message.useMessage();
-    const [selectedRoles, setSelectedRoles]     = useState([]);
-    const [preview, setPreview]                 = useState(null);
-    const [loading, setLoading]                 = useState(false);
+    const [errors, setErrors]                   = useState({});
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    // Gallery States for ImagePicker
+    const [gallery, setGallery]                 = useState([]);
+    const [page, setPage]                       = useState(1);
+    const [hasMore, setHasMore]                 = useState(true);
+    const [loadingMore, setLoadingMore]         = useState(false);
 
-        setImage(file);
+    const [form] = Form.useForm();
 
-        setPreview(URL.createObjectURL(file));
+    // Local Styles for Professional Look
+    const styles = {
+        container: {
+            padding: '24px',
+            background: '#f8fafc',
+            minHeight: '100vh',
+        },
+        header: {
+            background: '#ffffff',
+            padding: '24px 30px',
+            borderRadius: '16px',
+            marginBottom: '24px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.03)',
+            border: '1px solid #e2e8f0',
+        },
+        card: {
+            borderRadius: '20px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.02)',
+            overflow: 'hidden',
+        },
+        sectionTitle: {
+            fontSize: '16px',
+            fontWeight: 700,
+            color: '#1e293b',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+        },
+        input: {
+            borderRadius: '10px',
+            height: '46px',
+        },
+        submitBtn: {
+            height: '52px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+            border: 'none',
+            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+            fontSize: '16px',
+            fontWeight: 600,
+        }
     };
 
-    const removeImage = () => {
-        setImage(null);
-        setPreview(null);
+    const fetchGallery = async (pageNum = 1) => {
+        try {
+            setLoadingMore(true);
+            const res = await getDatas(`/admin/gallary?page=${pageNum}`);
+            if (res && res.success) {
+                const newData = res.result.data || [];
+                setGallery(prev => pageNum === 1 ? newData : [...prev, ...newData]);
+                setHasMore(res.result.current_page < res.result.last_page);
+            }
+        } catch (error) {
+            console.error("Error fetching gallery:", error);
+        } finally {
+            setLoadingMore(false);
+        }
     };
 
     useEffect(() => {
@@ -71,31 +132,46 @@ export default function AddManagement() {
         };
 
         loadOptions();
+        fetchGallery(1);
 
         return () => {
             active = false;
         };
     }, []);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleFetchMore = () => {
+        const nextPage = page + 1;
+        setPage(nextPage);
+        fetchGallery(nextPage);
+    };
 
-        const form = e.target;
+    const handleUploadSuccess = (newItems) => {
+        setGallery(prev => [...newItems, ...prev]);
+    };
+
+    const handleSubmit = async (values) => {
         const formData = new FormData();
-        formData.append("username", form.username.value);
-        formData.append("email", form.email.value);
-        formData.append("phone_number", form.phone_number.value);
-        formData.append("salary", form.salary.value);
-        formData.append("password", form.password.value);
+        formData.append("username", values.username);
+        formData.append("email", values.email || "");
+        formData.append("phone_number", values.phone_number);
+        formData.append("salary", values.salary || "");
+        formData.append("password", values.password);
         
-        selectedRoles.forEach((roleId) => formData.append("role_ids[]", roleId));
+        if (values.role_ids) {
+            values.role_ids.forEach((roleId) => formData.append("role_ids[]", roleId));
+        }
 
-        formData.append("manager_id", form.manager_id.value);
-        formData.append("user_category_id", form.user_category_id.value);
-        formData.append("status", form.status.value);
+        if (values.manager_id) formData.append("manager_id", values.manager_id);
+        if (values.user_category_id) formData.append("user_category_id", values.user_category_id);
+        formData.append("status", values.status || "active");
 
-        if (image) {
-            formData.append("image", image);
+        const imageFile = values.image?.[0];
+        if (imageFile) {
+            if (imageFile.isFromGallery) {
+                formData.append("image", imageFile.galleryPath);
+            } else if (imageFile.originFileObj) {
+                formData.append("image", imageFile.originFileObj);
+            }
             formData.append("width", 450);
             formData.append("height", 450);
         }
@@ -119,171 +195,235 @@ export default function AddManagement() {
                 setTimeout(() => {
                     navigate("/management");
                 }, 500);
+            }else{
+                if (res?.errors) {
+                    setErrors(res?.errors);
+                    const formErrors = Object.keys(res.errors).map(key => ({
+                        name: key,
+                        errors: [res.errors[key][0]]
+                    }));
+                    form.setFields(formErrors);
+                } else {
+                    message.error(res?.msg || "Something went wrong");
+                }
             }
-        } catch (error) {
-            console.error("Error creating user:", error.response?.data || error.message);
+        } catch (err) {
+            console.log("errors", err?.response?.data);
+            message.error("Failed to create management profile");
         }finally{
             setLoading(false);
         }
     }
 
     return (
-        <>
+        <div style={styles.container}>
             {contextHolder}
-            <div className="pagehead">
+            
+            <div style={styles.header}>
                 <div className="head-left">
-                    <h1 className="title">Add Management</h1>
-                </div>
-                <div className="head-actions">
+                    <Title level={2} style={{ margin: 0, fontWeight: 800, color: '#1e293b' }}>
+                        <TeamOutlined style={{ marginRight: 12, color: '#6366f1' }} />
+                        Add Management
+                    </Title>
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Add Management" },
+                            { title: <Link to="/management" style={{ color: '#64748b' }}>Management</Link> },
+                            { title: <span style={{ color: '#64748b' }}>Add Member</span> },
                         ]}
                     />
                 </div>
+                <div className="head-actions">
+                    <Button 
+                        icon={<ArrowLeftOutlined />} 
+                        onClick={() => window.history.back()}
+                        style={{ borderRadius: '10px', fontWeight: 500 }}
+                    >
+                        Back to List
+                    </Button>
+                </div>
             </div>
 
-            <div className="raw-sell-container">
-                <form action="" className="raw-sell-form" onSubmit={handleSubmit}>
-                    <div className="raw-up-sell-form-header" style={{marginBottom:"10px"}}>
-                        <h2 className="page-title">Add Management</h2>
-
-                        <button type="button" className="back-btn" onClick={() => window.history.back()} aria-label="Go back" title="Go back">
-                            <svg className="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-                                <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <span className="label">Back</span>
-                        </button>
-                    </div>
-
-                    <div className="row">
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">
-                                    Name:<span className="required">*</span>
-                                </label>
-                                <input type="text" className="raw-sell-input" placeholder="Enter user name" name="username"/>
+            <Form form={form} onFinish={handleSubmit} layout="vertical" autoComplete="off" requiredMark={true}>
+                <Row gutter={[24, 24]}>
+                    <Col xs={24} lg={16}>
+                        <Card style={styles.card} bodyStyle={{ padding: '32px' }}>
+                            <div style={styles.sectionTitle}>
+                                <UserOutlined /> Member Information
                             </div>
-                        </div>
+                            
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="username" label={<Text strong style={{ color: '#475569' }}>Full Name</Text>}
+                                        rules={[{ required: true, message: 'Please enter name' }]}>
+                                        <AntInput size="large" placeholder="Enter name" prefix={<UserOutlined style={{ color: '#94a3b8' }} />} style={styles.input}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="phone_number" label={<Text strong style={{ color: '#475569' }}>Phone Number</Text>}
+                                        rules={[{ required: true, message: 'Please enter phone number' }]}>
+                                        <AntInput size="large" placeholder="e.g. +1 234 567 890" 
+                                            prefix={<PhoneOutlined style={{ color: '#94a3b8' }} />} 
+                                            style={styles.input}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item 
+                                        name="email" 
+                                        label={<Text strong style={{ color: '#475569' }}>Email Address</Text>}
+                                    >
+                                        <AntInput 
+                                            size="large" 
+                                            placeholder="member@company.com" 
+                                            prefix={<MailOutlined style={{ color: '#94a3b8' }} />} 
+                                            style={styles.input}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item 
+                                        name="password" 
+                                        label={<Text strong style={{ color: '#475569' }}>Password</Text>}
+                                        rules={[{ required: true, message: 'Please enter password' }]}
+                                    >
+                                        <AntInput.Password 
+                                            size="large" 
+                                            placeholder="Security password" 
+                                            prefix={<LockOutlined style={{ color: '#94a3b8' }} />} 
+                                            style={styles.input}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
 
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">
-                                    Phone Number:<span className="required">*</span>
-                                </label>
-                                <input type="text" className="raw-sell-input" placeholder="Enter phone number" name="phone_number"/>
-                            </div>
-                        </div>
+                            <Divider style={{ margin: '24px 0' }} />
 
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Salary:</label>
-                                <input type="text" className="raw-sell-input" placeholder="Enter salary" name="salary"/>
+                            <div style={styles.sectionTitle}>
+                                <AppstoreOutlined /> Management Details
                             </div>
-                        </div>
 
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Email:</label>
-                                <input type="text" className="raw-sell-input" placeholder="Enter email" name="email"/>
-                            </div>
-                        </div>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item 
+                                        name="role_ids" 
+                                        label={<Text strong style={{ color: '#475569' }}>User Roles</Text>}
+                                        rules={[{ required: true, message: 'Please assign roles' }]}
+                                    >
+                                        <AntSelect 
+                                            mode="multiple" 
+                                            allowClear 
+                                            placeholder="Assign roles" 
+                                            style={{ width: '100%', borderRadius: '10px' }}
+                                            size="large"
+                                            options={roleOptions}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item 
+                                        name="salary" 
+                                        label={<Text strong style={{ color: '#475569' }}>Salary</Text>}
+                                    >
+                                        <AntInput 
+                                            size="large" 
+                                            placeholder="0.00" 
+                                            prefix={<DollarCircleOutlined style={{ color: '#94a3b8' }} />} 
+                                            style={styles.input}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item 
+                                        name="manager_id" 
+                                        label={<Text strong style={{ color: '#475569' }}>Reporting To</Text>}
+                                    >
+                                        <AntSelect 
+                                            placeholder="Select manager" 
+                                            style={{ width: '100%' }}
+                                            size="large"
+                                            options={managerOptions}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item 
+                                        name="user_category_id" 
+                                        label={<Text strong style={{ color: '#475569' }}>User Category</Text>}
+                                        rules={[{ required: true, message: 'Please select category' }]}
+                                    >
+                                        <AntSelect 
+                                            placeholder="Select category" 
+                                            style={{ width: '100%' }}
+                                            size="large"
+                                            options={categoryOptions}
+                                        />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                        </Card>
+                    </Col>
 
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">
-                                    Password:<span className="required">*</span>
-                                </label>
-                                <input type="password" className="raw-sell-input" placeholder="Enter password" name="password"/>
+                    <Col xs={24} lg={8}>
+                        <Card style={styles.card} bodyStyle={{ padding: '24px' }}>
+                            <div style={styles.sectionTitle}>
+                                <CheckCircleOutlined /> System Status
                             </div>
-                        </div>
+                            <Form.Item 
+                                name="status" 
+                                initialValue="active"
+                                rules={[{ required: true, message: 'Please select status' }]}
+                            >
+                                <AntSelect 
+                                    placeholder="Select Status" 
+                                    style={{ width: '100%' }}
+                                    size="large"
+                                >
+                                    <Option value="active">
+                                        <Space><span style={{ color: '#16a34a' }}>●</span> Active</Space>
+                                    </Option>
+                                    <Option value="inactive">
+                                        <Space><span style={{ color: '#dc2626' }}>●</span> Inactive</Space>
+                                    </Option>
+                                </AntSelect>
+                            </Form.Item>
 
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">
-                                    User Role:<span className="required">*</span>
-                                </label>
-                                <Select mode="multiple" allowClear placeholder="Select Role" className="raw-sell-select" style={{ width: "100%" }}
-                                    value={selectedRoles} onChange={(value) => setSelectedRoles(value)} options={roleOptions}
-                                />
-                            </div>
-                        </div>
+                            <Divider />
 
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Manager:</label>
-                                <select name="manager_id" id="" className="raw-sell-select">
-                                    <option value="" selected disabled>Select Manager</option>
-                                    {managerOptions.length > 0 && (
-                                        managerOptions.map((item) => (
-                                            <option value={item.value} key={item.value}>{item.label}</option>
-                                        ))
-                                    )}
-                                </select>
+                            <div style={styles.sectionTitle}>
+                                <CameraOutlined /> Profile Picture
                             </div>
-                        </div>
+                            
+                            <ImagePicker 
+                                form={form}
+                                name="image"
+                                label=""
+                                gallery={gallery}
+                                fetchMore={handleFetchMore}
+                                hasMore={hasMore}
+                                loadingMore={loadingMore}
+                                onUploadSuccess={handleUploadSuccess}
+                            />
 
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">
-                                    User Category:<span className="required">*</span>
-                                </label>
-                                <select name="user_category_id" id="" className="raw-sell-select">
-                                    <option value="" selected disabled>Select Category</option>
-                                    {categoryOptions.length > 0 && (
-                                        categoryOptions.map((item) => (
-                                            <option value={item.value} key={item.value}>{item.label}</option>
-                                        ))
-                                    )}
-                                </select>
+                            <div style={{ marginTop: 32 }}>
+                                <Button 
+                                    type="primary" 
+                                    htmlType="submit" 
+                                    loading={loading} 
+                                    block
+                                    size="large"
+                                    icon={<SaveOutlined />}
+                                    style={styles.submitBtn}
+                                >
+                                    {loading ? "Creating Member..." : "Create Management Profile"}
+                                </Button>
                             </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">
-                                    Status:<span className="required">*</span>
-                                </label>
-                                <select name="status" id="" className="raw-sell-select">
-                                    <option value="" selected disabled>Select Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="inactive">In Active</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Image:</label>
-                                <div className="image-upload-wrapper">
-                                    {!preview ? (
-                                        <label className="upload-box">
-                                            <input type="file" name="image" accept="image/*" onChange={handleImageChange}/>
-                                            <span>Select Image</span>
-                                        </label>
-                                    ) : (
-                                        <div className="preview-box">
-                                            <img src={preview} alt="preview" />
-                                            <button type="button" className="remove-btn" onClick={removeImage}>
-                                                Remove
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="col-12">
-                            <div className="raw-sell-submit">
-                                <button type="submit" className="raw-sell-btn">
-                                    {loading ? "Creating..." : "Submit"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </>
-    )
+                        </Card>
+                    </Col>
+                </Row>
+            </Form>
+        </div>
+    );
 }

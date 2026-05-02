@@ -25,6 +25,12 @@ export default function Management() {
     const columns = 
     [
         {
+            title: "SL",
+            key: "sl",
+            render: (_, record, index) => index + 1,
+            width: 60,
+        },
+        {
             title: "Image",
             dataIndex: "image",
             key: "image",
