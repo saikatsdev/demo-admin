@@ -1,13 +1,14 @@
-import { ArrowLeftOutlined, CloseOutlined, DeleteOutlined, LoadingOutlined, PhoneOutlined, PlusOutlined } from '@ant-design/icons'
-import { AutoComplete, Breadcrumb, Button, Card, Col, Divider, Form, Grid, Image, Input, DatePicker, InputNumber, message, Popconfirm, Row, Select, Space, Spin, Table, Typography } from 'antd'
+import { ArrowLeftOutlined, CloseOutlined, DeleteOutlined, LoadingOutlined, PhoneOutlined, PlusOutlined, UserOutlined, EnvironmentOutlined, ShoppingCartOutlined, CreditCardOutlined, MessageOutlined, CalendarOutlined, GlobalOutlined, CarOutlined, TagOutlined, InboxOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { AutoComplete, Breadcrumb, Button, Card, Col, Divider, Form, Grid, DatePicker, Image, Input, InputNumber, message, Popconfirm, Row, Select, Space, Spin, Table, Typography, Tag } from 'antd'
 import { useEffect, useMemo, useState } from 'react';
-import dayjs from "dayjs";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getDatas, postData } from '../../api/common/common';
 import useTitle from '../../hooks/useTitle';
+import dayjs from "dayjs";
 import { useSelector } from 'react-redux';
+import './OrderAdd.css';
 
-const currency = (value) => `${Number(value || 0).toFixed(2)} tk.`
+const currency = (value) => `৳ ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 export default function OrderAdd() {
     // Hook
@@ -25,15 +26,15 @@ export default function OrderAdd() {
     const [productInfo, setProductInfo]                     = useState(null);
     const [attributesList, setAttributesList]               = useState([]);
     const [cartItems, setCartItems]                         = useState([]);
-    const [followNote, setFollowNote]                       = useState('');
-    const [feedbackNote, setFeedbackNote]                   = useState('');
     const [phoneNumber, setPhoneNumber]                     = useState('');
     const [phoneOptions, setPhoneOptions]                   = useState([]);
     const [customerName, setCustomerName]                   = useState('');
     const [district, setDistrict]                           = useState('');
     const [address, setAddress]                             = useState('');
     const [statusId, setStatusId]                           = useState(1);
-    const [orderFromId, setOrderFromId]                     = useState(2);
+    const [followNote, setFollowNote]                       = useState('');
+    const [feedbackNote, setFeedbackNote]                       = useState('');
+    const [orderFromId, setOrderFromId]                     = useState(null);
     const [deliveryChargeId, setDeliveryChargeId]           = useState(1);
     const [paymentGatewayId, setPaymentGatewayId]           = useState(1);
     const [paymentStatus, setPaymentStatus]                 = useState('unpaid');
@@ -57,7 +58,7 @@ export default function OrderAdd() {
     const [isPathao, setIsPathao]                           = useState(false);
     const [isRedx, setIsRedx]                               = useState(false);
     const [approxStartDate, setApproxStartDate]             = useState('');
-    const [approxEndDate, setApproxEndDate]                 = useState('');
+    const [approxEndDate, setApproxEndDate]             = useState('');
     const [feedbackStartDate, setFeedbackStartDate]         = useState('');
     const [feedbackEndDate, setFeedbackEndDate]             = useState('');
     const [pathaoStores, setPathaoStores]                   = useState([]);
@@ -65,17 +66,17 @@ export default function OrderAdd() {
     const [pathaoCityOptions, setPathaoCityOptions]         = useState([]);
     const [selectedSearchArea, setSelectedSearchArea]       = useState('');
     const [selectedPathaoArea, setSelectedPathaoArea]       = useState(null);
-    const [itemWeight, setItemWeight]                       = useState('');
+    const [itemWeight, setItemWeight]                       = useState('0.5');
     const [areaLoading, setAreaLoading]                     = useState(false);
     const [orderFromError, setOrderFromError]               = useState('');
     const [shippingError, setShippingError]                 = useState('');
     const [errors, setErrors]                               = useState({});
     const [isIncomplte, setIsIncomplte]                     = useState(false);
     const [loading, setLoading]                             = useState(false);
-    const [currentPage, setCurrentPage]                     = useState(1);
-    const [lastPage, setLastPage]                           = useState(1);
     const location                                          = useLocation();
     const orderData                                         = location.state || "{}";
+    const [itemQuantity, setItemQuantity]                   = useState("");
+    const [itemDescription, setItemDescription]             = useState("");
 
     // Redux State
     const districts                 = useSelector((state) => state.districts.list);
@@ -89,41 +90,16 @@ export default function OrderAdd() {
     const deliveryGateways          = useSelector((state) => state.deliveryGateway.list);
 
     useEffect(() => {
-        setCustomerName(orderData.name);
-        setPhoneNumber(orderData.phone_number);
-        setAddress(orderData.address);
-
-        if (orderData.is_incomplete === 1) {
+        if(orderData.name) setCustomerName(orderData.name);
+        if(orderData.phone_number) setPhoneNumber(orderData.phone_number);
+        if(orderData.address) setAddress(orderData.address);
+        
+        if(orderData.is_incomplete === 1){
             setIsIncomplte(true);
         }
 
-        const products = (orderData.items || []).map((item) => {
-            const baseProduct = {
-                ...item.product,
-                quantity: item.quantity || 1,
-            };
-
-            const hasVariation =
-                item.attribute_value_1 || item.attribute_value_2 || item.attribute_value_3;
-
-            if (hasVariation) {
-                return {
-                    ...baseProduct,
-                    variation_1: item.attribute_value_1 || null,
-                    variation_2: item.attribute_value_2 || null,
-                    variation_3: item.attribute_value_3 || null,
-                    variations: [
-                        item.attribute_value_1,
-                        item.attribute_value_2,
-                        item.attribute_value_3,
-                    ].filter((v) => v !== null),
-                };
-            }
-
-            return baseProduct;
-        });
-
-        setCartItems(products);
+        const initialProducts = (orderData.items || []).map((item) => ({...item.product,quantity: 1,}));
+        setCartItems(initialProducts);
     }, [orderData]);
 
     useEffect(() => {
@@ -144,29 +120,18 @@ export default function OrderAdd() {
         }
     }, [couriers, defaultCourierId, courierId]);
 
-    const insertOrderFrom = async () => {
-        setAddLoading(true)
-        const res = await postData('/admin/order-froms', {
-            name: fromName,
-            status: 'active',
-        })
-
-        if (res && res?.success) {
-            setTimeout(() => {
-                setFromName('');
-                setAddLoading(false);
-                setOrderFromId('');
-                message.success('Order source added successfully');
-            }, 1000)
-        } else {
-            setOrderFromError(res?.errors || '')
-            setAddLoading(false)
+    useEffect(() => {
+        if (orderFromList?.length) {
+            const manualItem = orderFromList.find(item => item.slug === "manual");
+            if (manualItem) {
+                setOrderFromId(manualItem.id);
+            }
         }
-    }
+    }, [orderFromList]);
+    
 
     const insertDeliveryGateway = async () => {
         setAddLoading(true)
-
         const res = await postData('/admin/delivery-gateways', {name: deliveryName,deliveryFee: deliveryFee,status: 'active'});
 
         if (res && res?.success) {
@@ -184,21 +149,14 @@ export default function OrderAdd() {
         }
     }
 
-    const searchProduct = async (page = 1) => {
+    const searchProduct = async () => {
         if (!searchQuery) return
         
         try {
             setLoading(true);
-            const res = await getDatas('/admin/products/search', {search_key: searchQuery, page: page, paginate_size: 10 })
+            const res = await getDatas('/admin/products/search', {search_key: searchQuery })
             if (res && res?.success) {
-                const newProducts = res?.result?.data || [];
-                if (page === 1) {
-                    setProducts(newProducts);
-                } else {
-                    setProducts((prev) => [...prev, ...newProducts]);
-                }
-                setCurrentPage(res?.result?.current_page || 1);
-                setLastPage(res?.result?.last_page || 1);
+                setProducts(res?.result || [])
                 setHiddenSearchProducts(false)
             }
         } catch (error) {
@@ -212,7 +170,6 @@ export default function OrderAdd() {
         const delay = setTimeout(() => {
             searchProduct();
         }, 200);
-
         return () => clearTimeout(delay);
     }, [searchQuery]);
 
@@ -282,9 +239,7 @@ export default function OrderAdd() {
             setChangeableChargeValue(0);
             return;
         }
-
         const charge = deliveryGateways?.find((i) => String(i.id) === String(id));
-
         setChangeableChargeValue(Number(charge?.delivery_fee) || 0);
     };
 
@@ -332,8 +287,8 @@ export default function OrderAdd() {
                         offer_price: selectedVariation.offer_price,
                         discount   : selectedVariation.discount,
                         variation_1: selectedVariation?.attribute_value_1,
-                        variation_2: selectedVariation?.attribute_value_1,
-                        variation_3: selectedVariation?.attribute_value_1,
+                        variation_2: selectedVariation?.attribute_value_2,
+                        variation_3: selectedVariation?.attribute_value_3,
                         quantity   : quantity,
                         variations : product.variations,
                     }
@@ -413,12 +368,9 @@ export default function OrderAdd() {
     }
 
     const totalPrice = useMemo(() => {
-        const totalOfferPrice = cartItems.reduce((total, item) => {return total + item.offer_price * item.quantity}, 0)
-
-        const totalMrp = cartItems.reduce((total, item) => {return total + item.mrp * item.quantity}, 0)
-
-        const totalDiscount = cartItems.reduce((total, item) => {return total + item.discount * item.quantity}, 0)
-
+        const totalOfferPrice = cartItems.reduce((total, item) => total + item.offer_price * item.quantity, 0)
+        const totalMrp = cartItems.reduce((total, item) => total + item.mrp * item.quantity, 0)
+        const totalDiscount = cartItems.reduce((total, item) => total + item.discount * item.quantity, 0)
         return {mrp_price: totalMrp,offer_price: totalOfferPrice,discount_price: totalDiscount}
     }, [cartItems]);
 
@@ -431,7 +383,6 @@ export default function OrderAdd() {
             parseFloat(advancePayment || 0)
         )
     }, [totalPrice, changeableChargeValue, specialDiscount, advancePayment]);
-
 
     const submit = async () => {
         setSubmitLoading(true);
@@ -457,26 +408,28 @@ export default function OrderAdd() {
             delivery_charge    : changeableChargeValue,
             special_discount   : specialDiscount,
             advance_payment    : advancePayment,
+            address_details    : address,
+            district_id        : district,
+            customer_type_id   : customerTypeId,
             approx_start_date  : approxStartDate,
             approx_end_date    : approxEndDate,
             follow_note        : followNote,
             feedback_start_date: feedbackStartDate,
             feedback_end_date  : feedbackEndDate,
             feedback_note      : feedbackNote,
-            address_details    : address,
-            district_id        : district,
-            customer_type_id   : customerTypeId,
             customer_name      : customerName,
             phone_number       : phoneNumber,
             order_from_id      : orderFromId,
             order_note         : orderNote,
             items              : items,
-            delivery_type      : isPathao && !isRedx ? 12                   : 48,
+            delivery_type      : isPathao && !isRedx ? 12    : 48,
             courier_id         : courierId,
             pickup_store_id    : pathaoStoreId,
             courier_area_id    : selectedPathaoArea?.id || '',
             item_weight        : itemWeight,
-            is_incomplete      : isIncomplte ? 1                            : 0
+            item_quantity      : itemQuantity,
+            item_description   : itemDescription,
+            is_incomplete      : isIncomplte ? 1             : 0
         })
 
         setSubmitLoading(false)
@@ -486,9 +439,7 @@ export default function OrderAdd() {
                 type: "success",
                 content: res.msg,
             });
-
             setCartItems([])
-
             setTimeout(() => {
                 navigate('/orders')
             }, 400);
@@ -504,42 +455,37 @@ export default function OrderAdd() {
             title: 'Image',
             dataIndex: 'image',
             key: 'image',
-            width: 70,
+            width: 80,
             render: (src) => (
-                <Image src={src} width={40} height={40} style={{ objectFit: 'cover' }} preview={false}/>
+                <Image src={src} width={50} height={50} style={{ objectFit: 'cover', borderRadius: '8px' }} preview={false}/>
             ),
         },
         {
-            title: 'Name',
+            title: 'Product Info',
             dataIndex: 'name',
             key: 'name',
-        },
-        {
-            title: 'Variation',
-            key: 'variation',
-            width: 200,
-            responsive: ['md'],
-            render: (_, record) => (
-                <Space direction="vertical" size={0}>
-                    {record.variation_1 && (
-                        <Typography.Text style={{ fontSize: '12px' }}>
-                            {attributeName(record.variation_1?.attribute_id)}: {record.variation_1?.value}
-                        </Typography.Text>
-                    )}
-
-                    {record.variation_2 && (
-                        <Typography.Text style={{ fontSize: '12px' }}>
-                            {attributeName(record.variation_2?.attribute_id)}: {record.variation_2?.value}
-                        </Typography.Text>
-                    )}
-
-                    {record.variation_3 && (
-                        <Typography.Text style={{ fontSize: '12px' }}>
-                            {attributeName(record.variation_3?.attribute_id)}: {record.variation_3?.value}
-                        </Typography.Text>
-                    )}
-                </Space>
-            ),
+            render: (text, record) => (
+                <div>
+                    <Typography.Text strong style={{ fontSize: '15px' }}>{text}</Typography.Text>
+                    <div style={{ marginTop: 4 }}>
+                        {record.variation_1 && (
+                            <Tag className="variation-tag">
+                                {attributeName(record.variation_1?.attribute_id)}: {record.variation_1?.value}
+                            </Tag>
+                        )}
+                        {record.variation_2 && (
+                            <Tag className="variation-tag">
+                                {attributeName(record.variation_2?.attribute_id)}: {record.variation_2?.value}
+                            </Tag>
+                        )}
+                        {record.variation_3 && (
+                            <Tag className="variation-tag">
+                                {attributeName(record.variation_3?.attribute_id)}: {record.variation_3?.value}
+                            </Tag>
+                        )}
+                    </div>
+                </div>
+            )
         },
         {
             title: 'Qty',
@@ -547,501 +493,498 @@ export default function OrderAdd() {
             key: 'quantity',
             width: 100,
             render: (value, record, index) => (
-                <InputNumber size={isMobile ? 'small' : 'middle'} min={1} value={value} onChange={(v) => updateCartQuantity(index, v)}/>
+                <InputNumber size="middle" min={1} value={value} onChange={(v) => updateCartQuantity(index, v)} style={{ borderRadius: '6px' }}/>
             ),
         },
         {
-            title: 'Unit Price',
-            dataIndex: 'mrp',
-            key: 'mrp',
-            width: 120,
-            render: (v) => currency(v),
-            responsive: ['md'],
+            title: 'Pricing',
+            key: 'pricing',
+            width: 150,
+            render: (_, r) => (
+                <div>
+                    <div style={{ color: '#64748b', fontSize: '12px', textDecoration: 'line-through' }}>{currency(r.mrp)}</div>
+                    <div style={{ fontWeight: 600, color: '#1e293b' }}>{currency(r.mrp - r.discount)}</div>
+                </div>
+            ),
         },
         {
-            title: 'Discount',
-            dataIndex: 'discount',
-            key: 'discount',
-            width: 110,
-            render: (v) => currency(v),
-            responsive: ['md'],
-        },
-        {
-            title: 'Total Price',
+            title: 'Subtotal',
             key: 'total',
             width: 120,
-            render: (_, r) => currency((r.mrp - r.discount) * r.quantity),
+            render: (_, r) => (
+                <Typography.Text strong style={{ color: '#2563eb' }}>
+                    {currency((r.mrp - r.discount) * r.quantity)}
+                </Typography.Text>
+            ),
         },
         {
-            title: 'Action',
+            title: '',
             key: 'action',
-            width: 80,
+            width: 50,
+            align: 'center',
             render: (_, r, index) => (
-                <Popconfirm title="Delete this item?" okText="Yes" cancelText="No" onConfirm={() => deleteCartItem(index)}>
-                    <Button danger type="text" icon={deleteLoading === index ? <LoadingOutlined /> : <DeleteOutlined />}/>
+                <Popconfirm title="Remove this item?" okText="Yes" cancelText="No" onConfirm={() => deleteCartItem(index)}>
+                    <Button danger type="text" shape="circle" icon={deleteLoading === index ? <LoadingOutlined /> : <DeleteOutlined />}/>
                 </Popconfirm>
             ),
         },
     ];
 
     return (
-        <>
-            <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                {contextHolder}
-        
-                <Row justify="space-between" align="middle">
-                    <Col>
-                        <Typography.Title level={3} style={{ marginBottom: 4 }}>
-                            Order Add
-                        </Typography.Title>
+        <div className="order-add-container">
+            {contextHolder}
+            
+            <div className="page-header">
+                <div>
+                    <Typography.Title level={2} style={{ margin: 0, fontWeight: 800, color: '#0f172a' }}>
+                        Create New Order
+                    </Typography.Title>
+                    <Breadcrumb 
+                        items={[
+                            { title: 'Dashboard', href: '/admin/dashboard' }, 
+                            { title: 'Orders', href: '/orders' }, 
+                            { title: 'Order Creation' }
+                        ]} 
+                        style={{ marginTop: 8 }}
+                    />
+                </div>
+                <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')} style={{ borderRadius: '10px', fontWeight: 600 }}>
+                    Back to List
+                </Button>
+            </div>
 
-                        <Breadcrumb items={[{ title: 'Dashboard' }, { title: 'Orders' }, { title: 'Order Add' }]}/>
-                    </Col>
-
-                    <Col>
-                        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')}>
-                            Back
-                        </Button>
-                    </Col>
-                </Row>
-        
-                <Row gutter={[16, 16]}>
-                    <Col xs={24}>
-                        <Card title="Order Information">
-                            <Form layout="vertical" form={form}>
-                                <Row gutter={[16, 0]}>
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Customer Phone Number" required>
-                                            <AutoComplete value={phoneNumber} options={phoneOptions.map((p) => ({ value: p.phone_number }))} onSearch={onPhoneSearch} onSelect={handlePhoneNumberChange}
-                                                onChange={(value) => setPhoneNumber(value)} placeholder="Enter phone number" notFoundContent={isLoading ? <Spin size="small" /> : null}>
-                                                <Input prefix={<PhoneOutlined />} />
-                                            </AutoComplete>
-                                            {errors.phone_number && (
-                                                <Typography.Text type="danger">{errors.phone_number[0]}</Typography.Text>
-                                            )}
-                                        </Form.Item>
-                                    </Col>
-                
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Customer Name" required>
-                                            <Input placeholder="Full name" value={customerName} onChange={(e) => setCustomerName(e.target.value)}/>
-                                            {errors.customer_name && (
-                                                <Typography.Text type="danger">{errors.customer_name[0]}</Typography.Text>
-                                            )}
-                                        </Form.Item>
-                                    </Col>
-                
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="District Name">
-                                            <Select placeholder="Select district" value={district} onChange={(value) => setDistrict(value)} showSearch filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
-                                                {districts?.map((d) => (
-                                                    <Select.Option key={d.id} value={d.id}>
-                                                        {d.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select>
-                                        </Form.Item>
-                                    </Col>
-                                </Row>
-                
-                                <Row gutter={[16, 0]}>
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Customer Address">
-                                            <Input.TextArea rows={3} placeholder="Full address" value={address} onChange={(e) => setAddress(e.target.value)}/>
-                                            {errors.address_details && (
-                                                <Typography.Text type="danger">{errors.address_details[0]}</Typography.Text>
-                                            )}
-                                        </Form.Item>
-                                    </Col>
-                
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Courier">
-                                            <Select placeholder="Select courier" value={courierId} onChange={(value) => {setCourierId(value);getCourierWiseData(value);}}
-                                                showSearch optionFilterProp="children">
-                                                {couriers.map((c) => (
-                                                    <Select.Option key={c.id} value={c.id}>
-                                                        {c.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select>
-                                        </Form.Item>
-                                    </Col>
-                
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Order Status" required>
-                                            <Select placeholder="Select status" value={statusId} onChange={(value) => setStatusId(value)}>
-                                                {statuses?.map((status) => (
-                                                    <Select.Option key={status.id} value={status.id}>
-                                                        {status.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select>
-                                        </Form.Item>
-                                    </Col>
-                                </Row>
-                
-                                {isPathao && (
-                                    <Card title="Pathao Information" style={{marginTop: 16,marginBottom: 16,background: "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)",borderRadius: 12,boxShadow: "0 4px 12px rgba(0,0,0,0.05)",border: "1px solid #d9eaf7"}}>
-                                        <Row gutter={[16, 0]}>
-                                            <Col xs={24} sm={12} md={8}>
-                                                <Form.Item label="Pathao Store" required>
-                                                    <Select placeholder="Select store" value={pathaoStoreId} onChange={(value) => setPathaoStoreId(value)} showSearch filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
-                                                        {pathaoStores?.map((store) => (
-                                                            <Select.Option key={store.store_id} value={store.store_id}>
-                                                                {store.store_name}
-                                                            </Select.Option>
-                                                        ))}
-                                                    </Select>
-                                                </Form.Item>
-                                            </Col>
-
-                                            <Col xs={24} sm={12} md={8}>
-                                                <Form.Item label="Pathao Search Area" required>
-                                                    <Select placeholder="Search area" value={selectedSearchArea} onChange={handlePathaoAreaChange} showSearch onSearch={remoteMethod} filterOption={false}
-                                                        notFoundContent={areaLoading ? <Spin size="small" /> : null}>
-                                                        {pathaoCityOptions.map((item) => (
-                                                            <Select.Option key={item.id} value={item.id}>
-                                                                {item.area_name}
-                                                            </Select.Option>
-                                                        ))}
-                                                    </Select>
-                                                </Form.Item>
-                                            </Col>
-
-                                            <Col xs={24} sm={12} md={8}>
-                                                <Form.Item label="Item Weight">
-                                                    <Input placeholder="Estimated weight" value={itemWeight} onChange={(e) => setItemWeight(e.target.value)}/>
-                                                </Form.Item>
-                                            </Col>
-
-                                            <Col xs={24} sm={12} md={8}>
-                                                <Form.Item label="Item Quantity">
-                                                    <Input placeholder="Estimated quantity" value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)}/>
-                                                </Form.Item>
-                                            </Col>
-
-                                            <Col xs={24} sm={12} md={8}>
-                                                <Form.Item label="Desc & Prices">
-                                                    <Input placeholder="Description & price" value={itemDescription} onChange={(e) => setItemDescription(e.target.value)}/>
-                                                </Form.Item>
-                                            </Col>
-                                        </Row>
-                                    </Card>
-                                )}
-
-                                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
-                                    <Card title="Follow Up" style={{ flex: 1, minWidth: 300, background: "linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%)", borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #d9eaf7" }}>
-                                        <Row gutter={[16, 0]}>
-                                            <Col xs={24} sm={12} md={12}>
-                                                <Form.Item label="Follow Up Start Date" required name="approx_start_date">
-                                                    <DatePicker style={{ width: "100%" }} value={approxStartDate ? dayjs(approxStartDate) : null} onChange={(date, dateString) => setApproxStartDate(dateString)} />
-                                                </Form.Item>
-                                            </Col>
-
-                                            <Col xs={24} sm={12} md={12}>
-                                                <Form.Item label="Follow Up End Date" required name="approx_end_date">
-                                                    <DatePicker style={{ width: "100%" }} value={approxEndDate ? dayjs(approxEndDate) : null} onChange={(date, dateString) => setApproxEndDate(dateString)} />
-                                                </Form.Item>
-                                            </Col>
-
-                                            <Col xs={24} sm={24} md={24}>
-                                                <Form.Item label="Follow Up Note" required name="followup_note">
-                                                    <Input.TextArea rows={2} placeholder="Follow Up Note" value={followNote} onChange={(e) => setFollowNote(e.target.value)} />
-                                                </Form.Item>
-                                            </Col>
-                                        </Row>
-                                    </Card>
-
-                                    <Card style={{ flex: 1, minWidth: 300, background: "linear-gradient(135deg, #f9f0ff 0%, #efdbff 100%)", borderRadius: 12, boxShadow: "0 4px 12px rgba(0,0,0,0.05)", border: "1px solid #e4d3ff" }} title="Feed Back">
-                                        <Row gutter={[16, 0]}>
-                                            <Col xs={24} sm={12} md={12}>
-                                                <Form.Item label="Feedback Start Date" required name="feedback_start_date">
-                                                    <DatePicker style={{ width: "100%" }} value={feedbackStartDate ? dayjs(feedbackStartDate) : null} onChange={(date, dateString) => setFeedbackStartDate(dateString)} />
-                                                </Form.Item>
-                                            </Col>
-
-                                            <Col xs={24} sm={12} md={12}>
-                                                <Form.Item label="Feedback End Date" required name="feedback_end_date">
-                                                    <DatePicker style={{ width: "100%" }} value={feedbackEndDate ? dayjs(feedbackEndDate) : null} onChange={(date, dateString) => setFeedbackEndDate(dateString)} />
-                                                </Form.Item>
-                                            </Col>
-
-                                            <Col xs={24} sm={24} md={24}>
-                                                <Form.Item label="Feedback Note" required name="feedback_note">
-                                                    <Input.TextArea rows={2} placeholder="Feedback Note" value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} />
-                                                </Form.Item>
-                                            </Col>
-                                        </Row>
-                                    </Card>
-                                </div>
-                
-                                <Row gutter={[16, 0]}>
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Order Source">
-                                            {orderFromId === 'add' ? (
-                                                <Input.Group compact>
-                                                    <Input style={{ width: 'calc(100% - 70px)' }} placeholder="Name" value={fromName} onChange={(e) => setFromName(e.target.value)}/>
-                                                    <Button type="primary" loading={addLoading} icon={<PlusOutlined />} onClick={insertOrderFrom}/>
-                                                    <Button icon={<CloseOutlined />} onClick={removeAddField} />
-                                                </Input.Group>
-                                            ) : (
-                                                <Select placeholder="Select source" value={orderFromId} onChange={(value) => setOrderFromId(value)}>
-                                                    <Select.Option value="add" style={{ color: 'red' }}>
-                                                        Add New
-                                                    </Select.Option>
-                            
-                                                    {orderFromList?.map(tag => (
-                                                        <Select.Option key={tag.id} value={tag.id}>
-                                                            {tag.name}
-                                                        </Select.Option>
-                                                    ))}
-                                                </Select>
-                                            )}
-                                            {orderFromError?.name && (
-                                                <Typography.Text type="danger">{orderFromError.name[0]}</Typography.Text>
-                                            )}
-                                        </Form.Item>
-                                    </Col>
-                
-                
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Customer Tag">
-                                            <Select placeholder="Select customer type" value={customerTypeId} onChange={(value) => setCustomerTypeId(value)}>
-                                                {customerTypes?.map((type) => (
-                                                    <Select.Option key={type.id} value={type.id}>
-                                                        {type.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select>
-                                        </Form.Item>
-                                    </Col>
-                
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Shipping Area">
-                                            {deliveryChargeId === 'add' ? (
-                                                <Input.Group compact>
-                                                    <Input style={{ width: 'calc(50% - 35px)' }} placeholder="Name" value={deliveryName} onChange={(e) => setDeliveryName(e.target.value)}/>
-                                                    <Input style={{ width: 'calc(50% - 35px)' }} placeholder="Fee" value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)}/>
-                                                    <Button type="primary" loading={addLoading} icon={<PlusOutlined />} onClick={insertDeliveryGateway}/>
-                                                    <Button icon={<CloseOutlined />} onClick={removeAddField} />
-                                                </Input.Group>
-                                            ) : (
-                                                <Select placeholder="Select Delivery Gateway" value={deliveryChargeId} onChange={(value) => {setDeliveryChargeId(value);shippingCharge(value);}}
-                                                style={{ width: "100%" }}>
-                                                    {deliveryGateways?.map((charge) => (
-                                                        <Select.Option key={charge.id} value={charge.id}>
-                                                            {charge.name}
-                                                        </Select.Option>
-                                                    ))}
-                                                </Select>
-                                            )}
-                                            {shippingError?.name && (
-                                                <Typography.Text type="danger">{shippingError.name[0]}</Typography.Text>
-                                            )}
-                                        </Form.Item>
-                                    </Col>
-                                </Row>
-                
-                                <Row gutter={[16, 0]}>
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Payment Gateway" required>
-                                            <Select placeholder="Select payment gateway" value={paymentGatewayId} onChange={(value) => setPaymentGatewayId(value)}>
-                                                {paymentGateways?.map((gateway) => (
-                                                    <Select.Option key={gateway.id} value={gateway.id}>
-                                                        {gateway.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select>
-                                        </Form.Item>
-                                    </Col>
-                
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Payment Status" required>
-                                            <Select placeholder="Select payment status" value={paymentStatus} onChange={(value) => setPaymentStatus(value)}>
-                                                <Select.Option value="paid">Paid</Select.Option>
-                                                <Select.Option value="unpaid">Unpaid</Select.Option>
-                                            </Select>
-                                        </Form.Item>
-                                    </Col>
-                
-                                    <Col xs={24} sm={12} md={8}>
-                                        <Form.Item label="Order Note">
-                                            <Input.TextArea rows={3} placeholder="Order Note" value={orderNote} onChange={(e) => setOrderNote(e.target.value)}/>
-                                        </Form.Item>
-                                    </Col>
-                                </Row>
-                            </Form>
+            <Row gutter={[24, 24]}>
+                <Col xs={24} lg={17}>
+                    <Form layout="vertical" form={form} className="custom-form">
+                        <Card 
+                            className="modern-card" 
+                            title={
+                                <>
+                                    <div className="section-icon icon-blue"><UserOutlined /></div>
+                                    <span>Customer Information</span>
+                                </>
+                            }
+                        >
+                            <Row gutter={[20, 0]}>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Phone Number" required className="custom-form-item">
+                                        <AutoComplete 
+                                            value={phoneNumber} 
+                                            options={phoneOptions.map((p) => ({ value: p.phone_number }))} 
+                                            onSearch={onPhoneSearch} 
+                                            onSelect={handlePhoneNumberChange}
+                                            onChange={(value) => setPhoneNumber(value)} 
+                                            placeholder="Enter phone number" 
+                                            notFoundContent={isLoading ? <Spin size="small" /> : null}
+                                        >
+                                            <Input prefix={<PhoneOutlined />} className="custom-input" />
+                                        </AutoComplete>
+                                        {errors.phone_number && (
+                                            <Typography.Text type="danger" style={{ fontSize: '12px' }}>{errors.phone_number[0]}</Typography.Text>
+                                        )}
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Full Name" required className="custom-form-item">
+                                        <Input placeholder="John Doe" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="custom-input" />
+                                        {errors.customer_name && (
+                                            <Typography.Text type="danger" style={{ fontSize: '12px' }}>{errors.customer_name[0]}</Typography.Text>
+                                        )}
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="District" className="custom-form-item">
+                                        <Select placeholder="Select district" value={district} onChange={(value) => setDistrict(value)} showSearch className="custom-select" filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
+                                            {districts?.map((d) => (
+                                                <Select.Option key={d.id} value={d.id}>{d.name}</Select.Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24}>
+                                    <Form.Item label="Detailed Address" className="custom-form-item">
+                                        <Input.TextArea rows={3} placeholder="House, Road, Area..." value={address} onChange={(e) => setAddress(e.target.value)} className="custom-input" />
+                                        {errors.address_details && (
+                                            <Typography.Text type="danger" style={{ fontSize: '12px' }}>{errors.address_details[0]}</Typography.Text>
+                                        )}
+                                    </Form.Item>
+                                </Col>
+                            </Row>
                         </Card>
-                    </Col>
-        
-                    <Col xs={24}>
-                        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                            <Card title="Product Information">
-                                <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                                    {searchError && <Typography.Text type="danger">{searchError}</Typography.Text>}
-                                    <Row gutter={12} align="middle">
-                                        <Col flex="auto">
+
+                        {/* Logistics Information Card */}
+                        <Card 
+                            className="modern-card" 
+                            title={
+                                <>
+                                    <div className="section-icon icon-orange"><CarOutlined /></div>
+                                    <span>Logistics & Status</span>
+                                </>
+                            }
+                        >
+                            <Row gutter={[20, 0]}>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Preferred Courier" className="custom-form-item">
+                                        <Select placeholder="Select courier" value={courierId} onChange={(value) => {setCourierId(value);getCourierWiseData(value);}} showSearch>
+                                            {couriers.map((c) => (
+                                                <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Order Status" required className="custom-form-item">
+                                        <Select value={statusId} onChange={(value) => setStatusId(value)}>
+                                            {statuses?.map((status) => (
+                                                <Select.Option key={status.id} value={status.id}>{status.name}</Select.Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Customer Segment" className="custom-form-item">
+                                        <Select value={customerTypeId} onChange={(value) => setCustomerTypeId(value)}>
+                                            {customerTypes?.map((type) => (
+                                                <Select.Option key={type.id} value={type.id}>{type.name}</Select.Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+
+                            {isPathao && (
+                                <div style={{ marginTop: 24, padding: 24, backgroundColor: '#f8fafc', borderRadius: 16, border: '1px solid #e2e8f0' }}>
+                                    <Typography.Title level={5} style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <GlobalOutlined style={{ color: '#1890ff' }} /> Pathao Courier Integration
+                                    </Typography.Title>
+                                    <Row gutter={[20, 0]}>
+                                        <Col xs={24} md={12}>
+                                            <Form.Item label="Pathao Store" required>
+                                                <Select placeholder="Select store" value={pathaoStoreId} onChange={(value) => setPathaoStoreId(value)} showSearch>
+                                                    {pathaoStores?.map((store) => (
+                                                        <Select.Option key={store.store_id} value={store.store_id}>{store.store_name}</Select.Option>
+                                                    ))}
+                                                </Select>
+                                            </Form.Item>
+                                        </Col>
+                                        <Col xs={24} md={12}>
+                                            <Form.Item label="Delivery Area" required>
+                                                <Select placeholder="Search area" value={selectedSearchArea} onChange={handlePathaoAreaChange} showSearch onSearch={remoteMethod} filterOption={false}
+                                                    notFoundContent={areaLoading ? <Spin size="small" /> : null}
+                                                >
+                                                    {pathaoCityOptions.map((item) => (
+                                                        <Select.Option key={item.id} value={item.id}>{item.area_name}</Select.Option>
+                                                    ))}
+                                                </Select>
+                                            </Form.Item>
+                                        </Col>
+                                        <Col xs={24} md={8}>
+                                            <Form.Item label="Weight (kg)">
+                                                <Input value={itemWeight} onChange={(e) => setItemWeight(e.target.value)} placeholder="0.5" />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col xs={24} md={8}>
+                                            <Form.Item label="Item Quantity">
+                                                <Input value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)} placeholder="1" />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col xs={24} md={8}>
+                                            <Form.Item label="Description">
+                                                <Input value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} placeholder="Items detail" />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </div>
+                            )}
+                        </Card>
+
+                        {/* Product Search & Cart Card */}
+                        <Card 
+                            className="modern-card" 
+                            title={
+                                <>
+                                    <div className="section-icon icon-purple"><ShoppingCartOutlined /></div>
+                                    <span>Product Selection</span>
+                                </>
+                            }
+                        >
+                            <div style={{ marginBottom: 32 }}>
+                                {searchError && <Typography.Text type="danger" style={{ display: 'block', marginBottom: 12 }}>{searchError}</Typography.Text>}
+                                <Row gutter={16} align="bottom">
+                                    <Col flex="auto">
+                                        <Form.Item label="Search Products" className="custom-form-item" style={{ marginBottom: 0 }}>
                                             <div style={{ position: 'relative' }}>
-                                                <Input placeholder="Search Product" value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value),searchProduct()}}/>
-
-                                                {loading && (
-                                                    <div style={{position: 'absolute',right: 8,top: 8}}>
-                                                        <Spin size="small" />
-                                                    </div>
-                                                )}
-                        
+                                                <Input size="large" placeholder="Search by name, SKU or barcode..." value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value); searchProduct();}} prefix={<InboxOutlined style={{ color: '#94a3b8' }} />} className="custom-input"/>
+                                                {loading && <div style={{position: 'absolute', right: 12, top: 12}}><Spin size="small" /></div>}
                                                 {!hiddenSearchProducts && (
-                                                    <Button type="text" size="small" icon={<CloseOutlined />} onClick={clearSearchProducts} style={{position: 'absolute',right: 0,top: 0}}/>
-                                                )}
-
-                                                {!hiddenSearchProducts && (
-                                                    <Card size="small" style={{position: 'absolute',top: '100%',left: 0,right: 0,zIndex: 1000,maxHeight: '300px',overflow: 'auto',}}>
+                                                    <Card className="product-search-dropdown" size="small" style={{position: 'absolute', top: '105%', left: 0, right: 0, zIndex: 1000, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', borderRadius: '12px', maxHeight: '400px', overflow: 'auto'}}>
                                                         {products?.length > 0 ? (
-                                                            <Space direction="vertical" style={{ width: '100%' }}>
+                                                            <div>
                                                                 {products.map((product) => (
-                                                                    <div key={product.id} onClick={() => addProduct(product)} style={{ cursor: 'pointer', padding: '8px' }}>
-                                                                        <Row gutter={8}>
-                                                                            <Col>
-                                                                                <Image src={product.img_path} width={40} preview={false}/>
-                                                                            </Col>
-                                        
+                                                                    <div key={product.id} onClick={() => addProduct(product)} style={{ cursor: 'pointer', padding: '12px', borderRadius: '8px', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                                                        <Row gutter={12} align="middle">
+                                                                            <Col><Image src={product.img_path} width={48} height={48} style={{ borderRadius: '6px' }} preview={false}/></Col>
                                                                             <Col flex="auto">
-                                                                                <Typography.Text strong>{product.name}</Typography.Text>
-                                                                                <br />
-                                                                                <Typography.Text type="secondary">
-                                                                                    Categories: {product.categories?.length > 0 ? product.categories.map(c => c.name).join(', ') : product.category_name}
-                                                                                </Typography.Text>
+                                                                                <Typography.Text strong style={{ fontSize: '14px' }}>{product.name}</Typography.Text>
+                                                                                <div style={{ color: '#64748b', fontSize: '12px' }}>{product.category?.name} • {currency(product.mrp)}</div>
                                                                             </Col>
+                                                                            <Col><PlusOutlined style={{ color: '#3b82f6' }} /></Col>
                                                                         </Row>
                                                                     </div>
                                                                 ))}
-
-                                                                {currentPage < lastPage && (
-                                                                    <div style={{ textAlign: 'center', padding: '4px' }}>
-                                                                        <Button type="link" size="small" onClick={(e) => { e.stopPropagation(); searchProduct(currentPage + 1); }} loading={loading}>
-                                                                            Show More
-                                                                        </Button>
-                                                                    </div>
-                                                                )}
-                                                            </Space>
-                                                        ) : loading ? (
-                                                            <Typography.Text type="secondary">Loading...</Typography.Text>
+                                                            </div>
                                                         ) : (
-                                                            <Typography.Text type="danger">No Product Found</Typography.Text>
+                                                            <div style={{ padding: '20px', textAlign: 'center', color: '#94a3b8' }}>No products found</div>
                                                         )}
                                                     </Card>
                                                 )}
                                             </div>
-                                        </Col>
+                                        </Form.Item>
+                                    </Col>
 
-                                        {productInfo?.variations?.length > 0 && (
-                                            <Col>
-                                                <Select placeholder="Select Variation" value={variationId !== null ? variationId : undefined} onChange={(value) => {setVariationId(value)}} style={{ width: 200 }}>
-                                                    {productInfo.variations.map((variation, idx) => {
-                                                        const displayText = [];
-
-                                                        if (variation?.attribute_value_1?.attribute_id) {
-                                                            displayText.push(`${attributeName(variation.attribute_value_1.attribute_id)}: ${variation.attribute_value_1.value}`)
-                                                        }
-
-                                                        if (variation?.attribute_value_2?.attribute_id) {
-                                                            displayText.push(`${attributeName(variation.attribute_value_2.attribute_id)}: ${variation.attribute_value_2.value}`)
-                                                        }
-
-                                                        if (variation?.attribute_value_3?.attribute_id) {
-                                                            displayText.push(`${attributeName(variation.attribute_value_3.attribute_id)}: ${variation.attribute_value_3.value}`)
-                                                        }
-                                                        
-                                                        return (
-                                                            <Select.Option key={idx} value={idx}>
-                                                                {displayText.join(', ')}
-                                                            </Select.Option>
-                                                        )
+                                    {productInfo?.variations?.length > 0 && (
+                                        <Col span={6}>
+                                            <Form.Item label="Variation" className="custom-form-item" style={{ marginBottom: 0 }}>
+                                                <Select 
+                                                    size="large"
+                                                    placeholder="Choose style" 
+                                                    value={variationId !== null ? variationId : undefined} 
+                                                    onChange={(value) => setVariationId(value)}
+                                                >
+                                                    {productInfo.variations.map((v, idx) => {
+                                                        const label = [
+                                                            v?.attribute_value_1 && `${attributeName(v.attribute_value_1.attribute_id)}: ${v.attribute_value_1.value}`,
+                                                            v?.attribute_value_2 && `${attributeName(v.attribute_value_2.attribute_id)}: ${v.attribute_value_2.value}`,
+                                                            v?.attribute_value_3 && `${attributeName(v.attribute_value_3.attribute_id)}: ${v.attribute_value_3.value}`
+                                                        ].filter(Boolean).join(' | ');
+                                                        return <Select.Option key={idx} value={idx}>{label}</Select.Option>
                                                     })}
                                                 </Select>
-                                            </Col>
+                                            </Form.Item>
+                                        </Col>
+                                    )}
+
+                                    <Col span={3}>
+                                        <Form.Item label="Qty" className="custom-form-item" style={{ marginBottom: 0 }}>
+                                            <InputNumber size="large" min={1} value={quantity} onChange={(v) => setQuantity(v || 1)} style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+
+                                    <Col>
+                                        <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => addToCart(productInfo)} style={{ height: '48px', borderRadius: '10px' }}> Add
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </div>
+
+                            <Table 
+                                className="cart-table"
+                                rowKey="key" 
+                                columns={productColumns} 
+                                dataSource={cartItems} 
+                                pagination={false} 
+                                locale={{ emptyText: 'No items in cart' }}
+                            />
+                            {errors?.items && (
+                                <Typography.Text type="danger" style={{ display: 'block', marginTop: 12 }}>{errors.items[0]}</Typography.Text>
+                            )}
+                        </Card>
+
+                        {/* Follow Up & Feedback Card */}
+                        <Row gutter={[20, 20]}>
+                            <Col xs={24} md={12}>
+                                <Card className="modern-card" 
+                                    title={<><div className="section-icon icon-blue"><CalendarOutlined /></div><span>Follow Up</span></>}
+                                    style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)' }}
+                                >
+                                    <Row gutter={[12, 12]}>
+                                        <Col span={12}>
+                                            <Form.Item label="Start Date" required name="approx_start_date">
+                                                <DatePicker style={{ width: '100%' }} value={approxStartDate ? dayjs(approxStartDate) : null} onChange={(_, ds) => setApproxStartDate(ds)} />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item label="End Date" required name="approx_end_date">
+                                                <DatePicker style={{ width: '100%' }} value={approxEndDate ? dayjs(approxEndDate) : null} onChange={(_, ds) => setApproxEndDate(ds)} />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={24}>
+                                            <Form.Item label="Internal Note" required name="followup_note">
+                                                <Input.TextArea rows={2} value={followNote} onChange={(e) => setFollowNote(e.target.value)} placeholder="Instructions for staff..." />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </Card>
+                            </Col>
+                            <Col xs={24} md={12}>
+                                <Card 
+                                    className="modern-card" 
+                                    title={<><div className="section-icon icon-purple"><MessageOutlined /></div><span>Feedback</span></>}
+                                    style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fdf4ff 100%)' }}
+                                >
+                                    <Row gutter={[12, 12]}>
+                                        <Col span={12}>
+                                            <Form.Item label="Start Date" required name="feedback_start_date">
+                                                <DatePicker style={{ width: '100%' }} value={feedbackStartDate ? dayjs(feedbackStartDate) : null} onChange={(_, ds) => setFeedbackStartDate(ds)} />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item label="End Date" required name="feedback_end_date">
+                                                <DatePicker style={{ width: '100%' }} value={feedbackEndDate ? dayjs(feedbackEndDate) : null} onChange={(_, ds) => setFeedbackEndDate(ds)} />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={24}>
+                                            <Form.Item label="Customer Note" required name="feedback_note">
+                                                <Input.TextArea rows={2} value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="What customer said..." />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </Card>
+                            </Col>
+                        </Row>
+
+                        {/* Extra Settings Card */}
+                        <Card 
+                            className="modern-card" 
+                            title={<><div className="section-icon icon-green"><GlobalOutlined /></div><span>Source & Payments</span></>}
+                        >
+                            <Row gutter={[20, 0]}>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Order Source">
+                                        <Select value={orderFromId} onChange={(v) => setOrderFromId(v)} placeholder="Select source">
+                                            <Select.Option value="add" style={{ color: '#3b82f6' }}>+ Add New Source</Select.Option>
+                                            {orderFromList?.map(tag => (
+                                                <Select.Option key={tag.id} value={tag.id}>{tag.name}</Select.Option>
+                                            ))}
+                                        </Select>
+
+                                        {orderFromError?.name && <Typography.Text type="danger" style={{ fontSize: '12px' }}>{orderFromError.name[0]}</Typography.Text>}
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Shipping Area">
+                                        {deliveryChargeId === 'add' ? (
+                                            <Space.Compact style={{ width: '100%' }}>
+                                                <Input style={{ width: '60%' }} placeholder="Area" value={deliveryName} onChange={(e) => setDeliveryName(e.target.value)}/>
+                                                <Input style={{ width: '40%' }} placeholder="Fee" value={deliveryFee} onChange={(e) => setDeliveryFee(e.target.value)}/>
+                                                <Button type="primary" loading={addLoading} onClick={insertDeliveryGateway} icon={<PlusOutlined />} />
+                                                <Button onClick={removeAddField} icon={<CloseOutlined />} />
+                                            </Space.Compact>
+                                        ) : (
+                                            <Select value={deliveryChargeId} onChange={(v) => {setDeliveryChargeId(v); shippingCharge(v);}} placeholder="Select gateway">
+                                                {deliveryGateways?.map((charge) => (
+                                                    <Select.Option key={charge.id} value={charge.id}>{charge.name} ({currency(charge.delivery_fee)})</Select.Option>
+                                                ))}
+                                            </Select>
                                         )}
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Payment Gateway" required>
+                                        <Select value={paymentGatewayId} onChange={(v) => setPaymentGatewayId(v)}>
+                                            {paymentGateways?.map((gateway) => (
+                                                <Select.Option key={gateway.id} value={gateway.id}>{gateway.name}</Select.Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Payment Status" required>
+                                        <Select value={paymentStatus} onChange={(v) => setPaymentStatus(v)}>
+                                            <Select.Option value="paid"><Tag color="success" style={{ border: 'none', margin: 0 }}>Paid</Tag></Select.Option>
+                                            <Select.Option value="unpaid"><Tag color="error" style={{ border: 'none', margin: 0 }}>Unpaid</Tag></Select.Option>
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={16}>
+                                    <Form.Item label="General Order Note">
+                                        <Input.TextArea rows={1} value={orderNote} onChange={(e) => setOrderNote(e.target.value)} placeholder="Any special requests or notes..." />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                        </Card>
+                    </Form>
+                </Col>
 
-                                        <Col>
-                                            <InputNumber min={1} value={quantity} onChange={(v) => setQuantity(v || 1)}/>
-                                        </Col>
+                {/* Sticky Order Summary */}
+                <Col xs={24} lg={7}>
+                    <div className="order-summary-card">
+                        <Typography.Title level={4} style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <CreditCardOutlined style={{ color: '#2563eb' }} /> Order Summary
+                        </Typography.Title>
+                        
+                        <div className="summary-row">
+                            <span>Subtotal ({cartItems.length} items)</span>
+                            <span>{currency(totalPrice.mrp_price)}</span>
+                        </div>
+                        
+                        <div className="summary-row">
+                            <span>Item Discount</span>
+                            <span style={{ color: '#ef4444' }}>-{currency(totalPrice.discount_price)}</span>
+                        </div>
 
-                                        <Col>
-                                            <Button type="primary" icon={<PlusOutlined />} onClick={() => addToCart(productInfo)}>
-                                                Add
-                                            </Button>
-                                        </Col>
-                                    </Row>
-                    
-                                    <Row gutter={[16, 16]} align="top">
-                                        <Col xs={24} md={16}>
-                                            <Table size="middle" rowKey="key" columns={productColumns} dataSource={cartItems} pagination={false} scroll={{ x: isMobile ? 520 : undefined }}/>
-                                                {errors?.items && (
-                                                    <Typography.Text type="danger">{errors.items[0]}</Typography.Text>
-                                                )}
-                                        </Col>
-                    
-                                        <Col xs={24} md={8}>
-                                            <Card size="small" bordered>
-                                                <Space direction="vertical" style={{ width: '100%' }}>
-                                                    <Row justify="space-between">
-                                                        <Col>Regular Price</Col>
-                                                        <Col>: {currency(totalPrice.mrp_price)}</Col>
-                                                    </Row>
+                        <Divider style={{ margin: '12px 0' }} />
 
-                                                    <Row justify="space-between">
-                                                        <Col>Discount</Col>
-                                                        <Col>: -{currency(totalPrice.discount_price)}</Col>
-                                                    </Row>
+                        <div className="summary-row" style={{ fontWeight: 600, color: '#1e293b' }}>
+                            <span>Shipping Charge</span>
+                            <div style={{ width: '120px' }}>
+                                <InputNumber 
+                                    min={0} 
+                                    value={changeableChargeValue} 
+                                    onChange={(v) => setChangeableChargeValue(v || 0)} 
+                                    size="small" 
+                                    style={{ width: '100%' }}
+                                    formatter={v => `৳ ${v}`}
+                                />
+                            </div>
+                        </div>
 
-                                                    <Row justify="space-between">
-                                                        <Col>Sell Price</Col>
-                                                        <Col> : {currency(totalPrice.mrp_price - totalPrice.discount_price)}</Col>
-                                                    </Row>
+                        <div className="summary-row">
+                            <span>Special Discount</span>
+                            <div style={{ width: '120px' }}>
+                                <InputNumber 
+                                    min={0} 
+                                    value={specialDiscount} 
+                                    onChange={(v) => setSpecialDiscount(v || 0)} 
+                                    size="small" 
+                                    style={{ width: '100%', color: '#ef4444' }}
+                                    formatter={v => `- ৳ ${v}`}
+                                />
+                            </div>
+                        </div>
 
-                                                    <Row justify="space-between" align="middle" gutter={8}>
-                                                        <Col flex="auto">Advanced Payment</Col>
-                                                        <Col>
-                                                            <InputNumber min={0} value={advancePayment} onChange={(v) => setAdvancePayment(v || 0)} size="small"/>
-                                                        </Col>
-                                                    </Row>
+                        <div className="summary-row">
+                            <span>Advance Paid</span>
+                            <div style={{ width: '120px' }}>
+                                <InputNumber 
+                                    min={0} 
+                                    value={advancePayment} 
+                                    onChange={(v) => setAdvancePayment(v || 0)} 
+                                    size="small" 
+                                    style={{ width: '100%', color: '#10b981' }}
+                                    formatter={v => `- ৳ ${v}`}
+                                />
+                            </div>
+                        </div>
 
-                                                    <Row justify="space-between" align="middle" gutter={8}>
-                                                        <Col flex="auto">Delivery Charge</Col>
-                                                        <Col>
-                                                            <InputNumber min={0} value={changeableChargeValue} onChange={(v) => setChangeableChargeValue(v || 0)} size="small"/>
-                                                        </Col>
-                                                    </Row>
+                        <div className="summary-total">
+                            <div className="total-label">Payable Amount</div>
+                            <div className="total-value">{currency(payablePrice)}</div>
+                        </div>
 
-                                                    <Row justify="space-between" align="middle" gutter={8}>
-                                                        <Col flex="auto">Special Discount</Col>
-                                                        <Col>
-                                                            <InputNumber min={0} value={specialDiscount} onChange={(v) => setSpecialDiscount(v || 0)} size="small"/>
-                                                        </Col>
-                                                    </Row>
-
-                                                    <Divider style={{ margin: '8px 0' }} />
-
-                                                    <Row justify="space-between">
-                                                        <Col style={{ fontWeight: 600 }}>Payable Price</Col>
-                                                        <Col style={{ fontWeight: 600 }}>: {currency(payablePrice)}</Col>
-                                                    </Row>
-                                                </Space>
-                                            </Card>
-                    
-                                            <div style={{ textAlign: 'right', marginTop: 16 }}>
-                                                <Button type="primary" size="large" loading={submitLoading} onClick={submit}>
-                                                    Add Order
-                                                </Button>
-                                            </div>
-                                        </Col>
-                                    </Row>
-                                </Space>
-                            </Card>
-                        </Space>
-                    </Col>
-                </Row>
-            </Space>
-        </>
+                        <Button type="primary" className="submit-btn" loading={submitLoading} onClick={submit} icon={<CheckCircleOutlined />}>
+                            Complete Order
+                        </Button>
+                        
+                        <div style={{ marginTop: 16, textAlign: 'center' }}>
+                            <Typography.Text type="secondary" style={{ fontSize: '12px' }}>
+                                By clicking "Complete Order", you agree to the system's order policies.
+                            </Typography.Text>
+                        </div>
+                    </div>
+                </Col>
+            </Row>
+        </div>
     )
 }
+

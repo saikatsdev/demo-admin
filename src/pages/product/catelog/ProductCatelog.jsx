@@ -1,4 +1,4 @@
-import {ArrowLeftOutlined,DeleteOutlined,PlusOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined, CopyOutlined, DeleteOutlined, EditOutlined, PlusOutlined} from "@ant-design/icons";
 import {Input as AntInput,Breadcrumb,Button,message,Popconfirm,Space,Table,Tag} from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -27,7 +27,7 @@ export default function ProductCatelog() {
             setCopyLink(url);
             messageApi.open({
                 type: "success",
-                content: "Copy Link Successfully " + copyLink,
+                content: "Copy Link Successfully " + url,
             });
         })
         .catch(() => {
@@ -57,6 +57,17 @@ export default function ProductCatelog() {
             title: "Url",
             dataIndex: "url",
             key: "url",
+            render: (url) => (
+                <Space>
+                    {url}
+                    <Button
+                        size="small"
+                        type="text"
+                        icon={<CopyOutlined />}
+                        onClick={() => handleCopyLink(url)}
+                    />
+                </Space>
+            ),
         },
         {
             title: "Catalog Type",
@@ -91,20 +102,27 @@ export default function ProductCatelog() {
         {
             title: "Action",
             key: "operation",
-            width: 170,
+            width: 120,
             render: (_, record) => (
                 <Space>
-                    <Button size="small" type="primary" onClick={() => onEdit(record.id)}>
-                        Edit
-                    </Button>
+                    <Button
+                        size="small"
+                        type="primary"
+                        icon={<EditOutlined />}
+                        onClick={() => onEdit(record.id)}
+                    />
                     <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Button size="small" danger>
-                            Delete
-                        </Button>
+                        <Button
+                            size="small"
+                            danger
+                            icon={<DeleteOutlined />}
+                        />
                     </Popconfirm>
-                    <Button size="small" onClick={() => handleCopyLink(record.url)}>
-                        Copy Link
-                    </Button>
+                    <Button
+                        size="small"
+                        icon={<CopyOutlined />}
+                        onClick={() => handleCopyLink(record.url)}
+                    />
                 </Space>
             ),
         },

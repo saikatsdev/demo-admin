@@ -21,7 +21,8 @@ export default function OrderTag() {
     const [form]                          = Form.useForm();
 
     //Table Columns
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key:"sl",
