@@ -1,12 +1,16 @@
-import { Input as AntInput, Breadcrumb, Button, Form, message,Popconfirm } from "antd";
+import { Input as AntInput, Breadcrumb, Button, Form, message, Popconfirm, Card, Typography, Space, Divider, Alert, Row, Col, List } from "antd";
 import { Link } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
 import { getDatas, postData } from "../../../api/common/common";
 import { useEffect, useState } from "react";
+import { InfoCircleOutlined, SettingOutlined, WarningOutlined, PlayCircleOutlined, CheckCircleFilled, BarChartOutlined } from "@ant-design/icons";
+import { ArrowLeft } from "lucide-react";
+
+const { Title, Text, Paragraph } = Typography;
 
 export default function GoogleAnalytic() {
     // Hook
-    useTitle("Google Analytical Settings");
+    useTitle("Google Analytics Settings");
 
     //Variable
     const [form] = Form.useForm();
@@ -56,51 +60,173 @@ export default function GoogleAnalytic() {
                 });
             }
         } catch (error) {
-            console.log(error);
+            console.error(error);
         }finally{
             setLoading(false);
         }
     }
 
+    const benefits = [
+        { title: 'Advanced User Tracking', description: 'Understand user journeys across multiple platforms.' },
+        { title: 'Privacy-Centric Measurement', description: 'Cookie-less tracking and privacy-focused data collection.' },
+        { title: 'AI-Powered Insights', description: 'Automatically surface helpful trends and predictions.' },
+        { title: 'Cross-Platform Analysis', description: 'Analyze web and app data together in one place.' }
+    ];
+
     return (
         <>
             {contextHolder}
-            <div className="pagehead">
+            <div className="pagehead" style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div className="head-left">
-                    <h1 className="title">Google Analytic Setting</h1>
-                </div>
-                <div className="head-actions">
+                    <Title level={2} style={{ margin: 0 }}>Google Analytics Setting</Title>
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Google Analytic Setting" },
+                            { title: "Google Analytics Setting" },
                         ]}
                     />
                 </div>
+                <div className="head-actions">
+                    <Button 
+                        icon={<ArrowLeft size={18} />} 
+                        onClick={() => window.history.back()}
+                        style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            gap: "8px",
+                            height: "40px",
+                            borderRadius: "10px",
+                            fontWeight: "600",
+                            border: "1px solid #e0e0e0",
+                            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)"
+                        }}
+                    >
+                        Back
+                    </Button>
+                </div>
             </div>
 
-            <div className="catelog-form">
-                {!showForm ? (
-                    <Popconfirm title="Important Warning" description="Updating google analytical is a critical action. Please be very careful before making any changes." okText="I Understand" cancelText="Cancel" onConfirm={() => setShowForm(true)}>
-                        <Button type="primary" danger>
-                            Update Google Analytical
-                        </Button>
-                    </Popconfirm>
-                ) : (
-                    <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{analytical_id:"t8gayyxxrk"}}>
-                        <div>
-                            <Form.Item name="ga4_measurement_id" label="Analytical ID" rules={[{ required: true }]}>
-                                <AntInput placeholder="Enter Analytical id" />
-                            </Form.Item>
-
-                            <Form.Item style={{textAlign:"right"}}>
-                                <Button type="primary" htmlType="submit" loading={loading}>
-                                    Update
-                                </Button>
-                            </Form.Item>
+            <Row gutter={[24, 24]}>
+                <Col xs={24} xl={14}>
+                    <Card 
+                        bordered={false} 
+                        style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)', height: '100%' }}
+                        title={
+                            <Space>
+                                <PlayCircleOutlined style={{ color: '#4285F4', fontSize: 20 }} />
+                                <span>Learn about Google Analytics 4</span>
+                            </Space>
+                        }
+                    >
+                        <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 8, marginBottom: 24, background: '#000' }}>
+                            <iframe 
+                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                                src="https://www.youtube.com/embed/PPTVyRuWm6s" 
+                                title="Google Analytics 4 Introduction" 
+                                frameBorder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowFullScreen
+                            ></iframe>
                         </div>
-                    </Form>
-                )}
+
+                        <Title level={4}>Why use Google Analytics 4?</Title>
+                        <List
+                            itemLayout="horizontal"
+                            dataSource={benefits}
+                            renderItem={(item) => (
+                                <List.Item style={{ border: 'none', padding: '8px 0' }}>
+                                    <List.Item.Meta
+                                        avatar={<CheckCircleFilled style={{ color: '#52c41a', fontSize: 18 }} />}
+                                        title={<Text strong>{item.title}</Text>}
+                                        description={item.description}
+                                    />
+                                </List.Item>
+                            )}
+                        />
+                    </Card>
+                </Col>
+
+                <Col xs={24} xl={10}>
+                    <Card 
+                        bordered={false} 
+                        style={{ borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)', height: '100%' }}
+                        title={
+                            <Space>
+                                <BarChartOutlined style={{ color: '#4285F4', fontSize: 20 }} />
+                                <span>GA4 Configuration</span>
+                            </Space>
+                        }
+                    >
+                        <Paragraph type="secondary">
+                            Connect your platform with Google Analytics by entering your Measurement ID.
+                        </Paragraph>
+                        
+                        <Divider />
+
+                        {!showForm ? (
+                            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                                <Alert
+                                    message="Important Warning"
+                                    description="Modifying GA4 settings is a critical action. Ensure you have the correct Measurement ID to avoid data loss."
+                                    type="warning"
+                                    showIcon
+                                    icon={<WarningOutlined />}
+                                    style={{ marginBottom: 24, textAlign: 'left', borderRadius: 8 }}
+                                />
+                                <Popconfirm 
+                                    title="Unlock Analytics Settings?" 
+                                    description="Updating GA4 is a critical action. Please be very careful." 
+                                    okText="Yes, Unlock" 
+                                    cancelText="Cancel" 
+                                    onConfirm={() => setShowForm(true)}
+                                >
+                                    <Button type="primary" danger size="large" icon={<SettingOutlined />} style={{ borderRadius: 6 }}>
+                                        Unlock Settings
+                                    </Button>
+                                </Popconfirm>
+                            </div>
+                        ) : (
+                            <Form form={form} layout="vertical" onFinish={handleSubmit}>
+                                <div style={{ background: '#f8f9fa', padding: 20, borderRadius: 8, marginBottom: 24 }}>
+                                    <Form.Item 
+                                        name="ga4_measurement_id" 
+                                        label={<Text strong>GA4 Measurement ID</Text>}
+                                        tooltip="Example: G-XXXXXXXXXX"
+                                        rules={[{ required: true, message: 'Measurement ID is required' }]}
+                                    >
+                                        <AntInput 
+                                            placeholder="e.g. G-W7P2ZX" 
+                                            size="large" 
+                                            prefix={<BarChartOutlined style={{ color: '#bfbfbf' }} />}
+                                        />
+                                    </Form.Item>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>
+                                        <InfoCircleOutlined style={{ marginRight: 6 }} />
+                                        Found in Admin Data Streams  [Your Stream] in GA4.
+                                    </Text>
+                                </div>
+
+                                <Form.Item style={{ textAlign: "right", marginBottom: 0 }}>
+                                    <Space>
+                                        <Button onClick={() => setShowForm(false)} size="large">
+                                            Cancel
+                                        </Button>
+                                        <Button type="primary" htmlType="submit" loading={loading} size="large" icon={<SettingOutlined />}>
+                                            Save Changes
+                                        </Button>
+                                    </Space>
+                                </Form.Item>
+                            </Form>
+                        )}
+                    </Card>
+                </Col>
+            </Row>
+
+            <div style={{ marginTop: 24, textAlign: 'center' }}>
+                <Text type="secondary">
+                    Need help? <Link to="#" style={{ textDecoration: 'underline' }}>View GA4 Setup Guide</Link>
+                </Text>
             </div>
         </>
     )

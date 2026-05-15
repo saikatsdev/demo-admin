@@ -1,241 +1,450 @@
-import {Input as AntInput,Breadcrumb,Button,Col,Form,Row,Select,Upload, message} from "antd";
+import {Input as AntInput,Breadcrumb,Button,Col,Form,Row,Select,Upload,message,Card,Space,Divider,Typography,ConfigProvider,theme,Tooltip} from "antd";
+import {ArrowLeftOutlined,SaveOutlined,FileTextOutlined,PictureOutlined,SearchOutlined, SettingOutlined,InfoCircleOutlined,InboxOutlined} from "@ant-design/icons";
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";    
 import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 
-const { TextArea } = AntInput;
+const { Title, Text } = Typography;
+const { Dragger } = Upload;
 
 export default function EditBlog() {
-  // Hook
-  useTitle("Edit Blog Post");
+    // Hook
+    useTitle("Edit Blog Post");
+    const { token } = theme.useToken();
+    const navigate = useNavigate();
+    const { id } = useParams();
 
-  const navigate = useNavigate();
+    // State
+    const [form]                      = Form.useForm();
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading]       = useState(false);
+    const [fetching, setFetching]     = useState(true);
+    const [tags, setTags]             = useState([]);
+    const [fileList, setFileList]     = useState([]);
+    const [messageApi, contextHolder] = message.useMessage();
 
-  // State
-  const [form] = Form.useForm();
-  const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [fileList, setFileList] = useState([]);
-  const [messageApi, contextHolder]           = message.useMessage();
+    useEffect(() => {
+        let isMounted = true;
 
-  // Variable
-  const { id } = useParams();
+        const fetchData = async () => {
+            try {
+                setFetching(true);
+                const [catRes, tagRes, singleRes] = await Promise.all([
+                    getDatas("/admin/blog-post-categories"),
+                    getDatas("/admin/tags"),
+                    getDatas(`/admin/blog-posts/${id}`)
+                ]);
 
-  //Method
-  useEffect(() => {
-    const fetchSingleData = async () => {
-      const res = await getDatas(`/admin/blog-posts/${id}`);
+                if (isMounted) {
+                    setCategories(catRes?.result?.data || []);
+                    setTags(tagRes?.result?.data || []);
 
-      if (res?.success) {
+                    if (singleRes?.success) {
+                        const data = singleRes.result;
+                        
+                        if (data.image) {
+                            setFileList([
+                                {
+                                    uid: "-1",
+                                    name: "blog-image.png",
+                                    status: "done",
+                                    url: data.image,
+                                },
+                            ]);
+                        }
 
-        setFileList([
-          {
-            uid: "-1",
-            name: "blog-image.png",
-            status: "done",
-            url: res.result.image,
-          },
-        ]);
+                        form.setFieldsValue({
+                            title           : data.title,
+                            category_id     : data.category?.id,
+                            tag_ids         : data.tags?.map((tag) => tag.id),
+                            description     : data.description,
+                            status          : data.status,
+                            meta_title      : data.meta_title,
+                            meta_tag        : data.meta_tag,
+                            meta_description: data.meta_description,
+                            width           : data.width || 1920,
+                            height          : data.height || 720,
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                messageApi.error("Failed to load blog data");
+            } finally {
+                if (isMounted) setFetching(false);
+            }
+        };
 
-        form.setFieldsValue({
-          title: res.result.title,
-          category_id: res.result.category.id,
-          tags: res.result.tags.map((tag) => tag.id),
-          description: res.result.description,
-          status: res.result.status,
-          meta_title: res.result.meta_title,
-          meta_tag: res.result.meta_tag,
-          meta_description: res.result.meta_description,
+        if (id) {
+            fetchData();
+        }
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id, form, messageApi]);
+
+    const modules = {
+        toolbar: {
+            container: [
+                [{ header: [1, 2, 3, 4, 5, 6, false] }],
+                ["bold", "italic", "underline", "strike"],
+                [{ color: [] }, { background: [] }],
+                [{ list: "ordered" }, { list: "bullet" }],
+                [{ align: [] }],
+                ["blockquote", "code-block"],
+                ["link", "image"],
+                ["clean"],
+            ],
+            handlers: {
+                image: function () {
+                    const input = document.createElement("input");
+                    input.setAttribute("type", "file");
+                    input.setAttribute("accept", "image/*");
+                    input.click();
+
+                    input.onchange = () => {
+                        const file = input.files[0];
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            const quill = this.quill;
+                            const range = quill.getSelection();
+                            quill.insertEmbed(range.index, "image", reader.result);
+                        };
+                        reader.readAsDataURL(file);
+                    };
+                },
+            },
+        },
+    };
+
+    const handleSubmit = async (values) => {
+        const formData = new FormData();
+
+        Object.keys(values).forEach((key) => {
+            if (!["image", "tag_ids"].includes(key) && values[key] !== undefined) {
+                formData.append(key, values[key]);
+            }
         });
-      }
+
+        if (values.tag_ids) {
+            values.tag_ids.forEach((tagId) => {
+                formData.append("tag_ids[]", tagId);
+            });
+        }
+
+        const imageFile = fileList[0]?.originFileObj;
+
+        if (imageFile) {
+            formData.append("image", imageFile);
+        }
+
+        formData.append("_method", "PUT");
+
+        setLoading(true);
+
+        try {
+            const res = await postData(`/admin/blog-posts/${id}`, formData);
+
+            if(res && res?.success){
+                messageApi.success(res.msg || "Blog post updated successfully");
+                setTimeout(() => {
+                    navigate("/blogs");
+                }, 1000);
+            } else {
+                messageApi.error(res?.msg || "Failed to update blog post");
+            }
+        } catch (error) {
+            console.error(error);
+            messageApi.error("An error occurred while updating the form");
+        } finally{
+            setLoading(false);
+        }
     };
 
-    if (id) {
-      fetchSingleData();
-    }
-  }, [id, form]);
+    return (
+        <ConfigProvider
+            theme={{
+                token: {
+                    borderRadius: 12,
+                    colorPrimary: "#4f46e5",
+                },
+                components: {
+                    Card: {
+                        headerBg: "rgba(255, 255, 255, 0.8)",
+                    },
+                    Button: {
+                        borderRadius: 8,
+                        fontWeight: 500,
+                    }
+                },
+            }}
+        >
+            {contextHolder}
+            <div style={{ padding: "0 24px 40px", maxWidth: "1600px", margin: "0 auto", background: "#f8fafc", minHeight: "100vh" }}>
+                
+                <div style={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: "center", 
+                    padding: "24px 0",
+                    background: "transparent",
+                    borderBottom: "1px solid #e2e8f0",
+                    marginBottom: "32px"
+                }}>
+                    <Space direction="vertical" size={0}>
+                        <Breadcrumb
+                            items={[
+                                { title: <Link to="/dashboard" style={{ color: "#64748b" }}>Dashboard</Link> },
+                                { title: <Link to="/blogs" style={{ color: "#64748b" }}>Blogs</Link> },
+                                { title: <span style={{ color: "#1e293b", fontWeight: 500 }}>Edit Post</span> },
+                            ]}
+                        />
+                        <Title level={2} style={{ margin: "8px 0 0 0", color: "#0f172a", fontWeight: 700 }}>Edit Blog Article</Title>
+                    </Space>
+                    <Space size="middle">
+                        <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/blogs")} style={{ borderRadius: "8px" }}>
+                            Back to List
+                        </Button>
+                        <Button type="primary" icon={<SaveOutlined />} loading={loading} onClick={() => form.submit()}>
+                            Update Article
+                        </Button>
+                    </Space>
+                </div>
 
-  // For Category
-  useEffect(() => {
-    let isMounted = true;
+                <Form layout="vertical" form={form} onFinish={handleSubmit} requiredMark="optional">
+                    <Row gutter={[32, 32]}>
+                        <Col xs={24} lg={16}>
+                            <Space direction="vertical" size={32} style={{ width: "100%" }}>
+                                
+                                <Card 
+                                    title={<Space><FileTextOutlined style={{ color: "#4f46e5" }} /><span>Article Details</span></Space>}
+                                    bordered={false}
+                                    loading={fetching}
+                                    style={{ boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)" }}
+                                >
+                                    <Form.Item label="Article Title" name="title" rules={[{ required: true, message: "A title is required" }]}>
+                                        <AntInput size="large" placeholder="Enter article title..." style={{ fontSize: "1.1rem", padding: "12px 16px" }}/>
+                                    </Form.Item>
 
-    const fetchData = async () => {
-      const [catRes, tagRes] = await Promise.all([
-        getDatas("/admin/blog-post-categories"),
-        getDatas("/admin/tags")
-      ]);
+                                    <Row gutter={24}>
+                                        <Col span={12}>
+                                            <Form.Item label="Category" name="category_id" rules={[{ required: true, message: "Please select a category" }]}>
+                                                <Select size="large" placeholder="Select Category" options={categories.map((cat) => ({value: cat.id, label: cat.name}))} style={{ width: "100%" }}/>
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item label="Tags" name="tag_ids">
+                                                <Select mode="multiple" size="large" placeholder="Add tags" options={tags.map((tag) => ({value: tag.id, label: tag.name}))}/>
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </Card>
 
-      if (isMounted) {
-        setCategories(catRes?.result?.data || []);
-        setTags(tagRes?.result?.data || []);
-      }
-    };
+                                {/* Rich Text Editor */}
+                                <Card 
+                                    title={
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                                            <Space><FileTextOutlined style={{ color: "#4f46e5" }} /><span>Content Editor</span></Space>
+                                            <Tooltip title="Formatting tools help make your content more readable.">
+                                                <InfoCircleOutlined style={{ color: "#94a3b8" }} />
+                                            </Tooltip>
+                                        </div>
+                                    }
+                                    bordered={false}
+                                    loading={fetching}
+                                    style={{ boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)" }}
+                                >
+                                    <Form.Item name="description" rules={[{ required: true, message: "Content cannot be empty" }]}>
+                                        <ReactQuill theme="snow" modules={modules} placeholder="Edit your content here..." style={{ height: "500px", marginBottom: "60px" }}/>
+                                    </Form.Item>
+                                </Card>
+                            </Space>
+                        </Col>
 
-    fetchData();
+                        <Col xs={24} lg={8}>
+                            <Space direction="vertical" size={32} style={{ width: "100%" }}>
+                                <Card 
+                                    title={<Space><SettingOutlined style={{ color: "#4f46e5" }} /><span>Publishing</span></Space>}
+                                    bordered={false}
+                                    loading={fetching}
+                                    style={{ boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)" }}
+                                >
+                                    <Form.Item label="Post Status" name="status" style={{ marginBottom: "16px" }}>
+                                        <Select 
+                                            size="large"
+                                            options={[
+                                                { value: "active", label: "🟢 Active (Live)" },
+                                                { value: "inactive", label: "🔴 Inactive (Draft)" }
+                                            ]}
+                                        />
+                                    </Form.Item>
+                                    
+                                    <Divider style={{ margin: "16px 0" }} />
+                                    
+                                    <Button type="primary" block loading={loading} onClick={() => form.submit()}>
+                                        Save Changes
+                                    </Button>
+                                </Card>
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+                                <Card 
+                                    title={<Space><PictureOutlined style={{ color: "#4f46e5" }} /><span>Featured Image</span></Space>}
+                                    bordered={false}
+                                    loading={fetching}
+                                    style={{ boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)" }}
+                                >
+                                    <Form.Item name="image">
+                                        <Dragger 
+                                            maxCount={1} 
+                                            beforeUpload={() => false} 
+                                            fileList={fileList}  
+                                            onChange={({ fileList }) => setFileList(fileList)}
+                                            showUploadList={false}
+                                            style={{ 
+                                                background: "#f8fafc", 
+                                                border: "2px dashed #e2e8f0",
+                                                padding: fileList.length > 0 ? "0" : "20px",
+                                                overflow: "hidden",
+                                                height: "220px",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center"
+                                            }}
+                                        >
+                                            {fileList.length > 0 ? (
+                                                <div style={{ position: "relative", width: "100%", height: "100%", group: "hover" }}>
+                                                    <img 
+                                                        src={fileList[0].url || (fileList[0].originFileObj ? URL.createObjectURL(fileList[0].originFileObj) : "")} 
+                                                        alt="Preview" 
+                                                        style={{ width: "100%", height: "220px", objectFit: "cover" }} 
+                                                    />
+                                                    <div style={{
+                                                        position: "absolute",
+                                                        top: 0,
+                                                        left: 0,
+                                                        width: "100%",
+                                                        height: "100%",
+                                                        background: "rgba(0,0,0,0.4)",
+                                                        display: "flex",
+                                                        flexDirection: "column",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        opacity: 0,
+                                                        transition: "opacity 0.3s",
+                                                        color: "#white"
+                                                    }}
+                                                    className="upload-overlay"
+                                                    >
+                                                        <PictureOutlined style={{ fontSize: "24px", color: "#fff" }} />
+                                                        <Text style={{ color: "#fff", marginTop: "8px" }}>Change Image</Text>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <p className="ant-upload-drag-icon">
+                                                        <InboxOutlined style={{ color: "#4f46e5" }} />
+                                                    </p>
+                                                    <p className="ant-upload-text">Click or drag image to update</p>
+                                                    <p className="ant-upload-hint">Recommended: 1200x630px</p>
+                                                </>
+                                            )}
+                                        </Dragger>
+                                    </Form.Item>
+                                    
+                                    <Divider plain><Text type="secondary" style={{ fontSize: "12px" }}>Dimensions</Text></Divider>
+                                    
+                                    <Row gutter={12}>
+                                        <Col span={12}>
+                                            <Form.Item label="Width" name="width">
+                                                <AntInput placeholder="1920" suffix="px" />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item label="Height" name="height">
+                                                <AntInput placeholder="720" suffix="px" />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </Card>
 
-  const handleSubmit = async (values) => {
-    const formData = new FormData();
+                                <Card 
+                                    title={<Space><SearchOutlined style={{ color: "#4f46e5" }} /><span>SEO Meta Data</span></Space>}
+                                    bordered={false}
+                                    loading={fetching}
+                                    style={{ boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)" }}
+                                >
+                                    <Form.Item label="Meta Title" name="meta_title">
+                                        <AntInput placeholder="SEO Title..." />
+                                    </Form.Item>
 
-    Object.keys(values).forEach((key) => {
-      if (key !== "image") {
-        formData.append(key, values[key]);
-      }
-    });
+                                    <Form.Item label="Meta Description" name="meta_description">
+                                        <AntInput.TextArea rows={3} placeholder="Write a brief summary..." />
+                                    </Form.Item>
 
-    values.tag_ids?.forEach((tagId) => {
-      formData.append("tag_ids[]", tagId);
-    });
+                                    <Form.Item label="Meta Keywords" name="meta_tag">
+                                        <AntInput placeholder="e.g. tech, health" />
+                                    </Form.Item>
+                                </Card>
+                            </Space>
+                        </Col>
+                    </Row>
+                </Form>
+            </div>
 
-    formData.append("description", values.description);
-
-    const imageFile = fileList[0]?.originFileObj;
-
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
-
-    formData.append("_method", "PUT");
-
-    const res = await postData(`/admin/blog-posts/${id}`, formData);
-
-    if(res && res?.success){
-      messageApi.open({
-        type: "success",
-        content: res.msg,
-      });
-
-      setTimeout(() => {
-        navigate("/blogs");
-      }, 500);
-    }
-  }
-  return (
-    <>
-      {contextHolder}
-      <div className="pagehead">
-        <div className="head-left">
-          <h1 className="title">All Blog Posts</h1>
-        </div>
-        <div className="head-actions">
-          <Breadcrumb
-            items={[
-              { title: <Link to="/dashboard">Dashboard</Link> },
-              { title: "All Blog Posts" },
-            ]}
-          />
-        </div>
-      </div>
-
-      <div>
-        <div className="blog-form">
-          <div className="blog-post-head">
-              <h2 className="blog-post-title">
-                  Edit Post Information
-              </h2>
-
-              <button className="blog-post-back-btn">
-                  <i className="back-icon">←</i>
-                  Back
-              </button>
-          </div>
-
-          <div className="blog-form-layout">
-            <Form layout="vertical" form={form} onFinish={handleSubmit}>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="Blog Title" name="title">
-                    <AntInput placeholder="Enter blog title" />
-                  </Form.Item>
-                </Col>
-
-                <Col span={12}>
-                  <Form.Item label="Category" name="category_id">
-                    <Select
-                      placeholder="Choose Categories"
-                      options={categories.map((cat) => ({
-                        value: cat.id,
-                        label: cat.name,
-                      }))}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">
-                    <Select options={[{ value: "active", label: "Active" },{ value: "inactive", label: "Inactive" }]}/>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="Blog Tags" name="tags">
-                    <Select mode="multiple" placeholder="Select Tags" options={tags.map((tag) => ({value: tag.id,label: tag.name}))}/>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              {/* Description */}
-              <Form.Item label="Description" name="description">
-                <TextArea rows={6} placeholder="Enter description..." />
-              </Form.Item>
-
-              {/* Image Upload */}
-              <Form.Item label="Image" name="image">
-                <Upload listType="picture-card" fileList={fileList} onChange={({ fileList: newFileList }) => setFileList(newFileList)} beforeUpload={() => false}>
-                  <div>+</div>
-                  {fileList.length >= 1 ? null : "Upload"}
-                </Upload>
-              </Form.Item>
-
-              {/* Img Width + Height */}
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="Img Width" name="width" initialValue={1920}>
-                    <AntInput />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="Img Height" name="height" initialValue={720}>
-                    <AntInput />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              {/* Meta Title + Tag */}
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="Meta Title" name="meta_title">
-                    <AntInput />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="Description" name="meta_description">
-                    <TextArea rows={2} placeholder="Enter description..." />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="Meta Tag" name="meta_tag">
-                    <AntInput />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              {/* Submit */}
-              <Form.Item>
-                <Button type="primary" htmlType="submit" block>
-                  Update Post
-                </Button>
-              </Form.Item>
-            </Form>
-          </div>
-        </div>
-      </div>
-    </>
-  );
+            <style>{`
+                .ql-container {
+                    border-bottom-left-radius: 12px !important;
+                    border-bottom-right-radius: 12px !important;
+                    border: 1px solid #e2e8f0 !important;
+                    font-family: 'Inter', sans-serif !important;
+                    font-size: 16px !important;
+                }
+                .ql-toolbar {
+                    border-top-left-radius: 12px !important;
+                    border-top-right-radius: 12px !important;
+                    border: 1px solid #e2e8f0 !important;
+                    background: #f8fafc !important;
+                    padding: 12px !important;
+                }
+                .ql-editor {
+                    min-height: 400px !important;
+                    padding: 20px !important;
+                }
+                .ql-snow.ql-toolbar button, .ql-snow .ql-toolbar button {
+                    width: 32px !important;
+                    height: 32px !important;
+                }
+                .ant-card-head {
+                    border-bottom: 1px solid #f1f5f9 !important;
+                    padding: 0 24px !important;
+                    min-height: 56px !important;
+                }
+                .ant-card-head-title {
+                    font-weight: 600 !important;
+                    font-size: 16px !important;
+                    color: #334155 !important;
+                }
+                .ant-form-item-label label {
+                    font-weight: 500 !important;
+                    color: #64748b !important;
+                    font-size: 14px !important;
+                }
+                .ant-upload-drag {
+                    border-radius: 12px !important;
+                }
+                .ant-input, .ant-select-selector {
+                    border-color: #e2e8f0 !important;
+                }
+                .ant-input:hover, .ant-select-selector:hover {
+                    border-color: #4f46e5 !important;
+                }
+                .ant-upload-drag:hover .upload-overlay {
+                    opacity: 1 !important;
+                }
+            `}</style>
+        </ConfigProvider>
+    );
 }

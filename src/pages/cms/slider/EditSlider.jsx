@@ -1,9 +1,12 @@
-import { ArrowLeftOutlined, CloudUploadOutlined, LoadingOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message } from "antd";
+import { ArrowLeftOutlined, CloudUploadOutlined, LoadingOutlined, InfoCircleOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message, Row, Col, Typography, Spin } from "antd";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
 import useTitle from "../../../hooks/useTitle";
+import "./Slider.css";
+
+const { Text, Title } = Typography;
 
 const DEVICE_SIZES = {
     desktop: { width: 4360, height: 1826 },
@@ -14,12 +17,14 @@ const DEVICE_SIZES = {
 export default function EditSlider() {
     // Variable
     const {id} = useParams();
+    const navigate = useNavigate();
 
     // Hook
-    useTitle("Edit Slider");
+    useTitle("Edit Home Slider | Admin");
 
     // State
     const [loading, setLoading]     = useState(false);
+    const [fetching, setFetching]   = useState(true);
     const [image, setImage]         = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [form]                    = Form.useForm();
@@ -35,32 +40,40 @@ export default function EditSlider() {
         }
     };
 
-    //Method
+    const handleRemoveImage = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setImage(null);
+        setImageFile(null);
+    };
+
     useEffect(() => {
         let isMounted = true;
         const fetchSlider = async () => {
-            setLoading(true);
-            const res = await getDatas(`/admin/sliders/${id}`);
+            try {
+                setFetching(true);
+                const res = await getDatas(`/admin/sliders/${id}`);
+                const list = res?.result || [];
+                const size = DEVICE_SIZES[list.type] || {};
 
-            const list = res?.result || [];
+                if(isMounted && list){
+                    form.setFieldsValue({
+                        title : list.title || "",
+                        status: list.status || "",
+                        type  : list.type || "",
+                        width:  list.width  || size.width  || "",
+                        height: list.height || size.height || "",
+                    });
 
-            const size = DEVICE_SIZES[list.type] || {};
-
-            if(isMounted && list){
-                form.setFieldsValue({
-                    title : list.title || "",
-                    status: list.status || "",
-                    type  : list.type || "",
-                    width:  list.width  || size.width  || "",
-                    height: list.height || size.height || "",
-                });
-
-                if (list.image) {
-                    setImage(list.image);
+                    if (list.image) {
+                        setImage(list.image);
+                    }
                 }
+            } catch (error) {
+                message.error("Failed to fetch slider data");
+            } finally {
+                if (isMounted) setFetching(false);
             }
-
-            setLoading(false);
         }
 
         fetchSlider();
@@ -72,7 +85,7 @@ export default function EditSlider() {
 
     const onFinish = async (values) => {
         const formData = new FormData();
-        formData.append("title", values.title);
+        formData.append("title", values.title || "");
         formData.append("status", values.status);
         formData.append("type", values.type);
         formData.append("width", values.width);
@@ -84,114 +97,154 @@ export default function EditSlider() {
         }
 
         setLoading(true);
-        const res = await postData(`/admin/sliders/${id}`, formData, {headers: {'Content-type': 'multipart/form-data'}});
-
-        if(res?.success){
-            setLoading(false);
-            messageApi.open({
-                type: "success",
-                content: res.msg,
+        try {
+            const res = await postData(`/admin/sliders/${id}`, formData, {
+                headers: {'Content-type': 'multipart/form-data'}
             });
+
+            if(res?.success){  
+                messageApi.success({
+                    content: res.msg || "Slider updated successfully",
+                    duration: 3
+                });
+                navigate("/sliders")
+            }
+        } catch (error) {
+            messageApi.error("Update failed. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
+    if (fetching) {
+        return (
+            <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Spin size="large" tip="Loading slider data..." />
+            </div>
+        );
+    }
+
     return (
-        <>
+        <div className="slider-container">
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">Edit Home Sliders</h1>
-                </div>
-                <div className="head-actions">
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+                <div>
+                    <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Edit Home Slider</Title>
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Edit Home Sliders" },
+                            { title: <Link to="/sliders">Home Sliders</Link> },
+                            { title: "Edit Slider" },
                         ]}
                     />
                 </div>
+                <Button className="premium-back-btn" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                    Back to List
+                </Button>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div></div>
-                <Space>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
-                </Space>
-            </div>
-
-            <div className="slider-form-wrapper">
-                <Form layout="vertical" onFinish={onFinish} form={form} onValuesChange={(changed) => {
-                    if (changed.type) {
-                        const size = DEVICE_SIZES[changed.type];
-                        if (size) {
-                            form.setFieldsValue(size);
-                        }
-                    }
-                }}>
-                    <div className="slider-form">
-                        <div className="image-block">
-                            <div className="image-card">
-                                {image ? (
-                                    <>
-                                        <img src={image} alt="Uploaded" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "6px" }} />
-
-                                        <button className="image-btn" onClick={() => setImage(null)}>
-                                            ×
-                                        </button>
-                                    </>
-                                ) : (
-                                    <span>No image selected</span>
-                                )}
-
-                                <label htmlFor="file-upload">
-                                    <CloudUploadOutlined />
-                                    Upload
+            <div className="premium-card">
+                <div className="card-content">
+                    <Form form={form} layout="vertical" onFinish={onFinish} className="premium-form"
+                        onValuesChange={(changed) => {
+                            if (changed.type && DEVICE_SIZES[changed.type]) {
+                                const size = DEVICE_SIZES[changed.type];
+                                form.setFieldsValue(size);
+                            }
+                        }}
+                    >
+                        <div className="form-grid">
+                            <div className="upload-section">
+                                <Text strong style={{ fontSize: '16px' }}>Slider Artwork</Text>
+                                <label className="premium-upload-area">
+                                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageChange} />
+                                    {image ? (
+                                        <div className="preview-container">
+                                            <img src={image} alt="Preview" className="preview-image" />
+                                            <button className="remove-img-btn" onClick={handleRemoveImage}>
+                                                <DeleteOutlined />
+                                            </button>
+                                            <div className="upload-overlay">
+                                                <CloudUploadOutlined /> Replace Artwork
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="upload-placeholder">
+                                            <div className="upload-icon">
+                                                <CloudUploadOutlined />
+                                            </div>
+                                            <Text strong style={{ fontSize: '18px', color: '#1e293b' }}>Click to upload image</Text>
+                                            <Text type="secondary">Optimal size depends on slider type</Text>
+                                        </div>
+                                    )}
                                 </label>
-
-                                <input id="file-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageChange}/>
-                            </div>
-                        </div>
-                        <div className="form-block">
-                            <Form.Item name="title" label="Home Slider Title">
-                                <AntInput placeholder="Enter your title..." />
-                            </Form.Item>
-
-                            <Form.Item name="status" label="Home Slider Status" rules={[{ required: true }]}>
-                                <Select options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
-                            </Form.Item>
-
-                            <Form.Item name="type" label="Slider Type" rules={[{ required: true }]}>
-                                <Select options={[{ value: 'desktop', label: 'Desktop' }, { value: 'tablet', label: 'Tablet' },{ value: 'mobile', label: 'Mobile' }]} />
-                            </Form.Item>
-
-                            <div style={{display:"flex"}}>
-                                <div style={{width:"50%", marginRight:"5px"}}>
-                                    <Form.Item name="width" label="Width">
-                                        <AntInput placeholder="Enter width..." />
-                                    </Form.Item>
-                                </div>
-
-                                <div style={{width:"50%"}}>
-                                    <Form.Item name="height" label="Height">
-                                        <AntInput placeholder="Enter height..." />
-                                    </Form.Item>
+                                <div className="size-info-badge">
+                                    <div className="badge-dot" />
+                                    <Text type="secondary" style={{ fontSize: '13px' }}>
+                                        Current format: {imageFile ? imageFile.type.split('/')[1].toUpperCase() : 'Existing Image'}
+                                    </Text>
                                 </div>
                             </div>
 
-                            <div style={{textAlign:"right"}}>
-                                <Form.Item>
-                                    <Button type="primary" htmlType="submit">
-                                        {loading && (
-                                            <LoadingOutlined />
-                                        )}
-                                        Update Slider
-                                    </Button>
+                            <div className="form-details-section">
+                                <Form.Item label="Home Slider Title" name="title" rules={[{ required: true, message: "Please enter a slider title" }]}>
+                                    <AntInput className="premium-input" placeholder="e.g. Summer Collection 2024" />
                                 </Form.Item>
+
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item name="status" label="Visibility" rules={[{ required: true }]}>
+                                            <Select className="premium-select" options={[{ value: 'active', label: 'Visible' }, { value: 'inactive', label: 'Hidden' }]} />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item name="type" label="Display Device" rules={[{ required: true }]}>
+                                            <Select 
+                                                className="premium-select" 
+                                                options={[
+                                                    { value: 'desktop', label: 'Desktop View' }, 
+                                                    { value: 'tablet', label: 'Tablet View' },
+                                                    { value: 'mobile', label: 'Mobile View' }
+                                                ]} 
+                                            />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+
+                                <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                                    <Space style={{ marginBottom: 16 }}>
+                                        <InfoCircleOutlined style={{ color: '#6366f1' }} />
+                                        <Text strong>Dimension Configuration</Text>
+                                    </Space>
+                                    <Row gutter={16}>
+                                        <Col span={12}>
+                                            <Form.Item label="Width (px)" name="width" rules={[{ required: true }]}>
+                                                <AntInput className="premium-input" placeholder="Width" />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item label="Height (px)" name="height" rules={[{ required: true }]}>
+                                                <AntInput className="premium-input" placeholder="Height" />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                                        Updating the display device will automatically suggest recommended dimensions.
+                                    </Text>
+                                </div>
+
+                                <div className="submit-section">
+                                    <Button type="primary" htmlType="submit" loading={loading} className="premium-submit-btn" block>
+                                        {loading ? "SAVING CHANGES..." : "UPDATE HOME SLIDER"}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </Form>
+                    </Form>
+                </div>
             </div>
-        </>
+        </div>
     )
 }

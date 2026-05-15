@@ -809,3 +809,197 @@
     justify-content: flex-start;
   }
 }
+
+/* --- Ant Design Based Redesign Styles --- */
+.modern-antd-card {
+    border-radius: 12px !important;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid #f0f0f0 !important;
+}
+
+.modern-antd-card .ant-card-head {
+    background-color: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+    min-height: 56px;
+}
+
+.modern-antd-card .ant-card-head-title {
+    font-weight: 700;
+    color: #1a3353;
+}
+
+/* Search Dropdown */
+.search-box-wrapper {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.antd-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 350px;
+    overflow-y: auto;
+    margin-top: 4px;
+}
+
+.antd-search-dropdown.relative {
+    position: relative;
+    max-height: 250px;
+    box-shadow: none;
+    border-color: #f0f0f0;
+}
+
+.search-item-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.search-item-row:last-child {
+    border-bottom: none;
+}
+
+.search-item-row:hover {
+    background-color: #f0f7ff;
+}
+
+.search-item-row img {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: #f5f5f5;
+}
+
+.search-item-row .info {
+    flex: 1;
+}
+
+.search-item-row .name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #262626;
+}
+
+.search-item-row .meta {
+    font-size: 12px;
+    color: #8c8c8c;
+}
+
+/* Upsell Grid */
+.modern-upsell-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.upsell-product-card-lite {
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 12px;
+    transition: all 0.3s;
+}
+
+.upsell-product-card-lite:hover {
+    border-color: #1890ff;
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.1);
+}
+
+.upsell-product-card-lite .card-top {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.upsell-product-card-lite img {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.upsell-product-card-lite .details {
+    flex: 1;
+}
+
+.upsell-product-card-lite .details h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.upsell-product-card-lite .details p {
+    margin: 0;
+    font-size: 12px;
+    color: #8c8c8c;
+}
+
+.upsell-product-card-lite .card-controls {
+    padding-top: 10px;
+    border-top: 1px dashed #f0f0f0;
+}
+
+/* Empty Placeholder */
+.placeholder-empty {
+    padding: 40px 20px;
+    text-align: center;
+    background: #fafafa;
+    border: 1px dashed #d9d9d9;
+    border-radius: 8px;
+    color: #8c8c8c;
+}
+
+.placeholder-empty p {
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Trigger Styles */
+.trigger-tags-list {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.modern-trigger-tag {
+    padding: 4px 10px !important;
+    border-radius: 4px !important;
+    font-size: 13px !important;
+    margin-bottom: 4px;
+}
+
+.sticky-card {
+    position: sticky;
+    top: 16px;
+}
+
+.submit-upsell-btn {
+    height: 48px !important;
+    font-weight: 700 !important;
+    font-size: 16px !important;
+    border-radius: 8px !important;
+    margin-top: 10px;
+}
+
+@media (max-width: 992px) {
+    .sticky-card {
+        position: static;
+    }
+}

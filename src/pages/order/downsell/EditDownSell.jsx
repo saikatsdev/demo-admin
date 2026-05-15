@@ -1,11 +1,13 @@
-import useTitle from "../../../hooks/useTitle"
-import {Breadcrumb, message, Spin} from "antd";
-import {BackwardOutlined} from '@ant-design/icons';
-import { Link, useNavigate, useParams } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
-import { getDatas, postData } from "../../../api/common/common";
+import { ArrowLeftOutlined, CloudUploadOutlined, DeleteOutlined, InboxOutlined, PlusOutlined, SaveOutlined, SettingOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import { Breadcrumb, Button, Card, Col, Divider, Form, Input, InputNumber, message, Radio, Row, Select, Space, Spin, Tag, Typography, Upload } from "antd";
 import axios from "axios";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { getDatas, postData } from "../../../api/common/common";
+import useTitle from "../../../hooks/useTitle";
 import "./downsell.css";
+
+const { Title, Text } = Typography;
 
 export default function EditDownSell() {
     // Hook
@@ -15,6 +17,7 @@ export default function EditDownSell() {
     const [query, setQuery]                           = useState("");
     const [results, setResults]                       = useState([]);
     const [loading, setLoading]                       = useState(false);
+    const [formLoading, setFormLoading]               = useState(false);
     const [selectedProducts, setSelectedProducts]     = useState([]);
     const [image, setImage]                           = useState(null);
     const [categories, setCategories]                 = useState([]);
@@ -22,450 +25,368 @@ export default function EditDownSell() {
     const [imageFile, setImageFile]                   = useState(null);
     const [mode, setMode]                             = useState("all");
     const [messageApi, contextHolder]                 = message.useMessage();
-    const [downSellData, setDownSellData] = useState({title: "",amount: "",duration: "",type: "fixed",started_at: "",ended_at: "",status: "active",description: "",width: 200,height: 200});
-
+    const [downSellData, setDownSellData]             = useState(null);
 
     // Variable
-    const {id}            = useParams();
+    const { id } = useParams();
     const debounceTimeout = useRef(null);
-    const cancelToken     = useRef(null);
-    const navigate        = useNavigate();
+    const cancelToken = useRef(null);
+    const navigate = useNavigate();
+    const [form] = Form.useForm();
 
     // Get Category
     useEffect(() => {
         let isMounted = true;
-
         const getCategories = async () => {
-            const res =  await getDatas("/admin/categories/list");
-
-            if(res && res.success){
-                if(isMounted){
-                    setCategories(res?.result || []);
-                }
+            const res = await getDatas("/admin/categories/list");
+            if (res && res.success && isMounted) {
+                setCategories(res?.result || []);
             }
-        }
-
+        };
         getCategories();
-
-        return () => {
-            isMounted = false;
-        }
+        return () => { isMounted = false; };
     }, []);
 
     // Get DownSell
     useEffect(() => {
         let isMounted = true;
-
-        setLoading(true);
         const getDownSell = async () => {
-            const res = await getDatas(`/admin/down-sells/${id}`);
-
-            if(res && res?.success){
-                if(isMounted){
+            setLoading(true);
+            try {
+                const res = await getDatas(`/admin/down-sells/${id}`);
+                if (res && res?.success && isMounted) {
                     const data = res.result;
-
                     setDownSellData(data);
                     setImage(data.image);
-
-                    if (data.is_all == 1) {
-                        setMode("all");
-                    } else {
-                        setMode("product");
-                    }
+                    
+                    // Populate form
+                    form.setFieldsValue({
+                        title: data.title,
+                        amount: data.amount,
+                        duration: data.duration,
+                        coupon_type: data.type,
+                        started_at: data.started_at?.slice(0, 10),
+                        ended_at: data.ended_at?.slice(0, 10),
+                        status: data.status,
+                        description: data.description,
+                        width: data.width || 450,
+                        height: data.height || 450,
+                    });
 
                     if (Array.isArray(data.products) && data.products.length > 0) {
+                        setMode("product");
                         const formattedProducts = data.products.map(item => ({
-                            id         : item.id,
-                            name       : item.name,
-                            img_path   : item.img_path,
+                            id: item.id,
+                            name: item.name,
+                            img_path: item.img_path,
                             offer_price: item.offer_price,
-                            category   : item.category ?? { name: "N/A" }
+                            category: item.category ?? { name: "N/A" }
                         }));
-
                         setSelectedProducts(formattedProducts);
+                    } else if (data.category_id) {
+                        setMode("category");
+                    } else {
+                        setMode("all");
                     }
                 }
-                setLoading(false);
+            } catch (error) {
+                console.log(error);
+            } finally {
+                if (isMounted) setLoading(false);
             }
-        }
-
+        };
         getDownSell();
-
-        return () => {
-            isMounted = false;
-        }
-    }, [id]);
+        return () => { isMounted = false; };
+    }, [id, form]);
 
     useEffect(() => {
-        if (downSellData &&  downSellData.category_id !== null &&  categories.length > 0) {
+        if (downSellData && downSellData.category_id !== null && categories.length > 0) {
             const foundCat = categories.find((cat) => cat.id === downSellData.category_id);
-
             if (foundCat) {
                 setSelectedCategories([foundCat]);
             }
         }
     }, [downSellData, categories]);
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-
-        setDownSellData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
-    };
-
-    const handleImageChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            setImage(URL.createObjectURL(e.target.files[0]));
-            setImageFile(e.target.files[0]);
-        }
-    };
-
-    const removeImage = () => {
-        setImage(null);
-        setImageFile(null);
-    };
-
-    // For Product Search
     const fetchedProducts = async (searchTerm) => {
-        if(!searchTerm){
+        if (!searchTerm) {
             setResults([]);
             return;
         }
-
-        if (cancelToken.current) {
-            cancelToken.current.cancel("Operation canceled due to new request");
-        }
-
+        if (cancelToken.current) cancelToken.current.cancel();
         cancelToken.current = axios.CancelToken.source();
-
         setLoading(true);
-
         try {
-            const res = await getDatas("/admin/products/search", {search_key : searchTerm});
-
-            if(res && res?.success){
-                setResults(res?.result);
-            }
+            const res = await getDatas("/admin/products/search", {
+                params: { search_key: searchTerm },
+                cancelToken: cancelToken.current.token,
+            });
+            if (res && res?.success) setResults(res?.result);
         } catch (error) {
-            console.log("Something went wrong", error);
-        }finally{
+            if (!axios.isCancel(error)) console.log(error);
+        } finally {
             setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
-        if (debounceTimeout.current) {
-            clearTimeout(debounceTimeout.current);
-        }
-
-        debounceTimeout.current = setTimeout(() => {fetchedProducts(query);}, 400);
-
+        if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+        debounceTimeout.current = setTimeout(() => { fetchedProducts(query); }, 400);
         return () => clearTimeout(debounceTimeout.current);
     }, [query]);
 
     const handleSelect = (product) => {
         if (!selectedProducts.find((p) => p.id === product.id)) {
             setSelectedProducts([...selectedProducts, product]);
+            setQuery("");
+            setResults([]);
         }
-    }
+    };
 
     const handleCategory = (categoryId) => {
         if (!categoryId) return;
-
         const category = categories.find((cat) => cat.id === parseInt(categoryId));
-
         if (category && !selectedCategories.find((c) => c.id === category.id)) {
             setSelectedCategories([...selectedCategories, category]);
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleImageChange = (info) => {
+        if (info.file.status === 'removed') {
+            setImage(null);
+            setImageFile(null);
+            return;
+        }
+        const file = info.file.originFileObj || info.file;
+        if (file) {
+            setImage(URL.createObjectURL(file));
+            setImageFile(file);
+        }
+    };
 
-        const formData = new FormData(e.target);
+    const onFinish = async (values) => {
+        const formData = new FormData();
+        Object.keys(values).forEach(key => {
+            if (values[key] !== undefined && key !== 'image') {
+                formData.append(key, values[key]);
+            }
+        });
 
         formData.append("mode", mode);
-
         if (mode === "product") {
-            selectedProducts.forEach(p => {
-                formData.append("product_ids[]", p.id);
-            });
+            selectedProducts.forEach(p => formData.append("product_ids[]", p.id));
+            if (selectedProducts.length === 0) return messageApi.error("Select at least one product");
         }
-
         if (mode === "category") {
-            selectedCategories.forEach(c => {
-                formData.append("category_ids[]", c.id);
-            });
+            selectedCategories.forEach(c => formData.append("category_ids[]", c.id));
+            if (selectedCategories.length === 0) return messageApi.error("Select at least one category");
         }
-
         if (imageFile) formData.append("image", imageFile);
-
         formData.append("_method", "PUT");
 
         try {
-            setLoading(true);
-
-            const res = await postData(`/admin/down-sells/${id}`, formData, {headers: { "Content-Type": "multipart/form-data" }});
-            if(res && res?.success){
-
-                messageApi.open({
-                    type: "success",
-                    content: res.msg,
-                });
-
-                setTimeout(() => {
-                    navigate("/downsell-coupon");
-                }, 500);
+            setFormLoading(true);
+            const res = await postData(`/admin/down-sells/${id}`, formData, { headers: { "Content-Type": "multipart/form-data" } });
+            if (res && res?.success) {
+                messageApi.success(res.msg);
+                setTimeout(() => navigate("/downsell-coupon"), 1000);
             }
         } catch (error) {
             console.log(error);
-        }finally{
-            setLoading(false);
+            messageApi.error("Failed to update downsell offer");
+        } finally {
+            setFormLoading(false);
         }
-    }
+    };
 
     return (
-        <>
+        <div style={{ padding: 16 }}>
             {contextHolder}
-            <Spin spinning={loading} size="large">
-                <div className="pagehead">
-                    <div className="head-left">
-                        <h1 className="title">Edit Downsell Products</h1>
-                    </div>
-                    <div className="head-actions">
-                        <Breadcrumb
-                            items={[
-                                { title: <Link to="/dashboard">Dashboard</Link> },
-                                { title: "Edit Downsell Products" },
-                            ]}
-                        />
-                    </div>
+            <div className="pagehead">
+                <div className="head-left">
+                    <h1 className="title">Edit Downsell Products</h1>
+                    <p className="subtitle">Update your promotional offer settings and triggers</p>
                 </div>
+                <div className="head-actions">
+                    <Breadcrumb
+                        items={[
+                            { title: <Link to="/dashboard">Dashboard</Link> },
+                            { title: <Link to="/downsell-coupon">Downsells</Link> },
+                            { title: "Edit Offer" },
+                        ]}
+                    />
+                </div>
+            </div>
 
-                <div className="raw-sell-container">
-                    <form onSubmit={handleSubmit} className="raw-sell-form">
-                            <div className="raw-up-sell-form-header" style={{marginBottom:"10px"}}>
-                                <h2 className="page-title">Edit Downsell Products</h2>
+            <Spin spinning={loading && !downSellData}>
+                <Form form={form} layout="vertical" onFinish={onFinish}>
+                    <Row gutter={[24, 24]}>
+                        <Col xs={24} lg={16}>
+                            <Card title={<Space><SettingOutlined /> Campaign Details</Space>} className="modern-antd-card" extra={<Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/downsell-coupon")}>Back</Button>}>
+                                <Row gutter={16}>
+                                    <Col span={24}>
+                                        <Form.Item label="Campaign Name" name="title" rules={[{ required: true, message: 'Name is required' }]}>
+                                            <Input size="large" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24} md={8}>
+                                        <Form.Item label="Coupon Amount" name="amount" rules={[{ required: true, message: 'Amount is required' }]}>
+                                            <InputNumber size="large" style={{ width: '100%' }} min={0} />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24} md={8}>
+                                        <Form.Item label="Coupon Type" name="coupon_type">
+                                            <Select size="large">
+                                                <Select.Option value="fixed">Fixed Amount</Select.Option>
+                                                <Select.Option value="percent">Percentage (%)</Select.Option>
+                                            </Select>
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24} md={8}>
+                                        <Form.Item label="Duration (Days)" name="duration">
+                                            <InputNumber size="large" style={{ width: '100%' }} min={1} />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24} md={12}>
+                                        <Form.Item label="Start Date" name="started_at" rules={[{ required: true, message: 'Select start date' }]}>
+                                            <Input size="large" type="date" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24} md={12}>
+                                        <Form.Item label="End Date" name="ended_at" rules={[{ required: true, message: 'Select end date' }]}>
+                                            <Input size="large" type="date" />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={24}>
+                                        <Form.Item label="Description" name="description">
+                                            <Input.TextArea rows={4} />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                            </Card>
 
-                                <button type="button" className="back-btn" onClick={() => window.history.back()} aria-label="Go back" title="Go back">
-                                    <BackwardOutlined />
-                                    <span className="label">Back</span>
-                                </button>
-                            </div>
-
-                            <div className="row">
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">Name:</label>
-                                        <input type="text" className="raw-sell-input" placeholder="Enter offer name" value={downSellData?.title} name="title" onChange={handleChange}/>
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">Coupon Amount:</label>
-                                        <input type="number" className="raw-sell-input" placeholder="Enter amount" value={downSellData?.amount} name="amount" onChange={handleChange}/>
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">Duration (days):</label>
-                                        <input type="number" className="raw-sell-input" placeholder="Enter offer name" value={downSellData?.duration} name="duration" onChange={handleChange}/>
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">Coupon Type:</label>
-                                        <select name="coupon_type" className="raw-sell-input" value={downSellData?.type} onChange={handleChange}>
-                                            <option value="fixed">Fixed Amount</option>
-                                            <option value="percent">Percent</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">Start Date :</label>
-                                        <input type="date" className="raw-sell-input" name="started_at" value={downSellData?.started_at?.slice(0, 10) || ""} onChange={handleChange}/>
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">End Date :</label>
-                                        <input type="date" className="raw-sell-input" name="ended_at" value={downSellData?.ended_at?.slice(0, 10) || ""} onChange={handleChange}/>
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">Status:</label>
-                                        <select name="status" className="raw-sell-input" value={downSellData?.status} onChange={handleChange}>
-                                            <option value="active">Active</option>
-                                            <option value="inactive">Inactive</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">Description:</label>
-                                        <textarea name="description" className="raw-sell-input" placeholder="Enter description" value={downSellData?.description || ""} onChange={handleChange}></textarea>
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">Image:</label>
-                                        {!image && (
-                                            <label className="custom-upload">
-                                                <input type="file" accept="image/*" onChange={handleImageChange} />
-                                                <span>Choose Image</span>
-                                            </label>
-                                            )}
-
-                                            {image && (
-                                            <div className="image-preview">
-                                                <img src={image} alt="preview" />
-                                                <button className="remove-btn" onClick={removeImage}>
-                                                    &times;
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">Width:</label>
-                                        <input type="number" name="width" value={downSellData?.width} className="raw-sell-input" placeholder="Enter width" onChange={handleChange}/>
-                                    </div>
-                                </div>
-
-                                <div className="col-lg-6 col-12">
-                                    <div className="raw-sell-row">
-                                        <label className="raw-sell-label">Height:</label>
-                                        <input type="number" name="height" value={downSellData?.height} className="raw-sell-input" placeholder="Enter height" onChange={handleChange}/>
-                                    </div>
-                                </div>
-
-                                <div className="col-12 mb-3">
-                                <div className="raw-radio-main">
-                                    <label className="raw-sell-label d-block mb-2">Select Trigger Mode:</label>
-                                    <div className="raw-sell-radio-group">
-                                        <label className={`${mode === 'all' ? 'active' : ''}`}>
-                                        <input type="radio" name="trigger_mode" value="all" checked={mode === 'all'} onChange={(e) => setMode(e.target.value)}/>
-                                            For All Products
-                                        </label>
-
-                                        <label className={`${mode === 'product' ? 'active' : ''}`}>
-                                        <input type="radio" name="trigger_mode" value="product" checked={mode === 'product'} onChange={(e) => setMode(e.target.value)}/>
-                                            For Specific Products
-                                        </label>
-
-                                        <label className={`${mode === 'category' ? 'active' : ''}`}>
-                                        <input type="radio" name="trigger_mode" value="category" checked={mode === 'category'} onChange={(e) => setMode(e.target.value)}/>
-                                            For Specific Category
-                                        </label>
-                                    </div>
-                                </div>
-                                </div>
+                            <Card title={<Space><ThunderboltOutlined /> Trigger Logic</Space>} className="modern-antd-card" style={{ marginTop: 24 }}>
+                                <Form.Item label="Active Trigger Mode">
+                                    <Radio.Group value={mode} onChange={(e) => setMode(e.target.value)} buttonStyle="solid" className="modern-radio-group">
+                                        <Radio.Button value="all">Storewide</Radio.Button>
+                                        <Radio.Button value="product">Specific Products</Radio.Button>
+                                        <Radio.Button value="category">Specific Categories</Radio.Button>
+                                    </Radio.Group>
+                                </Form.Item>
 
                                 {mode === "product" && (
-                                    <div className="col-lg-6 col-12">
-                                        <div className="raw-sell-row">
-                                            <label className="raw-sell-label">Search Product:</label>
-                                            <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} className="raw-sell-input" placeholder="Enter product name..." />
-
-                                            {query && (
-                                                <div className="downsell-search-box">
-                                                    {loading ? (
-                                                        <div className="search-loading">Searching...</div>
-                                                    ): results.length > 0 ? (
-                                                        results.map((item) => (
-                                                            <div className="downsell-result-item" key={item.id} onClick={() => handleSelect(item)}>
-                                                                <img src={item.img_path} alt={item.name} />
-                                                                <span className="product-name">{item.name}</span>
-                                                                <span className="product-category">{item.category.name}</span>
-                                                                <span className="product-price">{item.offer_price} BDT</span>
+                                    <div style={{ marginTop: 20 }}>
+                                        <Form.Item label="Search & Add Products">
+                                            <div style={{ position: 'relative' }}>
+                                                <Input.Search size="large" placeholder="Search product name..." value={query} onChange={(e) => setQuery(e.target.value)} loading={loading}/>
+                                                {query && (
+                                                    <div className="antd-search-dropdown">
+                                                        {results.length > 0 ? results.map((item) => (
+                                                            <div className="search-item-row" key={item.id} onClick={() => handleSelect(item)}>
+                                                                <img src={item.img_path} alt="" />
+                                                                <div className="info">
+                                                                    <div className="name">{item.name}</div>
+                                                                    <div className="meta">{item.category?.name} • {item.offer_price} BDT</div>
+                                                                </div>
+                                                                <PlusOutlined style={{ color: '#1890ff' }} />
                                                             </div>
-                                                        ))
-                                                    ): (
-                                                        <div className="no-result">No product found</div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {selectedProducts.length > 0 && (
-                                                <div className="downsell-selected-products">
-                                                    <h5>Selected Products:</h5>
-                                                    {selectedProducts.map((item) => (
-                                                    <div className="downsell-result-item selected" key={item.id}>
-                                                        <img src={item.img_path} alt={item.name} />
-                                                        <span className="product-name">{item.name}</span>
-                                                        <span className="product-category">{item.category.name}</span>
-                                                        <span className="product-price">{item.offer_price} BDT</span>
-                                                        <button onClick={() => setSelectedProducts(selectedProducts.filter((p) => p.id !== item.id))} className="remove-btn">
-                                                            &times;
-                                                        </button>
+                                                        )) : <div className="no-results">No products found</div>}
                                                     </div>
-                                                    ))}
+                                                )}
+                                            </div>
+                                        </Form.Item>
+
+                                        <div className="modern-upsell-grid">
+                                            {selectedProducts.map((p) => (
+                                                <div className="upsell-product-card-lite" key={p.id}>
+                                                    <div className="card-top">
+                                                        <img src={p.img_path} alt="" />
+                                                        <div className="details">
+                                                            <h4>{p.name}</h4>
+                                                            <p>{p.category?.name || p.category_name}</p>
+                                                        </div>
+                                                        <Button type="text" danger icon={<DeleteOutlined />} onClick={() => setSelectedProducts(selectedProducts.filter(item => item.id !== p.id))} />
+                                                    </div>
                                                 </div>
-                                            )}
+                                            ))}
                                         </div>
+                                        {selectedProducts.length === 0 && <div className="placeholder-empty">No products linked to this offer</div>}
                                     </div>
                                 )}
 
                                 {mode === "category" && (
-                                    <div className="col-lg-6 col-12">
-                                        <div className="raw-sell-row">
-                                            <label className="raw-sell-label">Select Category:</label>
-                                            <select name="" className="raw-sell-input" onChange={(e) => handleCategory(e.target.value)}>
-                                                <option value="">Select Category</option>
-
+                                    <div style={{ marginTop: 20 }}>
+                                        <Form.Item label="Target Categories">
+                                            <Select size="large" placeholder="Add category" onChange={handleCategory} value={null}>
                                                 {categories.map((cat) => (
-                                                    <option key={cat.id} value={cat.id}>
-                                                        {cat.name}
-                                                    </option>
+                                                    <Select.Option key={cat.id} value={cat.id}>{cat.name}</Select.Option>
                                                 ))}
-                                            </select>
-
-                                            {selectedCategories.length > 0 && (
-                                                <div className="downsell-selected-categories">
-                                                    <h5>Selected Categories:</h5>
-                                                    <div className="category-list">
-                                                        {selectedCategories.map((cat) => (
-                                                            <div className="downsell-category-item" key={cat.id}>
-                                                                {cat.name}
-                                                                <button className="remove-btn" onClick={() => setSelectedCategories(selectedCategories.filter((c) => c.id !== cat.id))}>
-                                                                    &times;
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
+                                            </Select>
+                                        </Form.Item>
+                                        <div className="trigger-tags-list">
+                                            {selectedCategories.map((cat) => (
+                                                <Tag key={cat.id} closable className="modern-trigger-tag" onClose={() => setSelectedCategories(selectedCategories.filter(c => c.id !== cat.id))} color="blue">
+                                                    {cat.name}
+                                                </Tag>
+                                            ))}
                                         </div>
+                                        {selectedCategories.length === 0 && <div className="placeholder-empty">No categories linked yet</div>}
                                     </div>
                                 )}
+                            </Card>
+                        </Col>
 
+                        <Col xs={24} lg={8}>
+                            <Card title={<Space><InboxOutlined /> Banner Media</Space>} className="modern-antd-card sticky-card">
+                                <Form.Item label="Current Banner">
+                                    <Upload.Dragger multiple={false} showUploadList={false} beforeUpload={() => false} onChange={handleImageChange} className="modern-uploader">
+                                        {image ? (
+                                            <div className="upload-preview-container">
+                                                <img src={image} alt="preview" style={{ width: '100%', borderRadius: 8 }} />
+                                                <div className="upload-overlay">
+                                                    <CloudUploadOutlined />
+                                                    <span>Replace Image</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div style={{ padding: '20px 0' }}>
+                                                <p className="ant-upload-drag-icon"><InboxOutlined /></p>
+                                                <p className="ant-upload-text">Click or drag image to upload</p>
+                                            </div>
+                                        )}
+                                    </Upload.Dragger>
+                                </Form.Item>
 
-                                <div className="col-12">
-                                    <div className="raw-sell-submit">
-                                        <button type="submit" className="raw-sell-btn">
-                                            {loading ? "Updating..." : "Update"}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                    </form>
-                </div>
+                                <Row gutter={12}>
+                                    <Col span={12}>
+                                        <Form.Item label="Width" name="width">
+                                            <InputNumber style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item label="Height" name="height">
+                                            <InputNumber style={{ width: '100%' }} />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+
+                                <Form.Item label="Visibility" name="status">
+                                    <Select size="large">
+                                        <Select.Option value="active">Active</Select.Option>
+                                        <Select.Option value="inactive">Inactive</Select.Option>
+                                    </Select>
+                                </Form.Item>
+
+                                <Divider />
+
+                                <Button type="primary" htmlType="submit" size="large" block loading={formLoading} icon={<SaveOutlined />} style={{ height: 48, borderRadius: 8, fontWeight: 600 }}>
+                                    Update Down Sell
+                                </Button>
+                            </Card>
+                        </Col>
+                    </Row>
+                </Form>
             </Spin>
-            
-        </>
-    )
+        </div>
+    );
 }

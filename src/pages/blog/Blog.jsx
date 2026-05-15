@@ -248,7 +248,6 @@ export default function Blog() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
                 <Space>
-                    <Button size="small" icon={<DeleteOutlined />}>Trash</Button>
                     <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
                     <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
                 </Space>

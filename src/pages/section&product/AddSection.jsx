@@ -1,64 +1,76 @@
-import { ArrowLeftOutlined, DeleteOutlined, LoadingOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, Switch, message } from "antd";
+import { ArrowLeftOutlined, DeleteOutlined, LoadingOutlined, PlusOutlined, SearchOutlined, ShoppingOutlined,CheckCircleOutlined,EyeOutlined,GlobalOutlined} from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Select, message, Card, Row, Col, Typography, Divider, Tag, Badge, Empty, Segmented, Alert} from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 
+const { Title, Text } = Typography;
+
 export default function AddSection() {
     // Hook
     useTitle("Add Section");
 
-    // Varibale
+    // Variable
     const [form] = Form.useForm();
     const navigate = useNavigate();
 
     // State
-    const [isCategory, setIsCategory]                 = useState(false);
-    const [isCustom, setIsCustom]                     = useState(false);
+    const [selectionType, setSelectionType]           = useState('none');
     const [categories, setCategories]                 = useState([]);
-    const [query, setQuery]                           = useState();
+    const [query, setQuery]                           = useState("");
     const [results, setResults]                       = useState([]);
     const [loadingIndex, setLoadingIndex]             = useState(null);
     const [loadingRemoveIndex, setLoadingRemoveIndex] = useState(null);
     const [productIds, setProductIds]                 = useState([]);
     const [messageApi, contextHolder]                 = message.useMessage();
     const [addProducts, setAddProducts]               = useState([]);
-    const [loading, setLoading]                       = useState(false);
+    const [searching, setSearching]                   = useState(false);
+    const [submitting, setSubmitting]                 = useState(false);
+
+    const isCategory = selectionType === 'category';
+    const isCustom = selectionType === 'custom';
 
     // Method
     useEffect(() => {
-        const fetcheCatgeories = async () => {
+        const fetchCategories = async () => {
             const res = await getDatas("/admin/categories/list");
-
             const list = res?.result || [];
-
             setCategories(
                 list.map((cat) => ({
                     label: cat.name,
-                        value: cat.id
+                    value: cat.id
                 }))
             );
         }
-
-        fetcheCatgeories();
+        fetchCategories();
     }, []);
 
-    useEffect(() =>{
-        if(!query) return;
+    useEffect(() => {
+        if (!query) {
+            setResults([]);
+            return;
+        }
 
-        const delayDebouncFn = setTimeout(() => {
+        const delayDebounceFn = setTimeout(() => {
             fetchSearchProduct(query);
         }, 500);
 
-        return () => clearTimeout(delayDebouncFn);
+        return () => clearTimeout(delayDebounceFn);
     }, [query]);
 
     const fetchSearchProduct = async (searchText) => {
-        const res = await getDatas("/admin/products/search",{search_key :searchText});
-
-        if(res?.success){
-            setResults(res?.result || []);
+        setSearching(true);
+        try {
+            const res = await getDatas(`/admin/products/search?search_key=${searchText}`);
+            if (res?.success) {
+                const filteredResults = (res?.result || []).filter(
+                    item => !productIds.includes(item.id)
+                );
+                setResults(filteredResults);
+            }
+        } finally {
+            setSearching(false);
         }
     }
 
@@ -66,32 +78,29 @@ export default function AddSection() {
         setLoadingIndex(index);
         setProductIds((prev) => [...prev, item.id]);
         setAddProducts((prev) => [...prev, item]);
+        setResults((prev) => prev.filter(p => p.id !== item.id));
         setTimeout(() => setLoadingIndex(null), 500);
     };
 
     const handleRemove = (item, index) => {
         setLoadingRemoveIndex(index);
-
         setProductIds((prev) => prev.filter((id) => id !== item.id));
-
         setAddProducts((prev) => prev.filter((p) => p.id !== item.id));
-
         setTimeout(() => setLoadingRemoveIndex(null), 500);
     };
 
     const handleSubmit = async (values) => {
-        const payload = {
-            ...values,
-            position: 5,
-            product_ids : productIds
-        }
-
+        setSubmitting(true);
         try {
-            setLoading(true);
+            const payload = {
+                ...values,
+                position: 5,
+                product_ids: productIds
+            }
 
             const res = await postData("/admin/sections", payload);
 
-            if(res?.success){
+            if (res?.success) {
                 messageApi.open({
                     type: "success",
                     content: res.msg,
@@ -100,215 +109,219 @@ export default function AddSection() {
                 setTimeout(() => {
                     navigate("/section-list");
                 }, 400);
-            }else{
-                messageApi.open({
-                    type: "error",
-                    content: res?.message,
-                });
             }
-        } catch (error) {
-            console.log(error);
-        }finally{
-            setLoading(false);
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    return (
-        <>
-            {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">Add Section</h1>
+    const ProductCard = ({ item, index, isAdded, onAction, loading }) => (
+        <Card hoverable className="product-card"
+            cover={
+                <div style={{ position: 'relative', height: 180, overflow: 'hidden', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
+                    <img alt={item.name} src={item.img_path} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}/>
+                    <div style={{ position: 'absolute', top: 8, right: 8 }}>
+                        <Tag style={{textTransform:"capitalize"}} color={item.status === 'active' ? 'green' : 'red'}>
+                            {item.status}
+                        </Tag>
+                    </div>
                 </div>
-                <div className="head-actions">
+            }
+            styles={{ body: { padding: '12px' } }}
+        >
+            <div style={{ height: '40px', overflow: 'hidden', marginBottom: '8px' }}>
+                <Text strong style={{ fontSize: '14px', lineHeight: '1.2', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {item.name}
+                </Text>
+            </div>
+            
+            <div style={{ marginBottom: '8px' }}>
+                <Text type="secondary" size="small" style={{ fontSize: '12px', display: 'block' }}>
+                    SKU: {item.sku}
+                </Text>
+                <Text type="secondary" size="small" style={{ fontSize: '12px', display: 'block' }}>
+                    Cat: {item?.category_name ||  'N/A'}
+                </Text>
+            </div>
+
+            <Button type={isAdded ? "default" : "primary"} danger={isAdded} icon={loading ? <LoadingOutlined /> : (isAdded ? <DeleteOutlined /> : <PlusOutlined />)} block onClick={() => onAction(item, index)}>
+                {isAdded ? "Remove" : "Add Product"}
+            </Button>
+        </Card>
+    );
+
+    return (
+        <div style={{ padding: '24px', background: '#f0f2f5', minHeight: '100vh' }}>
+            {contextHolder}
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                <div>
                     <Breadcrumb
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
+                            { title: <Link to="/section-list">Sections</Link> },
                             { title: "Add Section" },
                         ]}
+                        style={{ marginBottom: '8px' }}
                     />
+                    <Title level={2} style={{ margin: 0, fontWeight: 700 }}>
+                        <ShoppingOutlined style={{ marginRight: '12px' }} />
+                        Create New Section
+                    </Title>
                 </div>
+                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} style={{ borderRadius: '8px' }}>
+                    Back to List
+                </Button>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div></div>
-                <Space>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
-                </Space>
-            </div>
+            <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ status: 'active', is_slider: 0 }}>
+                <Row gutter={24}>
+                    <Col xs={24} lg={10}>
+                        <Card title={<span><GlobalOutlined style={{ marginRight: 8 }} />Section Details</span>} className="shadow-sm" style={{ borderRadius: '12px', marginBottom: '24px' }}>
+                            <Form.Item name="title" label="Section Title" rules={[{ required: true, message: 'Please enter section title' }]}>
+                                <AntInput size="large" placeholder="e.g. Featured Products, New Arrivals" />
+                            </Form.Item>
 
-            <div style={{background:"#fff", padding:"5px 8px 5px", borderRadius:"4px", boxShadow: "0px 3px 8px rgba(0, 0, 0, 0.24)"}}>
-                <div style={{display:"flex"}}>
-                    <div style={{width:"45%"}}>
-                        <Form.Item style={{fontWeight:"600"}} label="Show Category Products" valuePropName="checked">
-                            <Switch  checked={isCategory} onChange={(checked) => {
-                                setIsCategory(checked);
-                                if(checked) {
-                                    setIsCustom(false);
-                                    setResults();
-                                }
-                            }}/>
-                        </Form.Item>
-                    </div>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+                                        <Select size="large" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+                                    </Form.Item>
+                                </Col>
 
-                    <div style={{width:"45%"}}>
-                        <Form.Item label="Show Custom Products" style={{fontWeight:"600"}} valuePropName="checked">
-                            <Switch checked={isCustom} onChange={(checked) => {
-                                setIsCustom(checked);
-                                if(checked) {
-                                    setIsCategory(false)
-                                };
-                            }}/>
-                        </Form.Item>
-                    </div>
-                </div>
+                                <Col span={12}>
+                                    <Form.Item name="is_slider" label="Slider Mode" rules={[{ required: true }]}>
+                                        <Select size="large" options={[{ value: 1, label: 'Yes' }, { value: 0, label: 'No' }]} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
 
-                <Form form={form} layout="vertical" onFinish={handleSubmit}>
-                    <div>
-                        <div style={{display:"flex", gap:"16px"}}>
-                            <div style={{width:"45%"}}>
-                                <Form.Item name="title" label="Section Title" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter title" />
-                                </Form.Item>
-                            </div>
+                            <Form.Item name="link" label="Section Link (View All)" rules={[{ required: true, message: 'Please enter link' }]}>
+                                <AntInput size="large" placeholder="/products?category=featured" />
+                            </Form.Item>
 
-                            <div style={{width:"45%"}}>
-                                <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">
-                                    <Select options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
-                                </Form.Item>
-                            </div>
-                        </div>
-
-                        <div style={{display:"flex", gap:"16px"}}>
-                            <div style={{width:"45%"}}>
-                                <Form.Item name="" label="Is Slider" rules={[{ required: true }]} initialValue="inactive">
-                                    <Select options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
-                                </Form.Item>
-                            </div>
-
-                            <div style={{width:"45%"}}>
-                                <Form.Item name="link" label="Section Link" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter link" />
-                                </Form.Item>
+                            <Divider orientation="left">Product Selection Mode</Divider>
+                            
+                            <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                                <Text type="secondary" style={{ display: 'block', marginBottom: '12px' }}>
+                                    How would you like to populate this section?
+                                </Text>
+                                <Segmented block size="large" value={selectionType}
+                                    onChange={(val) => {
+                                        setSelectionType(val);
+                                        if (val === 'category') {
+                                            setResults([]);
+                                            setAddProducts([]);
+                                            setProductIds([]);
+                                        } else if (val === 'custom') {
+                                        } else {
+                                            setResults([]);
+                                            setAddProducts([]);
+                                            setProductIds([]);
+                                        }
+                                    }}
+                                    options={[
+                                        { label: 'Manual', value: 'none' },
+                                        { label: 'By Category', value: 'category' },
+                                        { label: 'Custom List', value: 'custom' },
+                                    ]}
+                                />
                             </div>
 
                             {isCategory && (
-                                <div style={{width:"45%"}}>
-                                    <Form.Item name="category_id" label="Category" rules={[{ required: true }]}>
-                                        <Select options={categories} />
+                                <div style={{ marginTop: '20px' }}>
+                                    <Form.Item name="category_id" label="Select Category" rules={[{ required: true, message: 'Please select a category' }]}>
+                                        <Select size="large" placeholder="Choose a category..." options={categories} />
                                     </Form.Item>
+                                    <Alert type="info" showIcon message="This section will automatically display products from the selected category." style={{ marginTop: '8px' }}/>
                                 </div>
                             )}
-                            
-                            {isCustom && (
-                                <div style={{width:"45%"}}>
-                                    <Form.Item label="Search Products" rules={[{ required: true }]}>
-                                        <AntInput placeholder="Enter Search Key" value={query} onChange={((e) => setQuery(e.target.value))}/>
-                                    </Form.Item>
+
+                            <div style={{ marginTop: '32px', textAlign: 'right' }}>
+                                <Button type="primary" size="large" htmlType="submit" loading={submitting} style={{ height: '48px', padding: '0 40px', borderRadius: '8px', fontWeight: 600 }}>
+                                    {submitting ? "Creating..." : "Create Section"}
+                                </Button>
+                            </div>
+                        </Card>
+                    </Col>
+
+                    <Col xs={24} lg={14}>
+                        {isCustom ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                <Card 
+                                    title={
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span><CheckCircleOutlined style={{ marginRight: 8, color: '#52c41a' }} />Selected Products</span>
+                                            <Badge count={addProducts.length} showZero color="#52c41a" />
+                                        </div>
+                                    }
+                                    className="shadow-sm"
+                                    style={{ borderRadius: '12px' }}
+                                >
+                                    {addProducts.length > 0 ? (
+                                        <Row gutter={[16, 16]}>
+                                            {addProducts.map((item, index) => (
+                                                <Col xs={24} sm={12} md={8} key={item.id}>
+                                                    <ProductCard item={item} index={index} isAdded={true} onAction={handleRemove} loading={loadingRemoveIndex === index}/>
+                                                </Col>
+                                            ))}
+                                        </Row>
+                                    ) : (
+                                        <Empty description="No products selected yet. Use the search below to find products." />
+                                    )}
+                                </Card>
+
+                                <Card title={<span><SearchOutlined style={{ marginRight: 8 }} />Search & Add Products</span>}
+                                className="shadow-sm"
+                                style={{ borderRadius: '12px' }}>
+                                    <AntInput prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                                    size="large"
+                                    placeholder="Search by product name, SKU or keyword..." 
+                                    value={query} 
+                                        onChange={(e) => setQuery(e.target.value)}
+                                        allowClear
+                                        style={{ marginBottom: '20px', borderRadius: '8px' }}
+                                        suffix={searching ? <LoadingOutlined /> : null}
+                                    />
+
+                                    {results.length > 0 ? (
+                                        <Row gutter={[16, 16]}>
+                                            {results.map((item, index) => (
+                                                <Col xs={24} sm={12} md={8} key={item.id}>
+                                                    <ProductCard item={item} index={index} isAdded={false} onAction={handleAdd} loading={loadingIndex === index}/>
+                                                </Col>
+                                            ))}
+                                        </Row>
+                                    ) : query && !searching ? (
+                                        <Empty description={`No products found for "${query}"`} />
+                                    ) : (
+                                        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                                            <SearchOutlined style={{ fontSize: '48px', color: '#f0f0f0', marginBottom: '16px' }} />
+                                            <Text type="secondary" style={{ display: 'block' }}>Enter a search term to find products for this section</Text>
+                                        </div>
+                                    )}
+                                </Card>
+                            </div>
+                        ) : selectionType === 'none' ? (
+                            <Card style={{ borderRadius: '12px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ textAlign: 'center', padding: '60px' }}>
+                                    <ShoppingOutlined style={{ fontSize: '64px', color: '#e6f7ff', marginBottom: '24px' }} />
+                                    <Title level={4} style={{ color: '#8c8c8c' }}>Select a populate mode</Title>
+                                    <Text type="secondary">Choose "By Category" for automatic collection or "Custom List" to hand-pick products.</Text>
                                 </div>
-                            )}
-                        </div>
-                        
-                        {addProducts && addProducts.length > 0 && (
-                            <div style={{ display: "flex", gap: "15px", flexWrap:"wrap", alignItems:"stretch"}}>
-                                {addProducts.map((item, index) => (
-                                    <div key={item.id} style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px", width:"15%", height:"100%"}}>
-                                        <div>
-                                            <img src={item.img_path} alt={item.slug} style={{width:"80%", height:"180px", display:"block", objectFit:"cover", margin:"0 auto"}} />
-                                            <h2 style={{textAlign:"center", color:"#000", fontWeight:"600", fontSize:"20px", lineHeight:"25px"}}>{item.name}</h2>
-
-                                            {item.categories?.length > 0 && (
-                                                <p style={{ textTransform: "capitalize", fontWeight: "600", textAlign: "center", marginBottom: "0" }}>
-                                                    Category : {item.categories.map(c => c.name).join(", ")}
-                                                </p>
-                                            )}
-
-                                            <p style={{textTransform:"capitalize", fontWeight:"600", textAlign:"center"}}>
-                                                Sku : {item.sku}
-                                            </p>
-
-                                            <div style={{display:"flex", gap:"15px", justifyContent:"space-around", alignItems:"center"}}>
-                                                <span style={{textDecoration:"line-through", fontSize:"20px", fontWeight:"600", color:"red"}}>
-                                                    {item.mrp} tk
-                                                </span>
-                                                <span style={{fontSize:"20px", fontWeight:"600", color:"#28a745"}}>
-                                                    {item.sell_price} tk
-                                                </span>
-                                            </div>
-
-                                            <div style={{ display: "flex", justifyContent: "center", marginTop: "12px" }}>
-                                                <Button color="danger" variant="solid" onClick={() => handleRemove(item, index)}>
-                                                    {loadingRemoveIndex === index ? (
-                                                        <LoadingOutlined />
-                                                    ) : (
-                                                        <DeleteOutlined />
-                                                    )}
-                                                    {loadingRemoveIndex === index ? " Loading..." : " Remove"}
-                                                </Button>
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                            </Card>
+                        ) : (
+                            <Card style={{ borderRadius: '12px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ textAlign: 'center', padding: '60px' }}>
+                                    <EyeOutlined style={{ fontSize: '64px', color: '#f6ffed', marginBottom: '24px' }} />
+                                    <Title level={4} style={{ color: '#8c8c8c' }}>Category Mode Active</Title>
+                                    <Text type="secondary">In Category mode, products are managed via the selected category automatically.</Text>
+                                </div>
+                            </Card>
                         )}
-
-                        {addProducts && addProducts.length > 0 && (
-                            <hr />
-                        )}
-
-                        {results && results.length > 0 && (
-                            <div style={{ display: "flex", gap: "15px", flexWrap:"wrap", alignItems:"stretch"}}>
-                                {results.map((item, index) => (
-                                    <div key={item.id} style={{ padding: "8px", border: "1px solid #ccc", borderRadius: "4px", width:"15%", height:"100%"}}>
-                                        <div>
-                                            <img src={item.img_path} alt={item.slug} style={{width:"80%", height:"180px", display:"block", objectFit:"cover", margin:"0 auto"}} />
-                                            <h2 style={{textAlign:"center", color:"#000", fontWeight:"600", fontSize:"20px", lineHeight:"25px"}}>{item.name}</h2>
-
-                                            {item.categories?.length > 0 && (
-                                                <p style={{ textTransform: "capitalize", fontWeight: "600", textAlign: "center", marginBottom: "0" }}>
-                                                    Category : {item.categories.map(c => c.name).join(", ")}
-                                                </p>
-                                            )}
-
-                                            <p style={{textTransform:"capitalize", fontWeight:"600", textAlign:"center"}}>
-                                                Sku : {item.sku}
-                                            </p>
-
-                                            <div style={{display:"flex", gap:"15px", justifyContent:"space-around", alignItems:"center"}}>
-                                                <span style={{textDecoration:"line-through", fontSize:"20px", fontWeight:"600", color:"red"}}>
-                                                    {item.mrp} tk
-                                                </span>
-                                                <span style={{fontSize:"20px", fontWeight:"600", color:"#28a745"}}>
-                                                    {item.sell_price} tk
-                                                </span>
-                                            </div>
-
-                                            <div style={{ display: "flex", justifyContent: "center", marginTop: "12px" }}>
-                                                <Button type="primary" onClick={() => handleAdd(item, index)}>
-                                                    {loadingIndex === index ? (
-                                                        <LoadingOutlined />
-                                                    ) : (
-                                                        <PlusOutlined />
-                                                    )}
-                                                    {loadingIndex === index ? " Loading..." : " Add"}
-                                                </Button>
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <Form.Item style={{textAlign:"right"}}>
-                            <Button type="primary" htmlType="submit" loading={loading}>
-                                Add Section
-                            </Button>
-                        </Form.Item>
-                    </div>
-                </Form>
-            </div>
-        </>
+                    </Col>
+                </Row>
+            </Form>
+        </div>
     )
 }

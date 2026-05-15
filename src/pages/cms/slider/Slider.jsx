@@ -1,21 +1,24 @@
-import { ArrowLeftOutlined, CheckOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { Breadcrumb, Button, Skeleton, Space } from "antd";
+import { ArrowLeftOutlined, DeleteOutlined, EditOutlined, PlusOutlined, DesktopOutlined, TabletOutlined, MobileOutlined, ExpandOutlined, CheckCircleOutlined, StopOutlined } from "@ant-design/icons";
+import { Breadcrumb, Button, Skeleton, Space, Typography, Tag, Empty, Tooltip } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { deleteData, getDatas } from "../../../api/common/common";
 import useTitle from "../../../hooks/useTitle";
+import "./Slider.css";
+
+const { Title, Text } = Typography;
 
 export default function Slider() {
     // Variable
     const navigate = useNavigate();
 
     // State
-    const [sliders,setSlider] = useState([]);
+    const [sliders, setSlider] = useState([]);
     const [loading, setLoading] = useState(false);
 
     // Hook
-    useTitle("All Silder");
+    useTitle("Manage Home Sliders | Admin");
 
     // Method
     const openCreate = () => {
@@ -26,140 +29,164 @@ export default function Slider() {
         navigate(`/slider/edit/${id}`);
     }
 
-    useEffect(() => {
-        let isMounted = true;
-
-        const fetchSlider = async () => {
-            setLoading(true);
-
+    const fetchSliders = async (isMounted = true) => {
+        setLoading(true);
+        try {
             const res = await getDatas("/admin/sliders");
-
-            const list = res?.result?.data;
-
-            if(isMounted){
+            const list = res?.result?.data || [];
+            if (isMounted) {
                 setSlider(list);
             }
-
-            setLoading(false);
+        } catch (error) {
+            console.error("Failed to fetch sliders", error);
+        } finally {
+            if (isMounted) setLoading(false);
         }
+    };
 
-        fetchSlider();
-
+    useEffect(() => {
+        let isMounted = true;
+        fetchSliders(isMounted);
         return () => {
             isMounted = false;
         }
     }, []);
 
     const handleDelete = (id) => {
-      Swal.fire({
-        title: "Are you sure?",
-        text: "This action cannot be undone.",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
-        confirmButtonText: "Yes, delete it!",
-      }).then( async (result) => {
-        if (result.isConfirmed) {
-          const res = await deleteData(`/admin/sliders/${id}`);
+        Swal.fire({
+            title: "Delete Slider?",
+            text: "This artwork will be permanently removed from the homepage.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: "Yes, delete it",
+            cancelButtonText: "Cancel",
+            customClass: {
+                popup: 'premium-swal-popup',
+                confirmButton: 'premium-swal-confirm'
+            }
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                const res = await deleteData(`/admin/sliders/${id}`);
+                if (res?.success) {
+                    fetchSliders();
+                    Swal.fire({
+                        title: "Deleted!",
+                        text: res?.msg || "Slider has been removed.",
+                        icon: "success",
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+            }
+        });
+    };
 
-          if(res?.success){
-            const refreshed = await getDatas("/admin/sliders");
-
-            setSlider(refreshed?.result?.data);
-
-            Swal.fire({
-              title: "Deleted!",
-              text: res?.msg || "Slider deleted successfully",
-              icon: "success",
-              confirmButtonColor: "#3085d6",
-            });
-          }
+    const getDeviceIcon = (type) => {
+        switch (type?.toLowerCase()) {
+            case 'desktop': return <DesktopOutlined />;
+            case 'tablet': return <TabletOutlined />;
+            case 'mobile': return <MobileOutlined />;
+            default: return <DesktopOutlined />;
         }
-      });
     };
 
     return (
-        <>
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">All Home Sliders</h1>
-                </div>
-                <div className="head-actions">
+        <div className="slider-container">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 32 }}>
+                <div>
+                    <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Home Sliders</Title>
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "All Home Sliders" },
+                            { title: "CMS Management" },
+                            { title: "Home Sliders" },
                         ]}
                     />
                 </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div></div>
-                <Space>
-                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
+                <Space size="middle">
+                    <Button className="add-new-slider-btn" icon={<PlusOutlined />} onClick={openCreate}>
+                        ADD NEW SLIDER
+                    </Button>
+                    <Button className="premium-back-btn" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                        Back
+                    </Button>
                 </Space>
             </div>
 
-            <div className="slider-card">
-                {loading
-                    ? Array.from({ length: 6 }).map((_, idx) => (
-                        <div key={idx} className="card">
-                            {/* Skeleton image */}
-                            <div className="card-image">
-                                <Skeleton.Image style={{ width: "100%", height: 160, borderRadius: 8 }} active />
-                            </div>
-
-                            {/* Card footer */}
-                            <div className="card-footer">
-                                <Skeleton.Button active size="small" style={{ width: 60 }} />
-                                <Skeleton.Button active size="small" style={{ width: 60 }} />
-                                <Skeleton.Button active size="small" style={{ width: 60 }} />
+            {/* Slider Grid */}
+            <div className="premium-slider-grid">
+                {loading ? (
+                    Array.from({ length: 6 }).map((_, idx) => (
+                        <div key={idx} className="premium-slider-card skeleton-card">
+                            <Skeleton.Button active block className="skeleton-img" />
+                            <div style={{ padding: '20px' }}>
+                                <Skeleton active paragraph={{ rows: 2 }} title={true} />
                             </div>
                         </div>
                     ))
-                    : sliders?.map((slider) => (
-                        <div key={slider.id} className="card">
-                            {/* Image */}
-                            <div className="card-image">
-                                <img src={slider.image} alt={slider.title} />
-                            </div>
-
-                            {/* Footer buttons */}
-                            <div className="card-footer">
-                                <div className="slider-card-footer">
-                                    <div>
-                                        <button className="slide-btn button-primary" onClick={() => handleEdit(slider.id)}>
-                                            <EditOutlined style={{marginRight:"6px"}} />
-                                            Edit
-                                        </button>
+                ) : sliders?.length > 0 ? (
+                    sliders.map((slider) => (
+                        <div key={slider.id} className="premium-slider-card">
+                            {/* Image Section */}
+                            <div className="card-image-wrapper">
+                                <img src={slider.image} alt={slider.title} className="card-img" />
+                                <div className="card-overlay-badges">
+                                    <div className={`status-badge ${slider.status === 'active' ? 'active' : 'inactive'}`}>
+                                        {slider.status === 'active' ? <CheckCircleOutlined /> : <StopOutlined />}
+                                        {slider.status === 'active' ? 'Active' : 'Inactive'}
                                     </div>
-                                    <div>
-                                        {slider.status === 'active' ? (
-                                            <button className="slide-btn button-success" style={{marginRight:"10px"}}>
-                                                <CheckOutlined  style={{marginRight:"6px", fontWeight:"bold"}}/>
-                                                Active
-                                            </button>
-                                        ) : (
-                                            <button className="slide-btn button-warning" style={{marginRight:"10px"}}>
-                                                <CheckOutlined  style={{marginRight:"6px", fontWeight:"bold"}}/>
-                                                Inactive
-                                            </button>
-                                        )}
-                                        
-                                        <button className="slide-btn button-danger" onClick={() => handleDelete(slider.id)}>
-                                            <DeleteOutlined  style={{marginRight: "6px"}}/>
-                                            Delete
-                                        </button>
+                                    <div className="device-badge">
+                                        {getDeviceIcon(slider.type)}
+                                        {slider.type?.toUpperCase()}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
 
-        </>
-    )
+                            {/* Info Section */}
+                            <div className="card-info-content">
+                                <Tooltip title={slider.title}>
+                                    <Title level={5} className="card-title-text">{slider.title || "Untitled Slider"}</Title>
+                                </Tooltip>
+                                <Space>
+                                    <div className="dimension-tag">
+                                        <ExpandOutlined />
+                                        {slider.width} × {slider.height} px
+                                    </div>
+                                    <Tag color={slider.status === 'active' ? 'blue' : 'default'} style={{ borderRadius: '6px' }}>
+                                        {slider.status === 'active' ? 'Published' : 'Draft'}
+                                    </Tag>
+                                </Space>
+                            </div>
+
+                            <div className="card-action-footer">
+                                <div className="footer-btn edit-btn" onClick={() => handleEdit(slider.id)}>
+                                    <EditOutlined /> Edit
+                                </div>
+                                <div className="footer-btn delete-btn" onClick={() => handleDelete(slider.id)}>
+                                    <DeleteOutlined /> Delete
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div style={{ gridColumn: '1 / -1', padding: '80px 0' }}>
+                        <Empty 
+                            description={
+                                <Text type="secondary" style={{ fontSize: '16px' }}>
+                                    No homepage sliders found. Start by adding a new one!
+                                </Text>
+                            }
+                        >
+                            <Button type="primary" size="large" onClick={openCreate} className="add-new-slider-btn">
+                                Create Your First Slider
+                            </Button>
+                        </Empty>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }

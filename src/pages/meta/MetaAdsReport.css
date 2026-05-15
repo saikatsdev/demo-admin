@@ -1,0 +1,83 @@
+.meta-ads-page {
+    padding: 24px;
+    background: #f0f2f5;
+    min-height: calc(100vh - 64px);
+}
+
+.page-header-wrapper {
+    margin-bottom: 24px;
+    background: #fff;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+}
+
+/* Stat Cards Premium */
+.stat-card-premium {
+    border-radius: 16px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #fff !important;
+}
+
+.stat-card-premium:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+.active-border {
+    border-bottom: 4px solid #52c41a !important;
+}
+
+.warning-border {
+    border-bottom: 4px solid #faad14 !important;
+}
+
+.info-border {
+    border-bottom: 4px solid #1890ff !important;
+}
+
+/* Table Card Premium */
+.table-card-premium {
+    border-radius: 16px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+    overflow: hidden;
+}
+
+/* Ant Table Customization */
+.meta-ads-table .ant-table-thead > tr > th {
+    background: #fafafa !important;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.meta-ads-table .ant-table-tbody > tr:hover > td {
+    background: #f0f7ff !important;
+}
+
+.meta-ads-table .ant-table-pagination {
+    margin: 24px 16px !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .meta-ads-page {
+        padding: 12px;
+    }
+    
+    .page-header-wrapper {
+        padding: 16px;
+    }
+}
+
+/* Smooth sync animation for title icon */
+.syncing-icon {
+    animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

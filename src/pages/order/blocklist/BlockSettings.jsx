@@ -1,6 +1,6 @@
 
 import { ArrowLeftOutlined, SaveOutlined, SettingOutlined, MessageOutlined, ControlOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Space, Select, message, Card, Row, Col, Typography, Divider, Switch, InputNumber } from "antd";
+import { Input as AntInput, Breadcrumb, Button, Form, Space, Select, message, Card, Row, Col, Typography, Divider, InputNumber } from "antd";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
@@ -108,9 +108,9 @@ export default function BlockSettings() {
     const handleSubmit = async (values) => {
         const formData = new FormData();
 
-        formData.append('quantity', values.quantity);
-        formData.append('duration', values.duration);
-        formData.append('allow_percentage', values.allow_percentage);
+        formData.append('quantity', Math.round(values.quantity || 0));
+        formData.append('duration', Math.round(values.duration || 0));
+        formData.append('allow_percentage', Math.round(values.allow_percentage || 0));
         formData.append('duration_type', values.duration_type);
         formData.append('block_message', values.block_message);
         formData.append('permanent_block_message', values.permanent_block_message);
@@ -157,28 +157,16 @@ export default function BlockSettings() {
                     />
                 </div>
                 <div className="head-actions">
-                    <Button 
-                        style={{ borderRadius: '10px', height: '40px', fontWeight: 500 }}
-                        icon={<ArrowLeftOutlined />} 
-                        onClick={() => window.history.back()}
-                    >
+                    <Button style={{ borderRadius: '10px', height: '40px', fontWeight: 500 }} icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                         Back
                     </Button>
                 </div>
             </div>
 
-            <Form 
-                form={form} 
-                onFinish={handleSubmit} 
-                layout="vertical" 
-                autoComplete="off"
-                requiredMark={false}
-            >
+            <Form form={form} onFinish={handleSubmit} layout="vertical" autoComplete="off" requiredMark={false}>
                 <Row gutter={[24, 24]}>
                     <Col xs={24} lg={10}>
-                        <Card 
-                            style={styles.card}
-                            bodyStyle={{ padding: '24px' }}
+                        <Card style={styles.card} bodyStyle={{ padding: '24px' }}
                             title={
                                 <Space>
                                     <ControlOutlined style={{ color: '#6366f1' }} />
@@ -192,33 +180,20 @@ export default function BlockSettings() {
 
                             <Row gutter={16}>
                                 <Col span={24}>
-                                    <Form.Item 
-                                        name="quantity" 
-                                        label={<span style={styles.label}>Maximum Orders Allowed</span>} 
-                                        tooltip="The number of orders a customer can place before threshold check."
-                                        rules={[{ required: true, message: 'Please enter quantity' }]}
-                                    >
-                                        <InputNumber style={{ ...styles.input, width: '100%' }} size="large" placeholder="e.g. 5" min={1} />
+                                    <Form.Item name="quantity" label={<span style={styles.label}>Maximum Orders Allowed</span>} tooltip="The number of orders a customer can place before threshold check." rules={[{ required: true, message: 'Please enter quantity' }]}>
+                                        <InputNumber style={{ ...styles.input, width: '100%' }} size="large" placeholder="e.g. 5" min={1} precision={0} />
                                     </Form.Item>
                                 </Col>
                                 
                                 <Col span={14}>
-                                    <Form.Item 
-                                        name="duration" 
-                                        label={<span style={styles.label}>Blocking Duration</span>} 
-                                        rules={[{ required: true, message: 'Please enter duration' }]}
-                                    >
-                                        <InputNumber style={{ ...styles.input, width: '100%' }} size="large" placeholder="e.g. 30" min={1} />
+                                    <Form.Item name="duration" label={<span style={styles.label}>Blocking Duration</span>} rules={[{ required: true, message: 'Please enter duration' }]}>
+                                        <InputNumber style={{ ...styles.input, width: '100%' }} size="large" placeholder="e.g. 30" min={1} precision={0} />
                                     </Form.Item>
                                 </Col>
                                 
                                 <Col span={10}>
                                     <Form.Item name="duration_type" label={<span style={styles.label}>Unit</span>}>
-                                        <Select
-                                            size="large"
-                                            style={{ height: '46px' }}
-                                            dropdownStyle={{ borderRadius: '8px' }}
-                                            options={[
+                                        <Select size="large" style={{ height: '46px' }} dropdownStyle={{ borderRadius: '8px' }} options={[
                                                 { value: "minutes", label: "Minutes" },
                                                 { value: "hours", label: "Hours" },
                                                 { value: "days", label: "Days" }
@@ -228,8 +203,7 @@ export default function BlockSettings() {
                                 </Col>
 
                                 <Col span={24}>
-                                    <Form.Item 
-                                        name="allow_percentage" 
+                                    <Form.Item name="allow_percentage" 
                                         label={<span style={styles.label}>Blocking Percentage (%)</span>} 
                                         tooltip="Threshold percentage of failed/cancelled orders to trigger a block."
                                         rules={[{ required: true, message: 'Please enter percentage' }]}
@@ -240,6 +214,7 @@ export default function BlockSettings() {
                                             placeholder="e.g. 20" 
                                             min={0} 
                                             max={100} 
+                                            precision={0}
                                             formatter={value => `${value}%`}
                                             parser={value => value.replace('%', '')}
                                         />
@@ -262,15 +237,7 @@ export default function BlockSettings() {
                         </Card>
 
                         <div style={{ marginTop: 16 }}>
-                            <Button 
-                                type="primary" 
-                                htmlType="submit" 
-                                loading={loading} 
-                                size="large" 
-                                block
-                                icon={<SaveOutlined />}
-                                style={styles.submitBtn}
-                            >
+                            <Button type="primary" htmlType="submit" loading={loading} size="large" block icon={<SaveOutlined />} style={styles.submitBtn}>
                                 {loading ? "Updating System..." : "Save System Settings"}
                             </Button>
                         </div>
@@ -291,43 +258,16 @@ export default function BlockSettings() {
                                 Customize the messages displayed to users when their actions are restricted by the system.
                             </Paragraph>
 
-                            <Form.Item 
-                                name="block_message" 
-                                label={<span style={styles.label}>Standard Block Message</span>} 
-                                extra={<span style={{ fontSize: '12px', color: '#94a3b8' }}>Shown to customers who are temporarily blocked.</span>}
-                                rules={[{ required: true, message: "Please enter a message" }]}
-                            >
-                                <TextArea 
-                                    rows={4} 
-                                    placeholder="Enter the message for temporary blocks..." 
-                                    style={styles.input}
-                                />
+                            <Form.Item name="block_message" label={<span style={styles.label}>Standard Block Message</span>} extra={<span style={{ fontSize: '12px', color: '#94a3b8' }}>Shown to customers who are temporarily blocked.</span>} rules={[{ required: true, message: "Please enter a message" }]}>
+                                <TextArea rows={4} placeholder="Enter the message for temporary blocks..." style={styles.input}/>
                             </Form.Item>
 
-                            <Form.Item 
-                                name="permanent_block_message" 
-                                label={<span style={styles.label}>Permanent Block Notification</span>} 
-                                extra={<span style={{ fontSize: '12px', color: '#94a3b8' }}>Shown to customers who have been blacklisted permanently.</span>}
-                                rules={[{ required: true, message: "Please enter a message" }]}
-                            >
-                                <TextArea 
-                                    rows={4} 
-                                    placeholder="Enter the message for permanent bans..." 
-                                    style={styles.input}
-                                />
+                            <Form.Item name="permanent_block_message" label={<span style={styles.label}>Permanent Block Message</span>} extra={<span style={{ fontSize: '12px', color: '#94a3b8' }}>Shown to customers who have been blacklisted permanently.</span>} rules={[{ required: true, message: "Please enter a message" }]}>
+                                <TextArea rows={4} placeholder="Enter the message for permanent bans..." style={styles.input}/>
                             </Form.Item>
 
-                            <Form.Item 
-                                name="courier_block_message" 
-                                label={<span style={styles.label}>Courier Integration Message</span>} 
-                                extra={<span style={{ fontSize: '12px', color: '#94a3b8' }}>Message shown when a block is triggered via third-party courier data.</span>}
-                                rules={[{ required: true, message: "Please enter a message" }]}
-                            >
-                                <TextArea 
-                                    rows={4} 
-                                    placeholder="Enter the message for courier-based restrictions..." 
-                                    style={styles.input}
-                                />
+                            <Form.Item name="courier_block_message" label={<span style={styles.label}>Courier Integration Message</span>} extra={<span style={{ fontSize: '12px', color: '#94a3b8' }}>Message shown when a block is triggered via third-party courier data.</span>} rules={[{ required: true, message: "Please enter a message" }]}>
+                                <TextArea rows={4} placeholder="Enter the message for courier-based restrictions..." style={styles.input}/>
                             </Form.Item>
                         </Card>
                         

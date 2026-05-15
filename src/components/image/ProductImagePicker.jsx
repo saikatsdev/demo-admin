@@ -14,10 +14,26 @@ export default function ProductImagePicker({ gallery = [], fetchMore, hasMore, l
     const [fileList, setFileList]             = useState([]);
 
     const handleCustomUpload = async ({ file, onProgress, onSuccess, onError }) => {
-        const formData = new FormData();
-        formData.append("images[]", file);
-
         try {
+            const dimensions = await new Promise((resolve) => {
+                const img = new window.Image();
+                const objectUrl = URL.createObjectURL(file);
+                img.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve({ width: img.width, height: img.height });
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve({ width: 800, height: 800 });
+                };
+                img.src = objectUrl;
+            });
+
+            const formData = new FormData();
+            formData.append("images[]", file);
+            formData.append("width[]", dimensions.width);
+            formData.append("height[]", dimensions.height);
+
             const res = await postData("/admin/gallary/upload", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
                 onUploadProgress: (event) => {

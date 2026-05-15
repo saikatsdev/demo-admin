@@ -1,0 +1,12 @@
+.ql-editor {
+  background-color: #fff;
+  color: #000;
+}
+
+.ql-editor.ql-blank::before {
+  color: #999;
+}
+
+.ql-editor {
+  min-height: 300px;
+}

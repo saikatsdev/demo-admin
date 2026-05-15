@@ -1,19 +1,23 @@
-import useTitle from "../../../hooks/useTitle";
-import {Breadcrumb, message} from "antd";
+import { ArrowLeftOutlined, CloudUploadOutlined, DeleteOutlined, InboxOutlined, PlusOutlined, SettingOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import { Breadcrumb, Button, Card, Col, Divider, Form, Input, InputNumber, message, Radio, Row, Select, Space, Spin, Tag, Typography, Upload } from "antd";
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
+import useTitle from "../../../hooks/useTitle";
 import "./downsell.css";
+
+const { Title, Text } = Typography;
 
 export default function AddDownSell() {
     // Hook
-    useTitle("Add Downsell Produts");
+    useTitle("Add Downsell Products");
 
     // State
     const [query, setQuery]                           = useState("");
     const [results, setResults]                       = useState([]);
     const [loading, setLoading]                       = useState(false);
+    const [formLoading, setFormLoading]               = useState(false);
     const [mode, setMode]                             = useState("all");
     const [categories, setCategories]                 = useState([]);
     const [selectedProducts, setSelectedProducts]     = useState([]);
@@ -23,31 +27,24 @@ export default function AddDownSell() {
     const [messageApi, contextHolder]                 = message.useMessage();
 
     const debounceTimeout = useRef(null);
-    const cancelToken     = useRef(null);
-    const navigate        = useNavigate();
+    const cancelToken = useRef(null);
+    const navigate = useNavigate();
+    const [form] = Form.useForm();
 
     useEffect(() => {
         let isMounted = true;
-
         const getCategories = async () => {
-            const res =  await getDatas("/admin/categories/list");
-
-            if(res && res.success){
-                if(isMounted){
-                    setCategories(res?.result || []);
-                }
+            const res = await getDatas("/admin/categories/list");
+            if (res && res.success && isMounted) {
+                setCategories(res?.result || []);
             }
-        }
-
+        };
         getCategories();
-
-        return () => {
-            isMounted = false;
-        }
+        return () => { isMounted = false; };
     }, []);
 
     const fetchedProducts = async (searchTerm) => {
-        if(!searchTerm){
+        if (!searchTerm) {
             setResults([]);
             return;
         }
@@ -57,67 +54,69 @@ export default function AddDownSell() {
         }
 
         cancelToken.current = axios.CancelToken.source();
-
         setLoading(true);
 
         try {
             const res = await getDatas("/admin/products/search", {
-                params:{search_key : searchTerm},
+                params: { search_key: searchTerm },
                 cancelToken: cancelToken.current.token,
             });
 
-            if(res && res?.success){
+            if (res && res?.success) {
                 setResults(res?.result);
             }
         } catch (error) {
-            console.log("Something went wrong", error);
-        }finally{
+            if (!axios.isCancel(error)) {
+                console.log("Something went wrong", error);
+            }
+        } finally {
             setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
-        if (debounceTimeout.current) {
-            clearTimeout(debounceTimeout.current);
-        }
-
-        debounceTimeout.current = setTimeout(() => {fetchedProducts(query);}, 400);
-
+        if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+        debounceTimeout.current = setTimeout(() => { fetchedProducts(query); }, 400);
         return () => clearTimeout(debounceTimeout.current);
     }, [query]);
 
     const handleSelect = (product) => {
         if (!selectedProducts.find((p) => p.id === product.id)) {
             setSelectedProducts([...selectedProducts, product]);
+            setQuery("");
+            setResults([]);
         }
-    }
+    };
 
     const handleCategory = (categoryId) => {
         if (!categoryId) return;
-
         const category = categories.find((cat) => cat.id === parseInt(categoryId));
-
         if (category && !selectedCategories.find((c) => c.id === category.id)) {
             setSelectedCategories([...selectedCategories, category]);
         }
     };
 
-    const handleImageChange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-            setImage(URL.createObjectURL(e.target.files[0]));
-            setImageFile(e.target.files[0]);
+    const handleImageChange = (info) => {
+        if (info.file.status === 'removed') {
+            setImage(null);
+            setImageFile(null);
+            return;
+        }
+        const file = info.file.originFileObj || info.file;
+        if (file) {
+            setImage(URL.createObjectURL(file));
+            setImageFile(file);
         }
     };
 
-    const removeImage = () => {
-        setImage(null);
-        setImageFile(null);
-    };
-    
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const onFinish = async (values) => {
+        const formData = new FormData();
 
-        const formData = new FormData(e.target);
+        Object.keys(values).forEach(key => {
+            if (values[key] !== undefined && key !== 'image') {
+                formData.append(key, values[key]);
+            }
+        });
 
         formData.append("mode", mode);
 
@@ -125,275 +124,228 @@ export default function AddDownSell() {
             selectedProducts.forEach(p => {
                 formData.append("product_ids[]", p.id);
             });
+            if (selectedProducts.length === 0) {
+                return messageApi.error("Please select at least one product");
+            }
         }
 
         if (mode === "category") {
             selectedCategories.forEach(c => {
                 formData.append("category_ids[]", c.id);
             });
+            if (selectedCategories.length === 0) {
+                return messageApi.error("Please select at least one category");
+            }
         }
 
         if (imageFile) formData.append("image", imageFile);
 
         try {
-            setLoading(true);
+            setFormLoading(true);
+            const res = await postData("/admin/down-sells", formData, { headers: { "Content-Type": "multipart/form-data" } });
 
-            const res = await postData("/admin/down-sells", formData, {headers: { "Content-Type": "multipart/form-data" }});
-            if(res && res?.success){
-                messageApi.open({
-                    type: "success",
-                    content: res.msg,
-                });
-
-                setTimeout(() => {
-                    navigate("/downsell-coupon");
-                }, 500);
+            if (res && res?.success) {
+                messageApi.success(res.msg);
+                setTimeout(() => navigate("/downsell-coupon"), 1000);
             }
         } catch (error) {
             console.log(error);
-        }finally{
-            setLoading(false);
+            messageApi.error("Failed to create downsell offer");
+        } finally {
+            setFormLoading(false);
         }
-    }
+    };
 
     return (
-        <>
+        <div style={{ padding: 16 }}>
             {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
                     <h1 className="title">Add Downsell Products</h1>
+                    <p className="subtitle">Create promotional offers for customers who decline initial upsells</p>
                 </div>
                 <div className="head-actions">
                     <Breadcrumb
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Add Downsell Products" },
+                            { title: <Link to="/downsell-coupon">Downsells</Link> },
+                            { title: "Create Offer" },
                         ]}
                     />
                 </div>
             </div>
 
-            <div className="raw-sell-container">
-                <form onSubmit={handleSubmit} className="raw-sell-form">
-                    <div className="raw-up-sell-form-header" style={{marginBottom:"10px"}}>
-                        <h2 className="page-title">Add Downsell Products</h2>
+            <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ coupon_type: 'fixed', status: 'active', width: 450, height: 220 }}>
+                <Row gutter={[24, 24]}>
+                    <Col xs={24} lg={16}>
+                        <Card 
+                            title={<Space><SettingOutlined /> Offer Information</Space>} 
+                            className="modern-antd-card"
+                            extra={<Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/downsell-coupon")}>Back</Button>}
+                        >
+                            <Row gutter={16}>
+                                <Col span={24}>
+                                    <Form.Item label="Campaign Name" name="title" rules={[{ required: true, message: 'Offer name is required' }]}>
+                                        <Input size="large" placeholder="e.g. 10% Discount for Second Chance" />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Coupon Amount" name="amount" rules={[{ required: true, message: 'Amount is required' }]}>
+                                        <InputNumber size="large" style={{ width: '100%' }} min={0} placeholder="0.00" />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Coupon Type" name="coupon_type">
+                                        <Select size="large">
+                                            <Select.Option value="fixed">Fixed Amount</Select.Option>
+                                            <Select.Option value="percent">Percentage (%)</Select.Option>
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Duration (Days)" name="duration">
+                                        <InputNumber size="large" style={{ width: '100%' }} min={1} placeholder="30" />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={12}>
+                                    <Form.Item label="Start Date" name="started_at" rules={[{ required: true, message: 'Select start date' }]}>
+                                        <Input size="large" type="date" />
+                                    </Form.Item>
+                                </Col>
+                                <Col xs={24} md={12}>
+                                    <Form.Item label="End Date" name="ended_at" rules={[{ required: true, message: 'Select end date' }]}>
+                                        <Input size="large" type="date" />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={24}>
+                                    <Form.Item label="Short Description" name="description">
+                                        <Input.TextArea rows={4} placeholder="Describe the offer for your customers..." />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                        </Card>
 
-                        <button type="button" className="back-btn" onClick={() => window.history.back()} aria-label="Go back" title="Go back">
-                            <svg className="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-                                <path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <span className="label">Back</span>
-                        </button>
-                    </div>
+                        <Card title={<Space><ThunderboltOutlined /> Trigger Settings</Space>} className="modern-antd-card" style={{ marginTop: 24 }}>
+                            <Form.Item label="Show offer for:" required>
+                                <Radio.Group value={mode} onChange={(e) => setMode(e.target.value)} buttonStyle="solid" className="modern-radio-group">
+                                    <Radio.Button value="all">Storewide (All Products)</Radio.Button>
+                                    <Radio.Button value="product">Specific Products</Radio.Button>
+                                    <Radio.Button value="category">Specific Categories</Radio.Button>
+                                </Radio.Group>
+                            </Form.Item>
 
-                    <div className="row">
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Name:</label>
-                                <input type="text" className="raw-sell-input" placeholder="Enter offer name" name="title"/>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Coupon Amount:</label>
-                                <input type="number" className="raw-sell-input" placeholder="Enter amount" name="amount"/>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Duration (days):</label>
-                                <input type="number" className="raw-sell-input" placeholder="Enter duration" name="duration"/>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Coupon Type:</label>
-                                <select name="coupon_type" className="raw-sell-input">
-                                    <option value="fixed">Fixed Amount</option>
-                                    <option value="percent">Percent</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Start Date :</label>
-                                <input type="date" className="raw-sell-input" name="started_at"/>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">End Date :</label>
-                                <input type="date" className="raw-sell-input" name="ended_at"/>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Status:</label>
-                                <select name="status" className="raw-sell-input">
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Description:</label>
-                                <textarea name="description" className="raw-sell-input" placeholder="Enter description"></textarea>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Image:</label>
-                                {!image && (
-                                    <label className="custom-upload">
-                                        <input type="file" accept="image/*" onChange={handleImageChange} />
-                                        <span>Choose Image</span>
-                                    </label>
-                                    )}
-
-                                    {image && (
-                                    <div className="image-preview">
-                                        <img src={image} alt="preview" />
-                                        <button className="remove-btn" onClick={removeImage}>
-                                        &times;
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Width:</label>
-                                <input type="number" value={450} name="width" className="raw-sell-input" placeholder="Enter width"/>
-                            </div>
-                        </div>
-
-                        <div className="col-lg-6 col-12">
-                            <div className="raw-sell-row">
-                                <label className="raw-sell-label">Height:</label>
-                                <input type="number" value={220} name="height" className="raw-sell-input" placeholder="Enter height"/>
-                            </div>
-                        </div>
-
-                        <div className="col-12 mb-3">
-                            <div className="raw-radio-main">
-                                <label className="raw-sell-block-title d-block mb-2">Select Trigger Mode:</label>
-                                <div className="raw-sell-radio-group">
-                                    <label className={`${mode === 'all' ? 'active' : ''}`}>
-                                    <input type="radio" name="trigger_mode" value="all" checked={mode === 'all'} onChange={(e) => setMode(e.target.value)}/>
-                                        For All Products
-                                    </label>
-
-                                    <label className={`${mode === 'product' ? 'active' : ''}`}>
-                                    <input type="radio" name="trigger_mode" value="product" checked={mode === 'product'} onChange={(e) => setMode(e.target.value)}/>
-                                        For Specific Products
-                                    </label>
-
-                                    <label className={`${mode === 'category' ? 'active' : ''}`}>
-                                    <input type="radio" name="trigger_mode" value="category" checked={mode === 'category'} onChange={(e) => setMode(e.target.value)}/>
-                                        For Specific Category
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        {mode === "product" && (
-                            <div className="col-lg-6 col-12">
-                                <div className="raw-sell-row">
-                                    <label className="raw-sell-label">Search Product:</label>
-                                    <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} className="raw-sell-input" placeholder="Enter product name..." />
-
-                                    {query && (
-                                        <div className="downsell-search-box">
-                                            {loading ? (
-                                                <div className="search-loading">Searching...</div>
-                                            ): results.length > 0 ? (
-                                                results.map((item) => (
-                                                    <div className="downsell-result-item" key={item?.id} onClick={() => handleSelect(item)}>
-                                                        <img src={item?.img_path} alt={item?.name} />
-                                                        <span className="product-name">{item?.name}</span>
-                                                        <span className="product-category">{item?.category?.name}</span>
-                                                        <span className="product-price">{item?.offer_price} BDT</span>
-                                                    </div>
-                                                ))
-                                            ): (
-                                                <div className="no-result">No product found</div>
+                            {mode === "product" && (
+                                <div style={{ marginTop: 20 }}>
+                                    <Form.Item label="Search Products">
+                                        <div style={{ position: 'relative' }}>
+                                            <Input.Search size="large" placeholder="Type product name to search..." value={query} onChange={(e) => setQuery(e.target.value)} loading={loading}/>
+                                            {query && (
+                                                <div className="antd-search-dropdown">
+                                                    {results.length > 0 ? results.map((item) => (
+                                                        <div className="search-item-row" key={item.id} onClick={() => handleSelect(item)}>
+                                                            <img src={item.img_path} alt="" />
+                                                            <div className="info">
+                                                                <div className="name">{item.name}</div>
+                                                                <div className="meta">{item.category?.name} • {item.offer_price} BDT</div>
+                                                            </div>
+                                                            <PlusOutlined style={{ color: '#1890ff' }} />
+                                                        </div>
+                                                    )) : <div className="no-results">No products found</div>}
+                                                </div>
                                             )}
                                         </div>
-                                    )}
+                                    </Form.Item>
 
-                                    {selectedProducts.length > 0 && (
-                                        <div className="downsell-selected-products">
-                                            <h5>Selected Products:</h5>
-                                            {selectedProducts.map((item) => (
-                                            <div className="downsell-result-item selected" key={item.id}>
-                                                <img src={item?.img_path} alt={item?.name} />
-                                                <span className="product-name">{item?.name}</span>
-                                                <span className="product-category">{item?.category?.name}</span>
-                                                <span className="product-price">{item?.offer_price} BDT</span>
-                                                <button onClick={() => setSelectedProducts(selectedProducts.filter((p) => p.id !== item?.id))} className="remove-btn">
-                                                    &times;
-                                                </button>
-                                            </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {mode === "category" && (
-                            <div className="col-lg-6 col-12">
-                                <div className="raw-sell-row">
-                                    <label className="raw-sell-label">Select Category:</label>
-                                    <select name="category_ids[]" className="raw-sell-input" onChange={(e) => handleCategory(e.target.value)}>
-                                        <option value="">Select Category</option>
-
-                                        {categories.map((cat) => (
-                                            <option key={cat.id} value={cat.id}>
-                                                {cat.name}
-                                            </option>
-                                        ))}
-                                    </select>
-
-                                    {selectedCategories.length > 0 && (
-                                        <div className="downsell-selected-categories">
-                                            <h5>Selected Categories:</h5>
-                                            <div className="category-list">
-                                                {selectedCategories.map((cat) => (
-                                                    <div className="downsell-category-item" key={cat.id}>
-                                                        {cat.name}
-                                                        <button className="remove-btn" onClick={() => setSelectedCategories(selectedCategories.filter((c) => c.id !== cat.id))}>
-                                                            &times;
-                                                        </button>
+                                    <div className="modern-upsell-grid">
+                                        {selectedProducts.map((p) => (
+                                            <div className="upsell-product-card-lite" key={p.id}>
+                                                <div className="card-top">
+                                                    <img src={p?.img_path} alt="" />
+                                                    <div className="details">
+                                                        <h4>{p?.name}</h4>
+                                                        <p>{p?.category_name}</p>
                                                     </div>
-                                                ))}
+                                                    <Button type="text" danger icon={<DeleteOutlined />} onClick={() => setSelectedProducts(selectedProducts.filter(item => item.id !== p.id))} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {selectedProducts.length === 0 && <div className="placeholder-empty">No products selected yet</div>}
+                                </div>
+                            )}
+
+                            {mode === "category" && (
+                                <div style={{ marginTop: 20 }}>
+                                    <Form.Item label="Select Category">
+                                        <Select size="large" placeholder="Choose categories" onChange={handleCategory} value={null}>
+                                            {categories.map((cat) => (
+                                                <Select.Option key={cat.id} value={cat.id}>{cat.name}</Select.Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
+                                    <div className="trigger-tags-list">
+                                        {selectedCategories.map((cat) => (
+                                            <Tag key={cat.id} closable className="modern-trigger-tag" onClose={() => setSelectedCategories(selectedCategories.filter(c => c.id !== cat.id))} color="blue">
+                                                {cat.name}
+                                            </Tag>
+                                        ))}
+                                    </div>
+                                    {selectedCategories.length === 0 && <div className="placeholder-empty">No categories selected yet</div>}
+                                </div>
+                            )}
+                        </Card>
+                    </Col>
+
+                    <Col xs={24} lg={8}>
+                        <Card title={<Space><InboxOutlined /> Banner Media</Space>} className="modern-antd-card sticky-card">
+                            <Form.Item label="Promotional Image">
+                                <Upload.Dragger multiple={false} showUploadList={false} beforeUpload={() => false} onChange={handleImageChange} className="modern-uploader">
+                                    {image ? (
+                                        <div className="upload-preview-container">
+                                            <img src={image} alt="preview" style={{ width: '100%', borderRadius: 8 }} />
+                                            <div className="upload-overlay">
+                                                <CloudUploadOutlined />
+                                                <span>Change Image</span>
                                             </div>
                                         </div>
+                                    ) : (
+                                        <div style={{ padding: '20px 0' }}>
+                                            <p className="ant-upload-drag-icon"><InboxOutlined /></p>
+                                            <p className="ant-upload-text">Click or drag image to upload</p>
+                                        </div>
                                     )}
-                                </div>
-                            </div>
-                        )}
+                                </Upload.Dragger>
+                            </Form.Item>
 
-                        <div className="col-12">
-                            <div className="raw-sell-submit">
-                                <button type="submit" className="raw-sell-btn">
-                                    {loading ? "Submiting..." : "Submit"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </>
-    )
+                            <Row gutter={12}>
+                                <Col span={12}>
+                                    <Form.Item label="Banner Width" name="width">
+                                        <InputNumber style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item label="Banner Height" name="height">
+                                        <InputNumber style={{ width: '100%' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+
+                            <Form.Item label="Campaign Status" name="status">
+                                <Select size="large">
+                                    <Select.Option value="active">Active</Select.Option>
+                                    <Select.Option value="inactive">Inactive</Select.Option>
+                                </Select>
+                            </Form.Item>
+
+                            <Divider />
+
+                            <Button type="primary" htmlType="submit" size="large" block loading={formLoading} icon={<PlusOutlined />} style={{ height: 48, borderRadius: 8, fontWeight: 600 }}>
+                                Create Downsell Offer
+                            </Button>
+                        </Card>
+                    </Col>
+                </Row>
+            </Form>
+        </div>
+    );
 }

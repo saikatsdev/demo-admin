@@ -132,6 +132,7 @@ export default function Order() {
     const [bulkLoading, setBulLoading]                                                                 = useState(false);
     const [digitalModalOpen, setDigitalModalOpen]                                                      = useState(false);
     const [selectedDigitalOrderId, setSelectedDigitalOrderId]                                          = useState(null);
+	const [csvLoading, setCsvLoading]                                                                  = useState(false);
 
     // Redux State
     const orderTagList  = useSelector((state) => state.orderFrom.list);
@@ -487,12 +488,8 @@ export default function Order() {
             setHandleselectedActionPrintInvoiceModal(true);
         }
 
-        if (value === "steadfast") {
+        if (value === "csv") {
             downloadExcel();
-        }
-
-        if (value === "pathao") {
-            downloadPathaoExcel();
         }
     };
 
@@ -915,14 +912,12 @@ export default function Order() {
         }
     };
 
-    const downloadExcel = () => {
+    const downloadExcel = async () => {
         if (!selectedOrderIds.length) {
-            
             messageApi.open({
-                type: "success",
+                type: "warning",
                 content: "Please select at least one order to download.",
             });
-
             return;
         }
     
@@ -930,99 +925,66 @@ export default function Order() {
     
         if (!selectedOrders.length) {
             messageApi.open({
-                type: "success",
+                type: "error",
                 content: "No matching orders found!",
             });
-
-            return;
-        }
-    
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(
-            selectedOrders.map((order, index) => ({SL: index + 1,"Invoice No": order.invoice_number,"Customer Name": order.customer_name,"Phone No": order.phone_number,Address: order.address_details,Note: order.note || "N/A","Contact Name": websiteName,"Contact Phone": phoneNumber}))
-        );
-    
-        XLSX.utils.book_append_sheet(wb, ws, "Selected Orders");
-        XLSX.writeFile(wb,`steadfast_orders_${new Date().toISOString().split("T")[0]}.xlsx`);
-    
-        setSelectedOrderIds([]);
-        setSelectedAction("");
-        
-        messageApi.open({
-            type: "success",
-            content: "Steadfast CSV downloaded successfully!",
-        });
-    };
-    
-    const downloadPathaoExcel = async () => {
-        if (!selectedOrderIds.length) {
-            
-            messageApi.open({
-                type: "success",
-                content: "Please select at least one order to download.",
-            });
-
             return;
         }
 
-        const selectedOrders = orders?.data.filter((order) =>
-            selectedOrderIds.includes(order.id)
-        );
-
-        if (!selectedOrders.length) {
-            
-            messageApi.open({
-                type: "success",
-                content: "No matching orders found!",
-            });
-
-            return;
-        }
-
+        setCsvLoading(true);
+        const hide = message.loading("Generating professional report...", 0);
+    
         try {
-            let allFormattedOrders = [];
-
-            for (const order of selectedOrders) {
-                const items = await getOrderWiseProducts(order.id);
-
-                if (items && Array.isArray(items)) {
-                    for (const item of items) {
-                        allFormattedOrders.push({
-                            ItemType          : "parcel",
-                            StoreName         : "self",
-                            MerchantOrderId   : order.id,
-                            RecipientName     : order.customer_name,
-                            RecipientPhone    : order.phone_number || "N/A",
-                            RecipientCity     : "N/A",
-                            RecipientZone     : "N/A",
-                            RecipientArea     : "N/A",
-                            RecipientAddress  : order.address_details || "N/A",
-                            AmountToCollect   : order.payable_price || "N/A",
-                            ItemQuantity      : item.quantity || "N/A",
-                            ItemWeight        : order.item_weight || "N/A",
-                            ItemDesc          : order.note || "N/A",
-                            SpecialInstruction: order.note || "N/A",
-                        });
-                    }
-                }
-            }
+            const formattedData = selectedOrders.map((order, index) => {
+                const productList = order.products?.map(p => `${p.name} (Qty: ${p.pivot?.quantity || 1})`).join(", ") || "N/A";
+                
+                return {
+                    "SL"               : index + 1,
+                    "Invoice Number"   : order.invoice_number,
+                    "Date"             : dayjs(order.created_at).format("DD-MM-YYYY hh:mm A"),
+                    "Customer Name"    : `${order.customer_name} (${order.customer_type?.name || "N/A"})`,
+                    "Phone Number"     : order.phone_number,
+                    "Address Details"  : order.address_details,
+                    "Courier"          : order.courier?.name || "N/A",
+                    "Consignment ID"   : order.consignment_id || "N/A",
+                    "Tracking Code"    : order.tracking_code || "N/A",
+                    "Products"         : productList,
+                    "Pricing Breakdown": `MRP: ${order.mrp} | Disc: ${order.discount} | S.Disc: ${order.special_discount} | Coupon: ${order.coupon_value} | Ship: ${order.delivery_charge} | Net: ${order.net_order_price} | Advance: ${order.advance_payment} | Payable: ${order.payable_price}`,
+                    "Notes"            : order.note || "N/A"
+                };
+            });
 
             const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(allFormattedOrders);
-
-            XLSX.utils.book_append_sheet(wb, ws, "Selected Orders");
-            XLSX.writeFile(wb,`pathao_orders_${new Date().toISOString().split("T")[0]}.xlsx`);
-
+            const ws = XLSX.utils.json_to_sheet(formattedData);
+            
+            const wscols = [
+                {wch: 5},
+                {wch: 15},
+                {wch: 22},
+                {wch: 35},
+                {wch: 18},
+                {wch: 40},
+                {wch: 15},
+                {wch: 20},
+                {wch: 15},
+                {wch: 50},
+                {wch: 85},
+                {wch: 30}
+            ];
+            ws['!cols'] = wscols;
+        
+            XLSX.utils.book_append_sheet(wb, ws, "Order Report");
+            XLSX.writeFile(wb, `Order_Report_${dayjs().format("YYYY-MM-DD_HHmm")}.xlsx`);
+        
             setSelectedOrderIds([]);
             setSelectedAction("");
-
-            messageApi.open({
-                type: "success",
-                content: "Pathao CSV downloaded successfully!",
-            });
+            message.success("Order report downloaded successfully!");
         } catch (error) {
-            console.error("Error downloading Pathao CSV:", error);
-            message.error("Failed to download Pathao CSV");
+            console.error("CSV Download Error:", error);
+            message.error("Failed to generate CSV. Please try again.");
+        } finally {
+            setCsvLoading(false);
+            hide();
         }
     };
 
@@ -1703,60 +1665,97 @@ export default function Order() {
             title: "Payment Info",
             key: "payment_info",
             width: 180,
-			render: (_, record) => {
-                const products = record?.products ?? [];
-
-                const advance = Number(record.advance_payment || 0);
-                const delivery = Number(record.delivery_charge || 0);
-                const specialDiscount = Number(record.special_discount || 0);
-
-                const money = (v) => `৳ ${Number(v || 0).toLocaleString('en-BD')}`;
-
-                const subTotal = products.reduce((sum, p) => {
-                    return sum + Number(p.sell_price) * Number(p.quantity);
-                }, 0);
-
-                const payable = subTotal + delivery - advance - specialDiscount;
+            render: (_, record) => {
+                const money = (v) => `৳ ${Number(v || 0).toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                const remains = record.payable_price > 0 ? Number(record.payable_price) - Number(record.advance_payment || 0) : Number(record.payable_price);
+                const hasCoupon = Number(record.coupon_value) > 0;
+                const hasDiscount = Number(record.discount) > 0;
+                const hasSpecialDiscount = Number(record.special_discount) > 0;
 
                 return (
-                    <div>
-                        <p style={{ marginBottom: 5 }}>
-                            <span style={{ fontWeight: "bold" }}>Advanced Payment:</span>
-                            {money(advance)}
-                        </p>
+                    <div className="payment-info-summary" style={{ 
+                        fontSize: '12px', 
+                        lineHeight: '1.6',
+                        color: '#434343'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                            <span style={{ color: '#8c8c8c' }}>MRP Total:</span>
+                            <span style={{ fontWeight: '500' }}>{money(record.mrp)}</span>
+                        </div>
 
-                        <p style={{ marginBottom: 5 }}>
-                            <span style={{ fontWeight: "bold" }}>Discount:</span>
-                            {money(record.Discount)}
-                        </p>
-
-                        <p style={{ marginBottom: 5 }}>
-                            <span style={{ fontWeight: "bold" }}>Delivery Charge:</span>
-                            {money(delivery)}
-                        </p>
-
-                        {specialDiscount > 0 && (
-                            <p style={{ marginBottom: 5 }}>
-                                <span style={{ fontWeight: "bold" }}>Special Discount:</span>
-                                {money(specialDiscount)}
-                            </p>
+                        {hasDiscount && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff4d4f' }}>
+                                <span>Product Discount:</span>
+                                <span>-{money(record.discount)}</span>
+                            </div>
                         )}
 
-                        {products.map((p, index) => {
-                            const lineTotal = Number(p.sell_price) * Number(p.quantity);
+                        {hasCoupon && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff4d4f' }}>
+                                <span>Coupon:</span>
+                                <span>-{money(record.coupon_value)}</span>
+                            </div>
+                        )}
 
-                            return (
-                                <p key={index} style={{ marginBottom: 4 }}>
-                                    {money(p.sell_price)} × {p.quantity} ={" "}
-                                    <strong>{money(lineTotal)}</strong>
-                                </p>
-                            );
-                        })}
-                        
-                        <p style={{ marginBottom: 5 }}>
-                            <span style={{ fontWeight: "bold" }}>Payable Amount:</span>{" "}
-                            {payable}
-                        </p>
+                        {hasSpecialDiscount && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff4d4f' }}>
+                                <span>Special Discount:</span>
+                                <span>-{money(record.special_discount)}</span>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#52c41a', marginBottom: '4px' }}>
+                            <span>Shipping:</span>
+                            <span>+{money(record.delivery_charge)}</span>
+                        </div>
+
+                        <div style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            fontWeight: '700', 
+                            borderTop: '1px solid #f0f0f0', 
+                            paddingTop: '4px',
+                            color: '#262626',
+                            fontSize: '13px'
+                        }}>
+                            <span>Payable:</span>
+                            <span>{money(record.payable_price)}</span>
+                        </div>
+
+                        {Number(record.advance_payment) > 0 && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#1890ff', fontStyle: 'italic', marginTop: '2px' }}>
+                                <span>Advance Paid:</span>
+                                <span>-{money(record.advance_payment)}</span>
+                            </div>
+                        )}
+
+                        <div style={{ 
+                            marginTop: '8px',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            background: remains > 0 ? 'linear-gradient(to right, #fff7e6, #fff)' : 'linear-gradient(to right, #f6ffed, #fff)',
+                            borderLeft: `3px solid ${remains > 0 ? '#fa8c16' : '#52c41a'}`,
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ 
+                                    fontWeight: '600', 
+                                    color: remains > 0 ? '#d46b08' : '#389e0d',
+                                    fontSize: '11px',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.5px'
+                                }}>
+                                    {remains > 0 ? 'Balance Due' : 'Fully Paid'}
+                                </span>
+                                <span style={{ 
+                                    fontWeight: '800', 
+                                    color: remains > 0 ? '#d46b08' : '#389e0d',
+                                    fontSize: '14px'
+                                }}>
+                                    {money(remains)}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 );
             },
@@ -2010,15 +2009,16 @@ export default function Order() {
                             <div className="form-actions" style={{ display: "flex", gap: 8,  }}>
                                 <div>
                                     {isActionShow && (
-                                        <Select value={selectedAction} onChange={handleOrderAction} placeholder="Action" style={{ width: 150, height: 40 }}>
-                                            <Option value="">Select Action</Option>
-                                            <Option value="change-status">Payment Status</Option>
-                                            <Option value="print-invoice">Print Invoice</Option>
-                                            <Option value="change-current-order-status">Order Status</Option>
-                                            <Option value="order-assign">Order Assign</Option>
-                                            <Option value="steadfast">Steadfast CSV</Option>
-                                            <Option value="pathao">Pathao CSV</Option>
-                                        </Select>
+                                        <Spin spinning={csvLoading}>
+                                            <Select value={selectedAction} onChange={handleOrderAction} placeholder="Action" style={{ width: 160, height: 40 }}>
+                                                <Option value="">Select Action</Option>
+                                                <Option value="change-status">Payment Status</Option>
+                                                <Option value="print-invoice">Print Invoice</Option>
+                                                <Option value="change-current-order-status">Order Status</Option>
+                                                <Option value="order-assign">Order Assign</Option>
+                                                <Option value="csv">Download CSV</Option>
+                                            </Select>
+                                        </Spin>
                                     )}
                                 </div>
 
@@ -2038,6 +2038,97 @@ export default function Order() {
                             </div>
                         </Col>
                     </Row>
+					
+					{selectedOrderIds.length > 0 && (
+                        <div style={{
+                            background: "#fff",
+                            padding: "16px",
+                            borderRadius: "12px",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                            marginBottom: "20px",
+                            border: "1px solid #e1e8f0",
+                            borderLeft: "4px solid #1890ff"
+                        }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                    <div style={{ 
+                                        backgroundColor: "#e6f7ff", 
+                                        color: "#1890ff", 
+                                        padding: "4px 12px", 
+                                        borderRadius: "6px", 
+                                        fontWeight: "bold",
+                                        fontSize: "14px"
+                                    }}>
+                                        {selectedOrderIds.length} Selected
+                                    </div>
+                                    <span style={{ fontWeight: 700, fontSize: "16px", color: "#262626" }}>Selected Phone Numbers</span>
+                                </div>
+                                <Space>
+                                    <Button 
+                                        type="primary" 
+                                        icon={<CopyOutlined />}
+                                        size="middle"
+                                        style={{ borderRadius: "6px" }}
+                                        onClick={() => {
+                                            const phones = orders?.data
+                                                ?.filter(o => selectedOrderIds.includes(o.id))
+                                                ?.map(o => o.phone_number)
+                                                .join(", ");
+                                            if (phones) {
+                                                navigator.clipboard.writeText(phones);
+                                                message.success("Selected phone numbers copied to clipboard!");
+                                            } else {
+                                                message.warning("No phone numbers available in current view to copy.");
+                                            }
+                                        }}
+                                    >
+                                        Copy Current Page
+                                    </Button>
+                                    <Button 
+                                        onClick={() => {
+                                            setSelectedOrderIds([]);
+                                            setIsActionShow(false);
+                                        }}
+                                        style={{ borderRadius: "6px" }}
+                                    >
+                                        Clear Selection
+                                    </Button>
+                                </Space>
+                            </div>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", maxHeight: "150px", overflowY: "auto", padding: "4px" }}>
+                                {orders?.data
+                                    ?.filter(o => selectedOrderIds.includes(o.id))
+                                    ?.map(order => (
+                                        <Tag 
+                                            key={order.id} 
+                                            color="processing" 
+                                            closable 
+                                            onClose={() => {
+                                                const newSelected = selectedOrderIds.filter(id => id !== order.id);
+                                                setSelectedOrderIds(newSelected);
+                                                if (newSelected.length === 0) setIsActionShow(false);
+                                            }}
+                                            style={{ 
+                                                margin: 0, 
+                                                borderRadius: "4px", 
+                                                padding: "4px 10px",
+                                                fontSize: "13px",
+                                                fontWeight: "500",
+                                                border: "1px solid #91d5ff"
+                                            }}
+                                        >
+                                            {order.phone_number}
+                                        </Tag>
+                                    ))
+                                }
+                                {selectedOrderIds.length > (orders?.data?.filter(o => selectedOrderIds.includes(o.id)).length || 0) && (
+                                    <Tag color="warning" style={{ margin: 0, borderRadius: "4px", padding: "4px 10px" }}>
+                                        + {selectedOrderIds.length - (orders?.data?.filter(o => selectedOrderIds.includes(o.id)).length || 0)} more on other pages
+                                    </Tag>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
                         <Col xs={24} md={24}>

@@ -15,10 +15,26 @@ export default function ProductGalleryPicker({gallery = [],fetchMore,hasMore,loa
     const selectedIds = images.map(img => img.uid);
 
     const handleCustomUpload = async ({ file, onProgress, onSuccess, onError }) => {
-        const formData = new FormData();
-        formData.append("images[]", file);
-
         try {
+            const dimensions = await new Promise((resolve) => {
+                const img = new window.Image();
+                const objectUrl = URL.createObjectURL(file);
+                img.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve({ width: img.width, height: img.height });
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve({ width: 800, height: 800 });
+                };
+                img.src = objectUrl;
+            });
+
+            const formData = new FormData();
+            formData.append("images[]", file);
+            formData.append("width[]", dimensions.width);
+            formData.append("height[]", dimensions.height);
+
             const res = await postData("/admin/gallary/upload", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
                 onUploadProgress: (event) => {
@@ -28,7 +44,6 @@ export default function ProductGalleryPicker({gallery = [],fetchMore,hasMore,loa
             });
 
             if (res && res.success) {
-                // Handle Laravel Resource Collection wrapping (res.result.data) or direct arrays
                 let newGalleryItems = [];
                 if (res.result?.data && Array.isArray(res.result.data)) {
                     newGalleryItems = res.result.data;
@@ -54,13 +69,11 @@ export default function ProductGalleryPicker({gallery = [],fetchMore,hasMore,loa
     const handleUploadChange = ({ fileList: newFileList }) => {
         setFileList(newFileList);
 
-        // Check if all files in the current batch are successfully uploaded
         const allDone = newFileList.length > 0 && newFileList.every(file => file.status === 'done');
         
         if (allDone) {
             setTimeout(() => {
                 setActiveTab("gallery");
-                // Clear the upload list after switching so it's fresh for next time
                 setFileList([]);
             }, 500);
         }
@@ -73,6 +86,7 @@ export default function ProductGalleryPicker({gallery = [],fetchMore,hasMore,loa
         }
 
         const img = new Image();
+        
         img.onload = () => {
             onChange?.({
                 file       : null,

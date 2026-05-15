@@ -1,5 +1,5 @@
 import {ArrowLeftOutlined,CopyOutlined,DeleteOutlined,EditOutlined,EyeOutlined,FilterOutlined,InfoCircleOutlined,PlusOutlined} from "@ant-design/icons";
-import {Input as AntInput,Typography,Breadcrumb,Tabs,Button,Col,DatePicker,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
+import {Input as AntInput,Typography,Breadcrumb,Badge,Tabs,Button,Col,DatePicker,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -252,51 +252,83 @@ export default function Product() {
             ),
         },
         {
-            title: "Product Prices",
+            title: "Price Configuration",
             key: "product_prices",
-            width: 200,
-            render: (_, record) => (
-                <div style={{overflow: "hidden",whiteSpace: "nowrap",textOverflow: "ellipsis"}}>
-                    <p style={{ margin: 0, fontWeight: 700 }}>
-                        Regular Price: <span style={{ fontWeight: 800 }}>{record.mrp}</span>
-                    </p>
-                    <p style={{ margin: 0, fontWeight: 700 }}>
-                        Offer Price:{" "}
-                        <span style={{ fontWeight: 800, color: "#FFA500" /* orange highlight */ }}>
-                            {record.offer_price}
-                        </span>
-                    </p>
-                </div>
-            ),
+            width: 220,
+            render: (_, record) => {
+                const mrp = Number(record.mrp) || 0;
+                const offer = Number(record.offer_price) || 0;
+                const sell = Number(record.sell_price) || 0;
+                const discount = mrp > 0 && sell < mrp ? Math.round(((mrp - sell) / mrp) * 100) : 0;
+
+                return (
+                    <div style={{ background: '#fafafa', padding: '12px', borderRadius: '10px', border: '1px solid #f0f0f0' }}>
+                        <div style={{ marginBottom: '8px' }}>
+                            <Text type="secondary" style={{ fontSize: '10px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>Commercials</Text>
+                        </div>
+                        <Space direction="vertical" size={2} style={{ width: '100%' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Text type="secondary" style={{ fontSize: '12px' }}>MRP:</Text>
+                                <Text delete={sell < mrp} style={{ fontSize: '12px', color: sell < mrp ? '#bfbfbf' : '#434343' }}>৳{mrp.toLocaleString()}</Text>
+                            </div>
+                            {offer > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary" style={{ fontSize: '12px' }}>Offer:</Text>
+                                    <Text strong style={{ fontSize: '12px', color: '#fa8c16' }}>৳{offer.toLocaleString()}</Text>
+                                </div>
+                            )}
+                            <Divider style={{ margin: '8px 0' }} />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <Text strong style={{ fontSize: '13px', color: '#262626', marginTop: '4px' }}>Selling:</Text>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '18px', fontWeight: 800, color: '#1677ff', lineHeight: 1 }}>৳{sell.toLocaleString()}</div>
+                                    {discount > 0 && <Tag color="error" style={{ fontSize: '10px', margin: 0, marginTop: '4px', borderRadius: '4px', border: 'none', fontWeight: 700 }}>{discount}% OFF</Tag>}
+                                </div>
+                            </div>
+                        </Space>
+                    </div>
+                );
+            },
         },
         {
-            title: "Stock Report",
+            title: "Inventory Metrics",
             key: "stock_report",
-            width: 220,
-            render: (_, record) => (
-                <div style={{overflow: "hidden",whiteSpace: "nowrap",textOverflow: "ellipsis"}}>
-                    <p style={{ margin: 0, fontWeight: 700 }}>
-                        Total Current Stock:{" "}
-                        <span style={{ fontWeight: 800, color:"darkred" }}>
-                            {record.current_stock_range?.total_current_stock}
-                        </span>
-                    </p>
-
-                    <p style={{ margin: 0, fontWeight: 700 }}>
-                        Total Purchase Qty:{" "}
-                        <span style={{ fontWeight: 800, color:"blue" }}>
-                            {record.current_stock_range?.total_purchase_qty}
-                        </span>
-                    </p>
-
-                    <p style={{ margin: 0, fontWeight: 700 }}>
-                        Total Sell Qty:{" "}
-                        <span style={{ fontWeight: 800, color:"green" }}>
-                            {record?.total_sell_qty}
-                        </span>
-                    </p>
-                </div>
-            ),
+            width: 240,
+            render: (_, record) => {
+                const current = Number(record.current_stock_range?.total_current_stock) || 0;
+                const purchase = Number(record.current_stock_range?.total_purchase_qty) || 0;
+                const sell = Number(record?.total_sell_qty) || 0;
+                
+                return (
+                    <div style={{ background: '#f6ffed', padding: '12px', borderRadius: '10px', border: '1px solid #b7eb8f' }}>
+                        <div style={{ marginBottom: '8px' }}>
+                            <Text type="secondary" style={{ fontSize: '10px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.8px', color: '#389e0d', fontWeight: 600 }}>Stock Status</Text>
+                        </div>
+                        <Space direction="vertical" size={6} style={{ width: '100%' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Text strong style={{ fontSize: '12px', color: '#135200' }}>Current Stock:</Text>
+                                <Badge 
+                                    count={current} 
+                                    showZero 
+                                    overflowCount={9999} 
+                                    style={{ 
+                                        backgroundColor: current > 5 ? '#52c41a' : '#ff4d4f',
+                                        boxShadow: 'none'
+                                    }} 
+                                />
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Text type="secondary" style={{ fontSize: '12px' }}>Total Purchased:</Text>
+                                <Text strong style={{ fontSize: '12px' }}>{purchase}</Text>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Text type="secondary" style={{ fontSize: '12px' }}>Total Sold:</Text>
+                                <Text strong style={{ fontSize: '12px' }}>{sell}</Text>
+                            </div>
+                        </Space>
+                    </div>
+                );
+            },
         },
         {
             title: "Actions",

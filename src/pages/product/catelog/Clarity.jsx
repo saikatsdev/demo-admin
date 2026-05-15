@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
 import { getDatas, postData } from "../../../api/common/common";
 import { useEffect, useState } from "react";
-import { DashboardOutlined, EyeOutlined, InfoCircleOutlined, SettingOutlined, WarningOutlined, CheckCircleFilled, PlayCircleOutlined } from "@ant-design/icons";
+import { DashboardOutlined, EyeOutlined, InfoCircleOutlined, SettingOutlined, CheckCircleFilled, PlayCircleOutlined } from "@ant-design/icons";
+import { ArrowLeft } from "lucide-react";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -75,17 +76,34 @@ export default function Clarity() {
     return (
         <>
             {contextHolder}
-            <div className="pagehead" style={{ marginBottom: 24 }}>
+            <div className="pagehead" style={{ marginBottom: 24, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div className="head-left">
                     <Title level={2} style={{ margin: 0 }}>Microsoft Clarity Settings</Title>
-                </div>
-                <div className="head-actions">
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
                             { title: "Clarity Setting" },
                         ]}
                     />
+                </div>
+                <div className="head-actions">
+                    <Button 
+                        icon={<ArrowLeft size={18} />} 
+                        onClick={() => window.history.back()}
+                        style={{ 
+                            display: "flex", 
+                            alignItems: "center", 
+                            gap: "8px",
+                            height: "40px",
+                            borderRadius: "10px",
+                            fontWeight: "600",
+                            border: "1px solid #e0e0e0",
+                            boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)"
+                        }}
+                    >
+                        Back
+                    </Button>
                 </div>
             </div>
 
@@ -104,7 +122,7 @@ export default function Clarity() {
                         <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 8, marginBottom: 24, background: '#000' }}>
                             <iframe 
                                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                                src="https://www.youtube.com/embed/7O_W0A6zNfU" 
+                                src="https://www.youtube.com/embed/axUFm0Kl_6Y" 
                                 title="Microsoft Clarity Introduction" 
                                 frameBorder="0" 
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -148,8 +166,7 @@ export default function Clarity() {
 
                         {!showForm ? (
                             <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                                <Alert
-                                    message="Warning"
+                                <Alert message="Warning"
                                     description="Changing the Clarity ID will affect tracking and user behavior data collection."
                                     type="info"
                                     showIcon

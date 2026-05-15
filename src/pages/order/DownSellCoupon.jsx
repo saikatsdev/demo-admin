@@ -1,38 +1,37 @@
-import { PlusOutlined, BarChartOutlined, ShoppingCartOutlined,CheckCircleOutlined,ThunderboltOutlined,FireOutlined, ArrowLeftOutlined } from '@ant-design/icons';
-import { Breadcrumb, Button, Form, Input, message, Modal, Popconfirm, Select, Space, Table, Tag } from 'antd';
+import { ArrowLeftOutlined, BarChartOutlined, CheckCircleOutlined, DeleteOutlined, EditOutlined, FireOutlined, PlusOutlined, ShoppingCartOutlined, ThunderboltOutlined } from '@ant-design/icons';
+import { Breadcrumb, Button, Card, Divider, Input, message, Modal, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { deleteData, getDatas } from '../../api/common/common';
 import { useDebounce } from '../../hooks/useDebounce';
 import useTitle from '../../hooks/useTitle';
+import "./downsell/downsell.css";
+
+const { Text, Title } = Typography;
 
 const DownSellCoupon = () => {
     // Hook
-    useTitle("Down Sell Coupon");
+    useTitle("Downsell Campaigns");
 
     const navigate = useNavigate();
 
     // State
-    const [rows, setRows]                 = useState([]);
-    const [loading, setLoading]           = useState(true);
-    const [search, setSearch]             = useState('');
-    const dSearch                         = useDebounce(search, 300);
-    const [form]                          = Form.useForm();
-    const [messageApi, contextHolder]     = message.useMessage();
-    const [isModalOpen, setIsModalOpen]   = useState(false);
+    const [rows, setRows] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState('');
+    const dSearch = useDebounce(search, 300);
+    const [messageApi, contextHolder] = message.useMessage();
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     async function fetchRows() {
         try {
             setLoading(true);
-
             const res = await getDatas('/admin/down-sells', { per_page: 50 });
-
             const list = res?.result?.data || res?.data || [];
-
             setRows(list);
         } catch (e) {
             console.error(e);
-            message.error('Failed to load list');
+            messageApi.error('Failed to load campaigns');
             setRows([]);
         } finally {
             setLoading(false);
@@ -45,187 +44,187 @@ const DownSellCoupon = () => {
 
     const filtered = useMemo(() => {
         const k = (dSearch || '').toLowerCase();
-
         if (!k) return rows;
-
         return rows.filter(r => `${r.title} ${r.amount} ${r.status}`.toLowerCase().includes(k));
     }, [rows, dSearch]);
 
-    const columns = 
-    [
+    const handleDelete = async (id) => {
+        try {
+            const res = await deleteData(`/admin/down-sells/${id}`);
+            if (res && res?.success) {
+                messageApi.success(res.msg || "Campaign deleted successfully");
+                fetchRows();
+            } else {
+                messageApi.error(res?.msg || "Failed to delete campaign");
+            }
+        } catch (error) {
+            messageApi.error("Something went wrong");
+        }
+    };
+
+    const columns = [
         { 
             title: 'SL', 
             dataIndex: 'id', 
-            render: (v, r, i) => i + 1, width: 60 
+            render: (_, __, index) => <Text type="secondary">{index + 1}</Text>, 
+            width: 60 
         },
         {
             title: 'Image',
             dataIndex: 'image',
-            width: 90,
-            render: (url) => url ? <img src={url} alt="img" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 6 }} /> : '—',
+            width: 120,
+            render: (url) => url ? (
+                <div style={{ padding: 4, border: '1px solid #f0f0f0', borderRadius: 8, display: 'inline-block', background: '#fff' }}>
+                    <img src={url} alt="Campaign" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }} />
+                </div>
+            ) : (
+                <Tag color="default">No Image</Tag>
+            ),
         },
         { 
-            title: 'Title', 
-            key: 'title' ,
-            dataIndex: 'title' 
+            title: 'Details', 
+            key: 'title',
+            render: (_, record) => (
+                <Space direction="vertical" size={0}>
+                    <Text strong style={{ fontSize: 15 }}>{record.title}</Text>
+                    <Text type="secondary" size="small">{record.description?.substring(0, 50)}{record.description?.length > 50 ? '...' : ''}</Text>
+                </Space>
+            )
         },
         { 
-            title: 'Amount', 
+            title: 'Offer', 
             dataIndex: 'amount', 
-            width: 100 
+            width: 130,
+            render: (amount, record) => (
+                <Tag color="blue" style={{ fontWeight: 600, padding: '4px 8px' }}>
+                    {record.type === 'percent' ? `${amount}% OFF` : `৳${amount} OFF`}
+                </Tag>
+            )
         },
         { 
-            title: 'Duration', 
-            dataIndex: 'duration', 
-            width: 100 
-        },
-        { 
-            title: 'Started_at', 
-            key: 'started_at',
-            dataIndex: 'started_at',
-            render: (value) => value ? value.split(" ")[0] : ""
-        },
-        { 
-            title: 'Ended_at', 
-            key: 'ended_at',
-            dataIndex: 'ended_at',
-            render: (value) => value ? value.split(" ")[0] : ""
+            title: 'Schedule', 
+            key: 'schedule',
+            width: 220,
+            render: (_, record) => (
+                <Space direction="vertical" size={0}>
+                    <Text size="small" type="secondary">Start: <Text strong>{record.started_at?.split(" ")[0]}</Text></Text>
+                    <Text size="small" type="secondary">End: <Text strong>{record.ended_at?.split(" ")[0]}</Text></Text>
+                </Space>
+            )
         },
         {
             title: 'Status',
             dataIndex: 'status',
             width: 100,
-            render: (status) => <Tag color={status === 'active' ? 'green' : 'default'} style={{textTransform:"capitalize"}}>{status}</Tag>,
+            render: (status) => (
+                <Tag color={status === 'active' ? 'success' : 'default'} style={{ textTransform: "capitalize", borderRadius: 12, padding: '2px 10px' }}>
+                    {status}
+                </Tag>
+            ),
         },
         {
             title: 'Actions',
-            width: 150,
+            width: 120,
+            fixed: 'right',
             render: (_, record) => (
                 <Space>
-                    <Button size="small" onClick={() => onEdit(record.id)}>Edit</Button>
-
-                    <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => handleDelete(record.id)}>
-                        <Button size="small" danger>
-                            Delete
-                        </Button>
+                    <Button type="text" icon={<EditOutlined style={{ color: '#1890ff' }} />} onClick={() => navigate(`/edit/downsell/${record.id}`)} title="Edit Campaign"/>
+                    <Popconfirm title="Delete Campaign?" description="Are you sure you want to delete this offer?" okText="Yes" cancelText="No" onConfirm={() => handleDelete(record.id)} okButtonProps={{ danger: true }}>
+                        <Button type="text" danger icon={<DeleteOutlined />} title="Delete Campaign" />
                     </Popconfirm>
                 </Space>
             ),
         },
     ];
 
-    const resetModal = () => {
-        form.resetFields();
-    };
-
-    const onEdit = (id) => {
-        resetModal();
-
-        navigate(`/edit/downsell/${id}`)
-    }
-
-    const openCreate = () => {
-        navigate("/add/down-sell");
-        resetModal();
-    }
-
-    const handleDelete = async (id) => {
-        const res = await deleteData(`/admin/down-sells/${id}`);
-        if (res && res && res?.success) {
-            messageApi.open({
-                type: "success",
-                content: res.msg,
-            });
-            const refreshed = await getDatas("/admin/down-sells");
-
-            setRows(refreshed?.result?.data || []);
-        }else{
-            messageApi.open({
-                type: "error",
-                content: "Something Went Wrong",
-            });
-        }
-    }
-
-    const [recentActivity, setRecentActivity] = useState([
-        { title: "Today", new: 68, converted: 36 },
-        { title: "Yesterday", new: 92, converted: 54 },
-        { title: "Last 7 Days", new: 480, converted: 260 },
-    ]);
-
     const stats = [
-        { key: "total", label: "Total Incomplete Orders", value: 120, icon: <ShoppingCartOutlined /> },
-        { key: "recovered", label: "Successfully Recovered", value: 85, icon: <CheckCircleOutlined /> },
-        { key: "rate", label: "Recovery Rate", value: "70%", icon: <ThunderboltOutlined /> },
-        { key: "revenue", label: "Revenue Recovered", value: "৳50,000", icon: <FireOutlined /> },
+        { key: "total", label: "Active Offers", value: rows.filter(r => r.status === 'active').length, icon: <ShoppingCartOutlined /> },
+        { key: "recovered", label: "Fixed Amount", value: rows.filter(r => r.type === 'fixed').length, icon: <CheckCircleOutlined /> },
+        { key: "rate", label: "Percentage", value: rows.filter(r => r.type === 'percent').length, icon: <ThunderboltOutlined /> },
+        { key: "revenue", label: "Total Campaigns", value: rows.length, icon: <FireOutlined /> },
     ];
 
-    const handleHover = (e, hover) => {
-        e.currentTarget.style.setProperty("background-color", hover ? "#f5f5f5" : "#fff", "important");
-        e.currentTarget.style.setProperty("border-color", hover ? "#c9c9c9" : "#d9d9d9", "important");
-    };
-
-    const handleStatistics = () => setIsModalOpen(true);
-
     return (
-        <>
+        <div style={{ padding: 16 }}>
             {contextHolder}
-            <div style={{ margin: '0 auto', padding: 16 }}>
-                <div className="pagehead">
-                    <div className="head-left">
-                        <h1 className="title">Down Sell Coupon</h1>
-                    </div>
-
-                    <div className="head-actions">
-                        <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> },{ title: 'Downsell Coupon' },]}/>
-                    </div>
+            <div className="pagehead">
+                <div className="head-left">
+                    <h1 className="title">Downsell Campaigns</h1>
+                    <p className="subtitle">Manage promotional offers triggered when customers skip upsells</p>
                 </div>
+                <div className="head-actions">
+                    <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> }, { title: 'Downsell Campaigns' }]} />
+                </div>
+            </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <Input placeholder="Search Key ..." allowClear value={search} onChange={(e) => setSearch(e.target.value)} style={{ maxWidth: 360}}/>
+            <Card className="modern-antd-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+                    <Input placeholder="Search by campaign name or amount..." allowClear prefix={<ThunderboltOutlined style={{ color: '#bfbfbf' }} />} value={search} onChange={(e) => setSearch(e.target.value)} style={{ maxWidth: 400, height: 40, borderRadius: 8 }}/>
 
-                    <Space>
-                        <Button size='small' type="primary" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
+                    <Space size="middle">
+                        <Button type="primary" size="small" icon={<PlusOutlined />} onClick={() => navigate("/add/down-sell")}>
+                            Create Offer
+                        </Button>
 
-                        <Button size='small' icon={<BarChartOutlined />} onClick={handleStatistics} style={{ backgroundColor: "#fff", borderColor: "#d9d9d9", color: "#000", marginLeft: 8 }}
-                        onMouseEnter={(e) => handleHover(e, true)} onMouseLeave={(e) => handleHover(e, false)}>
+                        <Button size="small" icon={<BarChartOutlined />} onClick={() => setIsModalOpen(true)}>
                             Statistics
                         </Button>
 
-                        <Button size='small' icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+                        <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                            Back
+                        </Button>
                     </Space>
                 </div>
 
-                <Table rowKey="id" loading={loading} columns={columns} dataSource={filtered} pagination={false} scroll={{ x: true }}/>
+                <Table 
+                    rowKey="id" 
+                    loading={loading} 
+                    columns={columns} 
+                    dataSource={filtered} 
+                    pagination={{ pageSize: 10, showSizeChanger: true }}
+                    className="modern-table"
+                    scroll={{ x: 1000 }}
+                />
+            </Card>
 
-                <Modal title="Downsell Product Statistics" open={isModalOpen} onOk={() => setIsModalOpen(false)} onCancel={() => setIsModalOpen(false)} width={1000}>
-                    <div className="io-cards">
-                        {stats.map((s) => (
-                            <div key={s.key} className="io-card">
-                                <div className="io-badge">{s.icon}</div>
-                                <div className="io-card-body">
-                                    <div className="io-card-label">{s.label}</div>
-                                    <div className="io-card-value">{s.value}</div>
-                                </div>
+            <Modal title={<Space><BarChartOutlined /> Campaign Insights</Space>} 
+                open={isModalOpen} 
+                onCancel={() => setIsModalOpen(false)} 
+                footer={[<Button key="close" type="primary" onClick={() => setIsModalOpen(false)}>Close Insights</Button>]}
+                width={800}
+                className="io-modal"
+            >
+                <div className="io-cards">
+                    {stats.map((s) => (
+                        <div key={s.key} className="io-card">
+                            <div className="io-badge">{s.icon}</div>
+                            <div className="io-card-body">
+                                <div className="io-card-label">{s.label}</div>
+                                <div className="io-card-value">{s.value}</div>
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))}
+                </div>
 
-                    <div className="recent-activity-container">
-                        <h4><ThunderboltOutlined /> Recent Activity</h4>
-                        <div className="activity-stats">
-                            {recentActivity.map((item, index) => (
-                                <div key={index} className="activity-card">
-                                    <p>{item.title}</p>
-                                    <p>New: <span className="new">{item.new}</span></p>
-                                    <p>Converted: <span className="converted">{item.converted}</span></p>
-                                </div>
-                            ))}
+                <Divider style={{ margin: '32px 0 24px' }} />
+
+                <div className="recent-activity-container">
+                    <Title level={5}><ThunderboltOutlined style={{ color: '#faad14' }} /> Performance Summary</Title>
+                    <div className="activity-stats">
+                        <div className="activity-card">
+                            <p>Today's Interactions</p>
+                            <p>Active Displays: <span className="new">124</span></p>
+                            <p>Conversions: <span className="converted">18</span></p>
+                        </div>
+                        <div className="activity-card">
+                            <p>Last 7 Days</p>
+                            <p>Active Displays: <span className="new">842</span></p>
+                            <p>Conversions: <span className="converted">112</span></p>
                         </div>
                     </div>
-                </Modal>
-            </div>
-        </>
+                </div>
+            </Modal>
+        </div>
     );
 };
 

@@ -28,6 +28,11 @@ const Sidebar = ({ onMenuSelect }) => {
         can('users-read') && { label: "Employee", path: "/employee" },
         can('roles-read') && { label: "Roles", path: "/roles" },
     ].filter(Boolean);
+    
+    const metaAdsSubmenus = [
+        can('meta-ads-read') && { label: "Meta Ads Report", path: "/meta-ads" },
+        can('campaign-products-read') && { label: "Campaign Products", path: "/campaign-products" },
+    ].filter(Boolean);
 
     const productSubmenus = [
         can("products-read") && { label: "Products", path: "/products" },
@@ -148,6 +153,12 @@ const Sidebar = ({ onMenuSelect }) => {
             title: "Order Management",
             icon: <PropertySafetyOutlined />,
             submenus: orderSubmenus
+        },
+
+        metaAdsSubmenus.length > 0 && {
+            title: "Meta Ads",
+            icon: <NotificationOutlined />,
+            submenus: metaAdsSubmenus
         },
 
         mediaMenu,

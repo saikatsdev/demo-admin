@@ -1,55 +1,72 @@
-import {ArrowLeftOutlined,DeleteOutlined,LoadingOutlined,PlusOutlined} from "@ant-design/icons";
-import {Input as AntInput,Breadcrumb,Button,Form,Select,Space,Switch,message} from "antd";
+import { ArrowLeftOutlined, DeleteOutlined, LoadingOutlined, PlusOutlined, SearchOutlined, ShoppingOutlined, CheckCircleOutlined, EyeOutlined, GlobalOutlined,EditOutlined} from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Select, message, Card, Row, Col, Typography, Divider, Tag, Badge, Empty, Segmented, Alert, Spin} from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 
+const { Title, Text } = Typography;
 
 export default function EditSection() {
     // Hook
     useTitle("Edit Section");
 
     // Variable
+    const [form] = Form.useForm();
     const navigate = useNavigate();
-    const [form]   = Form.useForm();
-    const { id }   = useParams();
+    const { id } = useParams();
 
     // State
-    const [isCategory, setIsCategory]                 = useState(false);
-    const [isCustom, setIsCustom]                     = useState(false);
+    const [selectionType, setSelectionType]           = useState('none'); 
     const [categories, setCategories]                 = useState([]);
-    const [query, setQuery]                           = useState();
+    const [query, setQuery]                           = useState("");
     const [results, setResults]                       = useState([]);
     const [loadingIndex, setLoadingIndex]             = useState(null);
     const [loadingRemoveIndex, setLoadingRemoveIndex] = useState(null);
     const [productIds, setProductIds]                 = useState([]);
     const [messageApi, contextHolder]                 = message.useMessage();
     const [addProducts, setAddProducts]               = useState([]);
-    const [loading, setLoading]                       = useState(false);
+    const [searching, setSearching]                   = useState(false);
+    const [submitting, setSubmitting]                 = useState(false);
+    const [fetching, setFetching]                     = useState(true);
+
+    // Derived states
+    const isCategory = selectionType === 'category';
+    const isCustom = selectionType === 'custom';
 
     // Method
     useEffect(() => {
         const fetchedSingleData = async () => {
-        const res = await getDatas(`/admin/sections/${id}`);
+            try {
+                setFetching(true);
+                const res = await getDatas(`/admin/sections/${id}`);
 
-            if (res?.success) {
-                const list = res?.result || [];
-                form.setFieldsValue({
-                    title    : list.title,
-                    position : list.position,
-                    link     : list.link,
-                    status   : list.status,
-                    is_slider: list.status === "active" ? 1: 0,
-                });
+                if (res?.success) {
+                    const list = res?.result || [];
 
-                if (list.products.length > 0) {
-                    setIsCustom(true);
-                    setAddProducts(list.products);
+                    form.setFieldsValue({
+                        title    : list.title,
+                        position : list.position,
+                        link     : list.link,
+                        status   : list.status,
+                        is_slider: Number(list.is_slider),
+                        category_id: list.category_id
+                    });
 
-                    const ids = list.products.map((p) => p.id);
-                    setProductIds(ids);
+                    // Determine selection type
+                    if (list.category_id) {
+                        setSelectionType('category');
+                    } else if (list.products && list.products.length > 0) {
+                        setSelectionType('custom');
+                        setAddProducts(list.products);
+                        const ids = list.products.map((p) => p.id);
+                        setProductIds(ids);
+                    } else {
+                        setSelectionType('none');
+                    }
                 }
+            } finally {
+                setFetching(false);
             }
         };
 
@@ -57,66 +74,75 @@ export default function EditSection() {
     }, [id, form]);
 
     useEffect(() => {
-        const fetcheCatgeories = async () => {
+        const fetchCategories = async () => {
             const res = await getDatas("/admin/categories/list");
-
             const list = res?.result || [];
-
-            setCategories(list.map((cat) => ({label: cat.name,value: cat.id})));
-        };
-
-        fetcheCatgeories();
+            setCategories(
+                list.map((cat) => ({
+                    label: cat.name,
+                    value: cat.id
+                }))
+            );
+        }
+        fetchCategories();
     }, []);
 
     useEffect(() => {
-        if (!query) return;
+        if (!query) {
+            setResults([]);
+            return;
+        }
 
-        const delayDebouncFn = setTimeout(() => {
+        const delayDebounceFn = setTimeout(() => {
             fetchSearchProduct(query);
         }, 500);
 
-        return () => clearTimeout(delayDebouncFn);
+        return () => clearTimeout(delayDebounceFn);
     }, [query]);
 
     const fetchSearchProduct = async (searchText) => {
-        const res = await getDatas("/admin/products/search", {search_key:searchText});
-
-        if (res?.success) {
-            setResults(res?.result || []);
+        setSearching(true);
+        try {
+            const res = await getDatas(`/admin/products/search?search_key=${searchText}`);
+            if (res?.success) {
+                const filteredResults = (res?.result || []).filter(
+                    item => !productIds.includes(item.id)
+                );
+                setResults(filteredResults);
+            }
+        } finally {
+            setSearching(false);
         }
-    };
+    }
 
     const handleAdd = (item, index) => {
         setLoadingIndex(index);
         setProductIds((prev) => [...prev, item.id]);
         setAddProducts((prev) => [...prev, item]);
+        setResults((prev) => prev.filter(p => p.id !== item.id));
         setTimeout(() => setLoadingIndex(null), 500);
     };
 
     const handleRemove = (item, index) => {
         setLoadingRemoveIndex(index);
-
         setProductIds((prev) => prev.filter((id) => id !== item.id));
-
         setAddProducts((prev) => prev.filter((p) => p.id !== item.id));
-
         setTimeout(() => setLoadingRemoveIndex(null), 500);
     };
 
     const handleSubmit = async (values) => {
-        const payload = {
-            ...values,
-            is_slider  : values.is_slider,
-            position   : 5,
-            product_ids: productIds,
-            _method    : "PUT",
-        };
-
+        setSubmitting(true);
         try {
-            setLoading(true);
+            const payload = {
+                ...values,
+                position: 5,
+                product_ids: productIds,
+                _method: "PUT"
+            }
+
             const res = await postData(`/admin/sections/${id}`, payload);
 
-            if (res && res?.success) {
+            if (res?.success) {
                 messageApi.open({
                     type: "success",
                     content: res.msg,
@@ -124,201 +150,227 @@ export default function EditSection() {
 
                 setTimeout(() => {
                     navigate("/section-list");
-                }, 500);
-            }else{
-                messageApi.open({
-                    type: "error",
-                    content: res.message,
-                });
+                }, 400);
             }
-        } catch (error) {
-            console.log(error);
-        }finally{
-            setLoading(false);
+        } finally {
+            setSubmitting(false);
         }
     };
 
-    return (
-        <>
-            {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">Edit Section</h1>
+    const ProductCard = ({ item, index, isAdded, onAction, loading }) => (
+        <Card hoverable className="product-card"
+            cover={
+                <div style={{ position: 'relative', height: 180, overflow: 'hidden', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
+                    <img alt={item.name} src={item.img_path || item.image} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}/>
+                    <div style={{ position: 'absolute', top: 8, right: 8 }}>
+                        <Tag style={{textTransform:'capitalize'}} color={item.status === 'active' ? 'green' : 'red'}>
+                            {item.status}
+                        </Tag>
+                    </div>
                 </div>
-                <div className="head-actions">
+            }
+            styles={{ body: { padding: '12px' } }}
+        >
+            <div style={{ height: '40px', overflow: 'hidden', marginBottom: '8px' }}>
+                <Text strong style={{ fontSize: '14px', lineHeight: '1.2', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {item.name}
+                </Text>
+            </div>
+            
+            <div style={{ marginBottom: '12px' }}>
+                <Text type="secondary" size="small" style={{ fontSize: '12px', display: 'block' }}>
+                    SKU: {item.sku || "N/A"}
+                </Text>
+                <Text type="secondary" size="small" style={{ fontSize: '12px', display: 'block' }}>
+                    Cat: {item?.category_name || item?.category?.name ||  'N/A'}
+                </Text>
+            </div>
+
+            <Button type={isAdded ? "default" : "primary"} danger={isAdded} icon={loading ? <LoadingOutlined /> : (isAdded ? <DeleteOutlined /> : <PlusOutlined />)} block onClick={() => onAction(item, index)}>
+                {isAdded ? "Remove" : "Add Product"}
+            </Button>
+        </Card>
+    );
+
+    if (fetching) {
+        return (
+            <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Spin size="large" tip="Loading section data..." />
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ padding: '24px', background: '#f0f2f5', minHeight: '100vh' }}>
+            {contextHolder}
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                <div>
                     <Breadcrumb
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
+                            { title: <Link to="/section-list">Sections</Link> },
                             { title: "Edit Section" },
                         ]}
+                        style={{ marginBottom: '8px' }}
                     />
+                    <Title level={2} style={{ margin: 0, fontWeight: 700 }}>
+                        <EditOutlined style={{ marginRight: '12px' }} />
+                        Edit Section: {form.getFieldValue('title')}
+                    </Title>
                 </div>
+                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} style={{ borderRadius: '8px' }}>
+                    Back to List
+                </Button>
             </div>
 
-            <div className="common-bg">
-                <div className="common-bg-flex">
-                    <div></div>
-                    <Space>
-                        <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>
-                        Back
-                        </Button>
-                    </Space>
-                </div>
+            <Form form={form} layout="vertical" onFinish={handleSubmit}>
+                <Row gutter={24}>
+                    <Col xs={24} lg={10}>
+                        <Card title={<span><GlobalOutlined style={{ marginRight: 8 }} />Section Details</span>} className="shadow-sm" style={{ borderRadius: '12px', marginBottom: '24px' }}>
+                            <Form.Item name="title" label="Section Title" rules={[{ required: true, message: 'Please enter section title' }]}>
+                                <AntInput size="large" placeholder="e.g. Featured Products, New Arrivals" />
+                            </Form.Item>
 
-                <div style={{ display: "flex" }}>
-                    <div style={{ width: "45%" }}>
-                        <Form.Item style={{ fontWeight: "600" }} label="Show Category Products" valuePropName="checked">
-                            <Switch checked={isCategory} onChange={(checked) => {setIsCategory(checked);if (checked) {setIsCustom(false);setResults();}}}/>
-                        </Form.Item>
-                    </div>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+                                        <Select size="large" options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="is_slider" label="Slider Mode" rules={[{ required: true }]}>
+                                        <Select size="large" options={[{ value: 1, label: 'Yes' }, { value: 0, label: 'No' }]} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
 
-                    <div style={{ width: "45%" }}>
-                        <Form.Item label="Show Custom Products" style={{ fontWeight: "600" }} valuePropName="checked">
-                            <Switch checked={isCustom} onChange={(checked) => {setIsCustom(checked);if (checked) {setIsCategory(false)}}}/>
-                        </Form.Item>
-                    </div>
-                </div>
+                            <Form.Item name="link" label="Section Link (View All)" rules={[{ required: true, message: 'Please enter link' }]}>
+                                <AntInput size="large" placeholder="/products?category=featured" />
+                            </Form.Item>
 
-                <Form form={form} layout="vertical" onFinish={handleSubmit}>
-                    <div>
-                        <div style={{ display: "flex", gap: "16px" }}>
-                            <div style={{ width: "45%" }}>
-                                <Form.Item name="title" label="Section Title" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter title" />
-                                </Form.Item>
-                            </div>
-
-                            <div style={{ width: "45%" }}>
-                                <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">
-                                    <Select options={[{ value: "active", label: "Active" },{ value: "inactive", label: "Inactive" }]}/>
-                                </Form.Item>
-                            </div>
-                        </div>
-
-                        <div style={{ display: "flex", gap: "16px" }}>
-                            <div style={{ width: "45%" }}>
-                                <Form.Item name="is_slider" label="Is Slider" rules={[{ required: true }]} initialValue={0}>
-                                    <Select options={[{ value: 1, label: "Active" },{ value: 0, label: "Inactive" }]}/>
-                                </Form.Item>
-                            </div>
-
-                            <div style={{ width: "45%" }}>
-                                <Form.Item name="link" label="Section Link" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter link" />
-                                </Form.Item>
+                            <Divider orientation="left">Product Selection Mode</Divider>
+                            
+                            <div style={{ background: '#f8f9fa', padding: '16px', borderRadius: '8px', border: '1px solid #e9ecef' }}>
+                                <Text type="secondary" style={{ display: 'block', marginBottom: '12px' }}>
+                                    How would you like to populate this section?
+                                </Text>
+                                <Segmented block size="large" value={selectionType}
+                                    onChange={(val) => {
+                                        setSelectionType(val);
+                                        if (val === 'category') {
+                                            setResults([]);
+                                            setAddProducts([]);
+                                            setProductIds([]);
+                                        } else if (val === 'custom') {
+                                        } else {
+                                            setResults([]);
+                                            setAddProducts([]);
+                                            setProductIds([]);
+                                        }
+                                    }}
+                                    options={[
+                                        { label: 'Manual', value: 'none' },
+                                        { label: 'By Category', value: 'category' },
+                                        { label: 'Custom List', value: 'custom' },
+                                    ]}
+                                />
                             </div>
 
                             {isCategory && (
-                                <div style={{ width: "45%" }}>
-                                    <Form.Item name="category_id" label="Category" rules={[{ required: true }]}>
-                                        <Select options={categories} />
+                                <div style={{ marginTop: '20px' }}>
+                                    <Form.Item name="category_id" label="Select Category" rules={[{ required: true, message: 'Please select a category' }]}>
+                                        <Select size="large" placeholder="Choose a category..." options={categories} />
                                     </Form.Item>
+                                    <Alert type="info" showIcon message="This section will automatically display products from the selected category." style={{ marginTop: '8px' }}/>
                                 </div>
                             )}
 
-                            {isCustom && (
-                                <div style={{ width: "45%" }}>
-                                    <Form.Item label="Search Products" rules={[{ required: true }]}>
-                                        <AntInput placeholder="Enter Search Key" value={query} onChange={(e) => setQuery(e.target.value)}/>
-                                    </Form.Item>
+                            <div style={{ marginTop: '32px', textAlign: 'right' }}>
+                                <Button type="primary" size="large" htmlType="submit" loading={submitting} style={{ height: '48px', padding: '0 40px', borderRadius: '8px', fontWeight: 600 }}>
+                                    {submitting ? "Updating..." : "Update Section"}
+                                </Button>
+                            </div>
+                        </Card>
+                    </Col>
+
+                    <Col xs={24} lg={14}>
+                        {isCustom ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                <Card 
+                                    title={
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span><CheckCircleOutlined style={{ marginRight: 8, color: '#52c41a' }} />Selected Products</span>
+                                            <Badge count={addProducts.length} showZero color="#52c41a" />
+                                        </div>
+                                    }
+                                    className="shadow-sm"
+                                    style={{ borderRadius: '12px' }}
+                                >
+                                    {addProducts.length > 0 ? (
+                                        <Row gutter={[16, 16]}>
+                                            {addProducts.map((item, index) => (
+                                                <Col xs={24} sm={12} md={8} key={item.id}>
+                                                    <ProductCard item={item} index={index} isAdded={true} onAction={handleRemove} loading={loadingRemoveIndex === index}/>
+                                                </Col>
+                                            ))}
+                                        </Row>
+                                    ) : (
+                                        <Empty description="No products selected yet. Use the search below to find products." />
+                                    )}
+                                </Card>
+
+                                <Card title={<span><SearchOutlined style={{ marginRight: 8 }} />Search & Add Products</span>}
+                                className="shadow-sm"
+                                style={{ borderRadius: '12px' }}>
+                                    <AntInput prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                                    size="large"
+                                    placeholder="Search by product name, SKU or keyword..." 
+                                    value={query} 
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    allowClear
+                                    style={{ marginBottom: '20px', borderRadius: '8px' }}
+                                    suffix={searching ? <LoadingOutlined /> : null}
+                                />
+
+                                    {results.length > 0 ? (
+                                        <Row gutter={[16, 16]}>
+                                            {results.map((item, index) => (
+                                                <Col xs={24} sm={12} md={8} key={item.id}>
+                                                    <ProductCard item={item} index={index} isAdded={false} onAction={handleAdd} loading={loadingIndex === index}/>
+                                                </Col>
+                                            ))}
+                                        </Row>
+                                    ) : query && !searching ? (
+                                        <Empty description={`No products found for "${query}"`} />
+                                    ) : (
+                                        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                                            <SearchOutlined style={{ fontSize: '48px', color: '#f0f0f0', marginBottom: '16px' }} />
+                                            <Text type="secondary" style={{ display: 'block' }}>Enter a search term to find products for this section</Text>
+                                        </div>
+                                    )}
+                                </Card>
+                            </div>
+                        ) : selectionType === 'none' ? (
+                            <Card style={{ borderRadius: '12px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ textAlign: 'center', padding: '60px' }}>
+                                    <ShoppingOutlined style={{ fontSize: '64px', color: '#e6f7ff', marginBottom: '24px' }} />
+                                    <Title level={4} style={{ color: '#8c8c8c' }}>Select a populate mode</Title>
+                                    <Text type="secondary">Choose "By Category" for automatic collection or "Custom List" to hand-pick products.</Text>
                                 </div>
-                            )}
-                        </div>
-
-                        {addProducts && addProducts.length > 0 && (
-                            <div className="add-product-box">
-                                {addProducts.map((item, index) => (
-                                    <div className="add-product-item-list" key={item?.id}>
-                                        <div>
-                                            <img className="add-product-box-img" src={item?.img_path ? item?.img_path : item?.image} alt={item?.slug}/>
-
-                                            <h2 className="add-product-box-h2">
-                                                {item?.name}
-                                            </h2>
-
-                                            {item.categories?.length > 0 && (
-                                                <p style={{ textTransform: "capitalize", fontWeight: "600", textAlign: "center", marginBottom: "0" }}>
-                                                    Category : {item.categories.map(c => c.name).join(", ")}
-                                                </p>
-                                            )}
-
-                                            <p className="add-product-box-p1">
-                                                Sku : {item.sku}
-                                            </p>
-
-                                            <div className="result-product-list-display">
-                                                <span>
-                                                    {item?.mrp} tk
-                                                </span>
-
-                                                <span className="result-product-list-another-span">
-                                                    {item?.sell_price} tk
-                                                </span>
-                                            </div>
-
-                                            <div className="product-details-ss-display">
-                                                <Button color="danger" variant="solid" onClick={() => handleRemove(item, index)}>
-                                                    {loadingRemoveIndex === index ? (<LoadingOutlined />) : (<DeleteOutlined />)}
-                                                    {loadingRemoveIndex === index ? " Loading..." : " Remove"}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                            </Card>
+                        ) : (
+                            <Card style={{ borderRadius: '12px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ textAlign: 'center', padding: '60px' }}>
+                                    <EyeOutlined style={{ fontSize: '64px', color: '#f6ffed', marginBottom: '24px' }} />
+                                    <Title level={4} style={{ color: '#8c8c8c' }}>Category Mode Active</Title>
+                                    <Text type="secondary">In Category mode, products are managed via the selected category automatically.</Text>
+                                </div>
+                            </Card>
                         )}
-
-                        {addProducts && addProducts.length > 0 && <hr />}
-
-                        {results && results.length > 0 && (
-                            <div className="result-product-list-display-ss">
-                                {results.map((item, index) => (
-                                    <div className="result-product-list-item-ss" key={item?.id}>
-                                        <div>
-                                            <img className="result-product-list-img-ss" src={item?.img_path} alt={item?.slug}/>
-                                            <h2 className="result-product-list-h2-sss">
-                                                {item?.name}
-                                            </h2>
-
-                                            {item.categories?.length > 0 && (
-                                                <p style={{ textTransform: "capitalize", fontWeight: "600", textAlign: "center", marginBottom: "0" }}>
-                                                    Category : {item.categories.map(c => c.name).join(", ")}
-                                                </p>
-                                            )}
-
-                                            <p className="result-product-list-p1-sss">
-                                                Sku : {item?.sku}
-                                            </p>
-                                            <div className="s4-pro-dis">
-                                                <span className="s4-pro-dis-span">
-                                                    {item?.mrp} tk
-                                                </span>
-
-                                                <span className="s4-pro-dis-span1">
-                                                    {item?.sell_price} tk
-                                                </span>
-                                            </div>
-
-                                            <div className="s5-pro-dis">
-                                                <Button type="primary" onClick={() => handleAdd(item, index)}>
-                                                    {loadingIndex === index ? (<LoadingOutlined />) : (<PlusOutlined />)}
-                                                    {loadingIndex === index ? " Loading..." : " Add"}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <Form.Item style={{ textAlign: "right" }}>
-                            <Button type="primary" htmlType="submit" loading={loading}>
-                                Update Section
-                            </Button>
-                        </Form.Item>
-                    </div>
-                </Form>
-            </div>
-        </>
+                    </Col>
+                </Row>
+            </Form>
+        </div>
     )
 }

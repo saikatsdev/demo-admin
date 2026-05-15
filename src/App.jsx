@@ -77,6 +77,7 @@ import OrderReport from "./pages/report/OrderReport";
 import UpsellSetting from "./pages/product/thankyou/UpsellSetting";
 import Tutorial from "./pages/tutorial/Tutorial";
 import FacebookMeta from "./pages/product/catelog/FacebookMeta";
+import MetaAdsReport from "./pages/meta/MetaAdsReport";
 import AddDownSell from "./pages/order/downsell/AddDownSell";
 import EditDownSell from "./pages/order/downsell/EditDownSell";
 import AddCustomer from "./pages/auth/AddCustomer";
@@ -157,6 +158,7 @@ import TrashPaymentGatewayList from "./pages/order/payment_gateway/TrashPaymentG
 import Profile from "./pages/auth/user/Profile";
 import ServerTracker from "./pages/product/catelog/ServerTracker";
 import Feedback from "./pages/order/feedback/Feedback";
+import CampaignProduct from "./pages/meta/CampaignProduct";
 
 function App() {
     const dispatch         = useDispatch();
@@ -260,6 +262,8 @@ function App() {
 
                     <Route path="/section-banner" element={<SectionBanner />} />
 
+                    <Route path="/meta-ads" element={<MetaAdsReport />} />
+
                     <Route path="/product/catalogs" element={<ProductCatelog />} />
                     <Route path="/add/prodcut/catelog" element={<AddProductCatelog />} />
                     <Route path="/edit/prodcut/catelog/:id" element={<EditProductCatelog />}/>
@@ -269,6 +273,7 @@ function App() {
                     <Route path="/server-tracker" element={<ServerTracker />} />
                     <Route path="/google-analytical" element={<GoogleAnalytic />} />
                     <Route path="/facebook/meta/pixel" element={<FacebookMeta />} />
+                    <Route path="/campaign-products" element={<CampaignProduct />} />
 
                     <Route path="/pusher/settings" element={<Pusher />} />
 

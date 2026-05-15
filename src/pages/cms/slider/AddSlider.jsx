@@ -1,9 +1,12 @@
-import { ArrowLeftOutlined, CloudUploadOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message } from "antd";
+import { ArrowLeftOutlined, CloudUploadOutlined, InfoCircleOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message, Row, Col, Typography } from "antd";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { postData } from "../../../api/common/common";
 import useTitle from "../../../hooks/useTitle";
+import "./Slider.css";
+
+const { Text, Title } = Typography;
 
 const DEVICE_SIZES = {
     desktop: { width: 4360, height: 1826 },
@@ -13,7 +16,7 @@ const DEVICE_SIZES = {
 
 export default function AddSlider() {
     // Hooks
-    useTitle("Add Slider");
+    useTitle("Add Home Slider | Admin");
 
     // Variable
     const navigate = useNavigate();
@@ -22,23 +25,30 @@ export default function AddSlider() {
     const [image, setImage]           = useState(null);
     const [loading, setLoading]       = useState(false);
     const [imageFile, setImageFile]   = useState(null);
-    const [form]                                = Form.useForm();
+    const [form]                      = Form.useForm();
     const [messageApi, contextHolder] = message.useMessage();
 
     const handleImageChange = (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        setImageFile(file);
-        const reader = new FileReader();
-        reader.onload = () => setImage(reader.result);
-        reader.readAsDataURL(file);
-      }
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            const reader = new FileReader();
+            reader.onload = () => setImage(reader.result);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveImage = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setImage(null);
+        setImageFile(null);
     };
 
     const onFinish = async (values) => {
         try {
             const formData = new FormData();
-            formData.append("title", values.title);
+            formData.append("title", values.title || "");
             formData.append("status", values.status);
             formData.append("type", values.type);
             formData.append("width", values.width);
@@ -48,21 +58,22 @@ export default function AddSlider() {
                 formData.append("image", imageFile);
             }
 
+            setLoading(true);
             try {
-                setLoading(true);
-                const res = await postData("/admin/sliders", formData, { headers: { "Content-Type": "multipart/form-data", },});
+                const res = await postData("/admin/sliders", formData, { 
+                    headers: { "Content-Type": "multipart/form-data" }
+                });
 
                 if(res && res.success){
-                    messageApi.open({
-                        type: "success",
-                        content: res.msg,
+                    messageApi.success({
+                        content: res.msg || "Slider created successfully",
+                        duration: 3
                     });
-
-                    navigate("/sliders");
+                    navigate("/sliders")
                 }
             } catch (error) {
-                console.log(error);
-            }finally{
+                messageApi.error("Failed to create slider. Please try again.");
+            } finally {
                 setLoading(false);
             }
         } catch (error) {
@@ -71,97 +82,127 @@ export default function AddSlider() {
     };
 
     return (
-        <>
+        <div className="slider-container">
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">Add Home Sliders</h1>
-                </div>
-                <div className="head-actions">
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+                <div>
+                    <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Add Home Slider</Title>
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Add Home Sliders" },
+                            { title: <Link to="/sliders">Home Sliders</Link> },
+                            { title: "New Slider" },
                         ]}
                     />
                 </div>
+                <Button className="premium-back-btn" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                    Back to List
+                </Button>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div></div>
-                <Space>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
-                </Space>
-            </div>
-
-            <div className="slider-form-wrapper">
-                <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{width:4360, height:1826, type:"desktop"}} onValuesChange={(changed) => {
-                    if (changed.type) {
-                        const size = DEVICE_SIZES[changed.type];
-                        form.setFieldsValue(size);
-                    }
-                    }}>
-                    <div className="slider-form">
-                        <div className="image-block">
-                            <div className="image-card">
-                                {image ? (
-                                    <>
-                                        <img src={image} alt="Uploaded" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "6px" }} />
-
-                                        <button className="image-btn" onClick={() => setImage(null)}>
-                                            ×
-                                        </button>
-                                    </>
-                                ) : (
-                                    <span>No image selected</span>
-                                )}
-
-                                <label htmlFor="file-upload">
-                                    <CloudUploadOutlined />
-                                    Upload
+            <div className="premium-card">
+                <div className="card-content">
+                    <Form form={form} layout="vertical" onFinish={onFinish} className="premium-form"
+                        initialValues={{ width: 4360, height: 1826, type: "desktop", status: "active" }}
+                        onValuesChange={(changed) => {
+                            if (changed.type && DEVICE_SIZES[changed.type]) {
+                                const size = DEVICE_SIZES[changed.type];
+                                form.setFieldsValue(size);
+                            }
+                        }}
+                    >
+                        <div className="form-grid">
+                            <div className="upload-section">
+                                <Text strong style={{ fontSize: '16px' }}>Slider Artwork</Text>
+                                <label className="premium-upload-area">
+                                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageChange} />
+                                    {image ? (
+                                        <div className="preview-container">
+                                            <img src={image} alt="Preview" className="preview-image" />
+                                            <button className="remove-img-btn" onClick={handleRemoveImage}>
+                                                <DeleteOutlined />
+                                            </button>
+                                            <div className="upload-overlay">
+                                                <CloudUploadOutlined /> Change Image
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="upload-placeholder">
+                                            <div className="upload-icon">
+                                                <CloudUploadOutlined />
+                                            </div>
+                                            <Text strong style={{ fontSize: '18px', color: '#1e293b' }}>Click to upload image</Text>
+                                            <Text type="secondary">Optimal size depends on slider type</Text>
+                                        </div>
+                                    )}
                                 </label>
-
-                                <input id="file-upload" type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageChange}/>
-                            </div>
-                        </div>
-                        <div className="form-block">
-                            <Form.Item label="Home Slider Title" name="title">
-                                <AntInput placeholder="Enter your title..." />
-                            </Form.Item>
-
-                            <Form.Item name="status" label="Home Slider Status" rules={[{ required: true, message: "Please select a status" }]} initialValue={"active"}>
-                                <Select options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
-                            </Form.Item>
-
-                            <Form.Item name="type" label="Slider Type" rules={[{ required: true }]} initialValue="1">
-                                <Select options={[{value:'1', label: 'Select Type', disabled: true},{ value: 'desktop', label: 'Desktop' }, { value: 'tablet', label: 'Tablet' },{ value: 'mobile', label: 'Mobile' }]} />
-                            </Form.Item>
-
-                            <div style={{display:"flex"}}>
-                                <div style={{width:"50%", marginRight:"5px"}}>
-                                    <Form.Item label="Slider Width" name="width">
-                                        <AntInput placeholder="Enter width..."/>
-                                    </Form.Item>
-                                </div>
-
-                                <div style={{width:"50%"}}>
-                                    <Form.Item label="Slider Height" name="height">
-                                        <AntInput placeholder="Enter height..."/>
-                                    </Form.Item>
+                                <div className="size-info-badge">
+                                    <div className="badge-dot" />
+                                    <Text type="secondary" style={{ fontSize: '13px' }}>
+                                        Supports JPG, PNG, WEBP (Max 2MB)
+                                    </Text>
                                 </div>
                             </div>
 
-                            <div style={{textAlign:"right"}}>
-                                <Form.Item>
-                                    <Button type="primary" htmlType="submit" loading={loading}>
-                                        {loading ? "Creating..." : "Add Slider"}
-                                    </Button>
+                            <div className="form-details-section">
+                                <Form.Item label="Home Slider Title" name="title" rules={[{ required: true, message: "Please enter a slider title" }]}>
+                                    <AntInput className="premium-input" placeholder="e.g. Summer Collection 2024" />
                                 </Form.Item>
+
+                                <Row gutter={16}>
+                                    <Col span={12}>
+                                        <Form.Item name="status" label="Visibility" rules={[{ required: true }]}>
+                                            <Select className="premium-select" options={[{ value: 'active', label: 'Visible' }, { value: 'inactive', label: 'Hidden' }]} />
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={12}>
+                                        <Form.Item name="type" label="Display Device" rules={[{ required: true }]}>
+                                            <Select 
+                                                className="premium-select" 
+                                                options={[
+                                                    { value: 'desktop', label: 'Desktop View' }, 
+                                                    { value: 'tablet', label: 'Tablet View' },
+                                                    { value: 'mobile', label: 'Mobile View' }
+                                                ]} 
+                                            />
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+
+                                <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                                    <Space style={{ marginBottom: 16 }}>
+                                        <InfoCircleOutlined style={{ color: '#6366f1' }} />
+                                        <Text strong>Dimension Configuration</Text>
+                                    </Space>
+                                    <Row gutter={16}>
+                                        <Col span={12}>
+                                            <Form.Item label="Width (px)" name="width" rules={[{ required: true }]}>
+                                                <AntInput className="premium-input" placeholder="Width" />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item label="Height (px)" name="height" rules={[{ required: true }]}>
+                                                <AntInput className="premium-input" placeholder="Height" />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                                        Dimensions are automatically suggested based on the selected device type.
+                                    </Text>
+                                </div>
+
+                                <div className="submit-section">
+                                    <Button type="primary" htmlType="submit" loading={loading} className="premium-submit-btn" block>
+                                        {loading ? "PROCESSING..." : "CREATE HOME SLIDER"}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </Form>
+                    </Form>
+                </div>
             </div>
-        </>
+        </div>
     )
 }

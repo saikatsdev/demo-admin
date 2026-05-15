@@ -1,12 +1,12 @@
-import {ArrowLeftOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, InputNumber, message } from "antd";
+import { ArrowLeftOutlined, UploadOutlined, SearchOutlined, CheckCircleOutlined, StarFilled,ShoppingOutlined,GlobalOutlined,UserOutlined,MailOutlined,MessageOutlined,DeleteOutlined,LoadingOutlined
+} from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Select, message, Upload, Card, Row, Col, Typography, Divider, Tag, Rate, Empty, Avatar } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
 import { useEffect, useState } from "react";
 import { getDatas, postData } from "../../../api/common/common";
-import ImagePicker from "../../../components/image/ImagePicker";
 
-const { Option } = Select;
+const { Title, Text } = Typography;
 
 export default function AddReview() {
     // Hook
@@ -18,73 +18,68 @@ export default function AddReview() {
 
     // State
     const [formLoading, setFormLoading] = useState(false);
-    const [products, setProducts]       = useState([]);
+    const [searching, setSearching]     = useState(false);
+    const [query, setQuery]             = useState("");
+    const [results, setResults]         = useState([]);
+    const [selectedProduct, setSelectedProduct] = useState(null);
     const [messageApi, contextHolder]   = message.useMessage();
 
-    const [gallery, setGallery] = useState([]);
-    const [loadingMore, setLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
-    const [page, setPage] = useState(1);
-
-    // Method
+    // Debounced Search Logic
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const productRes = await getDatas("/admin/products/list");
-                setProducts(productRes?.result || []);
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            }
-        };
-
-        fetchData();
-        fetchMedia(1);
-    }, []);
-
-    const fetchMedia = async (pageNumber = 1) => {
-        try {
-            setLoadingMore(true);
-            const res = await getDatas(`/admin/gallary?page=${pageNumber}`);
-
-            if (res && res?.success) {
-                const data = res.result.data;
-
-                if (pageNumber > 1) {
-                    setGallery(prev => [...prev, ...data]);
-                } else {
-                    setGallery(data);
-                }
-
-                const meta = res.result.meta;
-                setPage(meta.current_page);
-                setHasMore(meta.current_page < meta.last_page);
-            }
-        } catch (error) {
-            console.error("Failed to load gallery:", error);
-        } finally {
-            setLoadingMore(false);
+        if (!query) {
+            setResults([]);
+            return;
         }
+
+        const delayDebounceFn = setTimeout(() => {
+            fetchSearchProduct(query);
+        }, 500);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [query]);
+
+    const fetchSearchProduct = async (searchText) => {
+        setSearching(true);
+        try {
+            const res = await getDatas(`/admin/products/search?search_key=${searchText}`);
+            if (res?.success) {
+                setResults(res?.result || []);
+            }
+        } finally {
+            setSearching(false);
+        }
+    }
+
+    const handleSelectProduct = (product) => {
+        setSelectedProduct(product);
+        setResults([]);
+        setQuery("");
+        form.setFieldValue("product_id", product.id);
     };
 
+    const handleRemoveProduct = () => {
+        setSelectedProduct(null);
+        form.setFieldValue("product_id", undefined);
+    };
 
     const handleSubmit = async (values) => {
+        if (!selectedProduct) {
+            messageApi.error("Please select a product!");
+            return;
+        }
+
         const formData = new FormData();
 
         formData.append("name", values.name);
-        formData.append("email", values.email);
-        formData.append("title", values.title);
-        formData.append("product_id", values.product_id);
-        formData.append("rating", values.rating);
-        formData.append("review", values.review);
+        formData.append("email", values.email || "");
+        formData.append("title", values.title || "");
+        formData.append("product_id", selectedProduct.id);
+        formData.append("rating", values.rating || 5);
+        formData.append("review", values.review || "");
         formData.append("status", values.status);
 
-        const image = values.image?.[0];
-        if (image) {
-            if (image.originFileObj) {
-                formData.append('image', image.originFileObj);
-            } else if (image.isFromGallery) {
-                formData.append('image', image.galleryPath);
-            }
+        if (values.image && values.image.length > 0) {
+            formData.append("image", values.image[0].originFileObj);
             formData.append('width', 450);
             formData.append('height', 450);
         }
@@ -93,7 +88,7 @@ export default function AddReview() {
             setFormLoading(true);
             const res = await postData("/admin/product/reviews", formData);
 
-            if(res && res?.success){
+            if (res && res?.success) {
                 messageApi.open({
                     type: "success",
                     content: res.msg,
@@ -102,102 +97,197 @@ export default function AddReview() {
                 setTimeout(() => {
                     navigate("/review");
                 }, 400);
-            }else{
-                messageApi.open({
-                    type: "error",
-                    content: "Something Went Wrong",
-                });
             }
         } catch (error) {
-            console.log(error);
-        }finally{
+            console.error(error);
+        } finally {
             setFormLoading(false);
         }
     }
 
     return (
-        <>
+        <div style={{ padding: '24px', background: '#f0f2f5', minHeight: '100vh' }}>
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">Add Reviews</h1>
-                </div>
-                <div className="head-actions">
+            
+            {/* Page Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                <div>
                     <Breadcrumb
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Add Reviews" },
+                            { title: <Link to="/review">Reviews</Link> },
+                            { title: "Add Review" },
                         ]}
+                        style={{ marginBottom: '8px' }}
                     />
+                    <Title level={2} style={{ margin: 0, fontWeight: 700 }}>
+                        <StarFilled style={{ marginRight: '12px', color: '#faad14' }} />
+                        Create Product Review
+                    </Title>
                 </div>
+                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} style={{ borderRadius: '8px' }}>
+                    Back to List
+                </Button>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div></div>
-                <Space>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
-                </Space>
-            </div>
+            <Form form={form} layout="vertical" onFinish={handleSubmit} initialValues={{ status: 'pending', rating: 5 }}>
+                <Row gutter={24}>
+                    <Col xs={24} lg={14}>
+                        <Card title={<span><UserOutlined style={{ marginRight: 8 }} />Reviewer & Feedback Details</span>} className="shadow-sm" style={{ borderRadius: '12px', marginBottom: '24px' }}>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="name" label="Reviewer Name" rules={[{ required: true, message: "Please provide a name!" }]}>
+                                        <AntInput prefix={<UserOutlined style={{ color: '#bfbfbf' }} />} size="large" placeholder="John Doe" />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="email" label="Email Address">
+                                        <AntInput prefix={<MailOutlined style={{ color: '#bfbfbf' }} />} size="large" placeholder="john@example.com" />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
 
-            <div className="review-form-wrapper">
-                <Form layout="vertical" form={form} onFinish={handleSubmit} style={{ maxWidth: 600, marginTop: 20 }}>
+                            <Row gutter={16}>
+                                <Col span={16}>
+                                    <Form.Item name="title" label="Review Title">
+                                        <AntInput size="large" placeholder="e.g. Amazing Quality, Highly Recommended" />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={8}>
+                                    <Form.Item name="rating" label="Overall Rating" rules={[{ required: true }]}>
+                                        <Rate />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
 
-                    <Form.Item label="Name" name="name" rules={[{ required: true, message: "Please provide a name!" }]}>
-                        <AntInput style={{ width: "100%" }} placeholder="Enter Name" />
-                    </Form.Item>
+                            <Form.Item name="review" label="Review Content">
+                                <AntInput.TextArea rows={5} placeholder="Share the customer's detailed experience with this product..." prefix={<MessageOutlined />} />
+                            </Form.Item>
 
-                    <Form.Item label="Email" name="email">
-                        <AntInput style={{ width: "100%" }} placeholder="Enter email" />
-                    </Form.Item>
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item label="Upload Photo" name="image" valuePropName="fileList" getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}>
+                                        <Upload beforeUpload={() => false} listType="picture" maxCount={1} accept="image/*">
+                                            <Button size="large" icon={<UploadOutlined />} block>Click to Upload</Button>
+                                        </Upload>
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="status" label="Display Status" rules={[{ required: true }]}>
+                                        <Select size="large">
+                                            <Select.Option value="pending">Pending Review</Select.Option>
+                                            <Select.Option value="approved">Approved / Live</Select.Option>
+                                            <Select.Option value="cancelled">Cancelled</Select.Option>
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+                            </Row>
 
-                    <Form.Item label="Review Title" name="title">
-                        <AntInput style={{ width: "100%" }} placeholder="Enter title" />
-                    </Form.Item>
+                            <Divider />
+                            
+                            <div style={{ textAlign: 'right' }}>
+                                <Button type="primary" htmlType="submit" loading={formLoading}>
+                                    {formLoading ? "Saving Review..." : "Submit Review"}
+                                </Button>
+                            </div>
+                        </Card>
+                    </Col>
 
-                    <Form.Item label="Rating" name="rating">
-                        <InputNumber min={1} max={5} style={{ width: "100%" }} placeholder="Enter rating" />
-                    </Form.Item>
+                    <Col xs={24} lg={10}>
+                        <Card 
+                            title={<span><ShoppingOutlined style={{ marginRight: 8 }} />Assign Product</span>}
+                            className="shadow-sm"
+                            style={{ borderRadius: '12px' }}
+                        >
+                            {selectedProduct ? (
+                                <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '12px', padding: '20px', position: 'relative' }}>
+                                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                        <Avatar shape="square" size={80} src={selectedProduct.img_path || selectedProduct.image} style={{ backgroundColor: '#fff', border: '1px solid #f0f0f0' }} />
+                                        <div style={{ flex: 1 }}>
+                                            <Text strong style={{ fontSize: '16px', display: 'block' }}>{selectedProduct.name}</Text>
+                                            <Text type="secondary" style={{ fontSize: '13px' }}>SKU: {selectedProduct.sku}</Text>
+                                            <div style={{ marginTop: '8px' }}>
+                                                <Tag color="success" icon={<CheckCircleOutlined />}>Selected</Tag>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Button type="text" danger icon={<DeleteOutlined />} onClick={handleRemoveProduct} style={{ position: 'absolute', top: 12, right: 12 }}>
+                                        Remove
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div style={{ background: '#e6f7ff', padding: '12px', borderRadius: '8px', border: '1px solid #91d5ff' }}>
+                                        <Text type="secondary" style={{ fontSize: '13px' }}>
+                                            Search and select the product that this review belongs to.
+                                        </Text>
+                                    </div>
+                                    <AntInput prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                                        size="large"
+                                        placeholder="Type to search products..." 
+                                        value={query} 
+                                        onChange={(e) => setQuery(e.target.value)}
+                                        suffix={searching ? <LoadingOutlined /> : null}
+                                        allowClear
+                                    />
 
-                    <ImagePicker 
-                        form={form} 
-                        name="image" 
-                        label="Image" 
-                        gallery={gallery}  
-                        hasMore={hasMore} 
-                        loadingMore={loadingMore} 
-                        fetchMore={() => fetchMedia(page + 1)} 
-                        onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])} 
-                    />
+                                    <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #f0f0f0', borderRadius: '8px' }}>
+                                        {results.length > 0 ? (
+                                            results.map((item) => (
+                                                <div 
+                                                    key={item.id}
+                                                    onClick={() => handleSelectProduct(item)}
+                                                    style={{ 
+                                                        padding: '12px', 
+                                                        borderBottom: '1px solid #f0f0f0', 
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        gap: '12px',
+                                                        alignItems: 'center',
+                                                        transition: 'background 0.3s'
+                                                    }}
+                                                    className="search-result-item"
+                                                    onMouseEnter={(e) => e.currentTarget.style.background = '#fafafa'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                                >
+                                                    <Avatar shape="square" src={item.img_path || item.image} size="large" />
+                                                    <div style={{ overflow: 'hidden' }}>
+                                                        <Text strong style={{ fontSize: '14px', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            {item.name}
+                                                        </Text>
+                                                        <Text type="secondary" style={{ fontSize: '12px' }}>SKU: {item.sku}</Text>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : query && !searching ? (
+                                            <Empty description="No products found" style={{ padding: '20px' }} />
+                                        ) : (
+                                            <div style={{ padding: '40px', textAlign: 'center' }}>
+                                                <ShoppingOutlined style={{ fontSize: '32px', color: '#f0f0f0', marginBottom: '12px' }} />
+                                                <Text type="secondary" style={{ display: 'block' }}>Start typing to find products</Text>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </Card>
 
-                    <Form.Item label="Product ID" name="product_id" rules={[{ required: true, message: "Please select a product!" }]}>
-                        <Select placeholder="Select Product" showSearch optionFilterProp="children" filterOption={(input, option) =>
-                            (option?.children ?? "").toLowerCase().includes(input.toLowerCase())
-                        }>
-                            {products?.map((item) => (
-                                <Option value={item.id}>{item.name}</Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
-
-                    <Form.Item label="Review" name="review">
-                        <AntInput.TextArea rows={4} placeholder="Write your review..." />
-                    </Form.Item>
-
-                    <Form.Item label="Status" name="status" rules={[{ required: true, message: "Please select status!" }]}>
-                        <Select placeholder="Select Status">
-                            <Option value="pending">Pending</Option>
-                            <Option value="approved">Approved</Option>
-                            <Option value="cancelled">Cancelled</Option>
-                        </Select>
-                    </Form.Item>
-
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit" loading={formLoading}>
-                            Submit Review
-                        </Button>
-                    </Form.Item>
-                </Form>
-            </div>
-        </>
+                        <Card 
+                            title={<span><GlobalOutlined style={{ marginRight: 8 }} />Review Guidelines</span>}
+                            className="shadow-sm"
+                            style={{ borderRadius: '12px', marginTop: '24px' }}
+                        >
+                            <Text type="secondary" style={{ fontSize: '13px' }}>
+                                <ul>
+                                    <li>Ensure the reviewer name is accurate.</li>
+                                    <li>Upload a real-life photo if available for higher trust.</li>
+                                    <li>Select "Approved" to make the review visible on the website immediately.</li>
+                                </ul>
+                            </Text>
+                        </Card>
+                    </Col>
+                </Row>
+            </Form>
+        </div>
     )
 }

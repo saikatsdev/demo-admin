@@ -25,7 +25,7 @@ export default function Gallary() {
     const [isModalOpen, setIsModalOpen]       = useState(false);
     const [form]                              = Form.useForm();
     const [formLoading, setFormLoading]       = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
+    const [isDragging, setIsDragging]         = useState(false);
 
     useEffect(() => {
         fetchMedia(page);
@@ -279,16 +279,43 @@ export default function Gallary() {
                 return;
             }
 
+            const dimensions = await Promise.all(
+                values.images.map((file) => {
+                    return new Promise((resolve) => {
+                        const img = new window.Image();
+                        const objectUrl = URL.createObjectURL(file.originFileObj);
+                        img.onload = () => {
+                            URL.revokeObjectURL(objectUrl);
+                            resolve({ width: img.width, height: img.height });
+                        };
+                        img.onerror = () => {
+                            URL.revokeObjectURL(objectUrl);
+                            resolve({ width: 800, height: 800 });
+                        };
+                        img.src = objectUrl;
+                    });
+                })
+            );
+
             const formData = new FormData();
             
-            values.images.forEach((file) => {
+            values.images.forEach((file, index) => {
                 formData.append("images[]", file.originFileObj);
+                formData.append("width[]", dimensions[index].width);
+                formData.append("height[]", dimensions[index].height);
             });
 
             const res = await postData("/admin/gallary", formData);
 
             if(res && res?.success){
-                const data = res?.result?.data || [];
+                let data = [];
+                if (res.result?.data && Array.isArray(res.result.data)) {
+                    data = res.result.data;
+                } else if (Array.isArray(res.result)) {
+                    data = res.result;
+                } else if (res.result) {
+                    data = [res.result];
+                }
 
                 setGallaries(prev => [...data, ...prev]);
 
