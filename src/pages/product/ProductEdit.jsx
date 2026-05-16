@@ -766,9 +766,8 @@ export default function ProductEdit() {
     const isInvalidOffer = offerPrice !== "" && regularPrice !== "" && !Number.isNaN(regular) && !Number.isNaN(offer) && offer > regular;
 
     return (
-        <>
-            <div style={{ background: '#f4f7fe', minHeight: '100vh', paddingBottom: '40px' }}>
-                {contextHolder}
+        <div style={{ background: '#f4f7fe', minHeight: '100vh', paddingBottom: '40px' }}>
+            {contextHolder}
             
                 <div style={{
                     position: 'sticky',
@@ -1292,7 +1291,6 @@ export default function ProductEdit() {
                         </Col>
                     </Row>
                 </div>
-            </div>
         
             <Modal title="Please Choose Your Variations" open={variationMultiplyModal} onCancel={() => setVariationMultiplyModal(false)} onOk={handleVariationMultiplySubmit} okText="Submit" width={800}>
                 <Form layout="vertical">
@@ -1411,6 +1409,6 @@ export default function ProductEdit() {
                     </Form.Item>
                 </Form>
             </Modal>
-        </>
+        </div>
     )
 }
