@@ -1,9 +1,10 @@
-import { ArrowLeftOutlined, CloudUploadOutlined, DeleteOutlined, InboxOutlined, PlusOutlined, SaveOutlined, SettingOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, DeleteOutlined, InboxOutlined, PlusOutlined, SaveOutlined, SettingOutlined, ThunderboltOutlined } from "@ant-design/icons";
 import { Breadcrumb, Button, Card, Col, Divider, Form, Input, InputNumber, message, Radio, Row, Select, Space, Spin, Tag, Typography, Upload } from "antd";
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
+import ImagePicker from "../../../components/image/ImagePicker";
 import useTitle from "../../../hooks/useTitle";
 import "./downsell.css";
 
@@ -27,6 +28,12 @@ export default function EditDownSell() {
     const [messageApi, contextHolder]                 = message.useMessage();
     const [downSellData, setDownSellData]             = useState(null);
 
+    // Gallery states
+    const [gallery, setGallery]         = useState([]);
+    const [page, setPage]               = useState(1);
+    const [hasMore, setHasMore]         = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+
     // Variable
     const { id } = useParams();
     const debounceTimeout = useRef(null);
@@ -44,8 +51,26 @@ export default function EditDownSell() {
             }
         };
         getCategories();
+        fetchMedia();
         return () => { isMounted = false; };
     }, []);
+
+    const fetchMedia = async (pageNum = 1) => {
+        setLoadingMore(true);
+        try {
+            const res = await getDatas(`/admin/gallary?page=${pageNum}`);
+            if (res && res.success) {
+                const newItems = res.result?.data || [];
+                setGallery(prev => pageNum === 1 ? newItems : [...prev, ...newItems]);
+                setHasMore(res.result?.current_page < res.result?.last_page);
+                setPage(pageNum);
+            }
+        } catch (error) {
+            console.error("Media fetch error:", error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     // Get DownSell
     useEffect(() => {
@@ -63,7 +88,6 @@ export default function EditDownSell() {
                     form.setFieldsValue({
                         title: data.title,
                         amount: data.amount,
-                        duration: data.duration,
                         coupon_type: data.type,
                         started_at: data.started_at?.slice(0, 10),
                         ended_at: data.ended_at?.slice(0, 10),
@@ -71,6 +95,7 @@ export default function EditDownSell() {
                         description: data.description,
                         width: data.width || 450,
                         height: data.height || 450,
+                        image: data.image ? [{ uid: "-1", name: "existing-image", status: "done", url: data.image }] : []
                     });
 
                     if (Array.isArray(data.products) && data.products.length > 0) {
@@ -151,18 +176,7 @@ export default function EditDownSell() {
         }
     };
 
-    const handleImageChange = (info) => {
-        if (info.file.status === 'removed') {
-            setImage(null);
-            setImageFile(null);
-            return;
-        }
-        const file = info.file.originFileObj || info.file;
-        if (file) {
-            setImage(URL.createObjectURL(file));
-            setImageFile(file);
-        }
-    };
+
 
     const onFinish = async (values) => {
         const formData = new FormData();
@@ -181,7 +195,17 @@ export default function EditDownSell() {
             selectedCategories.forEach(c => formData.append("category_ids[]", c.id));
             if (selectedCategories.length === 0) return messageApi.error("Select at least one category");
         }
-        if (imageFile) formData.append("image", imageFile);
+        
+        const imageValue = values.image;
+        if (imageValue && imageValue.length > 0) {
+            const imgObj = imageValue[0];
+            if (imgObj.isFromGallery) {
+                formData.append("gallery_image_path", imgObj.galleryPath);
+            } else if (imgObj.originFileObj) {
+                formData.append("image", imgObj.originFileObj);
+            }
+        }
+        
         formData.append("_method", "PUT");
 
         try {
@@ -229,22 +253,17 @@ export default function EditDownSell() {
                                             <Input size="large" />
                                         </Form.Item>
                                     </Col>
-                                    <Col xs={24} md={8}>
+                                    <Col xs={24} md={12}>
                                         <Form.Item label="Coupon Amount" name="amount" rules={[{ required: true, message: 'Amount is required' }]}>
                                             <InputNumber size="large" style={{ width: '100%' }} min={0} />
                                         </Form.Item>
                                     </Col>
-                                    <Col xs={24} md={8}>
+                                    <Col xs={24} md={12}>
                                         <Form.Item label="Coupon Type" name="coupon_type">
                                             <Select size="large">
                                                 <Select.Option value="fixed">Fixed Amount</Select.Option>
                                                 <Select.Option value="percent">Percentage (%)</Select.Option>
                                             </Select>
-                                        </Form.Item>
-                                    </Col>
-                                    <Col xs={24} md={8}>
-                                        <Form.Item label="Duration (Days)" name="duration">
-                                            <InputNumber size="large" style={{ width: '100%' }} min={1} />
                                         </Form.Item>
                                     </Col>
                                     <Col xs={24} md={12}>
@@ -338,24 +357,15 @@ export default function EditDownSell() {
 
                         <Col xs={24} lg={8}>
                             <Card title={<Space><InboxOutlined /> Banner Media</Space>} className="modern-antd-card sticky-card">
-                                <Form.Item label="Current Banner">
-                                    <Upload.Dragger multiple={false} showUploadList={false} beforeUpload={() => false} onChange={handleImageChange} className="modern-uploader">
-                                        {image ? (
-                                            <div className="upload-preview-container">
-                                                <img src={image} alt="preview" style={{ width: '100%', borderRadius: 8 }} />
-                                                <div className="upload-overlay">
-                                                    <CloudUploadOutlined />
-                                                    <span>Replace Image</span>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div style={{ padding: '20px 0' }}>
-                                                <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-                                                <p className="ant-upload-text">Click or drag image to upload</p>
-                                            </div>
-                                        )}
-                                    </Upload.Dragger>
-                                </Form.Item>
+                                <ImagePicker 
+                                    form={form}
+                                    name="image"
+                                    label="Current Banner"
+                                    gallery={gallery}
+                                    hasMore={hasMore}
+                                    loadingMore={loadingMore}
+                                    fetchMore={() => fetchMedia(page + 1)}
+                                />
 
                                 <Row gutter={12}>
                                     <Col span={12}>
