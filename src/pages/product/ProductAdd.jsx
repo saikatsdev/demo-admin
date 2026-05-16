@@ -793,12 +793,8 @@ export default function ProductAdd() {
                                     </Form>
                                 </Card>
 
-                                {/* Media Section */}
-                                <Card 
-                                    title={<Space><PlusOutlined style={{ color: '#3b82f6' }} />Product Media</Space>}
-                                    variant="borderless"
-                                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
-                                >
+                                <Card title={<Space><PlusOutlined style={{ color: '#3b82f6' }} />Product Media</Space>} variant="borderless"
+                                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
                                     <Row gutter={[20, 20]}>
                                         <Col xs={24} md={10}>
                                             <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', height: '100%' }}>
