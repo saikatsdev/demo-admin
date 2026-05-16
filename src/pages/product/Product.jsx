@@ -1,4 +1,4 @@
-import {ArrowLeftOutlined,CopyOutlined,DeleteOutlined,EditOutlined,EyeOutlined,FilterOutlined,FormOutlined,InfoCircleOutlined,PlusOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,BarcodeOutlined,CopyOutlined,DeleteOutlined,EditOutlined,EyeOutlined,FilterOutlined,FormOutlined,InfoCircleOutlined,PlusOutlined} from "@ant-design/icons";
 import {Input as AntInput,Typography,Breadcrumb,Badge,Tabs,Button,Col,DatePicker,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -185,64 +185,66 @@ export default function Product() {
             ),
         },
         {
-            title: "SKU & Type",
+            title: "Identity & Type",
             key: "sku",
-            width: 260,
+            width: 280,
             render: (_, record) => (
-                <div style={{overflow: "hidden",whiteSpace: "nowrap",textOverflow: "ellipsis",}}>
-                    <Tag color={record.status === "active" ? "green" : "red"}>
-                        {record.status === "active" ? "Active" : "Inactive"}
-                    </Tag>
-
-                    {record.sku && (
-                        <p style={{ margin: 0 }}>
-                            SKU: <span style={{ fontWeight: 300 }}>{record.sku}</span>
-                        </p>
-                    )}
-
-                    {record.product_type?.name && (
-                        <p style={{ margin: 0 }}>
-                            Product Type:{" "}
-                            <span style={{ fontWeight: 300 }}>
-                                {record.product_type.name}
+                <div className="product-identity-card">
+                    <div className="status-sku-header">
+                        <Tag 
+                            color={record.status === "active" ? "#f6ffed" : "#fff1f0"} 
+                            style={{ 
+                                color: record.status === "active" ? "#52c41a" : "#f5222d", 
+                                borderColor: record.status === "active" ? "#b7eb8f" : "#ffa39e",
+                                fontWeight: 700,
+                                borderRadius: '4px',
+                                fontSize: '10px'
+                            }}
+                        >
+                            {record.status === "active" ? "ACTIVE" : "INACTIVE"}
+                        </Tag>
+                        {record.sku && (
+                            <span className="sku-text">
+                                <BarcodeOutlined style={{ marginRight: 4, color: '#8c8c8c' }} />
+                                {record.sku}
                             </span>
-                        </p>
-                    )}
-                
-                    <div>
+                        )}
+                    </div>
+                    
+                    <div className="classification-details">
+                        {record.product_type?.name && (
+                            <div className="detail-item">
+                                <span className="label">Type:</span>
+                                <span className="value type-tag">{record.product_type.name}</span>
+                            </div>
+                        )}
+                        
                         {record.brand?.name && (
-                            <p style={{ margin: 0, fontWeight: 700 }}>
-                                Brand:{" "}
-                                <span style={{ fontWeight: 300 }}>{record.brand.name}</span>
-                            </p>
+                            <div className="detail-item">
+                                <span className="label">Brand:</span>
+                                <span className="value brand-name">{record.brand.name}</span>
+                            </div>
                         )}
 
-                        {record.categories?.length > 0 && (
-                            <p style={{ margin: 0, fontWeight: 700 }}>
-                                Category:{" "}
-                                <span style={{ fontWeight: 300 }}>
-                                    {record.categories.map(cat => cat.name).join(", ")}
+                        <div className="category-hierarchy">
+                            {record.categories?.map((cat, index) => (
+                                <span key={cat.id} className="cat-node">
+                                    {cat.name}
+                                    {index < record.categories.length - 1 || record.sub_categories?.length > 0 ? <span className="cat-sep">/</span> : null}
                                 </span>
-                            </p>
-                        )}
-
-                        {record.sub_categories?.length > 0 && (
-                            <p style={{ margin: 0, fontWeight: 700 }}>
-                                Sub Category:{" "}
-                                <span style={{ fontWeight: 300 }}>
-                                    {record.sub_categories.map(item => item.name).join(", ")}
+                            ))}
+                            {record.sub_categories?.map((sub, index) => (
+                                <span key={sub.id} className="cat-node sub">
+                                    {sub.name}
+                                    {index < record.sub_categories.length - 1 || record.sub_sub_categories?.length > 0 ? <span className="cat-sep">/</span> : null}
                                 </span>
-                            </p>
-                        )}
-
-                        {record.sub_sub_categories?.length > 0 && (
-                            <p style={{ margin: 0, fontWeight: 700 }}>
-                                Sub Sub Category:{" "}
-                                <span style={{ fontWeight: 300 }}>
-                                    {record.sub_sub_categories.map(item => item.name).join(", ")}
+                            ))}
+                            {record.sub_sub_categories?.map((ss) => (
+                                <span key={ss.id} className="cat-node sub-sub">
+                                    {ss.name}
                                 </span>
-                            </p>
-                        )}
+                            ))}
+                        </div>
                     </div>
                 </div>
             ),
