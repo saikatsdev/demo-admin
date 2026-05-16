@@ -44,6 +44,9 @@ export default function AddUpSell() {
         try {
             const res = await getDatas("/admin/products/search", { search_key: query });
 
+            console.log(res);
+            return;
+
             if (res && res?.success) {
                 setStateFn(res?.result || []);
             }
