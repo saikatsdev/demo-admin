@@ -1,9 +1,11 @@
-import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, message, Popconfirm, Space, Table,Tag } from "antd";
+import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, FilterOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, message, Popconfirm, Space, Table, Tag, Card, Typography, Tooltip } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas } from "../../../api/common/common";
 import useTitle from "../../../hooks/useTitle";
+
+const { Title, Text } = Typography;
 
 export default function ProductType() {
     //Hook
@@ -20,44 +22,56 @@ export default function ProductType() {
     const [filteredData, setFilteredData] = useState(productTypes);
 
     //Table Columns
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
-            key:"sl",
-            width: 10,
-            render: (_,__, index) => (
-                index + 1
-            )
+            key: "sl",
+            width: 80,
+            align: 'center',
+            render: (_, __, index) => (
+                <Text type="secondary" style={{ fontWeight: 500 }}>
+                    {index + 1}
+                </Text>
+            ),
         },
         {
-            title: "Name",
+            title: "Type Name",
             dataIndex: "name",
-            key: "name"
+            key: "name",
+            render: (text) => <Text strong style={{ color: '#1e293b' }}>{text}</Text>,
         },
         {
             title: "Status",
             dataIndex: "status",
             key: "status",
+            width: 120,
             render: (status) => (
-                <Tag style={{textTransform:"capitalize"}} color={status === "active" ? "green" : "red"}>{status}</Tag>
+                <Tag 
+                    color={status === "active" ? "success" : "error"} 
+                    style={{ borderRadius: '20px', padding: '0 12px', textTransform: 'capitalize', fontWeight: 600 }}
+                >
+                    {status}
+                </Tag>
             ),
         },
         {
             title: "Action",
             key: "operation",
-            width:170,
+            width: 140,
+            align: 'center',
             render: (_, record) => (
-                <Space>
-                    <Button size="small" type="primary" onClick={() => onEdit(record)}>
-                        Edit
-                    </Button>
-                    <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Button size="small" danger>
-                            Delete
-                        </Button>
-                    </Popconfirm>
+                <Space size="middle">
+                    <Tooltip title="Edit Type">
+                        <Button type="text" icon={<EditOutlined style={{ color: '#0ea5e9' }} />} onClick={() => onEdit(record)} style={{ background: '#f0f9ff', borderRadius: '8px' }}/>
+                    </Tooltip>
+                    <Tooltip title="Delete Type">
+                        <Popconfirm title="Are you sure you want to delete this product type?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
+                            <Button type="text" danger icon={<DeleteOutlined />} style={{ background: '#fef2f2', borderRadius: '8px' }}/>
+                        </Popconfirm>
+                    </Tooltip>
                 </Space>
-            )
+            ),
         },
     ];
 
@@ -71,14 +85,16 @@ export default function ProductType() {
     }
 
     useEffect(() => {
-        if(!query){
+        if (!query) {
             setFilteredData(productTypes);
+            return;
         }
 
         const lowerQuery = query.toLowerCase();
 
         const filtered = productTypes?.filter(item => 
-            item.title?.toLowerCase().includes(lowerQuery) || item.status?.toLowerCase().includes(lowerQuery)
+            item.name?.toLowerCase().includes(lowerQuery) || 
+            item.status?.toLowerCase().includes(lowerQuery)
         );
 
         setFilteredData(filtered);
@@ -129,33 +145,89 @@ export default function ProductType() {
     }
 
     return (
-        <>
+        <div style={{ background: '#f4f7fe', minHeight: '100vh' }}>
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">All Product Type</h1>
-                </div>
-                <div className="head-actions">
-                    <Breadcrumb
-                        items={[
-                            { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "All Product Type" },
-                        ]}
+            
+            <div style={{
+                background: '#fff',
+                padding: '16px 24px',
+                borderBottom: '1px solid #e2e8f0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 24
+            }}>
+                <Space size="middle">
+                    <Button 
+                        icon={<ArrowLeftOutlined />} 
+                        onClick={() => navigate(-1)} 
+                        style={{ border: 'none', background: '#f1f5f9', borderRadius: '8px' }}
                     />
-                </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
-                    
+                    <div>
+                        <Title level={4} style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>Product Types</Title>
+                        <Breadcrumb
+                            style={{ fontSize: '12px' }}
+                            items={[
+                                { title: <Link to="/dashboard" style={{ color: '#64748b' }}>Dashboard</Link> },
+                                { title: <span style={{ color: '#1e293b', fontWeight: 500 }}>Product Types</span> },
+                            ]}
+                        />
+                    </div>
+                </Space>
                 <Space>
-                    <Button type="primary" danger ghost size="small" icon={<DeleteOutlined />}>Trash</Button>
-                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
+                    <Button 
+                        type="primary" 
+                        icon={<PlusOutlined />} 
+                        onClick={openCreate}
+                        style={{ 
+                            borderRadius: '8px',
+                            background  : '#2563eb',
+                            height      : '40px',
+                            padding     : '0 20px',
+                            fontWeight  : 600,
+                            boxShadow   : '0 4px 10px rgba(37, 99, 235, 0.2)'
+                        }}
+                    >
+                        Create Product Type
+                    </Button>
                 </Space>
             </div>
 
-            <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
-        </>
+            <div>
+                <Card 
+                    variant="borderless"
+                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                    title={
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                            <Space>
+                                <FilterOutlined style={{ color: '#6366f1' }} />
+                                <Text strong style={{ fontSize: '16px' }}>All Product Types</Text>
+                            </Space>
+                            <AntInput 
+                                prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                                placeholder="Search types by name..." 
+                                value={query} 
+                                onChange={(e) => setQuery(e.target.value)} 
+                                style={{ width: 280, borderRadius: '8px' }}
+                                allowClear
+                            />
+                        </div>
+                    }
+                >
+                    <Table 
+                        rowKey="id" 
+                        loading={loading}
+                        columns={columns}
+                        dataSource={filteredData}
+                        scroll={{ x: "max-content" }}
+                        style={{ borderRadius: '8px' }}
+                        pagination={{
+                            showSizeChanger: true,
+                            showTotal: (total) => `Total ${total} types`,
+                        }}
+                    />
+                </Card>
+            </div>
+        </div>
     )
 }
