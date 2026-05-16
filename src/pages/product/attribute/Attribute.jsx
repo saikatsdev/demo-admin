@@ -1,13 +1,16 @@
-import { ArrowLeftOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Modal, Popconfirm, Select, Space, Table, Tag, message } from "antd";
+import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined, SettingOutlined, FilterOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Modal, Popconfirm, Select, Space, Table, Tag, message, Card, Typography, Tooltip } from "antd";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas, postData } from "../../../api/common/common";
 import useTitle from "../../../hooks/useTitle";
+
+const { Title, Text } = Typography;
 
 export default function Attribute() {
 
     // Hook
+    const navigate = useNavigate();
     useTitle("All Attributes");
 
     // State
@@ -27,56 +30,95 @@ export default function Attribute() {
         {
             title: "SL",
             key: "sl",
-            width: 50,
-            render: (_, __, index) =>
-            index + 1 + (pagination.current - 1) * pagination.pageSize,
+            width: 70,
+            align: 'center',
+            render: (_, __, index) => (
+                <Text type="secondary" style={{ fontWeight: 500 }}>
+                    {index + 1 + (pagination.current - 1) * pagination.pageSize}
+                </Text>
+            ),
         },
         {
-            title: "Name",
+            title: "Attribute Name",
             dataIndex: "name",
             key: "name",
+            render: (text) => <Text strong style={{ color: '#1e293b' }}>{text}</Text>,
         },
         {
             title: "Slug",
             dataIndex: "slug",
             key: "slug",
+            render: (text) => <Tag color="blue" style={{ borderRadius: '4px' }}>{text}</Tag>,
         },
         {
-            title: "Values",
+            title: "Configured Values",
             dataIndex: "values",
             key: "values",
             render: (values, record) => (
-                <>
-                    {values && values.length > 0  ? values.map((v) => v.value).join(", ") : "-"}
-
-                    <Link  to={`/attributes/config/${record.id}`}  style={{ marginLeft: 8, color: "#1677ff" }}>
-                        Config
-                    </Link>
-                </>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                    {values && values.length > 0 ? (
+                        values.slice(0, 5).map((v) => (
+                            <Tag key={v.id} color="default" style={{ borderRadius: '12px', fontSize: '12px' }}>
+                                {v.value}
+                            </Tag>
+                        ))
+                    ) : (
+                        <Text type="secondary" italic>No values</Text>
+                    )}
+                    {values && values.length > 5 && (
+                        <Tag color="default" style={{ borderRadius: '12px' }}>+{values.length - 5} more</Tag>
+                    )}
+                    <Tooltip title="Configure Values">
+                        <Button 
+                            type="text" 
+                            size="small" 
+                            icon={<SettingOutlined style={{ color: '#6366f1' }} />}
+                            onClick={() => navigate(`/attributes/config/${record.id}`)}
+                            style={{ marginLeft: 4 }}
+                        />
+                    </Tooltip>
+                </div>
             )
         },
         {
             title: "Status",
             dataIndex: "status",
             key: "status",
+            width: 120,
             render: (status) => (
-                <Tag style={{textTransform:"capitalize"}} color={status === "active" ? "green" : "red"}>{status}</Tag>
+                <Tag 
+                    color={status === "active" ? "success" : "error"} 
+                    style={{ borderRadius: '20px', padding: '0 12px', textTransform: 'capitalize', fontWeight: 600 }}
+                >
+                    {status}
+                </Tag>
             ),
         },
         {
             title: "Action",
             key: "operation",
-            width: 160,
+            width: 140,
+            align: 'center',
             render: (_, record) => (
-                <Space>
-                    <Button size="small" type="primary" onClick={() => onEdit(record)}>
-                        Edit
-                    </Button>
-                    <Popconfirm title="Delete attribute?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Button size="small" danger>
-                            Delete
-                        </Button>
-                    </Popconfirm>
+                <Space size="middle">
+                    <Tooltip title="Edit Attribute">
+                        <Button 
+                            type="text" 
+                            icon={<EditOutlined style={{ color: '#0ea5e9' }} />} 
+                            onClick={() => onEdit(record)}
+                            style={{ background: '#f0f9ff', borderRadius: '8px' }}
+                        />
+                    </Tooltip>
+                    <Tooltip title="Delete Attribute">
+                        <Popconfirm title="Are you sure you want to delete this attribute?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
+                            <Button 
+                                type="text" 
+                                danger 
+                                icon={<DeleteOutlined />}
+                                style={{ background: '#fef2f2', borderRadius: '8px' }}
+                            />
+                        </Popconfirm>
+                    </Tooltip>
                 </Space>
             ),
         },
@@ -221,68 +263,112 @@ export default function Attribute() {
     }
 
     return (
-        <>
+        <div style={{ background: '#f4f7fe', minHeight: '100vh' }}>
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">All Attributes</h1>
-                </div>
-                <div className="head-actions">
-                    <Breadcrumb
-                        items={[
-                            { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "All Attributes" },
-                        ]}
-                    />
-                </div>
-            </div>
 
-            <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16}}>
-                <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
-
+            <div style={{
+                background    : '#fff',
+                padding       : '16px 24px',
+                borderBottom  : '1px solid #e2e8f0',
+                display       : 'flex',
+                justifyContent: 'space-between',
+                alignItems    : 'center',
+                marginBottom  : 24
+            }}>
+                <Space size="middle">
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ border: 'none', background: '#f1f5f9', borderRadius: '8px' }}/>
+                    <div>
+                        <Title level={4} style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>Product Attributes</Title>
+                        <Breadcrumb
+                            style={{ fontSize: '12px' }}
+                            items={[
+                                { title: <Link to="/dashboard" style={{ color: '#64748b' }}>Dashboard</Link> },
+                                { title: <span style={{ color: '#1e293b', fontWeight: 500 }}>Attributes</span> },
+                            ]}
+                        />
+                    </div>
+                </Space>
                 <Space>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-                        Add
-                    </Button>
-
-                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                        Back
+                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} style={{ borderRadius: '8px', background: '#2563eb', height: '40px', padding: '0 20px', fontWeight: 600, boxShadow: '0 4px 10px rgba(37, 99, 235, 0.2)' }}
+                    >
+                        Create Attribute
                     </Button>
                 </Space>
             </div>
 
-            <Table rowKey="id" loading={loading}
-                pagination={{
-                    current: pagination.current,
-                    pageSize: pagination.pageSize,
-                    total: pagination.total,
-                    showSizeChanger: true,
-                    onChange: (page, pageSize) => {
-                        setPagination((p) => ({ ...p, current: page, pageSize }));
-                    },
+            <div>
+                <Card variant="borderless"
+                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                    title={
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                            <Space>
+                                <FilterOutlined style={{ color: '#6366f1' }} />
+                                <Text strong style={{ fontSize: '16px' }}>All Attributes</Text>
+                            </Space>
+                            <AntInput prefix={<SearchOutlined style={{ color: '#94a3b8' }} />} placeholder="Search by name..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 280, borderRadius: '8px' }} allowClear
+                            />
+                        </div>
+                    }
+                >
+                    <Table 
+                        rowKey="id" 
+                        loading={loading}
+                        pagination={{
+                            current: pagination.current,
+                            pageSize: pagination.pageSize,
+                            total: pagination.total,
+                            showSizeChanger: true,
+                            showTotal: (total) => `Total ${total} attributes`,
+                            onChange: (page, pageSize) => {
+                                setPagination((p) => ({ ...p, current: page, pageSize }));
+                            },
+                        }}
+                        columns={columns}
+                        dataSource={filteredData}
+                        scroll={{ x: "max-content" }}
+                        style={{ borderRadius: '8px' }}
+                        rowClassName={() => 'attribute-row'}
+                    />
+                </Card>
+            </div>
+
+            <Modal 
+                open={isModalOpen} 
+                onCancel={() => setIsModalOpen(false)} 
+                title={
+                    <Space>
+                        {editingAttribute ? <EditOutlined style={{ color: '#0ea5e9' }} /> : <PlusOutlined style={{ color: '#22c55e' }} />}
+                        <span>{editingAttribute ? "Edit Attribute" : "Create New Attribute"}</span>
+                    </Space>
+                } 
+                onOk={handleSubmit} 
+                okText={editingAttribute ? "Update Attribute" : "Save Attribute"}
+                confirmLoading={loading}
+                width={500}
+                centered
+                styles={{
+                    mask: { backdropFilter: 'blur(4px)' },
+                    header: { borderBottom: '1px solid #f1f5f9', paddingBottom: '16px', marginBottom: '20px' },
+                    footer: { borderTop: '1px solid #f1f5f9', paddingTop: '16px', marginTop: '20px' }
                 }}
-                columns={columns}
-                dataSource={filteredData}
-                scroll={{ x: "max-content" }}
-            />
-
-            <Modal open={isModalOpen} onCancel={() => setIsModalOpen(false)} title={editingAttribute ? "Edit Attribute" : "Create Attribute"} onOk={handleSubmit} okText={editingAttribute ? "Update" : "Create"}>
+            >
                 <Form form={form} layout="vertical">
-                    <div style={{display: "grid",gridTemplateColumns: "1fr 1fr",gap: "0 16px"}}>
-                        <Form.Item name="name" label="Attribute Name" rules={[{ required: true }]}>
-                            <AntInput placeholder="Enter Attribute Name" />
-                        </Form.Item>
+                    <Form.Item name="name" label={<Text strong>Attribute Name</Text>} rules={[{ required: true, message: 'Please enter attribute name' }]}>
+                        <AntInput size="large" placeholder="e.g. Color, Size, Material" style={{ borderRadius: '8px' }} />
+                    </Form.Item>
 
-                        <Form.Item name="slug" label="Attribute slug" rules={[{ required: true }]}>
-                            <AntInput placeholder="Enter Attribute slug" />
-                        </Form.Item>
+                    <Form.Item name="slug" label={<Text strong>Attribute Slug</Text>} rules={[{ required: true, message: 'Please enter slug' }]}>
+                        <AntInput size="large" placeholder="e.g. product-color" style={{ borderRadius: '8px' }} />
+                    </Form.Item>
 
-                        <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">
-                            <Select options={[{ value: "active", label: "Active" },{ value: "inactive", label: "Inactive" },]}/>
-                        </Form.Item>
-                    </div>
+                    <Form.Item name="status" label={<Text strong>Visibility Status</Text>} rules={[{ required: true }]} initialValue="active">
+                        <Select size="large" style={{ borderRadius: '8px' }} options={[
+                            { value: "active", label: <Space><Tag color="success">Active</Tag><span>Visible to customers</span></Space> },
+                            { value: "inactive", label: <Space><Tag color="default">Inactive</Tag><span>Hidden from catalog</span></Space> },
+                        ]} />
+                    </Form.Item>
                 </Form>
             </Modal>
-        </>
+        </div>
     )
 }

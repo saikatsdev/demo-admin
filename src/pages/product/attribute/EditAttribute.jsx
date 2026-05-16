@@ -1,11 +1,18 @@
-import { ArrowLeftOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb,Table, Button, Space, Popconfirm, message, Modal, Form,Select } from "antd";
+import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined, FilterOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Table, Button, Space, Popconfirm, message, Modal, Form, Select, Card, Typography, Tooltip, Tag } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { deleteData, getDatas, postData } from "../../../api/common/common";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import useTitle from "../../../hooks/useTitle";
+
+const { Title, Text } = Typography;
 
 export default function EditAttribute() {
+    // Hook
+    useTitle("Edit Attribute Value");
+
+    const navigate = useNavigate();
     const [attributes, setAttributes]         = useState({});
     const [loading, setLoading]               = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -48,7 +55,6 @@ export default function EditAttribute() {
     }, [load]);
 
 
-    // Open Add Modal
     const handleAdd = () => {
         setModalMode("add");
         setCurrentValue(null);
@@ -59,7 +65,6 @@ export default function EditAttribute() {
         setIsModalVisible(true);
     };
 
-    // Open Update Modal
     const handleUpdate = (value) => {
         setModalMode("update");
         setCurrentValue(value);
@@ -72,7 +77,6 @@ export default function EditAttribute() {
         setIsModalVisible(true);
     };
 
-    // Delete handler
     const handleDelete = async (valueId) => {
         const res = await deleteData(`/admin/attribute-values/${valueId}`);
 
@@ -86,7 +90,6 @@ export default function EditAttribute() {
         }
     };
 
-    // Submit Add/Update
     const handleModalSubmit = async () => {
         try {
             const values = await form.validateFields();
@@ -138,32 +141,42 @@ export default function EditAttribute() {
         {
             title: "SL",
             key: "sl",
-            render: (_, __, index) => index + 1,
+            width: 80,
+            align: 'center',
+            render: (_, __, index) => (
+                <Text type="secondary" style={{ fontWeight: 500 }}>
+                    {index + 1}
+                </Text>
+            ),
         },
         { 
-            title: "Value", 
+            title: "Attribute Value", 
             dataIndex: "value", 
-            key: "value" 
+            key: "value",
+            render: (text) => <Tag color="blue" style={{ borderRadius: '6px', padding: '4px 12px', fontSize: '13px', fontWeight: 500 }}>{text}</Tag>
         },
         { 
             title: "Slug", 
             dataIndex: "slug", 
-            key: "slug" 
+            key: "slug",
+            render: (text) => <Text type="secondary" style={{ fontFamily: 'monospace' }}>{text}</Text>
         },
         {
             title: "Actions",
             key: "actions",
-            width:160,
+            width: 140,
+            align: 'center',
             render: (_, record) => (
-            <Space>
-                <Button size="small" type="primary" onClick={() => handleUpdate(record)}>
-                    Edit
-                </Button>
-                
-                <Popconfirm title="Are you sure to delete this value?" onConfirm={() => handleDelete(record.id)} okText="Yes" cancelText="No">
-                    <Button size="small" danger>Delete</Button>
-                </Popconfirm>
-            </Space>
+                <Space size="middle">
+                    <Tooltip title="Edit Value">
+                        <Button type="text" icon={<EditOutlined style={{ color: '#0ea5e9' }} />} onClick={() => handleUpdate(record)} style={{ background: '#f0f9ff', borderRadius: '8px' }}/>
+                    </Tooltip>
+                    <Tooltip title="Delete Value">
+                        <Popconfirm title="Are you sure you want to delete this value?" onConfirm={() => handleDelete(record.id)} okText="Yes" cancelText="No">
+                            <Button type="text" danger icon={<DeleteOutlined />} style={{ background: '#fef2f2', borderRadius: '8px' }}/>
+                        </Popconfirm>
+                    </Tooltip>
+                </Space>
             ),
         },
     ];
@@ -185,52 +198,112 @@ export default function EditAttribute() {
     }, [id, allAttributes]);
 
     return (
-        <>
+        <div style={{ background: '#f4f7fe', minHeight: '100vh' }}>
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">Edit Attributes Value</h1>
-                </div>
-                <div className="head-actions">
-                    <Breadcrumb
-                        items={[
-                            { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: `Edit ${attributes.name} Attributes Value` },
-                        ]}
-                    />
-                </div>
-            </div>
-
-            <div style={{display: "flex",justifyContent: "space-between",alignItems: "center",marginBottom: 16}}>
-                <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
+            
+            <div style={{
+                background    : '#fff',
+                padding       : '16px 24px',
+                borderBottom  : '1px solid #e2e8f0',
+                display       : 'flex',
+                justifyContent: 'space-between',
+                alignItems    : 'center',
+                marginBottom  : 24
+            }}>
+                <Space size="middle">
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/attributes')} style={{ border: 'none', background: '#f1f5f9', borderRadius: '8px' }}/>
+                    <div>
+                        <Title level={4} style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>
+                            Configure {attributes.name || 'Attribute'}
+                        </Title>
+                        <Breadcrumb
+                            style={{ fontSize: '12px' }}
+                            items={[
+                                { title: <Link to="/dashboard" style={{ color: '#64748b' }}>Dashboard</Link> },
+                                { title: <Link to="/attributes" style={{ color: '#64748b' }}>Attributes</Link> },
+                                { title: <span style={{ color: '#1e293b', fontWeight: 500 }}>Values</span> },
+                            ]}
+                        />
+                    </div>
+                </Space>
                 <Space>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-                        Add
-                    </Button>
-                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                        Back
+                    <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} style={{ 
+                            borderRadius: '8px',
+                            background  : '#2563eb',
+                            height      : '40px',
+                            padding     : '0 20px',
+                            fontWeight  : 600,
+                            boxShadow   : '0 4px 10px rgba(37, 99, 235, 0.2)'
+                        }}
+                    >
+                        Add New Value
                     </Button>
                 </Space>
             </div>
 
-            <Table dataSource={filteredData} columns={columns} rowKey="id" loading={loading} scroll={{ x: "max-content" }}/>
+            <div>
+                <Card 
+                    variant="borderless"
+                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                    title={
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
+                            <Space>
+                                <FilterOutlined style={{ color: '#6366f1' }} />
+                                <Text strong style={{ fontSize: '16px' }}>Available Values for {attributes.name}</Text>
+                            </Space>
+                            <AntInput prefix={<SearchOutlined style={{ color: '#94a3b8' }} />} placeholder="Search values..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 280, borderRadius: '8px' }} allowClear/>
+                        </div>
+                    }
+                >
+                    <Table 
+                        dataSource={filteredData} 
+                        columns={columns} 
+                        rowKey="id" 
+                        loading={loading} 
+                        scroll={{ x: "max-content" }}
+                        pagination={{
+                            showSizeChanger: true,
+                            showTotal: (total) => `Total ${total} values`,
+                        }}
+                        style={{ borderRadius: '8px' }}
+                    />
+                </Card>
+            </div>
 
-            <Modal title={modalMode === "add" ? "Add Value" : "Update Value"} open={isModalVisible} onOk={handleModalSubmit} onCancel={() => setIsModalVisible(false)} okText={modalMode === "add" ? "Save" : "Update"}
+            <Modal 
+                title={
+                    <Space>
+                        {modalMode === "add" ? <PlusOutlined style={{ color: '#22c55e' }} /> : <EditOutlined style={{ color: '#0ea5e9' }} />}
+                        <span>{modalMode === "add" ? "Add Attribute Value" : "Update Attribute Value"}</span>
+                    </Space>
+                } 
+                open={isModalVisible} 
+                onOk={handleModalSubmit} 
+                onCancel={() => setIsModalVisible(false)} 
+                okText={modalMode === "add" ? "Save Value" : "Update Value"}
+                confirmLoading={loading}
+                width={500}
+                centered
+                styles={{
+                    mask: { backdropFilter: 'blur(4px)' },
+                    header: { borderBottom: '1px solid #f1f5f9', paddingBottom: '16px', marginBottom: '20px' },
+                    footer: { borderTop: '1px solid #f1f5f9', paddingTop: '16px', marginTop: '20px' }
+                }}
             >
                 <Form form={form} layout="vertical">
                     <Form.Item name="id" hidden>
                         <AntInput />
                     </Form.Item>
 
-                    <Form.Item name="attribute_id" label="Attribute" rules={[{ required: true }]}>
-                        <Select  options={allAttributes?.map(attr => ({ value: attr.id, label: attr.name }))} placeholder="Select attribute"/>
+                    <Form.Item name="attribute_id" label={<Text strong>Parent Attribute</Text>} rules={[{ required: true }]}>
+                        <Select size="large" options={allAttributes?.map(attr => ({ value: attr.id, label: attr.name }))} placeholder="Select attribute" style={{ borderRadius: '8px' }} disabled/>
                     </Form.Item>
 
-                    <Form.Item label="Value" name="value" rules={[{ required: true, message: "Please input the value!" }]}>
-                        <AntInput />
+                    <Form.Item label={<Text strong>Value Name</Text>} name="value" rules={[{ required: true, message: "Please input the value!" }]}>
+                        <AntInput size="large" placeholder="e.g. Red, XL, Cotton" style={{ borderRadius: '8px' }} />
                     </Form.Item>
                 </Form>
             </Modal>
-        </>
+        </div>
     );
 }

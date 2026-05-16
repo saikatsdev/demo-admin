@@ -770,18 +770,13 @@ export default function ProductEdit() {
             {contextHolder}
             
                 <div style={{
-                    position: 'sticky',
-                    top: 0,
-                    zIndex: 1000,
-                    background: 'rgba(255, 255, 255, 0.8)',
-                    backdropFilter: 'blur(10px)',
-                    padding: '12px 24px',
+                    background: '#fff',
+                    padding: '16px 24px',
                     borderBottom: '1px solid #e2e8f0',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: 24,
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+                    marginBottom: 24
                 }}>
                     <Space size="middle">
                         <Button 
