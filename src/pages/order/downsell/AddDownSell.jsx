@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, CloudUploadOutlined, DeleteOutlined, InboxOutlined, PlusOutlined, SettingOutlined, ThunderboltOutlined } from "@ant-design/icons";
-import { Breadcrumb, Button, Card, Col, Divider, Form, Input, InputNumber, message, Radio, Row, Select, Space, Spin, Tag, Typography, Upload } from "antd";
+import { Breadcrumb, Button, Card, Col, Divider, Form, Input, InputNumber, message, Radio, Row, Select, Space, Tag, Typography, Upload } from "antd";
 import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -178,8 +178,7 @@ export default function AddDownSell() {
             <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ coupon_type: 'fixed', status: 'active', width: 450, height: 220 }}>
                 <Row gutter={[24, 24]}>
                     <Col xs={24} lg={16}>
-                        <Card 
-                            title={<Space><SettingOutlined /> Offer Information</Space>} 
+                        <Card title={<Space><SettingOutlined /> Offer Information</Space>} 
                             className="modern-antd-card"
                             extra={<Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/downsell-coupon")}>Back</Button>}
                         >
