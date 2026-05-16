@@ -119,18 +119,20 @@ export default function AddDownSell() {
         }
     };
 
-
-
     const onFinish = async (values) => {
         const formData = new FormData();
 
         Object.keys(values).forEach(key => {
-            if (values[key] !== undefined && key !== 'image') {
+            if (values[key] !== undefined && key !== 'image' && key !== 'coupon_type') {
                 formData.append(key, values[key]);
             }
         });
 
-        formData.append("mode", mode);
+        formData.append("type", values.coupon_type);
+
+        if (mode === "all") {
+            formData.append("trigger_mode", "all");
+        }
 
         if (mode === "product") {
             selectedProducts.forEach(p => {
@@ -144,6 +146,7 @@ export default function AddDownSell() {
         if (mode === "category") {
             selectedCategories.forEach(c => {
                 formData.append("category_ids[]", c.id);
+                formData.append("trigger_category_ids[]", c.id);
             });
             if (selectedCategories.length === 0) {
                 return messageApi.error("Please select at least one category");
@@ -154,7 +157,7 @@ export default function AddDownSell() {
         if (imageValue && imageValue.length > 0) {
             const imgObj = imageValue[0];
             if (imgObj.isFromGallery) {
-                formData.append("gallery_image_path", imgObj.galleryPath);
+                formData.append("image", imgObj.galleryPath);
             } else if (imgObj.originFileObj) {
                 formData.append("image", imgObj.originFileObj);
             }
