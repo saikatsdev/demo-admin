@@ -4,7 +4,7 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
-import ProductImagePicker from "../../../components/image/ProductImagePicker";
+import ImagePicker from "../../../components/image/ImagePicker";
 import useTitle from "../../../hooks/useTitle";
 import "./downsell.css";
 
@@ -223,11 +223,13 @@ export default function AddDownSell() {
                                         <Input size="large" placeholder="e.g. 10% Discount for Second Chance" />
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={12}>
                                     <Form.Item label="Coupon Amount" name="amount" rules={[{ required: true, message: 'Amount is required' }]}>
                                         <InputNumber size="large" style={{ width: '100%' }} min={0} placeholder="0.00" />
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={12}>
                                     <Form.Item label="Coupon Type" name="coupon_type">
                                         <Select size="large">
@@ -236,16 +238,19 @@ export default function AddDownSell() {
                                         </Select>
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={12}>
                                     <Form.Item label="Start Date" name="started_at" rules={[{ required: true, message: 'Select start date' }]}>
                                         <Input size="large" type="date" />
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={12}>
                                     <Form.Item label="End Date" name="ended_at" rules={[{ required: true, message: 'Select end date' }]}>
                                         <Input size="large" type="date" />
                                     </Form.Item>
                                 </Col>
+
                                 <Col span={24}>
                                     <Form.Item label="Short Description" name="description">
                                         <Input.TextArea rows={4} placeholder="Describe the offer for your customers..." />
@@ -337,7 +342,7 @@ export default function AddDownSell() {
                     <Col xs={24} lg={8}>
                         <Card title={<Space><InboxOutlined /> Banner Media</Space>} className="modern-antd-card sticky-card">
                             <Form.Item name="image" rules={[{ required: true, message: "Please select an image" }]}>
-                                <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}/>
+                                <ImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}/>
                             </Form.Item>
 
                             <Row gutter={12}>

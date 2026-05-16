@@ -4,7 +4,7 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
-import ProductImagePicker from "../../../components/image/ProductImagePicker";
+import ImagePicker from "../../../components/image/ImagePicker";
 import useTitle from "../../../hooks/useTitle";
 import "./downsell.css";
 
@@ -88,6 +88,7 @@ export default function EditDownSell() {
             setLoading(true);
             try {
                 const res = await getDatas(`/admin/down-sells/${id}`);
+                
                 if (res && res?.success && isMounted) {
                     const data = res.result;
                     setDownSellData(data);
@@ -377,7 +378,7 @@ export default function EditDownSell() {
                         <Col xs={24} lg={8}>
                             <Card title={<Space><InboxOutlined /> Banner Media</Space>} className="modern-antd-card sticky-card">
                                 <Form.Item name="image">
-                                    <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}/>
+                                    <ImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}/>
                                 </Form.Item>
 
                                 <Row gutter={12}>
