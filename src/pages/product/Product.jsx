@@ -132,7 +132,6 @@ export default function Product() {
         }
     };
 
-    console.log(products);
 
     const handleSubCategoryChange = async (selectedIds) => {
         setSubCategoryIds(selectedIds);
@@ -253,6 +252,27 @@ export default function Product() {
             key: "product_prices",
             width: 220,
             render: (_, record) => {
+                const hasVariations = record?.variations?.length > 0;
+                
+                if (hasVariations) {
+                    const minPrice = Number(record?.variation_price_range?.min_price) || 0;
+                    const maxPrice = Number(record?.variation_price_range?.max_price) || 0;
+                    
+                    return (
+                        <div style={{ background: '#f0f5ff', padding: '12px', borderRadius: '10px', border: '1px solid #adc6ff' }}>
+                             <div style={{ marginBottom: '8px' }}>
+                                <Text type="secondary" style={{ fontSize: '10px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.8px', color: '#2f54eb', fontWeight: 600 }}>Variation Price</Text>
+                            </div>
+                            <div style={{ textAlign: 'center', padding: '4px 0' }}>
+                                <div style={{ fontSize: '16px', fontWeight: 800, color: '#1d39c4' }}>
+                                    ৳{minPrice.toLocaleString()} — ৳{maxPrice.toLocaleString()}
+                                </div>
+                                <Tag color="blue" style={{ marginTop: '8px', borderRadius: '4px', border: 'none', fontWeight: 600 }}>{record.variations.length} Variations</Tag>
+                            </div>
+                        </div>
+                    );
+                }
+
                 const mrp = Number(record.mrp) || 0;
                 const offer = Number(record.offer_price) || 0;
                 const sell = Number(record.sell_price) || 0;
