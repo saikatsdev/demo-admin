@@ -127,7 +127,7 @@ export default function EditUpSell() {
                             id             : item.id,
                             name           : item.name,
                             slug           : item.slug,
-                            img_path       : item.img_path,
+                            image          : item.image,
                             sell_price     : item.sell_price,
                             discount_type  : item?.pivot?.discount_type || "percentage",
                             discount_amount: item?.pivot?.discount_amount || 0,
@@ -290,7 +290,7 @@ export default function EditUpSell() {
                                         <div className="antd-search-dropdown">
                                             {product?.length > 0 ? product.map((p) => (
                                                 <div key={p.id} className="search-item-row" onClick={() => handleSelectProduct(p, "main")}>
-                                                    <img src={p.img_path} alt="" />
+                                                    <img src={p.img_path || p.image} alt="Image" />
                                                     <div className="info">
                                                         <div className="name">{p.name}</div>
                                                         <div className="meta">{p?.category_name || 'N/A'} | ৳{p.sell_price}</div>
@@ -306,7 +306,7 @@ export default function EditUpSell() {
                                     {selectedProducts.map((p) => (
                                         <div key={p.id} className="upsell-product-card-lite">
                                             <div className="card-top">
-                                                <img src={p.img_path} alt="" />
+                                                <img src={p.image} alt="Image" />
                                                 <div className="details">
                                                     <h4>{p.name}</h4>
                                                     <p>৳{p.sell_price} | {p.category_name || 'N/A'}</p>
@@ -360,8 +360,11 @@ export default function EditUpSell() {
                                             <div className="antd-search-dropdown relative">
                                                 {triggerProducts?.map((p) => (
                                                     <div key={p.id} className="search-item-row" onClick={() => handleSelectProduct(p, "trigger")}>
-                                                        <img src={p.img_path} alt="" />
-                                                        <div className="info"><div className="name">{p.name}</div></div>
+                                                        <img src={p.image} alt="" />
+                                                        <div className="info">
+                                                            <div className="name">{p.name}</div>
+                                                            <div className="meta">{p.sku || 'No SKU'}</div>
+                                                        </div>
                                                         <Button type="primary" size="small" icon={<PlusOutlined />} />
                                                     </div>
                                                 ))}

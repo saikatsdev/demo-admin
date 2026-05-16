@@ -44,9 +44,6 @@ export default function AddUpSell() {
         try {
             const res = await getDatas("/admin/products/search", { search_key: query });
 
-            console.log(res);
-            return;
-
             if (res && res?.success) {
                 setStateFn(res?.result || []);
             }
@@ -233,10 +230,13 @@ export default function AddUpSell() {
                                         {filteredProducts?.length > 0 ? (
                                             filteredProducts?.map((product) => (
                                                 <div key={product.id} className="search-item-row" onClick={() => handleSelectProduct(product, "main")}>
-                                                    <img src={product.img_path} alt="" />
+                                                    <img src={product.image} alt="" />
                                                     <div className="info">
                                                         <div className="name">{product.name}</div>
-                                                        <div className="meta">{product?.category_name || 'N/A'} | ৳{product.sell_price}</div>
+                                                        <div className="meta">
+                                                            {Array.isArray(product?.categories) && product.categories.length > 0
+                                                                ? product.categories.map(category => category?.name).join(", ") : "N/A"} | ৳{product.sell_price}
+                                                        </div>
                                                     </div>
                                                     <Button type="primary" size="small" icon={<PlusOutlined />}>Add</Button>
                                                 </div>
@@ -255,10 +255,14 @@ export default function AddUpSell() {
                                     {selectedProducts.map((product) => (
                                         <div key={product.id} className="upsell-product-card-lite">
                                             <div className="card-top">
-                                                <img src={product.img_path} alt="" />
+                                                <img src={product.image} alt="" />
                                                 <div className="details">
                                                     <h4>{product.name}</h4>
-                                                    <p>৳{product.sell_price} | {product.category_name || 'N/A'}</p>
+                                                    <p>
+                                                        ৳{product.sell_price} |{" "}
+                                                        {Array.isArray(product?.categories) && product.categories.length > 0
+                                                            ? product.categories.map(category => category?.name).join(", ") : "N/A"}
+                                                    </p>
                                                 </div>
                                                 <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleRemoveProduct(product.id, "main")}/>
                                             </div>
@@ -308,7 +312,7 @@ export default function AddUpSell() {
                                             {triggerProducts?.length > 0 ? (
                                                 triggerProducts?.map((product) => (
                                                     <div key={product.id} className="search-item-row" onClick={() => handleSelectProduct(product, "trigger")}>
-                                                        <img src={product.img_path} alt="" />
+                                                        <img src={product.image} alt="" />
                                                         <div className="info">
                                                             <div className="name">{product.name}</div>
                                                         </div>
