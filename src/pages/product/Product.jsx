@@ -132,6 +132,8 @@ export default function Product() {
         }
     };
 
+    console.log(products);
+
     const handleSubCategoryChange = async (selectedIds) => {
         setSubCategoryIds(selectedIds);
 
@@ -290,8 +292,8 @@ export default function Product() {
             key: "stock_report",
             width: 240,
             render: (_, record) => {
-                const current = Number(record.current_stock_range?.total_current_stock) || 0;
-                const purchase = Number(record.current_stock_range?.total_purchase_qty) || 0;
+                const current = Number(record?.current_stock - record?.total_sell_qty) || 0;
+                const purchase = Number(record?.total_purchase_qty) || 0;
                 const sell = Number(record?.total_sell_qty) || 0;
                 
                 return (
