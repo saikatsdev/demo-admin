@@ -1,109 +1,199 @@
-import { useRef, useState } from "react";
-import { Upload, Modal, Button, Form, Row, Col } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { useState, useEffect } from "react";
+import { Modal, Button, Row, Col, Tabs, Upload, message } from "antd";
+import { InboxOutlined, CheckCircleFilled, CloudUploadOutlined } from "@ant-design/icons";
+import { postData } from "../../api/common/common";
 
-export default function ImagePicker({form,name = "image",label = "Image",gallery = [],fetchMore,hasMore,loadingMore}) {
-    // State
-    const [imageModalOpen, setImageModalOpen] = useState(false);
+const { Dragger } = Upload;
+
+export default function ImagePicker({ value, initialValue, gallery = [], fetchMore, hasMore, loadingMore, onUploadSuccess, onChange }) {
+    // States
     const [galleryOpen, setGalleryOpen]       = useState(false);
+    const [activeTab, setActiveTab]           = useState("gallery");
     const [selectedIds, setSelectedIds]       = useState([]);
+    const [preview, setPreview]               = useState(null);
+    const [fileList, setFileList]             = useState([]);
 
-    const fileInputRef = useRef(null);
+    // Sync preview with value or initialValue
+    useEffect(() => {
+        const val = value || initialValue;
+        if (val) {
+            if (typeof val === 'string') {
+                setPreview(val);
+            } else if (Array.isArray(val) && val.length > 0) {
+                setPreview(val[0].url || val[0].img_path);
+            } else if (val.url || val.img_path) {
+                setPreview(val.url || val.img_path);
+            }
+        } else {
+            setPreview(null);
+        }
+    }, [initialValue, value]);
 
-    const imageValue = Form.useWatch(name, form);
+    const handleCustomUpload = async ({ file, onProgress, onSuccess, onError }) => {
+        try {
+            const dimensions = await new Promise((resolve) => {
+                const img = new window.Image();
+                const objectUrl = URL.createObjectURL(file);
+                img.onload = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve({ width: img.width, height: img.height });
+                };
+                img.onerror = () => {
+                    URL.revokeObjectURL(objectUrl);
+                    resolve({ width: 800, height: 800 });
+                };
+                img.src = objectUrl;
+            });
 
-    const handleDeviceUpload = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+            const formData = new FormData();
+            formData.append("images[]", file);
+            formData.append("width[]", dimensions.width);
+            formData.append("height[]", dimensions.height);
 
-        form.setFieldsValue({
-            [name]: [
-                {
-                    uid: "-1",
-                    name: file.name,
-                    status: "done",
-                    originFileObj: file,
-                    url: URL.createObjectURL(file),
+            const res = await postData("/admin/gallary/upload", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+                onUploadProgress: (event) => {
+                    const percent = Math.floor((event.loaded / event.total) * 100);
+                    onProgress({ percent });
                 },
-            ],
-        });
+            });
 
-        setImageModalOpen(false);
+            if (res && res.success) {
+                const newGalleryItems = Array.isArray(res.result) ? res.result : (res.result?.data || []);
+                onUploadSuccess?.(newGalleryItems);
+                onSuccess(res, file);
+                message.success(`${file.name} uploaded successfully`);
+            } else {
+                onError(new Error(res.message || "Upload failed"));
+            }
+        } catch (error) {
+            onError(error);
+        }
     };
 
-    const handleSelect = (item) => {
-        setSelectedIds([item.id]);
+    const handleUploadChange = ({ fileList: newFileList }) => {
+        setFileList(newFileList);
 
-        form.setFieldsValue({
-            [name]: [
-                {
-                    uid: item.id,
-                    name: "gallery-image.jpg",
-                    status: "done",
-                    url: item.img_path,
-                    originFileObj: null,
-                    isFromGallery: true,
-                    galleryPath: item.original_path,
-                },
-            ],
-        });
+        const allDone = newFileList.length > 0 && newFileList.every(file => file.status === 'done');
+        if (allDone) {
+            setTimeout(() => {
+                setActiveTab("gallery");
+                setFileList([]);
+            }, 800);
+        }
+    };
+
+    const handleSelectGallery = (item) => {
+        setSelectedIds([item.id]);
+        setPreview(item.img_path);
+
+        const img = new window.Image();
+        img.onload = function () {
+            const width = img.width;
+            const height = img.height;
+            
+            const data = { 
+                uid: item.id,
+                name: "gallery-image.jpg",
+                status: "done",
+                url: item.img_path,
+                originFileObj: null,
+                isFromGallery: true, 
+                galleryPath: item.original_path,
+                width,
+                height
+            };
+            
+            // This is required for Form.Item to pick up the value
+            onChange?.([data]);
+        };
+        img.src = item.img_path;
 
         setGalleryOpen(false);
     };
 
     return (
         <>
-            <Form.Item label={label} name={name} valuePropName="fileList">
-                <>
-                    <Upload listType="picture-card" showUploadList={false} beforeUpload={() => false} style={{ display: "none" }}/>
+            {preview ? (
+                <div className="gallary-uploaded-img-container">
+                    <img src={preview} alt="selected" className="gallary-uploaded-img" onClick={() => setGalleryOpen(true)} style={{ cursor: "pointer" }}/>
+                    <div className="upload-overlay-simple" onClick={() => setGalleryOpen(true)}>
+                        <CloudUploadOutlined />
+                        <span>Change</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="gallary-modal-box" onClick={() => setGalleryOpen(true)}>
+                    <CloudUploadOutlined style={{ fontSize: 28 }} />
+                    <div style={{ marginTop: 8, fontWeight: 600 }}>Media Library</div>
+                </div>
+            )}
 
-                    {imageValue?.length ? (
-                        <img className="gallary-uploaded-img" src={imageValue[0].url} alt="selected" onClick={() => setImageModalOpen(true)}/>
-                    ) : (
-                        <div className="gallary-modal-box" onClick={() => setImageModalOpen(true)}>
-                            <PlusOutlined />
-                            <div style={{ marginTop: 8 }}>Upload</div>
-                        </div>
-                    )}
-                </>
-            </Form.Item>
-
-            <Modal title="Select Image Source" open={imageModalOpen} onCancel={() => setImageModalOpen(false)} footer={null}>
-                <Button type="primary" block onClick={() => fileInputRef.current.click()}>
-                    📱 Upload From Device
-                </Button>
-
-                <Button block style={{ marginTop: 10 }} onClick={() => {setImageModalOpen(false);setGalleryOpen(true);}}>
-                    🖼️ Choose From Gallery
-                </Button>
-
-                <input type="file" ref={fileInputRef} style={{ display: "none" }} accept="image/*" onChange={handleDeviceUpload}/>
-            </Modal>
-
-            <Modal title="Select From Gallery" open={galleryOpen} onCancel={() => setGalleryOpen(false)} footer={null} width={600}>
-                <Row gutter={[16, 16]}>
-                    {gallery.map((item) => (
-                        <Col span={6} key={item.id}>
-                            <div className={`sub-gallary-images-box ${selectedIds.includes(item.id) ? "sub-selected" : ""}`} onClick={() => handleSelect(item)}>
-                                <img src={item.img_path} className="sub-gallery-img"/>
+            <Modal 
+                title="Select Media" 
+                open={galleryOpen} 
+                onCancel={() => setGalleryOpen(false)} 
+                footer={null} 
+                width={800}
+                style={{ top: 20 }}
+            >
+                <Tabs activeKey={activeTab} onChange={setActiveTab} items={[
+                    {
+                        key: 'upload',
+                        label: 'Upload Files',
+                        children: (
+                            <div style={{ padding: '20px 0' }}>
+                                <Dragger 
+                                    name="file"
+                                    multiple={true}
+                                    fileList={fileList}
+                                    customRequest={handleCustomUpload}
+                                    onChange={handleUploadChange}
+                                >
+                                    <p className="ant-upload-drag-icon">
+                                        <InboxOutlined />
+                                    </p>
+                                    <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                                    <p className="ant-upload-hint">Support for a single or bulk upload.</p>
+                                </Dragger>
                             </div>
-                        </Col>
-                    ))}
+                        )
+                    },
+                    {
+                        key: 'gallery',
+                        label: 'Media Gallery',
+                        children: (
+                            <div style={{ maxHeight: '60vh', overflowY: 'auto', overflowX: 'hidden', padding: '10px 5px' }}>
+                                <Row gutter={[16, 16]}>
+                                    {gallery.map((item) => (
+                                        <Col xs={12} sm={8} md={6} lg={6} key={item.id}>
+                                            <div className={`sub-gallary-images-box ${selectedIds.includes(item.id) ? "sub-selected" : ""}`} onClick={() => handleSelectGallery(item)}>
+                                                <img src={item.img_path} className="sub-gallery-img" alt="Gallery item" />
+                                                <div className="selection-overlay">
+                                                    <div className="selection-check">
+                                                        <CheckCircleFilled />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Col>
+                                    ))}
 
-                    <Col span={24} style={{ textAlign: "center", marginTop: 10 }}>
-                        {hasMore && (
-                            <button type="button" className="gallary-load-more-btn" disabled={loadingMore} onClick={fetchMore}>
-                                {loadingMore ? "Loading…" : "Load more"}
-                            </button>
-                        )}
-
-                        {!hasMore && (
-                            <p className="no-more-items">
-                                No more images to load
-                            </p>
-                        )}
-                    </Col>
-                </Row>
+                                    <Col span={24} style={{ textAlign: "center", marginTop: 20 }}>
+                                        {hasMore ? (
+                                            <Button type="default" loading={loadingMore} onClick={fetchMore}>
+                                                {loadingMore ? "Loading…" : "Load more"}
+                                            </Button>
+                                        ) : (
+                                            <p style={{ color: '#94a3b8', fontSize: '13px', margin: '10px 0' }}>
+                                                ✨ No more images to load
+                                            </p>
+                                        )}
+                                    </Col>
+                                </Row>
+                            </div>
+                        )
+                    }
+                ]} />
             </Modal>
         </>
     );
