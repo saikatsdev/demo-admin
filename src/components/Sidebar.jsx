@@ -98,7 +98,6 @@ const Sidebar = ({ onMenuSelect }) => {
 
     const blogSubmenus = [
         can('blog-posts-read') && { label: "Blog Post", path: "/blogs" },
-        can('blog-posts-create') && { label: "Add Blog Post", path: "/add/blog" },
         can('blog-post-categories-read') && { label: "Blog Category", path: "/blog/categories" },
         can('tags-read') && { label: "Blog Tags", path: "/blog/tag" },
     ].filter(Boolean);
