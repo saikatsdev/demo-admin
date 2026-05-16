@@ -1,9 +1,9 @@
-import { ArrowLeftOutlined, CloudUploadOutlined, InfoCircleOutlined, DeleteOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message, Row, Col, Typography } from "antd";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { postData, getDatas } from "../../../api/common/common";
-import ProductImagePicker from "../../../components/image/ProductImagePicker";
+import ImagePicker from "../../../components/image/ImagePicker";
 import useTitle from "../../../hooks/useTitle";
 import "./Slider.css";
 
@@ -142,7 +142,7 @@ export default function AddSlider() {
                         <div className="form-grid">
                             <div className="upload-section">
                                 <Form.Item name="image" rules={[{ required: true, message: "Please select an image" }]}>
-                                    <ProductImagePicker 
+                                    <ImagePicker 
                                         gallery={gallery}
                                         hasMore={hasMore}
                                         loadingMore={loadingMore}

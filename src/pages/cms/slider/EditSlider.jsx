@@ -3,7 +3,7 @@ import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message, Ro
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { postData, getDatas } from "../../../api/common/common";
-import ProductImagePicker from "../../../components/image/ProductImagePicker";
+import ImagePicker from "../../../components/image/ImagePicker";
 import useTitle from "../../../hooks/useTitle";
 import "./Slider.css";
 
@@ -181,7 +181,7 @@ export default function EditSlider() {
                         <div className="form-grid">
                             <div className="upload-section">
                                 <Form.Item name="image">
-                                    <ProductImagePicker 
+                                    <ImagePicker 
                                         gallery={gallery}
                                         hasMore={hasMore}
                                         loadingMore={loadingMore}
