@@ -45,23 +45,34 @@ export default function AddDownSell() {
             }
         };
         getCategories();
-        fetchMedia();
+        fetchMedia(page);
         return () => { isMounted = false; };
     }, []);
 
-    const fetchMedia = async (pageNum = 1) => {
-        setLoadingMore(true);
+    const fetchMedia = async (pageNumber = 1) => {
         try {
-            const res = await getDatas(`/admin/gallary?page=${pageNum}`);
-            if (res && res.success) {
-                const newItems = res.result?.data || [];
-                setGallery(prev => pageNum === 1 ? newItems : [...prev, ...newItems]);
-                setHasMore(res.result?.current_page < res.result?.last_page);
-                setPage(pageNum);
+            if (pageNumber === 1) setLoading(true);
+            setLoadingMore(true);
+
+            const res = await getDatas(`/admin/gallary?page=${pageNumber}`);
+
+            if (res && res?.success) {
+                const data = res.result.data;
+
+                if (pageNumber > 1) {
+                    setGallery(prev => [...prev, ...data]);
+                } else {
+                    setGallery(data);
+                }
+
+                const meta = res.result.meta;
+                setPage(meta.current_page);
+                setHasMore(meta.current_page < meta.last_page);
             }
         } catch (error) {
-            console.error("Media fetch error:", error);
+            console.error("Failed to load gallery:", error);
         } finally {
+            setLoading(false);
             setLoadingMore(false);
         }
     };
@@ -154,6 +165,7 @@ export default function AddDownSell() {
         }
 
         const imageValue = values.image;
+
         if (imageValue && imageValue.length > 0) {
             const imgObj = imageValue[0];
             if (imgObj.isFromGallery) {
@@ -325,13 +337,7 @@ export default function AddDownSell() {
                     <Col xs={24} lg={8}>
                         <Card title={<Space><InboxOutlined /> Banner Media</Space>} className="modern-antd-card sticky-card">
                             <Form.Item name="image" rules={[{ required: true, message: "Please select an image" }]}>
-                                <ProductImagePicker 
-                                    gallery={gallery}
-                                    hasMore={hasMore}
-                                    loadingMore={loadingMore}
-                                    fetchMore={() => fetchMedia(page + 1)}
-                                    onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}
-                                />
+                                <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}/>
                             </Form.Item>
 
                             <Row gutter={12}>

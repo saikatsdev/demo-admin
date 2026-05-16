@@ -34,22 +34,33 @@ export default function AddSlider() {
     const [loadingMore, setLoadingMore] = useState(false);
 
     useEffect(() => {
-        fetchMedia();
+        fetchMedia(page);
     }, []);
 
-    const fetchMedia = async (pageNum = 1) => {
-        setLoadingMore(true);
+    const fetchMedia = async (pageNumber = 1) => {
         try {
-            const res = await getDatas(`/admin/gallary?page=${pageNum}`);
-            if (res && res.success) {
-                const newItems = res.result?.data || [];
-                setGallery(prev => pageNum === 1 ? newItems : [...prev, ...newItems]);
-                setHasMore(res.result?.current_page < res.result?.last_page);
-                setPage(pageNum);
+            if (pageNumber === 1) setLoading(true);
+            setLoadingMore(true);
+
+            const res = await getDatas(`/admin/gallary?page=${pageNumber}`);
+
+            if (res && res?.success) {
+                const data = res.result.data;
+
+                if (pageNumber > 1) {
+                    setGallery(prev => [...prev, ...data]);
+                } else {
+                    setGallery(data);
+                }
+
+                const meta = res.result.meta;
+                setPage(meta.current_page);
+                setHasMore(meta.current_page < meta.last_page);
             }
         } catch (error) {
-            console.error("Media fetch error:", error);
+            console.error("Failed to load gallery:", error);
         } finally {
+            setLoading(false);
             setLoadingMore(false);
         }
     };

@@ -20,10 +20,8 @@ export default function EditDownSell() {
     const [loading, setLoading]                       = useState(false);
     const [formLoading, setFormLoading]               = useState(false);
     const [selectedProducts, setSelectedProducts]     = useState([]);
-    const [image, setImage]                           = useState(null);
     const [categories, setCategories]                 = useState([]);
     const [selectedCategories, setSelectedCategories] = useState([]);
-    const [imageFile, setImageFile]                   = useState(null);
     const [mode, setMode]                             = useState("all");
     const [messageApi, contextHolder]                 = message.useMessage();
     const [downSellData, setDownSellData]             = useState(null);
@@ -51,23 +49,34 @@ export default function EditDownSell() {
             }
         };
         getCategories();
-        fetchMedia();
+        fetchMedia(page);
         return () => { isMounted = false; };
     }, []);
 
-    const fetchMedia = async (pageNum = 1) => {
-        setLoadingMore(true);
+    const fetchMedia = async (pageNumber = 1) => {
         try {
-            const res = await getDatas(`/admin/gallary?page=${pageNum}`);
-            if (res && res.success) {
-                const newItems = res.result?.data || [];
-                setGallery(prev => pageNum === 1 ? newItems : [...prev, ...newItems]);
-                setHasMore(res.result?.current_page < res.result?.last_page);
-                setPage(pageNum);
+            if (pageNumber === 1) setLoading(true);
+            setLoadingMore(true);
+
+            const res = await getDatas(`/admin/gallary?page=${pageNumber}`);
+
+            if (res && res?.success) {
+                const data = res.result.data;
+
+                if (pageNumber > 1) {
+                    setGallery(prev => [...prev, ...data]);
+                } else {
+                    setGallery(data);
+                }
+
+                const meta = res.result.meta;
+                setPage(meta.current_page);
+                setHasMore(meta.current_page < meta.last_page);
             }
         } catch (error) {
-            console.error("Media fetch error:", error);
+            console.error("Failed to load gallery:", error);
         } finally {
+            setLoading(false);
             setLoadingMore(false);
         }
     };
@@ -82,30 +91,28 @@ export default function EditDownSell() {
                 if (res && res?.success && isMounted) {
                     const data = res.result;
                     setDownSellData(data);
-                    setImage(data.image);
                     
-                    // Populate form
                     form.setFieldsValue({
-                        title: data.title,
-                        amount: data.amount,
+                        title      : data.title,
+                        amount     : data.amount,
                         coupon_type: data.type,
-                        started_at: data.started_at?.slice(0, 10),
-                        ended_at: data.ended_at?.slice(0, 10),
-                        status: data.status,
+                        started_at : data.started_at?.slice(0, 10),
+                        ended_at   : data.ended_at?.slice(0, 10),
+                        status     : data.status,
                         description: data.description,
-                        width: data.width || 450,
-                        height: data.height || 450,
-                        image: data.image ? [{ uid: "-1", name: "existing-image", status: "done", url: data.image }] : []
+                        width      : data.width || 450,
+                        height     : data.height || 450,
+                        image      : data.image ? [{ uid: "-1", name: "existing-image", status: "done", url: data.image }]: []
                     });
 
                     if (Array.isArray(data.products) && data.products.length > 0) {
                         setMode("product");
                         const formattedProducts = data.products.map(item => ({
-                            id: item.id,
-                            name: item.name,
-                            img_path: item.img_path,
+                            id         : item.id,
+                            name       : item.name,
+                            img_path   : item.img_path,
                             offer_price: item.offer_price,
-                            category: item.category ?? { name: "N/A" }
+                            category   : item.category ?? { name: "N/A" }
                         }));
                         setSelectedProducts(formattedProducts);
                     } else if (data.category_id) {
@@ -138,9 +145,13 @@ export default function EditDownSell() {
             setResults([]);
             return;
         }
+
         if (cancelToken.current) cancelToken.current.cancel();
+
         cancelToken.current = axios.CancelToken.source();
+
         setLoading(true);
+
         try {
             const res = await getDatas("/admin/products/search", {
                 params: { search_key: searchTerm },
@@ -366,13 +377,7 @@ export default function EditDownSell() {
                         <Col xs={24} lg={8}>
                             <Card title={<Space><InboxOutlined /> Banner Media</Space>} className="modern-antd-card sticky-card">
                                 <Form.Item name="image">
-                                    <ProductImagePicker 
-                                        gallery={gallery}
-                                        hasMore={hasMore}
-                                        loadingMore={loadingMore}
-                                        fetchMore={() => fetchMedia(page + 1)}
-                                        onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}
-                                    />
+                                    <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}/>
                                 </Form.Item>
 
                                 <Row gutter={12}>
