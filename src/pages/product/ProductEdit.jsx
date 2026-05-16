@@ -871,53 +871,50 @@ export default function ProductEdit() {
                 <Col xs={24} lg={8}>
                     <Card title="Product Images" bordered>
                         <Space direction="vertical" size={16} style={{ width: "100%" }}>
-                            <div>
-                                <Text strong style={{ display: "block", marginBottom: 8 }}>
-                                    Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
+                            <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+                                <Text strong style={{ display: "block", marginBottom: 12, fontSize: '15px', color: '#1e293b' }}>
+                                    Product Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
                                 </Text>
                                 
-                                <ProductImagePicker name="image" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={handleImageChange} onUploadSuccess={(newImages) => {
+                                <ProductImagePicker 
+                                    initialValue={thumbnailPreview}
+                                    name="image" 
+                                    gallery={gallery} 
+                                    hasMore={hasMore} 
+                                    loadingMore={loadingMore} 
+                                    fetchMore={() => fetchMedia(page + 1)} 
+                                    onChange={handleImageChange} 
+                                    onUploadSuccess={(newImages) => {
                                         setGallery(prev => [...newImages, ...prev]);
                                     }}
                                 />
 
                                 {errors?.image && (
-                                    <div style={{ color: "#ff4d4f", marginTop: 4 }}>
+                                    <div style={{ color: "#ff4d4f", marginTop: 8 }}>
                                         {errors.image.map((error, index) => (
                                             <div key={index}>{error}</div>
                                         ))}
                                     </div>
-
-                                )}
-
-                                {thumbnailPreview && (
-                                    <div style={{marginTop: 12,position: "relative",display: "inline-block"}}>
-                                        <Image src={thumbnailPreview} alt="Thumbnail preview" style={{width: 100,height: 100, objectFit: "fill", borderRadius: 8}}/>
-                                    </div>
                                 )}
                             </div>
             
-                            <div>
-                                <Text strong style={{ display: "block", marginBottom: 8 }}>
-                                    Gallery Images
+                            <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+                                <Text strong style={{ display: "block", marginBottom: 12, fontSize: '15px', color: '#1e293b' }}>
+                                    Media Gallery
                                 </Text>
 
-                                <ProductGalleryPicker name="gallery_images" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={handleGalleryImageFileChange} onUploadSuccess={(newImages) => {setGallery(prev => [...newImages, ...prev]);}}
+                                <ProductGalleryPicker 
+                                    initialValues={imagePreview}
+                                    name="gallery_images" 
+                                    gallery={gallery} 
+                                    hasMore={hasMore} 
+                                    loadingMore={loadingMore} 
+                                    fetchMore={() => fetchMedia(page + 1)} 
+                                    onChange={handleGalleryImageFileChange} 
+                                    onUploadSuccess={(newImages) => {
+                                        setGallery(prev => [...newImages, ...prev]);
+                                    }}
                                 />
-
-                                {imagePreview.length > 0 && (
-                                    <div style={{marginTop: 12,display: "flex",flexWrap: "wrap",gap: 8}}>
-                                        {imagePreview.map((image, index) => (
-                                            <div key={index} style={{position: "relative",display: "inline-block",}}>
-                                                <Image src={image.url} alt={`Gallery ${index + 1}`} style={{width: 80,height: 80, objectFit: "cover",borderRadius: 8}}/>
-
-                                                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => deleteImg(index)}
-                                                    style={{position: "absolute",top: -8,right: -8,background: "#ff4d4f",color: "white",borderRadius: "50%",width: 20,height: 20,minWidth: 20,display: "flex",alignItems: "center",justifyContent: "center",fontSize: 10}}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
                             </div>
                         </Space>
                     </Card>

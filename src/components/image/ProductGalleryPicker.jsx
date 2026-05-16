@@ -1,16 +1,22 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, Button, Row, Col, Tabs, Upload, message, } from "antd";
 import { PlusOutlined, DeleteOutlined, InboxOutlined, CloudUploadOutlined, CheckCircleFilled } from "@ant-design/icons";
 import { postData } from "../../api/common/common";
 
 const { Dragger } = Upload;
 
-export default function ProductGalleryPicker({gallery = [],fetchMore,hasMore,loadingMore,onChange,onUploadSuccess}) {
+export default function ProductGalleryPicker({ initialValues = [], gallery = [], fetchMore, hasMore, loadingMore, onChange, onUploadSuccess }) {
     // State
     const [images, setImages]                 = useState([]);
     const [galleryOpen, setGalleryOpen]       = useState(false);
     const [activeTab, setActiveTab]           = useState("gallery");
     const [fileList, setFileList]             = useState([]);
+
+    useEffect(() => {
+        if (initialValues?.length > 0) {
+            setImages(initialValues.map(img => ({ uid: img.id, url: img.url })));
+        }
+    }, [initialValues]);
 
     const selectedIds = images.map(img => img.uid);
 

@@ -1,17 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal, Button, Row, Col, Tabs, Upload, message } from "antd";
 import { InboxOutlined, PlusOutlined, CheckCircleFilled, CloudUploadOutlined } from "@ant-design/icons";
 import { postData } from "../../api/common/common";
 
 const { Dragger } = Upload;
 
-export default function ProductImagePicker({ gallery = [], fetchMore, hasMore, loadingMore, onChange, onUploadSuccess }) {
+export default function ProductImagePicker({ initialValue, gallery = [], fetchMore, hasMore, loadingMore, onChange, onUploadSuccess }) {
     // States
     const [galleryOpen, setGalleryOpen]       = useState(false);
     const [activeTab, setActiveTab]           = useState("gallery");
     const [selectedIds, setSelectedIds]       = useState([]);
     const [preview, setPreview]               = useState(null);
     const [fileList, setFileList]             = useState([]);
+
+    useEffect(() => {
+        if (initialValue) {
+            setPreview(initialValue);
+        }
+    }, [initialValue]);
 
     const handleCustomUpload = async ({ file, onProgress, onSuccess, onError }) => {
         try {
