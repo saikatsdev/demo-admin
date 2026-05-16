@@ -1,4 +1,4 @@
-import { ArrowLeftOutlined, CloseOutlined, DeleteOutlined, LoadingOutlined, PhoneOutlined, PlusOutlined, UserOutlined, EnvironmentOutlined, ShoppingCartOutlined, CreditCardOutlined, MessageOutlined, CalendarOutlined, GlobalOutlined, CarOutlined, TagOutlined, InboxOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, CloseOutlined, DeleteOutlined, LoadingOutlined, PhoneOutlined, PlusOutlined, UserOutlined, ShoppingCartOutlined, CreditCardOutlined, MessageOutlined, CalendarOutlined, GlobalOutlined, CarOutlined, InboxOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { AutoComplete, Breadcrumb, Button, Card, Col, Divider, Form, Grid, DatePicker, Image, Input, InputNumber, message, Popconfirm, Row, Select, Space, Spin, Table, Typography, Tag } from 'antd'
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -155,6 +155,7 @@ export default function OrderAdd() {
         try {
             setLoading(true);
             const res = await getDatas('/admin/products/search', {search_key: searchQuery })
+
             if (res && res?.success) {
                 setProducts(res?.result || [])
                 setHiddenSearchProducts(false)
@@ -449,6 +450,18 @@ export default function OrderAdd() {
         }
     };
 
+    useEffect(() => {
+        if (pathaoStores?.length) {
+            const defaultStore = pathaoStores.find(
+                (s) => s.store_name?.toLowerCase() === "stylon"
+            );
+
+            if (defaultStore) {
+                setPathaoStoreId(defaultStore.store_id);
+            }
+        }
+    }, [pathaoStores]);
+
     const productColumns = 
     [
         {
@@ -568,25 +581,21 @@ export default function OrderAdd() {
                             <Row gutter={[20, 0]}>
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Phone Number" required className="custom-form-item">
-                                        <AutoComplete 
-                                            value={phoneNumber} 
-                                            options={phoneOptions.map((p) => ({ value: p.phone_number }))} 
-                                            onSearch={onPhoneSearch} 
-                                            onSelect={handlePhoneNumberChange}
-                                            onChange={(value) => setPhoneNumber(value)} 
-                                            placeholder="Enter phone number" 
-                                            notFoundContent={isLoading ? <Spin size="small" /> : null}
+                                        <AutoComplete value={phoneNumber} options={phoneOptions.map((p) => ({ value: p.phone_number }))} onSearch={onPhoneSearch} onSelect={handlePhoneNumberChange} onChange={(value) => setPhoneNumber(value)} 
+                                            placeholder="Enter phone number" notFoundContent={isLoading ? <Spin size="small" /> : null}
                                         >
                                             <Input prefix={<PhoneOutlined />} className="custom-input" />
                                         </AutoComplete>
+
                                         {errors.phone_number && (
                                             <Typography.Text type="danger" style={{ fontSize: '12px' }}>{errors.phone_number[0]}</Typography.Text>
                                         )}
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Full Name" required className="custom-form-item">
-                                        <Input placeholder="John Doe" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="custom-input" />
+                                        <Input placeholder="Write Your Name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="custom-input" />
                                         {errors.customer_name && (
                                             <Typography.Text type="danger" style={{ fontSize: '12px' }}>{errors.customer_name[0]}</Typography.Text>
                                         )}
@@ -601,6 +610,7 @@ export default function OrderAdd() {
                                         </Select>
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24}>
                                     <Form.Item label="Detailed Address" className="custom-form-item">
                                         <Input.TextArea rows={3} placeholder="House, Road, Area..." value={address} onChange={(e) => setAddress(e.target.value)} className="custom-input" />
@@ -632,6 +642,7 @@ export default function OrderAdd() {
                                         </Select>
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Order Status" required className="custom-form-item">
                                         <Select value={statusId} onChange={(value) => setStatusId(value)}>
@@ -641,6 +652,7 @@ export default function OrderAdd() {
                                         </Select>
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Customer Segment" className="custom-form-item">
                                         <Select value={customerTypeId} onChange={(value) => setCustomerTypeId(value)}>
@@ -667,6 +679,7 @@ export default function OrderAdd() {
                                                 </Select>
                                             </Form.Item>
                                         </Col>
+
                                         <Col xs={24} md={12}>
                                             <Form.Item label="Delivery Area" required>
                                                 <Select placeholder="Search area" value={selectedSearchArea} onChange={handlePathaoAreaChange} showSearch onSearch={remoteMethod} filterOption={false}
@@ -678,16 +691,19 @@ export default function OrderAdd() {
                                                 </Select>
                                             </Form.Item>
                                         </Col>
+
                                         <Col xs={24} md={8}>
                                             <Form.Item label="Weight (kg)">
                                                 <Input value={itemWeight} onChange={(e) => setItemWeight(e.target.value)} placeholder="0.5" />
                                             </Form.Item>
                                         </Col>
+
                                         <Col xs={24} md={8}>
                                             <Form.Item label="Item Quantity">
                                                 <Input value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)} placeholder="1" />
                                             </Form.Item>
                                         </Col>
+
                                         <Col xs={24} md={8}>
                                             <Form.Item label="Description">
                                                 <Input value={itemDescription} onChange={(e) => setItemDescription(e.target.value)} placeholder="Items detail" />
@@ -698,9 +714,7 @@ export default function OrderAdd() {
                             )}
                         </Card>
 
-                        {/* Product Search & Cart Card */}
-                        <Card 
-                            className="modern-card" 
+                        <Card className="modern-card" 
                             title={
                                 <>
                                     <div className="section-icon icon-purple"><ShoppingCartOutlined /></div>
@@ -745,12 +759,7 @@ export default function OrderAdd() {
                                     {productInfo?.variations?.length > 0 && (
                                         <Col span={6}>
                                             <Form.Item label="Variation" className="custom-form-item" style={{ marginBottom: 0 }}>
-                                                <Select 
-                                                    size="large"
-                                                    placeholder="Choose style" 
-                                                    value={variationId !== null ? variationId : undefined} 
-                                                    onChange={(value) => setVariationId(value)}
-                                                >
+                                                <Select size="large" placeholder="Choose style" value={variationId !== null ? variationId : undefined} onChange={(value) => setVariationId(value)}>
                                                     {productInfo.variations.map((v, idx) => {
                                                         const label = [
                                                             v?.attribute_value_1 && `${attributeName(v.attribute_value_1.attribute_id)}: ${v.attribute_value_1.value}`,
@@ -771,7 +780,8 @@ export default function OrderAdd() {
                                     </Col>
 
                                     <Col>
-                                        <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => addToCart(productInfo)} style={{ height: '48px', borderRadius: '10px' }}> Add
+                                        <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => addToCart(productInfo)} style={{ height: '48px', borderRadius: '10px' }}> 
+                                            Add
                                         </Button>
                                     </Col>
                                 </Row>
@@ -790,24 +800,30 @@ export default function OrderAdd() {
                             )}
                         </Card>
 
-                        {/* Follow Up & Feedback Card */}
                         <Row gutter={[20, 20]}>
                             <Col xs={24} md={12}>
                                 <Card className="modern-card" 
-                                    title={<><div className="section-icon icon-blue"><CalendarOutlined /></div><span>Follow Up</span></>}
-                                    style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)' }}
-                                >
+                                    title={
+                                    <>
+                                        <div className="section-icon icon-blue">
+                                            <CalendarOutlined />
+                                        </div>
+                                        <span>Follow Up</span>
+                                    </>
+                                    }style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)' }}>
                                     <Row gutter={[12, 12]}>
                                         <Col span={12}>
                                             <Form.Item label="Start Date" required name="approx_start_date">
                                                 <DatePicker style={{ width: '100%' }} value={approxStartDate ? dayjs(approxStartDate) : null} onChange={(_, ds) => setApproxStartDate(ds)} />
                                             </Form.Item>
                                         </Col>
+
                                         <Col span={12}>
                                             <Form.Item label="End Date" required name="approx_end_date">
                                                 <DatePicker style={{ width: '100%' }} value={approxEndDate ? dayjs(approxEndDate) : null} onChange={(_, ds) => setApproxEndDate(ds)} />
                                             </Form.Item>
                                         </Col>
+
                                         <Col span={24}>
                                             <Form.Item label="Internal Note" required name="followup_note">
                                                 <Input.TextArea rows={2} value={followNote} onChange={(e) => setFollowNote(e.target.value)} placeholder="Instructions for staff..." />
@@ -816,10 +832,9 @@ export default function OrderAdd() {
                                     </Row>
                                 </Card>
                             </Col>
+
                             <Col xs={24} md={12}>
-                                <Card 
-                                    className="modern-card" 
-                                    title={<><div className="section-icon icon-purple"><MessageOutlined /></div><span>Feedback</span></>}
+                                <Card className="modern-card" title={<><div className="section-icon icon-purple"><MessageOutlined /></div><span>Feedback</span></>}
                                     style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fdf4ff 100%)' }}
                                 >
                                     <Row gutter={[12, 12]}>
@@ -828,11 +843,13 @@ export default function OrderAdd() {
                                                 <DatePicker style={{ width: '100%' }} value={feedbackStartDate ? dayjs(feedbackStartDate) : null} onChange={(_, ds) => setFeedbackStartDate(ds)} />
                                             </Form.Item>
                                         </Col>
+
                                         <Col span={12}>
                                             <Form.Item label="End Date" required name="feedback_end_date">
                                                 <DatePicker style={{ width: '100%' }} value={feedbackEndDate ? dayjs(feedbackEndDate) : null} onChange={(_, ds) => setFeedbackEndDate(ds)} />
                                             </Form.Item>
                                         </Col>
+
                                         <Col span={24}>
                                             <Form.Item label="Customer Note" required name="feedback_note">
                                                 <Input.TextArea rows={2} value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="What customer said..." />
@@ -843,16 +860,14 @@ export default function OrderAdd() {
                             </Col>
                         </Row>
 
-                        {/* Extra Settings Card */}
-                        <Card 
-                            className="modern-card" 
-                            title={<><div className="section-icon icon-green"><GlobalOutlined /></div><span>Source & Payments</span></>}
-                        >
+                        <Card className="modern-card" title={<><div className="section-icon icon-green"><GlobalOutlined /></div><span>Source & Payments</span></>}>
                             <Row gutter={[20, 0]}>
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Order Source">
                                         <Select value={orderFromId} onChange={(v) => setOrderFromId(v)} placeholder="Select source">
-                                            <Select.Option value="add" style={{ color: '#3b82f6' }}>+ Add New Source</Select.Option>
+                                            <Select.Option value="add" style={{ color: '#3b82f6' }}>
+                                                + Add New Source
+                                            </Select.Option>
                                             {orderFromList?.map(tag => (
                                                 <Select.Option key={tag.id} value={tag.id}>{tag.name}</Select.Option>
                                             ))}
@@ -861,6 +876,7 @@ export default function OrderAdd() {
                                         {orderFromError?.name && <Typography.Text type="danger" style={{ fontSize: '12px' }}>{orderFromError.name[0]}</Typography.Text>}
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Shipping Area">
                                         {deliveryChargeId === 'add' ? (
@@ -877,8 +893,13 @@ export default function OrderAdd() {
                                                 ))}
                                             </Select>
                                         )}
+
+                                        {shippingError?.name && (
+                                            <Typography.Text type="danger">{shippingError.name[0]}</Typography.Text>
+                                        )}
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Payment Gateway" required>
                                         <Select value={paymentGatewayId} onChange={(v) => setPaymentGatewayId(v)}>
@@ -888,6 +909,7 @@ export default function OrderAdd() {
                                         </Select>
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Payment Status" required>
                                         <Select value={paymentStatus} onChange={(v) => setPaymentStatus(v)}>
@@ -896,6 +918,7 @@ export default function OrderAdd() {
                                         </Select>
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={16}>
                                     <Form.Item label="General Order Note">
                                         <Input.TextArea rows={1} value={orderNote} onChange={(e) => setOrderNote(e.target.value)} placeholder="Any special requests or notes..." />
@@ -906,7 +929,6 @@ export default function OrderAdd() {
                     </Form>
                 </Col>
 
-                {/* Sticky Order Summary */}
                 <Col xs={24} lg={7}>
                     <div className="order-summary-card">
                         <Typography.Title level={4} style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -928,42 +950,21 @@ export default function OrderAdd() {
                         <div className="summary-row" style={{ fontWeight: 600, color: '#1e293b' }}>
                             <span>Shipping Charge</span>
                             <div style={{ width: '120px' }}>
-                                <InputNumber 
-                                    min={0} 
-                                    value={changeableChargeValue} 
-                                    onChange={(v) => setChangeableChargeValue(v || 0)} 
-                                    size="small" 
-                                    style={{ width: '100%' }}
-                                    formatter={v => `৳ ${v}`}
-                                />
+                                <InputNumber min={0} value={changeableChargeValue} onChange={(v) => setChangeableChargeValue(v || 0)} size="small" style={{ width: '100%' }} formatter={v => `৳ ${v}`} parser={v => v.replace(/[^\d.]/g, '')} />
                             </div>
                         </div>
 
                         <div className="summary-row">
                             <span>Special Discount</span>
                             <div style={{ width: '120px' }}>
-                                <InputNumber 
-                                    min={0} 
-                                    value={specialDiscount} 
-                                    onChange={(v) => setSpecialDiscount(v || 0)} 
-                                    size="small" 
-                                    style={{ width: '100%', color: '#ef4444' }}
-                                    formatter={v => `- ৳ ${v}`}
-                                />
+                                <InputNumber min={0} value={specialDiscount} onChange={(v) => setSpecialDiscount(v || 0)} size="small" style={{ width: '100%', color: '#ef4444' }} formatter={v => `- ৳ ${v}`} parser={v => v.replace(/[^\d.]/g, '')} />
                             </div>
                         </div>
 
                         <div className="summary-row">
                             <span>Advance Paid</span>
                             <div style={{ width: '120px' }}>
-                                <InputNumber 
-                                    min={0} 
-                                    value={advancePayment} 
-                                    onChange={(v) => setAdvancePayment(v || 0)} 
-                                    size="small" 
-                                    style={{ width: '100%', color: '#10b981' }}
-                                    formatter={v => `- ৳ ${v}`}
-                                />
+                                <InputNumber min={0} value={advancePayment} onChange={(v) => setAdvancePayment(v || 0)} size="small" style={{ width: '100%', color: '#10b981' }} formatter={v => `- ৳ ${v}`} parser={v => v.replace(/[^\d.]/g, '')} />
                             </div>
                         </div>
 

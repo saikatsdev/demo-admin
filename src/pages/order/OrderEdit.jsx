@@ -131,12 +131,12 @@ const OrderEdit = () => {
             setChangeableChargeValue(orderInfo?.delivery_charge || 0);
 
             form.setFieldsValue({
-                approx_start_date: orderInfo?.followUp?.start_date ? dayjs(orderInfo.followUp.start_date) : null,
-                approx_end_date: orderInfo?.followUp?.end_date ? dayjs(orderInfo.followUp.end_date) : null,
-                followup_note: orderInfo?.followUp?.note || "",
-                feedback_start_date: orderInfo?.feedback?.start_date ? dayjs(orderInfo.feedback.start_date) : null,
-                feedback_end_date: orderInfo?.feedback?.end_date ? dayjs(orderInfo.feedback.end_date) : null,
-                feedback_note: orderInfo?.feedback?.note || "",
+                approx_start_date  : orderInfo?.followUp?.start_date ? dayjs(orderInfo.followUp.start_date): null,
+                approx_end_date    : orderInfo?.followUp?.end_date ? dayjs(orderInfo.followUp.end_date)    : null,
+                followup_note      : orderInfo?.followUp?.note || "",
+                feedback_start_date: orderInfo?.feedback?.start_date ? dayjs(orderInfo.feedback.start_date): null,
+                feedback_end_date  : orderInfo?.feedback?.end_date ? dayjs(orderInfo.feedback.end_date)    : null,
+                feedback_note      : orderInfo?.feedback?.note || "",
             });
             
             // Load Pathao area if exists
@@ -592,25 +592,31 @@ const OrderEdit = () => {
         if (values.approx_start_date) {
             formData.append('approx_start_date',values.approx_start_date.format('YYYY-MM-DD'));
         }
+
         if (values.approx_end_date) {
             formData.append('approx_end_date',values.approx_end_date.format('YYYY-MM-DD'));
         }
+
         if (values.followup_note) {
             formData.append('follow_note', values.followup_note);
         }
+
         if (values.feedback_start_date) {
             formData.append('feedback_start_date',values.feedback_start_date.format('YYYY-MM-DD'));
         }
+        
         if (values.feedback_end_date) {
             formData.append('feedback_end_date',values.feedback_end_date.format('YYYY-MM-DD'));
         }
+
         if (values.feedback_note) {
             formData.append('feedback_note', values.feedback_note);
         }
 
         formData.append('_method', 'PUT');
 
-        let cartIndex = 0
+        let cartIndex = 0;
+        
         for (const item of cartItems) {
             formData.append(`items[${cartIndex}][product_id]`, item?.item_id || '')
             formData.append(`items[${cartIndex}][buy_price]`, item?.buy_price || 0)
@@ -707,13 +713,7 @@ const OrderEdit = () => {
                     <div style={{ color: '#64748b', fontSize: '12px', textDecoration: 'line-through' }}>{currency(record.mrp)}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontWeight: 600, color: '#1e293b' }}>Disc:</span>
-                        <InputNumber 
-                            size="small" 
-                            min={0} 
-                            value={record.discount} 
-                            onChange={(v) => updateDiscount(index, v)}
-                            style={{ width: '80px', borderRadius: '4px' }}
-                        />
+                        <InputNumber size="small" min={0} value={record.discount} onChange={(v) => updateDiscount(index, v)} style={{ width: '80px', borderRadius: '4px' }}/>
                     </div>
                 </div>
             ),
@@ -760,6 +760,18 @@ const OrderEdit = () => {
         }
     };
 
+    useEffect(() => {
+        if (pathaoStores?.length) {
+            const defaultStore = pathaoStores.find(
+                (s) => s.store_name?.toLowerCase() === "stylon"
+            );
+
+            if (defaultStore) {
+                setPathaoStoreId(defaultStore.store_id);
+            }
+        }
+    }, [pathaoStores]);
+
     return (
         <div className="order-add-container">
             {contextHolder}
@@ -802,12 +814,14 @@ const OrderEdit = () => {
                                         {errors.phone_number && <Typography.Text type="danger" style={{ fontSize: '12px' }}>{errors.phone_number[0]}</Typography.Text>}
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Full Name" required className="custom-form-item">
                                         <Input placeholder="Customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="custom-input" />
                                         {errors.customer_name && <Typography.Text type="danger" style={{ fontSize: '12px' }}>{errors.customer_name[0]}</Typography.Text>}
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={8}>
                                     <Form.Item label="District" className="custom-form-item">
                                         <Select placeholder="Select district" value={district} onChange={(v) => setDistrict(v)} showSearch filterOption={(i, o) => o.children.toLowerCase().includes(i.toLowerCase())}>
@@ -817,6 +831,7 @@ const OrderEdit = () => {
                                         </Select>
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24}>
                                     <Form.Item label="Detailed Address" className="custom-form-item">
                                         <Input.TextArea rows={3} placeholder="Address detail..." value={address} onChange={(e) => setAddress(e.target.value)} className="custom-input" />
@@ -826,10 +841,14 @@ const OrderEdit = () => {
                             </Row>
                         </Card>
 
-                        <Card 
-                            className="modern-card" 
-                            title={<><div className="section-icon icon-orange"><CarOutlined /></div><span>Logistics & Status</span></>}
-                        >
+                        <Card className="modern-card" title={
+                                <>
+                                    <div className="section-icon icon-orange">
+                                        <CarOutlined />
+                                    </div>
+                                    <span>Logistics & Status</span>
+                                </>
+                        }>
                             <Row gutter={[20, 0]}>
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Preferred Courier" className="custom-form-item">
@@ -849,6 +868,7 @@ const OrderEdit = () => {
                                         </Select>
                                     </Form.Item>
                                 </Col>
+
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Customer Segment" className="custom-form-item">
                                         <Select value={customerTypeId} onChange={(v) => setCustomerTypeId(v)}>
@@ -865,6 +885,7 @@ const OrderEdit = () => {
                                             <Typography.Title level={5} style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
                                                 <GlobalOutlined style={{ color: '#0284c7' }} /> Pathao Integration
                                             </Typography.Title>
+
                                             <Row gutter={[16, 16]}>
                                                 <Col xs={24} md={12}>
                                                     <Form.Item label="Pathao Store" required>
@@ -875,6 +896,7 @@ const OrderEdit = () => {
                                                         </Select>
                                                     </Form.Item>
                                                 </Col>
+
                                                 <Col xs={24} md={12}>
                                                     <Form.Item label="Delivery Area" required>
                                                         <Select value={selectedSearchArea} onChange={handlePathaoAreaChange} showSearch onSearch={remoteMethod} filterOption={false} notFoundContent={areaLoading ? <Spin size="small" /> : null}
@@ -885,9 +907,24 @@ const OrderEdit = () => {
                                                         </Select>
                                                     </Form.Item>
                                                 </Col>
-                                                <Col xs={24} md={8}><Form.Item label="Weight"><Input value={itemWeight} onChange={(e) => setItemWeight(e.target.value)}/></Form.Item></Col>
-                                                <Col xs={24} md={8}><Form.Item label="Quantity"><Input value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)}/></Form.Item></Col>
-                                                <Col xs={24} md={8}><Form.Item label="Desc"><Input value={itemDescription} onChange={(e) => setItemDescription(e.target.value)}/></Form.Item></Col>
+
+                                                <Col xs={24} md={8}>
+                                                    <Form.Item label="Weight">
+                                                        <Input value={itemWeight} onChange={(e) => setItemWeight(e.target.value)}/>
+                                                    </Form.Item>
+                                                </Col>
+
+                                                <Col xs={24} md={8}>
+                                                    <Form.Item label="Quantity">
+                                                        <Input value={itemQuantity} onChange={(e) => setItemQuantity(e.target.value)}/>
+                                                    </Form.Item>
+                                                </Col>
+
+                                                <Col xs={24} md={8}>
+                                                    <Form.Item label="Desc">
+                                                        <Input value={itemDescription} onChange={(e) => setItemDescription(e.target.value)}/>
+                                                    </Form.Item>
+                                                </Col>
                                             </Row>
                                         </div>
                                     </Col>
@@ -907,17 +944,26 @@ const OrderEdit = () => {
                             </Row>
                         </Card>
 
-                        <Card 
-                            className="modern-card" 
-                            title={<><div className="section-icon icon-purple"><ShoppingCartOutlined /></div><span>Product Selection</span></>}
-                        >
+                        <Card className="modern-card" title={
+                            <>
+                                <div className="section-icon icon-purple">
+                                    <ShoppingCartOutlined />
+                                </div>
+                                <span>Product Selection</span>
+                            </>
+                        }>
                             <div style={{ marginBottom: 32 }}>
+                                {searchError && <Typography.Text type="danger">{searchError}</Typography.Text>}
                                 <Row gutter={16} align="bottom">
                                     <Col flex="auto">
                                         <Form.Item label="Search Products" className="custom-form-item" style={{ marginBottom: 0 }}>
                                             <div style={{ position: 'relative' }}>
                                                 <Input size="large" placeholder="Search to add more products..." value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value); searchProduct();}} prefix={<InboxOutlined style={{ color: '#94a3b8' }} />} className="custom-input"/>
-                                                {loading && <div style={{position: 'absolute', right: 12, top: 12}}><Spin size="small" /></div>}
+                                                {loading && 
+                                                    <div style={{position: 'absolute', right: 12, top: 12}}>
+                                                        <Spin size="small" />
+                                                    </div>
+                                                }
                                                 {!hiddenSearchProducts && (
                                                     <Card className="product-search-dropdown" size="small" style={{position: 'absolute', top: '105%', left: 0, right: 0, zIndex: 1000, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', borderRadius: '12px', maxHeight: '400px', overflow: 'auto'}}>
                                                         {products?.length > 0 ? (
@@ -925,10 +971,15 @@ const OrderEdit = () => {
                                                                 {products.map((p) => (
                                                                     <div key={p.id} onClick={() => addProduct(p)} style={{ cursor: 'pointer', padding: '12px', borderRadius: '8px', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                                                                         <Row gutter={12} align="middle">
-                                                                            <Col><Image src={p.img_path} width={48} height={48} style={{ borderRadius: '6px' }} preview={false}/></Col>
+                                                                            <Col>
+                                                                                <Image src={p.img_path} width={48} height={48} style={{ borderRadius: '6px' }} preview={false}/>
+                                                                            </Col>
+
                                                                             <Col flex="auto">
                                                                                 <Typography.Text strong>{p.name}</Typography.Text>
-                                                                                <div style={{ color: '#64748b', fontSize: '12px' }}>{p.category?.name} • {currency(p.mrp)}</div>
+                                                                                <div style={{ color: '#64748b', fontSize: '12px' }}>
+                                                                                    {p.category?.name} • {currency(p.mrp)}
+                                                                                </div>
                                                                             </Col>
                                                                         </Row>
                                                                     </div>
@@ -964,7 +1015,11 @@ const OrderEdit = () => {
                                         </Form.Item>
                                     </Col>
 
-                                    <Col><Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => addToCart(productInfo)} style={{ height: '48px', borderRadius: '10px' }}>Add</Button></Col>
+                                    <Col>
+                                        <Button type="primary" size="large" icon={<PlusOutlined />} onClick={() => addToCart(productInfo)} style={{ height: '48px', borderRadius: '10px' }}>
+                                            Add
+                                        </Button>
+                                    </Col>
                                 </Row>
                             </div>
 
@@ -1034,9 +1089,31 @@ const OrderEdit = () => {
                                         )}
                                     </Form.Item>
                                 </Col>
-                                <Col xs={24} md={8}><Form.Item label="Payment Gateway" required><Select value={paymentGatewayId} onChange={(v) => setPaymentGatewayId(v)}>{paymentGateways?.map(g => <Select.Option key={g.id} value={g.id}>{g.name}</Select.Option>)}</Select></Form.Item></Col>
-                                <Col xs={24} md={8}><Form.Item label="Payment Status" required><Select value={paymentStatus} onChange={(v) => setPaymentStatus(v)}><Select.Option value="paid"><Tag color="success">Paid</Tag></Select.Option><Select.Option value="unpaid"><Tag color="error">Unpaid</Tag></Select.Option></Select></Form.Item></Col>
-                                <Col xs={24} md={16}><Form.Item label="Internal Order Note"><Input.TextArea rows={1} value={orderNote} onChange={(e) => setOrderNote(e.target.value)}/></Form.Item></Col>
+
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Payment Gateway" required>
+                                        <Select value={paymentGatewayId} onChange={(v) => setPaymentGatewayId(v)}>
+                                            {paymentGateways?.map(g => 
+                                                <Select.Option key={g.id} value={g.id}>{g.name}</Select.Option>
+                                            )}
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Payment Status" required>
+                                        <Select value={paymentStatus} onChange={(v) => setPaymentStatus(v)}>
+                                            <Select.Option value="paid"><Tag color="success">Paid</Tag></Select.Option>
+                                            <Select.Option value="unpaid"><Tag color="error">Unpaid</Tag></Select.Option>
+                                        </Select>
+                                    </Form.Item>
+                                </Col>
+
+                                <Col xs={24} md={16}>
+                                    <Form.Item label="Internal Order Note">
+                                        <Input.TextArea rows={1} value={orderNote} onChange={(e) => setOrderNote(e.target.value)}/>
+                                    </Form.Item>
+                                </Col>
                             </Row>
                         </Card>
 
@@ -1049,14 +1126,52 @@ const OrderEdit = () => {
                         <Typography.Title level={4} style={{ marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
                             <CreditCardOutlined style={{ color: '#2563eb' }} /> Order Pricing
                         </Typography.Title>
-                        <div className="summary-row"><span>Regular Price</span><span>{currency(totalPrice.mrp_price)}</span></div>
-                        <div className="summary-row"><span>Total Discount</span><span style={{ color: '#ef4444' }}>-{currency(totalPrice.discount_price)}</span></div>
+
+                        <div className="summary-row">
+                            <span>Regular Price</span>
+                            <span>{currency(totalPrice.mrp_price)}</span>
+                        </div>
+
+                        <div className="summary-row">
+                            <span>Total Discount</span>
+                            <span style={{ color: '#ef4444' }}>-{currency(totalPrice.discount_price)}</span>
+                        </div>
+
                         <Divider style={{ margin: '12px 0' }} />
-                        <div className="summary-row" style={{ fontWeight: 600 }}><span>Shipping</span><div style={{ width: '120px' }}><InputNumber min={0} value={changeableChargeValue} onChange={(v) => setChangeableChargeValue(v || 0)} size="small" style={{ width: '100%' }} formatter={v => `৳ ${v}`}/></div></div>
-                        <div className="summary-row"><span>Special Disc.</span><div style={{ width: '120px' }}><InputNumber min={0} value={specialDiscount} onChange={(v) => setSpecialDiscount(v || 0)} size="small" style={{ width: '100%', color: '#ef4444' }} formatter={v => `- ৳ ${v}`}/></div></div>
-                        <div className="summary-row"><span>Advance Paid</span><div style={{ width: '120px' }}><InputNumber min={0} value={advancePayment} onChange={(v) => setAdvancePayment(v || 0)} size="small" style={{ width: '100%', color: '#10b981' }} formatter={v => `- ৳ ${v}`}/></div></div>
-                        <div className="summary-total"><div className="total-label">Grand Total</div><div className="total-value">{currency(payablePrice)}</div></div>
-                        <Button type="primary" className="submit-btn" loading={submitLoading} onClick={submit} icon={<CheckCircleOutlined />}>{submitLoading ? "Updating..." : "Save Changes"}</Button>
+
+                        <div className="summary-row" style={{ fontWeight: 600 }}>
+                            <span>Shipping</span>
+                            <div style={{ width: '120px' }}>
+                                <InputNumber min={0} value={changeableChargeValue} onChange={(v) => setChangeableChargeValue(v || 0)} size="small" style={{ width: '100%' }} formatter={v => `৳ ${v}`} parser={v => v.replace(/[^\d.]/g, '')}/>
+                            </div>
+                        </div>
+
+                        <div className="summary-row">
+                            <span>Special Disc.</span>
+                            <div style={{ width: '120px' }}>
+                                <InputNumber min={0} value={specialDiscount} onChange={(v) => setSpecialDiscount(v || 0)} size="small" style={{ width: '100%', color: '#ef4444' }} formatter={v => `- ৳ ${v}`} parser={v => v.replace(/[^\d.]/g, '')}/>
+                            </div>
+                        </div>
+
+                        <div className="summary-row">
+                            <span>Advance Paid</span>
+                            <div style={{ width: '120px' }}>
+                                <InputNumber min={0} value={advancePayment} onChange={(v) => setAdvancePayment(v || 0)} size="small" style={{ width: '100%', color: '#10b981' }} formatter={v => `- ৳ ${v}`} parser={v => v.replace(/[^\d.]/g, '')}/>
+                            </div>
+                        </div>
+
+                        <div className="summary-total">
+                            <div className="total-label">
+                                Grand Total
+                            </div>
+                            <div className="total-value">
+                                {currency(payablePrice)}
+                            </div>
+                        </div>
+
+                        <Button type="primary" className="submit-btn" loading={submitLoading} onClick={submit} icon={<CheckCircleOutlined />}>
+                            {submitLoading ? "Updating..." : "Save Changes"}
+                        </Button>
                     </div>
                 </Col>
             </Row>
@@ -1064,6 +1179,7 @@ const OrderEdit = () => {
             <Modal title="Customer Intelligence Report" open={isModalVisible} width={960} onCancel={() => setIsModalVisible(false)} footer={null}>
                 {loading ? <div style={{ textAlign: "center", padding: 32 }}><Spin /></div> : customerData ? <CourierDeliveryReport data={customerData} onRecheck={handleInfoClick}/> : <Empty />}
             </Modal>
+
             <OrderHistoryModal orderId={selectedOrderId} open={showHistory} onClose={() => setShowHistory(false)}/>
         </div>
     )
