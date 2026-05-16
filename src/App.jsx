@@ -159,6 +159,7 @@ import Profile from "./pages/auth/user/Profile";
 import ServerTracker from "./pages/product/catelog/ServerTracker";
 import Feedback from "./pages/order/feedback/Feedback";
 import CampaignProduct from "./pages/meta/CampaignProduct";
+import ProductTrash from "./pages/product/ProductTrash";
 
 function App() {
     const dispatch         = useDispatch();
@@ -253,6 +254,8 @@ function App() {
                     <Route path="/edit/upsell/:id" element={<EditUpSell />} />
                     <Route path="/upsell/settings" element={<UpsellSetting />} />
                     <Route path="/add/down-sell" element={<AddDownSell />} />
+
+                    <Route path="/product/trash" element={<ProductTrash/>}/>
 
                     <Route path="/edit/downsell/:id" element={<EditDownSell />} />
 

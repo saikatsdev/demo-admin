@@ -403,67 +403,6 @@ export default function Product() {
         setIsModalOpen(true);
     }
 
-    const trashColumns = 
-    [
-        {
-            title: "SL",
-            key: "sl",
-            width: 50,
-            render: (_, __, i) => (trashPage - 1) * trashPageSize + i + 1,
-        },
-        {
-            title: "Image",
-            dataIndex: "image",
-            key: "image",
-            width: 110,
-            render: (src, r) => (
-                <img src={src} alt={r.name} style={{width: 95,height: 95,objectFit: "cover",borderRadius: 4,cursor: "pointer"}} onClick={() => handleImagePreview(src)}/>
-            ),
-        },
-        {
-            title: "Name",
-            dataIndex: "name",
-            key: "name",
-            width: 200,
-            ellipsis: true,
-        },
-        {
-            title: "SKU",
-            dataIndex: "sku",
-            key: "sku",
-            width: 140,
-            ellipsis: true,
-        },
-        {
-            title: "Category",
-            key: "category",
-            width: 160,
-            render: (_, r) => r?.category?.name || "—",
-        },
-        {
-            title: "Brand",
-            key: "brand",
-            width: 140,
-            render: (_, r) => r?.brand?.name || "—",
-        },
-        {
-            title: "Actions",
-            key: "trash_actions",
-            width: 220,
-            fixed: "right",
-            render: (_, record) => (
-                <Space size="small">
-                    <Button size="small" onClick={() => handleRestore(record.id)}>
-                        Restore
-                    </Button>
-                    <Button size="small" danger onClick={() => handlePermanentDelete(record.id)}>
-                        Delete
-                    </Button>
-                </Space>
-            ),
-        },
-    ];
-
     const handleQuickEdit = async (item) => {
         setEditingProduct(item);
         setQuickEditOpen(true);
@@ -740,215 +679,7 @@ export default function Product() {
     };
 
     const handleToggleTrash = () => {
-        const next = !isTrashView;
-        setIsTrashView(next);
-        setSelectedRowKeys([]);
-
-        if (next) {
-            fetchTrashData();
-        } else {
-            // When switching back to normal view, refresh the product list
-            setLoading(true);
-            const params = new URLSearchParams();
-            params.append("page", currentPage);
-            params.append("paginate_size", pageSize);
-
-            if (debouncedSearchQuery) {
-                params.append("search_key", debouncedSearchQuery);
-            }
-
-            params.append("status", productStatus);
-
-            if (brandIds.length > 0) {
-                brandIds.forEach((bId) => params.append("brand_ids[]", bId));
-            }
-
-            if (categoryIds.length > 0) {
-                categoryIds.forEach((cId) => params.append("category_ids[]", cId));
-            }
-
-            if (subCategoryIds.length > 0) {
-                subCategoryIds.forEach((sId) => params.append("sub_category_ids[]", sId));
-            }
-
-            if (subSubCategoryIds.length > 0) {
-                subSubCategoryIds.forEach((ssId) => params.append("sub_sub_category_ids[]", ssId));
-            }
-
-            if (attributeValueIds.length > 0) {
-                attributeValueIds.forEach((avId) => params.append("attribute_value_ids[]", avId));
-            }
-
-            if (tagIds.length > 0) {
-                tagIds.forEach((tId) => params.append("tag_ids[]", tId));
-            }
-
-            if (productTypeId) {
-                params.append("product_type_id", productTypeId);
-            }
-
-            if (dateRange?.[0] && dateRange?.[1]) {
-                params.append("start_date", dayjs(dateRange[0]).format("YYYY-MM-DD"));
-                params.append("end_date", dayjs(dateRange[1]).format("YYYY-MM-DD"));
-            }
-
-            if (minPrice !== undefined && minPrice !== null && minPrice !== "") {
-                params.append("min_price", String(minPrice));
-            }
-
-            if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
-                params.append("max_price", String(maxPrice));
-            }
-
-            const paramsObj = {};
-            params.forEach((value, key) => {
-                if (paramsObj[key]) {
-                    if (Array.isArray(paramsObj[key])) {
-                        paramsObj[key].push(value);
-                    } else {
-                        paramsObj[key] = [paramsObj[key], value];
-                    }
-                } else {
-                    paramsObj[key] = value;
-                }
-            });
-
-            getDatas("/admin/products", paramsObj)
-            .then((res) => {
-                if (res?.success) {
-                    setTableData(res.result);
-                    setProducts(res.result?.data || []);
-                }
-            })
-            .catch(() => message.error("Error fetching products"))
-            .finally(() => setLoading(false));
-        }
-    };
-
-    const handleRestore = async (id) => {
-        try {
-            const res = await putData(`/admin/products/${id}/restore`, {});
-            if (res?.success) {
-                message.success("Restored successfully");
-                fetchTrashData();
-        
-                // If not in trash view, refresh the product list to show the restored item
-                if (!isTrashView) {
-                    setLoading(true);
-                    try {
-                        const params = new URLSearchParams();
-                        params.append("page", currentPage);
-                        params.append("paginate_size", pageSize);
-
-                        if (debouncedSearchQuery) {
-                            params.append("search_key", debouncedSearchQuery);
-                        }
-
-                        params.append("status", productStatus);
-            
-                        if (brandIds.length > 0) {
-                            brandIds.forEach((bId) => params.append("brand_ids[]", bId));
-                        }
-
-                        if (categoryIds.length > 0) {
-                            categoryIds.forEach((cId) =>
-                                params.append("category_ids[]", cId)
-                            );
-                        }
-
-                        if (subCategoryIds.length > 0) {
-                            subCategoryIds.forEach((sId) =>
-                                params.append("sub_category_ids[]", sId)
-                            );
-                        }
-
-                        if (subSubCategoryIds.length > 0) {
-                            subSubCategoryIds.forEach((ssId) =>
-                                params.append("sub_sub_category_ids[]", ssId)
-                            );
-                        }
-
-                        if (attributeValueIds.length > 0) {
-                            attributeValueIds.forEach((avId) =>
-                                params.append("attribute_value_ids[]", avId)
-                            );
-                        }
-
-                        if (tagIds.length > 0) {
-                            tagIds.forEach((tId) => params.append("tag_ids[]", tId));
-                        }
-
-                        if (productTypeId) {
-                            params.append("product_type_id", productTypeId);
-                        }
-
-                        if (dateRange?.[0] && dateRange?.[1]) {
-                            params.append("start_date",dayjs(dateRange[0]).format("YYYY-MM-DD"));
-
-                            params.append("end_date",dayjs(dateRange[1]).format("YYYY-MM-DD"));
-                        }
-
-                        if (minPrice !== undefined && minPrice !== null && minPrice !== "") {
-                            params.append("min_price", String(minPrice));
-                        }
-
-                        if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
-                            params.append("max_price", String(maxPrice));
-                        }
-            
-                        const paramsObj = {};
-                            params.forEach((value, key) => {
-                            if (paramsObj[key]) {
-                                if (Array.isArray(paramsObj[key])) {
-                                    paramsObj[key].push(value);
-                                } else {
-                                    paramsObj[key] = [paramsObj[key], value];
-                                }
-                            } else {
-                                paramsObj[key] = value;
-                            }
-                        });
-            
-                        const refreshed = await getDatas("/admin/products", paramsObj);
-
-                        if (refreshed?.success) {
-                            setTableData(refreshed.result);
-                            setProducts(refreshed.result?.data || []);
-                        }
-                    } finally {
-                        setLoading(false);
-                    }
-                }
-            } else {
-                message.error(res?.msg || "Restore failed");
-            }
-        } catch {
-            message.error("Restore failed");
-        }
-    };
-
-    const handlePermanentDelete = async (id) => {
-        modal.confirm({
-            title: "Permanently delete this product?",
-            content: "This cannot be undone.",
-            okText: "Yes, delete",
-            okType: "danger",
-            cancelText: "No",
-            centered: true,
-            onOk: async () => {
-                try {
-                    const res = await deleteData(`/admin/products/${id}/permanent-delete`,{});
-                    if (res?.success) {
-                        message.success("Permanently deleted");
-                        fetchTrashData();
-                    } else {
-                        message.error(res?.msg || "Delete failed");
-                    }
-                } catch {
-                    message.error("Delete failed");
-                }
-            },
-        });
+        navigate("/product/trash");
     };
 
     const handleBulkTrashAction = async (action) => {
@@ -1420,7 +1151,7 @@ export default function Product() {
             
                                 {productDelete && (
                                     <Button size="small" danger icon={<DeleteOutlined />} onClick={handleToggleTrash}>
-                                        {isTrashView ? "Back to List" : "Trash"}
+                                        Trash
                                     </Button>
                                 )}
             
@@ -1462,7 +1193,7 @@ export default function Product() {
         
                         {productDelete && (
                             <Button type="primary" icon={<DeleteOutlined />} onClick={handleToggleTrash} style={{ flex: 1 }}>
-                                {isTrashView ? "Back" : "Trash"}
+                                Trash
                             </Button>
                         )}
         
@@ -1627,23 +1358,7 @@ export default function Product() {
                     </Flex>
         
                     <div className="product-table-desktop">
-                        {isTrashView ? (
-                            <Table rowSelection={rowSelection} columns={trashColumns} dataSource={trashData} loading={loading} tableLayout="fixed" size="small" bordered scroll={{ x: "max-content" }} rowKey="id"
-                            pagination={{
-                                current: trashPage,
-                                pageSize: trashPageSize,
-                                total: trashTableMeta?.total || 0,
-                                showSizeChanger: true,
-                                showQuickJumper: true,
-                                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-                                onChange: (page, size) => {
-                                    setTrashPage(page);
-                                    setTrashPageSize(size);
-                                },
-                            }}
-                            />
-                        ) : (
-                            <Table rowSelection={rowSelection} columns={columns} dataSource={products} loading={loading} tableLayout="fixed" size="small" bordered scroll={{ x: "max-content" }} rowKey="id"
+                        <Table rowSelection={rowSelection} columns={columns} dataSource={products} loading={loading} tableLayout="fixed" size="small" bordered scroll={{ x: "max-content" }} rowKey="id"
                             pagination={{
                                 current: currentPage,
                                 pageSize: pageSize,
@@ -1654,8 +1369,7 @@ export default function Product() {
                                 showTotal: (total, range) =>`${range[0]}-${range[1]} of ${total} items`,
                                 onChange: (page, size) => {setCurrentPage(page);setPageSize(size);},
                             }}
-                            />
-                        )}
+                        />
                     </div>
         
                     <div className="product-table-mobile">
