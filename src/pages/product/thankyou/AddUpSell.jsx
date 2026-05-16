@@ -190,11 +190,7 @@ export default function AddUpSell() {
                 </div>
             </div>
 
-            <Form 
-                layout="vertical" 
-                onFinish={handleSubmit}
-                initialValues={{ status: 'active' }}
-            >
+            <Form layout="vertical" onFinish={handleSubmit} initialValues={{ status: 'active' }}>
                 <Row gutter={[20, 20]}>
                     <Col xs={24} lg={16}>
                         <Card title={<Space><SettingOutlined /> General Information</Space>} className="modern-antd-card" extra={<Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>}>
