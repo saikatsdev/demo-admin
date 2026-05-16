@@ -165,23 +165,43 @@ export default function Product() {
             title: "Image",
             dataIndex: "image",
             key: "image",
-            width: 110,
+            width: 120,
             render: (src, record) => (
-                <img src={src} alt={record.name} style={{width: "95px",height: "95px",objectFit: "fill",borderRadius: "4px",cursor: "pointer",}} onClick={() => handleImagePreview(src)}/>
+                <div className="product-image-container" onClick={() => handleImagePreview(src)}>
+                    <img src={src} alt={record.name} className="product-table-image" />
+                    <div className="image-overlay">
+                        <EyeOutlined style={{ color: '#fff', fontSize: '20px' }} />
+                    </div>
+                </div>
             ),
         },
         {
-            title: "Name",
+            title: "Product Name",
             dataIndex: "name",
             key: "name",
-            width: 160,
-            ellipsis: true,
+            width: 200,
             render: (text, record) => (
-                <span>
-                    {text}
-                    
-                    <InfoCircleOutlined style={{ marginLeft: 6, color: "#1677ff", cursor: "pointer" }} onClick={() => {handleProductInfo(record)}}/>
-                </span>
+                <div className="product-name-column">
+                    <div className="name-with-info">
+                        <Text strong className="product-name-text" ellipsis={{ tooltip: text }}>
+                            {text}
+                        </Text>
+                        <Tooltip title="View Quick Info" color="#1677ff">
+                            <Button 
+                                type="text" 
+                                size="small" 
+                                className="info-trigger-btn"
+                                icon={<InfoCircleOutlined style={{ color: '#1677ff' }} />} 
+                                onClick={() => handleProductInfo(record)}
+                            />
+                        </Tooltip>
+                    </div>
+                    {record.slug && (
+                        <Text type="secondary" className="product-slug-text">
+                            {record.slug}
+                        </Text>
+                    )}
+                </div>
             ),
         },
         {
