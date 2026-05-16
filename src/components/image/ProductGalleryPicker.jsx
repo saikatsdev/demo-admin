@@ -203,7 +203,7 @@ export default function ProductGalleryPicker({gallery = [],fetchMore,hasMore,loa
                                             const selected = selectedIds.includes(item.id);
 
                                             return (
-                                                <Col xs={12} sm={8} md={6} lg={4} key={item.id}>
+                                                <Col xs={12} sm={8} md={6} lg={6} key={item.id}>
                                                     <div className={`sub-gallary-images-box ${selected ? "sub-selected" : ""}`} onClick={() => handleSelect(item)}>
                                                         <img src={item.img_path} className="sub-gallery-img" alt="Gallery" />
                                                         <div className="selection-overlay">

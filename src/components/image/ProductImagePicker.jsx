@@ -95,7 +95,7 @@ export default function ProductImagePicker({ gallery = [], fetchMore, hasMore, l
     return (
         <>
             {preview ? (
-                <img src={preview} alt="selected" className="gallary-uploaded-img" onClick={() => setGalleryOpen(true)} style={{ cursor: "pointer", width: 120, height: 120, objectFit: "fill", borderRadius: 8 }}/>
+                <img src={preview} alt="selected" className="gallary-uploaded-img" onClick={() => setGalleryOpen(true)} style={{ cursor: "pointer", width: 150, height: 150, objectFit: "cover", borderRadius: 8 }}/>
             ) : (
                 <div className="gallary-modal-box" onClick={() => setGalleryOpen(true)}>
                     <CloudUploadOutlined style={{ fontSize: 28 }} />
@@ -136,7 +136,7 @@ export default function ProductImagePicker({ gallery = [], fetchMore, hasMore, l
                             <div style={{ maxHeight: '60vh', overflowY: 'auto', overflowX: 'hidden', padding: '10px 5px' }}>
                                 <Row gutter={[16, 16]}>
                                     {gallery.map((item) => (
-                                        <Col xs={12} sm={8} md={6} lg={4} key={item.id}>
+                                        <Col xs={12} sm={8} md={6} lg={6} key={item.id}>
                                             <div className={`sub-gallary-images-box ${selectedIds.includes(item.id) ? "sub-selected" : ""}`} onClick={() => handleSelectGallery(item)}>
                                                 <img src={item.img_path} className="sub-gallery-img" alt="Gallery item" />
                                                 <div className="selection-overlay">
