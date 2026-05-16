@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Modal, Button, Row, Col, Tabs, Upload, message } from "antd";
-import { InboxOutlined, PlusOutlined, CheckCircleFilled, CloudUploadOutlined } from "@ant-design/icons";
+import { Modal, Button, Row, Col, Tabs, Upload } from "antd";
+import { InboxOutlined, CheckCircleFilled, CloudUploadOutlined } from "@ant-design/icons";
 import { postData } from "../../api/common/common";
 
 const { Dragger } = Upload;

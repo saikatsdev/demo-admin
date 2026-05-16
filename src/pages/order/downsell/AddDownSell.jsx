@@ -4,7 +4,7 @@ import axios from "axios";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
-import ImagePicker from "../../../components/image/ImagePicker";
+import ProductImagePicker from "../../../components/image/ProductImagePicker";
 import useTitle from "../../../hooks/useTitle";
 import "./downsell.css";
 
@@ -324,15 +324,15 @@ export default function AddDownSell() {
 
                     <Col xs={24} lg={8}>
                         <Card title={<Space><InboxOutlined /> Banner Media</Space>} className="modern-antd-card sticky-card">
-                            <ImagePicker 
-                                form={form}
-                                name="image"
-                                label="Promotional Image"
-                                gallery={gallery}
-                                hasMore={hasMore}
-                                loadingMore={loadingMore}
-                                fetchMore={() => fetchMedia(page + 1)}
-                            />
+                            <Form.Item name="image" rules={[{ required: true, message: "Please select an image" }]}>
+                                <ProductImagePicker 
+                                    gallery={gallery}
+                                    hasMore={hasMore}
+                                    loadingMore={loadingMore}
+                                    fetchMore={() => fetchMedia(page + 1)}
+                                    onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}
+                                />
+                            </Form.Item>
 
                             <Row gutter={12}>
                                 <Col span={12}>

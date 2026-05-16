@@ -1,8 +1,9 @@
 import { ArrowLeftOutlined, CloudUploadOutlined, InfoCircleOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message, Row, Col, Typography } from "antd";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { postData } from "../../../api/common/common";
+import { postData, getDatas } from "../../../api/common/common";
+import ProductImagePicker from "../../../components/image/ProductImagePicker";
 import useTitle from "../../../hooks/useTitle";
 import "./Slider.css";
 
@@ -22,27 +23,35 @@ export default function AddSlider() {
     const navigate = useNavigate();
 
     // State
-    const [image, setImage]           = useState(null);
     const [loading, setLoading]       = useState(false);
-    const [imageFile, setImageFile]   = useState(null);
     const [form]                      = Form.useForm();
     const [messageApi, contextHolder] = message.useMessage();
+    
+    // Gallery states
+    const [gallery, setGallery]         = useState([]);
+    const [page, setPage]               = useState(1);
+    const [hasMore, setHasMore]         = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImageFile(file);
-            const reader = new FileReader();
-            reader.onload = () => setImage(reader.result);
-            reader.readAsDataURL(file);
+    useEffect(() => {
+        fetchMedia();
+    }, []);
+
+    const fetchMedia = async (pageNum = 1) => {
+        setLoadingMore(true);
+        try {
+            const res = await getDatas(`/admin/gallary?page=${pageNum}`);
+            if (res && res.success) {
+                const newItems = res.result?.data || [];
+                setGallery(prev => pageNum === 1 ? newItems : [...prev, ...newItems]);
+                setHasMore(res.result?.current_page < res.result?.last_page);
+                setPage(pageNum);
+            }
+        } catch (error) {
+            console.error("Media fetch error:", error);
+        } finally {
+            setLoadingMore(false);
         }
-    };
-
-    const handleRemoveImage = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setImage(null);
-        setImageFile(null);
     };
 
     const onFinish = async (values) => {
@@ -54,8 +63,14 @@ export default function AddSlider() {
             formData.append("width", values.width);
             formData.append("height", values.height);
 
-            if (imageFile) {
-                formData.append("image", imageFile);
+            const imageValue = values.image;
+            if (imageValue && imageValue.length > 0) {
+                const imgObj = imageValue[0];
+                if (imgObj.isFromGallery) {
+                    formData.append("image", imgObj.galleryPath);
+                } else if (imgObj.originFileObj) {
+                    formData.append("image", imgObj.originFileObj);
+                }
             }
 
             setLoading(true);
@@ -115,29 +130,15 @@ export default function AddSlider() {
                     >
                         <div className="form-grid">
                             <div className="upload-section">
-                                <Text strong style={{ fontSize: '16px' }}>Slider Artwork</Text>
-                                <label className="premium-upload-area">
-                                    <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleImageChange} />
-                                    {image ? (
-                                        <div className="preview-container">
-                                            <img src={image} alt="Preview" className="preview-image" />
-                                            <button className="remove-img-btn" onClick={handleRemoveImage}>
-                                                <DeleteOutlined />
-                                            </button>
-                                            <div className="upload-overlay">
-                                                <CloudUploadOutlined /> Change Image
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="upload-placeholder">
-                                            <div className="upload-icon">
-                                                <CloudUploadOutlined />
-                                            </div>
-                                            <Text strong style={{ fontSize: '18px', color: '#1e293b' }}>Click to upload image</Text>
-                                            <Text type="secondary">Optimal size depends on slider type</Text>
-                                        </div>
-                                    )}
-                                </label>
+                                <Form.Item name="image" rules={[{ required: true, message: "Please select an image" }]}>
+                                    <ProductImagePicker 
+                                        gallery={gallery}
+                                        hasMore={hasMore}
+                                        loadingMore={loadingMore}
+                                        fetchMore={() => fetchMedia(page + 1)}
+                                        onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}
+                                    />
+                                </Form.Item>
                                 <div className="size-info-badge">
                                     <div className="badge-dot" />
                                     <Text type="secondary" style={{ fontSize: '13px' }}>
