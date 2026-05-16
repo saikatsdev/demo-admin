@@ -206,8 +206,7 @@ export default function ProductSetting({ formatText }) {
 
                                         case "dropdown":
                                             return (
-                                                <select 
-                                                    className="custom-input" 
+                                                <select className="custom-input" 
                                                     name={product.key} 
                                                     value={product.value || ""} 
                                                     onChange={(e) => handleInputChange(product.id, e.target.value)}

@@ -47,7 +47,6 @@ export default function AllSettings() {
         fetchCategories();
     }, []);
 
-    // Edit button click
     const handleEdit = (record) => {
         setEditingRecord(record);
         setEditKey(record.key);
@@ -61,9 +60,8 @@ export default function AllSettings() {
         setIsModalOpen(true);
     };
 
-    // Add button click
     const handleAdd = () => {
-        setEditingRecord(null);
+        setEditingRecord(null)
         setEditKey("");
         setEditType("");
         setSettingValue("");
@@ -75,7 +73,6 @@ export default function AllSettings() {
         setIsModalOpen(true);
     };
 
-    // Image Change
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -84,7 +81,6 @@ export default function AllSettings() {
         }
     };
 
-    // Save for both add & edit
     const handleSave = async () => {
         if (!editKey || !editType || !settingCategory) {
             message.error("Please fill in all required fields.");
@@ -117,7 +113,7 @@ export default function AllSettings() {
             if (res?.success) {
                 messageApi.success(res.msg || "Setting saved successfully");
                 setIsModalOpen(false);
-                fetchSettings(); // Refresh data
+                fetchSettings();
             } else {
                 message.error(res?.message || "Failed to save setting");
             }
@@ -143,7 +139,8 @@ export default function AllSettings() {
         }
     };
 
-    const columns = [
+    const columns = 
+    [
         { 
             title: "SL", 
             key: "sl", 
@@ -196,22 +193,8 @@ export default function AllSettings() {
             width: 120,
             render: (_, record) => (
                 <Space>
-                    <Button 
-                        type="primary" 
-                        ghost 
-                        size="small" 
-                        icon={<EditOutlined />} 
-                        onClick={() => handleEdit(record)} 
-                        style={{ borderRadius: 6 }}
-                    />
-                    <Popconfirm 
-                        title="Delete Setting" 
-                        description="Are you sure you want to delete this setting?"
-                        onConfirm={() => handleDelete(record.id)} 
-                        okText="Yes" 
-                        cancelText="No"
-                        okButtonProps={{ danger: true }}
-                    >
+                    <Button type="primary" ghost size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} style={{ borderRadius: 6 }}/>
+                    <Popconfirm title="Delete Setting" description="Are you sure you want to delete this setting?" onConfirm={() => handleDelete(record.id)} okText="Yes" cancelText="No" okButtonProps={{ danger: true }}>
                         <Button danger ghost size="small" icon={<DeleteOutlined />} style={{ borderRadius: 6 }} />
                     </Popconfirm>
                 </Space>
@@ -288,6 +271,7 @@ export default function AllSettings() {
                                 <Option value="switch-button">Switch (Toggle)</Option>
                                 <Option value="input">Text Input</Option>
                                 <Option value="image">Image Upload</Option>
+                                <Option value="dropdown">Dropdown</Option>
                                 <Option value="description">Long Description</Option>
                             </Select>
                         </Col>
