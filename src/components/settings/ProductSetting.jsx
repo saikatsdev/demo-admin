@@ -21,7 +21,7 @@ export default function ProductSetting({ formatText }) {
         let isMounted = true;
 
         const fetchedProductSetting = async () => {
-            const res = await getDatas("/admin/settings", {setting_category_id:3});
+            const res = await getDatas("/admin/settings", {setting_category_id:4});
             const data = res?.result?.data || [];
 
             if(isMounted){
@@ -36,7 +36,7 @@ export default function ProductSetting({ formatText }) {
         }
     }, []);
 
-    const filteredProductdata = productSetting.filter((item) => item.category?.id == 3);
+    const filteredProductdata = productSetting.filter((item) => item.category?.id == 4);
 
     const handleFileChange = (e, key) => {
         const file = e.target.files[0];
@@ -73,7 +73,7 @@ export default function ProductSetting({ formatText }) {
         const formData = new FormData();
         formData.append(`items[0][key]`, product.key);
         formData.append(`items[0][type]`, product.type || "text");
-        formData.append(`items[0][setting_category_id]`, product.category?.id || 3);
+        formData.append(`items[0][setting_category_id]`, product.category?.id || 4);
         formData.append(`items[0][instruction]`, product.instruction || '');
 
         if (product.type === "image") {

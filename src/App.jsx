@@ -59,7 +59,7 @@ import SubCategory from "./pages/product/subcategory/SubCategory";
 import SubSubCategory from "./pages/product/subsubcategory/SubSubCategory";
 import AddSection from "./pages/section&product/AddSection";
 import EditSection from "./pages/section&product/EditSection";
-import SectionProdcut from "./pages/section&product/SectionProdcut";
+import SectionProduct from "./pages/section&product/SectionProduct";
 import Settings from "./pages/setting/Settings";
 import RedirectIfAuth from "./routes/RedirectIfAuth";
 import RequireAuth from "./routes/RequireAuth";
@@ -385,7 +385,7 @@ function App() {
 
                     <Route path="/gallary" element={<Gallary />} />
 
-                    <Route path="/section-list" element={<SectionProdcut />} />
+                    <Route path="/section-list" element={<SectionProduct />} />
                     <Route path="/add/section" element={<AddSection />} />
                     <Route path="/edit/section/:id" element={<EditSection />} />
 

@@ -33,7 +33,7 @@ export default function TopHeader({ formatText }) {
         }
     }, []);
 
-    const filteredTopHeaderData = topHeaderSetting.filter((item) => item.category?.id == 5);
+    const filteredTopHeaderData = topHeaderSetting.filter((item) => item.category?.id == 6);
 
     const handleFileChange = (e, key) => {
         const file = e.target.files[0];
@@ -70,7 +70,7 @@ export default function TopHeader({ formatText }) {
         const formData = new FormData();
         formData.append(`items[0][key]`, product.key);
         formData.append(`items[0][type]`, product.type || "text");
-        formData.append(`items[0][setting_category_id]`, product.category?.id || 5);
+        formData.append(`items[0][setting_category_id]`, product.category?.id || 6);
         formData.append(`items[0][instruction]`, product.instruction || '');
 
         if (product.type === "image") {

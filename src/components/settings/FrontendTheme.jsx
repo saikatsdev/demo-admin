@@ -33,7 +33,7 @@ export default function FrontendTheme({ formatText }) {
         }
     }, []);
 
-    const filteredData = frontendThemeSetting.filter((item) => item.category?.id == 6);
+    const filteredData = frontendThemeSetting.filter((item) => item.category?.id == 7);
 
     const handleFileChange = (e, key) => {
         const file = e.target.files[0];
@@ -70,7 +70,7 @@ export default function FrontendTheme({ formatText }) {
         const formData = new FormData();
         formData.append(`items[0][key]`, product.key);
         formData.append(`items[0][type]`, product.type || "text");
-        formData.append(`items[0][setting_category_id]`, product.category?.id || 6);
+        formData.append(`items[0][setting_category_id]`, product.category?.id || 7);
         formData.append(`items[0][instruction]`, product.instruction || '');
 
         if (product.type === "image") {

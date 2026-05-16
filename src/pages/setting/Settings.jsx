@@ -52,9 +52,9 @@ export default function Settings() {
         
         if (settingCategories[index]) {
             setIndexTitle(settingCategories[index].name);
-        } else if (index === 7) {
-            setIndexTitle("Settings Category Data");
         } else if (index === 8) {
+            setIndexTitle("Settings Category Data");
+        } else if (index === 9) {
             setIndexTitle("All Settings");
         }
     }

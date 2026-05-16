@@ -33,7 +33,7 @@ export default function GeneralSetting({ formatText }) {
         };
     }, []);
 
-    const generalSettings = generalData.filter((item) => item.category?.id == 1);
+    const generalSettings = generalData.filter((item) => item.category?.id == 2);
 
     const handleFileChange = (e, key) => {
         const file = e.target.files[0];

@@ -109,6 +109,7 @@ export default function AllSettings() {
 
         try {
             setLoading(true);
+            
             const res = await postData("/admin/settings", formData, {
                 headers: { "Content-Type": "multipart/form-data" }
             });

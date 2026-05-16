@@ -32,7 +32,7 @@ export default function Logo({ formatText }) {
         let isMounted = true;
 
         const fetchLogoData = async () => {
-            const res = await getDatas("/admin/settings", {setting_category_id:2});
+            const res = await getDatas("/admin/settings", {setting_category_id:3});
             const data = res?.result?.data || [];
 
             if (isMounted) {
@@ -47,13 +47,13 @@ export default function Logo({ formatText }) {
         };
     }, []);
 
-    const filteredLogoData = logoData.filter((item) => item.category?.id == 2);
+    const filteredLogoData = logoData.filter((item) => item.category?.id == 3);
 
     const handleUpdateSingle = async (product) => {
         const formData = new FormData();
         formData.append(`items[0][key]`, product.key);
         formData.append(`items[0][type]`, product.type);
-        formData.append(`items[0][setting_category_id]`, product.category?.id ?? 2);
+        formData.append(`items[0][setting_category_id]`, product.category?.id ?? 3);
         formData.append(`items[0][instruction]`, product.instruction || '');
 
         if (product.type === "image") {

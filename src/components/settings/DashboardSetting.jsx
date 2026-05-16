@@ -18,7 +18,7 @@ export default function DashboardSetting({ formatText }) {
         let isMounted = true;
 
         const fetcheDashboard = async () => {
-            const res = await getDatas("/admin/settings", { setting_category_id: 8 });
+            const res = await getDatas("/admin/settings", { setting_category_id: 1 });
             const data = res?.result?.data || [];
 
             if (isMounted) {
@@ -33,7 +33,7 @@ export default function DashboardSetting({ formatText }) {
         };
     }, []);
 
-    const dashboardSettings = dashboardData.filter((item) => item.category?.id == 8);
+    const dashboardSettings = dashboardData.filter((item) => item.category?.id == 1);
 
     const handleFileChange = (e, key) => {
         const file = e.target.files[0];
