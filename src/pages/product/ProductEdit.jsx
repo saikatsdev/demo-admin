@@ -1,5 +1,5 @@
-import { ArrowLeftOutlined, DeleteOutlined,PlusOutlined } from "@ant-design/icons";
-import {Button,Card,Col,Divider,Form,Image,Input,message,Modal,Row,Select,Space,Table,Tag,Typography,Checkbox,Upload} from "antd";
+import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined, SaveOutlined, CloseOutlined, RocketOutlined, BarcodeOutlined, GlobalOutlined, InfoCircleOutlined, DollarOutlined, AppstoreOutlined } from "@ant-design/icons";
+import {Button,Card,Col,Divider,Form,Image,Input,message,Modal,Row,Select,Space,Table,Tag,Typography,Checkbox,Upload, Tooltip} from "antd";
 import { useEffect, useMemo,useState } from "react";
 import { useNavigate, useParams,useSearchParams } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
@@ -766,469 +766,533 @@ export default function ProductEdit() {
     const isInvalidOffer = offerPrice !== "" && regularPrice !== "" && !Number.isNaN(regular) && !Number.isNaN(offer) && offer > regular;
 
     return (
-        <div style={{ padding: 16 }}>
-            {contextHolder}
-            <div className="products-info-top">
-                <Title level={3}>Edit Product</Title>
-        
-                <Permalink slug={slug} setSlug={setSlug} productId={productId} settings={settings}/>
-        
-                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                    Back
-                </Button>
-            </div>
-
-            <Row gutter={16}>
-                <Col xs={24} lg={16}>
-                    <Card title="Product Information" bordered>
-                        <Form layout="vertical">
-                            <Row gutter={12}>
-                                <Col span={24}>
-                                    <Form.Item label="Product Name" required>
-                                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="" status={errors?.name ? "error" : ""}/>
-                                    {errors?.name && (
-                                        <div style={{ color: "#ff4d4f", marginTop: 4 }}>
-                                            {errors.name.map((error, index) => (
-                                                <div key={index}>{error}</div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    </Form.Item>
-                                </Col>
+        <>
+            <div style={{ background: '#f4f7fe', minHeight: '100vh', paddingBottom: '40px' }}>
+                {contextHolder}
             
-                                <Col span={8}>
-                                    <Form.Item label="Brand">
-                                        <Select placeholder="Brand" value={brandId || undefined} onChange={setBrandId} options={(brands || []).map((b) => ({label: b.name,value: b.id,}))}/>
-                                    </Form.Item>
-                                </Col>
-
-                                <Col span={8}>
-                                    <Form.Item label="Status">
-                                        <Select placeholder="Select" value={status || undefined} onChange={setStatus} options={[{label:"Active",value:"active"},{label:"Inactive",value:"inactive"}]}/>
-                                    </Form.Item>
-                                </Col>
-            
-                                <Col span={8}>
-                                    <Form.Item label="Product Type">
-                                        <Select placeholder="Select" value={productTypeId || undefined} onChange={setProductTypeId} options={(productTypes || []).map((t) => ({label: t.name,value: t.id,}))}/>
-                                    </Form.Item>
-                                </Col>
-            
-                                <Col span={8}>
-                                    <Form.Item label="Sold Quantity">
-                                        <Input value={soldQty} onChange={(e) => setSoldQty(e.target.value)} placeholder="0"/>
-                                    </Form.Item>
-                                </Col>
-            
-                                <Col span={8}>
-                                    <Form.Item label="Is Free Shipping">
-                                        <Select placeholder="Is Free Shipping" value={isFreeShipping} onChange={setIsFreeShipping} options={[{label: "No", value: "0" },{label: "Yes", value: "1" }]}/>
-                                    </Form.Item>
-                                </Col>
-
-                                {isStockMaintain && (
-                                    <Col span={8}>
-                                        <Form.Item label="Current Stock">
-                                            <Input placeholder="0" value={currentStock} onChange={(e) => setCurrentStock(e.target.value)} disabled={!isStockMaintainWithDirect}/>
-                                        </Form.Item>
-                                    </Col>
-                                )}
-
-                                <Col span={8}>
-                                    <Form.Item label="Minimum Quantity" required>
-                                        <Input placeholder="1" value={minimumQuantity} onChange={(e) => setMinimumQuantity(e.target.value)}/>
-                                    </Form.Item>
-                                </Col>
-
-                                <Col span={12}>
-                                    <Form.Item label="Product SKU">
-                                        <Input value={sku} onChange={(e) => setSku(e.target.value)}/>
-                                    </Form.Item>
-                                </Col>
-
-                                <Col span={12}>
-                                    <Form.Item label="Video Url">
-                                        <Input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)}/>
-                                    </Form.Item>
-                                </Col>
-
-                                <Col span={24}>
-                                    <Form.Item label="Short Description">
-                                        <ReactQuill theme="snow" value={shortDescription} onChange={setShortDescription} placeholder="Write your product description..." modules={modules} style={{backgroundColor: "#fff",borderRadius: 5,height: "300px",marginBottom: "20px"}}/>
-                                    </Form.Item>
-                                </Col>
-            
-                                <Col span={24}>
-                                    <Form.Item label="Description">
-                                        <ReactQuill theme="snow" value={description} onChange={setDescription} placeholder="Write your product description..." modules={modules} style={{backgroundColor: "#fff",borderRadius: 5,height: "300px",marginBottom: "20px",}}/>
-                                    </Form.Item>
-                                </Col>
-                            </Row>
-                        </Form>
-                    </Card>
-                </Col>
-
-                <Col xs={24} lg={8}>
-                    <Card title="Product Images" bordered>
-                        <Space direction="vertical" size={16} style={{ width: "100%" }}>
-                            <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
-                                <Text strong style={{ display: "block", marginBottom: 12, fontSize: '15px', color: '#1e293b' }}>
-                                    Product Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
-                                </Text>
-                                
-                                <ProductImagePicker 
-                                    initialValue={thumbnailPreview}
-                                    name="image" 
-                                    gallery={gallery} 
-                                    hasMore={hasMore} 
-                                    loadingMore={loadingMore} 
-                                    fetchMore={() => fetchMedia(page + 1)} 
-                                    onChange={handleImageChange} 
-                                    onUploadSuccess={(newImages) => {
-                                        setGallery(prev => [...newImages, ...prev]);
-                                    }}
-                                />
-
-                                {errors?.image && (
-                                    <div style={{ color: "#ff4d4f", marginTop: 8 }}>
-                                        {errors.image.map((error, index) => (
-                                            <div key={index}>{error}</div>
-                                        ))}
-                                    </div>
-                                )}
+                <div style={{
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1000,
+                    background: 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(10px)',
+                    padding: '12px 24px',
+                    borderBottom: '1px solid #e2e8f0',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 24,
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
+                }}>
+                    <Space size="middle">
+                        <Button 
+                            icon={<ArrowLeftOutlined />} 
+                            onClick={() => window.history.back()} 
+                            style={{ border: 'none', background: '#f1f5f9', borderRadius: '8px' }}
+                        />
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <Title level={4} style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>Edit Product</Title>
+                                <Tag color="blue" style={{ borderRadius: '4px', fontWeight: 600 }}>ID: {productId}</Tag>
                             </div>
-            
-                            <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
-                                <Text strong style={{ display: "block", marginBottom: 12, fontSize: '15px', color: '#1e293b' }}>
-                                    Media Gallery
-                                </Text>
-
-                                <ProductGalleryPicker 
-                                    initialValues={imagePreview}
-                                    name="gallery_images" 
-                                    gallery={gallery} 
-                                    hasMore={hasMore} 
-                                    loadingMore={loadingMore} 
-                                    fetchMore={() => fetchMedia(page + 1)} 
-                                    onChange={handleGalleryImageFileChange} 
-                                    onUploadSuccess={(newImages) => {
-                                        setGallery(prev => [...newImages, ...prev]);
-                                    }}
-                                />
-                            </div>
-                        </Space>
-                    </Card>
-
-                    <Divider/>
-
-                    <Card title="Product Categories" bordered>
-                        <div style={{maxHeight: 400,overflowY: "auto",paddingRight: 10}}>
-                            <Checkbox.Group style={{ width: "100%" }} value={categoryIds} onChange={(checkedValues) => setCategoryIds(checkedValues)}>
-                                {categories?.map(category => (
-                                    <div key={category.id} style={{ marginBottom: 12 }}>
-
-                                        <div>
-                                            <Checkbox value={`cat-${category.id}`}>
-                                                <strong>{category.name}</strong>
-                                            </Checkbox>
-                                        </div>
-
-                                        {/* Sub Categories */}
-                                        <div style={{ marginLeft: 20, marginTop: 5 }}>
-                                            {category.sub_categories?.map(sub => (
-                                                <div key={sub.id} style={{ marginBottom: 5 }}>
-
-                                                    <Checkbox value={`sub-${sub.id}`}>
-                                                        {sub.name}
-                                                    </Checkbox>
-
-                                                    {/* Sub Sub */}
-                                                    <div style={{ marginLeft: 20, marginTop: 3 }}>
-                                                        {sub.sub_sub_categories?.map(subsub => (
-                                                            <div key={subsub.id}>
-                                                                <Checkbox value={`subsub-${subsub.id}`}>
-                                                                    {subsub.name}
-                                                                </Checkbox>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                    </div>
-                                ))}
-                            </Checkbox.Group>
+                            <Permalink slug={slug} setSlug={setSlug} productId={productId} settings={settings}/>
                         </div>
-                    </Card>
-                </Col>
-            </Row>
-        
-            <Divider />
-        
-            <Row gutter={16}>
-                <Col xs={24} lg={24}>
-                    <Card id="pricing-design-a" title="Product Price And Product Variation" bordered>
-                        <Row justify="space-between" style={{ marginBottom: 12 }}>
-                            <Col>
-                                <Space>
-                                    <Button type="default" icon={<PlusOutlined />} onClick={addVariationField}>
-                                        Add Variation
-                                    </Button>
+                    </Space>
+                    <Space>
+                        <Button 
+                            icon={<CloseOutlined />} 
+                            onClick={() => window.history.back()}
+                            style={{ borderRadius: '8px' }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            type="primary" 
+                            icon={<SaveOutlined />}
+                            onClick={handleSubmit} 
+                            loading={loading} 
+                            disabled={isInvalidOffer}
+                            style={{ 
+                                borderRadius: '8px', 
+                                background: '#2563eb', 
+                                height: '40px', 
+                                padding: '0 24px',
+                                fontWeight: 600,
+                                boxShadow: '0 4px 10px rgba(37, 99, 235, 0.2)'
+                            }}
+                        >
+                            Update Product
+                        </Button>
+                    </Space>
+                </div>
 
-                                    <Button type="default" icon={<PlusOutlined />} onClick={() => setVariationMultiplyModal(true)}>
-                                        Variation Multiply
-                                    </Button>
-
-                                    {dynamicInputs.length > 0 && (
-                                        <Button danger disabled={selectedVariationRows.length === 0} onClick={handleBulkDeleteVariations}>
-                                            Delete Selected ({selectedVariationRows.length})
-                                        </Button>
-                                    )}
-                                </Space>
-                            </Col>
-
-                            <Col>
-                                {dynamicInputs.length > 0 && (
-                                    <Space>
-                                        <input type="checkbox" checked={selectAllVariations} onChange={(e) => handleSelectAllVariations(e.target.checked)} style={{ marginRight: 8 }}/>
-                                        <Text strong>Select All</Text>
-                                    </Space>
-                                )}
-                            </Col>
-                        </Row>
-        
-                        {dynamicInputs.length > 0 ? (
-                            <div style={{ overflowX: "auto" }}>
-                                <Table bordered pagination={false} scroll={{ x: true }} dataSource={dynamicInputs.map((_, index) => ({key: index,index}))}
-                                    columns={[
-                                    {
-                                        title: (
-                                            <input type="checkbox" checked={selectAllVariations} onChange={(e) => handleSelectAllVariations(e.target.checked)}/>
-                                        ),
-                                        dataIndex: "select",
-                                        width: 50,
-                                        render: (_, record) => (
-                                            <input type="checkbox" checked={selectedVariationRows.includes(record.index)} onChange={(e) => handleSelectVariationRow(record.index,e.target.checked)}/>
-                                        ),
-                                    },
-                                    {
-                                        title: "Variations",
-                                        dataIndex: "variations",
-                                        width: 250,
-                                        render: (_, record) => (
-                                            <Space direction="vertical" style={{ width: "100%" }}>
-                                                <Select mode="multiple" placeholder="Select Attributes" style={{ width: "100%" }} value={selectedAttributeId[record.index] || []} onChange={(val) => {
-                                                    let updated = [...selectedAttributeId];
-                                                    updated[record.index] = val;
-                                                    setSelectedAttributeId(updated);
-                                                    handleAttributeValue(record.index, val);
-                                                }}
-                                                options={(allVariations?.data || []).map((v) => ({label: v.name,value: v.id,}))}/>
-                                                {attributes[record.index]?.map((attr, i) => {
-                                                    const currentValue = attributeValue[
-                                                        record.index
-                                                    ]?.find((val) => val.attribute_id === attr.id);
-                    
-                                                    return (
-                                                        <Select key={i} placeholder={`Select ${attr.name}`} style={{ width: "100%" }} value={currentValue?.id || undefined}
-                                                        onChange={(val) => {
-                                                            let updated = [...attributeValue];
-                                                            if (!updated[record.index])
-                                                            updated[record.index] = [];
+                <div style={{ padding: '0 24px' }}>
+                    <Row gutter={[24, 24]}>
+                        <Col xs={24} lg={16}>
+                            <Space direction="vertical" size={24} style={{ width: '100%' }}>
+                                {/* General Information */}
+                                <Card 
+                                    title={<Space><InfoCircleOutlined style={{ color: '#3b82f6' }} />General Information</Space>}
+                                    variant="borderless"
+                                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                                >
+                                    <Form layout="vertical">
+                                        <Row gutter={20}>
+                                            <Col span={24}>
+                                                <Form.Item label={<Text strong style={{ color: '#475569' }}>Product Name</Text>} required>
+                                                    <Input 
+                                                        size="large"
+                                                        value={title} 
+                                                        onChange={(e) => setTitle(e.target.value)} 
+                                                        placeholder="Enter product name" 
+                                                        status={errors?.name ? "error" : ""}
+                                                        style={{ borderRadius: '8px' }}
+                                                    />
+                                                    {errors?.name && (
+                                                        <div style={{ color: "#ef4444", marginTop: 4, fontSize: '12px' }}>
+                                                            {errors.name.map((error, index) => (
+                                                                <div key={index}>{error}</div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </Form.Item>
+                                            </Col>
                         
-                                                            updated[record.index] = updated[
-                                                            record.index
-                                                            ].filter((v) => v.attribute_id !== attr.id);
+                                            <Col span={8}>
+                                                <Form.Item label="Brand">
+                                                    <Select 
+                                                        size="large"
+                                                        placeholder="Select Brand" 
+                                                        value={brandId || undefined} 
+                                                        onChange={setBrandId} 
+                                                        options={(brands|| []).map((b) => ({label: b.name,value: b.id,}))}
+                                                        style={{ borderRadius: '8px' }}
+                                                    />
+                                                </Form.Item>
+                                            </Col>
+        
+                                            <Col span={8}>
+                                                <Form.Item label="Status">
+                                                    <Select 
+                                                        size="large"
+                                                        placeholder="Select Status" 
+                                                        value={status || undefined} 
+                                                        onChange={setStatus} 
+                                                        options={[{ label: "Active", value: "active" },{ label: "Inactive", value: "inactive" },]}
+                                                    />
+                                                </Form.Item>
+                                            </Col>
+        
+                                            <Col span={8}>
+                                                <Form.Item label="Product Type">
+                                                    <Select 
+                                                        size="large"
+                                                        placeholder="Select Type" 
+                                                        value={productTypeId || undefined} 
+                                                        onChange={setProductTypeId} 
+                                                        options={(productTypes || []).map((t) => ({label: t.name,value: t.id,}))}
+                                                    />
+                                                </Form.Item>
+                                            </Col>
                         
-                                                            const selectedValue = attr.values.find((v) => v.id === val);
-                                                            if (selectedValue) {
-                                                                updated[record.index].push(selectedValue);
-                                                            }
+                                            <Col span={8}>
+                                                <Form.Item label="Sold Quantity">
+                                                    <Input size="large" value={soldQty} onChange={(e) => setSoldQty(e.target.value)} placeholder="0"/>
+                                                </Form.Item>
+                                            </Col>
                         
-                                                            setAttributeValue(updated);
-                                                        }}
-                                                        options={(attr.values || []).map((v) => ({label: v.value,value: v.id,}))}
-                                                        />
-                                                    );
-                                                })}
-                                            </Space>
-                                        ),
-                                    },
-                                    {
-                                        title: "Regular Price",
-                                        dataIndex: "regularPrice",
-                                        width: 130,
-                                        render: (_, record) => (
-                                            <Input placeholder="0" value={variationRegularPrice[record.index]} onChange={(e) => updateVariationField(record.index,"regularPrice",e.target.value)}/>
-                                        ),
-                                    },
-                                    {
-                                        title: "Offer Price",
-                                        dataIndex: "offerPrice",
-                                        width: 120,
-                                        render: (_, record) => (
-                                            <Input placeholder="0" value={variationOfferPrice[record.index]} onChange={(e) => updateVariationField(record.index,"offerPrice",e.target.value)}/>
-                                        ),
-                                    },
-                                    {
-                                        title: "Stock",
-                                        dataIndex: "stock",
-                                        width: 100,
-                                        render: (_, record) => (
-                                            <Input placeholder="1" value={itemCurrentStock[record.index]} onChange={(e) =>updateVariationField(record.index,"stock",e.target.value)}/>
-                                        ),
-                                    },
-                                    {
-                                        title: "Default",
-                                        dataIndex: "default",
-                                        width: 100,
-                                        render: (_, record) => (
-                                            <Select placeholder="No" value={isDefault[record.index]} onChange={(val) => updateVariationField(record.index, "default", val)} options={[{ label: "No", value: 0 },{ label: "Yes", value: 1 }]}/>
-                                        ),
-                                    },
-                                    {
-                                        title: "Image",
-                                        dataIndex: "image",
-                                        width: 150,
-                                        render: (_, record) => (
-                                            <Space direction="vertical" style={{ width: "100%" }}>
-                                                <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={(data) => handleColorImageChange(data, record.index)}/>
-
-                                                {colorImagePreview[record.index] && (
-                                                    <div style={{ position: "relative", display: "inline-block" }}>
-                                                        <Image src={colorImagePreview[record.index]} alt={`Variation ${record.index + 1}`}
-                                                            style={{
-                                                                width       : 50,
-                                                                height      : 50,
-                                                                objectFit   : "cover",
-                                                                borderRadius: 4,
-                                                            }}
-                                                        />
-
-                                                        <Button type="text" danger icon={<DeleteOutlined />}
-                                                            onClick={() => {
-                                                                const newImages = [...colorImages];
-                                                                const newPreview = [...colorImagePreview];
-
-                                                                newImages[record.index] = null;
-                                                                newPreview[record.index] = null;
-
-                                                                setColorImages(newImages);
-                                                                setColorImagePreview(newPreview);
-                                                            }}
-                                                            style={{
-                                                                position      : "absolute",
-                                                                top           : -8,
-                                                                right         : -8,
-                                                                background    : "#ff4d4f",
-                                                                color         : "white",
-                                                                borderRadius  : "50%",
-                                                                width         : 20,
-                                                                height        : 20,
-                                                                minWidth      : 20,
-                                                                display       : "flex",
-                                                                alignItems    : "center",
-                                                                justifyContent: "center",
-                                                                fontSize      : 10,
-                                                            }}
-                                                        />
+                                            <Col span={8}>
+                                                <Form.Item label="Free Shipping">
+                                                    <Select size="large" value={isFreeShipping} onChange={setIsFreeShipping} options={[{ label: "No", value: "0" },{ label: "Yes", value: "1" },]}/>
+                                                </Form.Item>
+                                            </Col>
+        
+                                            <Col span={8}>
+                                                <Form.Item label="Stock Quantity">
+                                                    <Input size="large" placeholder="0" value={currentStock} onChange={(e) => setCurrentStock(e.target.value)}/>
+                                                </Form.Item>
+                                            </Col>
+        
+                                            <Col span={8}>
+                                                <Form.Item label="Min. Order Qty" required>
+                                                    <Input size="large" placeholder="1" value={minimumQuantity} onChange={(e) => setMinimumQuantity(e.target.value)}/>
+                                                </Form.Item>
+                                            </Col>
+        
+                                            <Col span={8}>
+                                                <Form.Item label="Product SKU">
+                                                    <Input size="large" prefix={<BarcodeOutlined style={{ color: '#94a3b8' }} />} value={sku} onChange={(e) => setSku(e.target.value)}/>
+                                                </Form.Item>
+                                            </Col>
+        
+                                            <Col span={8}>
+                                                <Form.Item label="Video URL">
+                                                    <Input size="large" placeholder="YouTube/Vimeo link" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)}/>
+                                                </Form.Item>
+                                            </Col>
+                        
+                                            <Col span={24}>
+                                                <Form.Item label="Short Description">
+                                                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                                                        <ReactQuill theme="snow" value={shortDescription} onChange={setShortDescription} placeholder="Write a brief overview..." modules={modules} style={{ height: "200px", border: 'none' }}/>
                                                     </div>
-                                                )}
-                                            </Space>
-                                        ),
-                                    },
-                                    {
-                                        title: "Description",
-                                        dataIndex: "description",
-                                        width: 200,
-                                        render: (_, record) => (
-                                            <Input.TextArea placeholder="Description" rows={2} value={variationDescription[record.index]} onChange={(e) =>updateVariationField(record.index,"description",e.target.value)}/>
-                                        ),
-                                    },
-                                    {
-                                        title: "Action",
-                                        dataIndex: "action",
-                                        fixed: "right",
-                                        width: 80,
-                                        render: (_, record) => (
-                                            <Button danger size="small" onClick={() => removeVariationField(record.index)}>
-                                                Delete
-                                            </Button>
-                                        ),
-                                    },
-                                    ]}
-                                />
-                            </div>
-                        ) : (
-                            <Card size="small" bordered style={{ background: "#f8fbff" }}>
-                                <Space align="center">
-                                    <Tag color="#1677ff" style={{ marginRight: 8 }}>
-                                        $
-                                    </Tag>
-                                    <Text strong>Product Pricing (Without Variation)</Text>
-                                </Space>
+                                                    <div style={{ height: '45px' }}></div>
+                                                </Form.Item>
+                                            </Col>
+                        
+                                            <Col span={24}>
+                                                <Form.Item label="Full Description">
+                                                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                                                        <ReactQuill theme="snow" value={description} onChange={setDescription} placeholder="Detailed product specifications..." modules={modules} style={{ height: "350px", border: 'none' }}/>
+                                                    </div>
+                                                    <div style={{ height: '45px' }}></div>
+                                                </Form.Item>
+                                            </Col>
+                                        </Row>
+                                    </Form>
+                                </Card>
 
-                                <Row gutter={12} style={{ marginTop: 12 }}>
-                                    <Col xs={24} lg={8}>
-                                        <Form layout="vertical">
-                                            <Form.Item label="Regular Price" required>
-                                                <Input placeholder="Enter Regular Price" value={regularPrice} onChange={(e) => setRegularPrice(e.target.value)} status={errors?.mrp ? "error" : ""}/>
-
-                                                {errors?.mrp && (
-                                                    <div style={{ color: "#ff4d4f", marginTop: 4 }}>
-                                                        {errors.mrp.map((error, index) => (
+                                {/* Media Section */}
+                                <Card 
+                                    title={<Space><PlusOutlined style={{ color: '#3b82f6' }} />Product Media</Space>}
+                                    variant="borderless"
+                                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                                >
+                                    <Row gutter={[20, 20]}>
+                                        <Col xs={24} md={10}>
+                                            <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', height: '100%' }}>
+                                                <Text strong style={{ display: "block", marginBottom: 12, fontSize: '14px' }}>
+                                                    Main Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
+                                                </Text>
+                                                <ProductImagePicker name="image" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={handleImageChange} onUploadSuccess={(newImages) => { setGallery(prev => [...newImages, ...prev]);}} initialValue={thumbnailPreview}/>
+                                                {errors?.image && (
+                                                    <div style={{ color: "#ef4444", marginTop: 8, fontSize: '12px' }}>
+                                                        {errors.image.map((error, index) => (
                                                             <div key={index}>{error}</div>
                                                         ))}
                                                     </div>
                                                 )}
-                                            </Form.Item>
-                                        </Form>
-                                    </Col>
+                                            </div>
+                                        </Col>
+                                        <Col xs={24} md={14}>
+                                            <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', height: '100%' }}>
+                                                <Text strong style={{ display: "block", marginBottom: 12, fontSize: '14px' }}>
+                                                    Product Gallery
+                                                </Text>
+                                                <ProductGalleryPicker gallery={gallery} hasMore={hasMore} fetchMore={() => fetchMedia(page + 1)} loadingMore={loadingMore} onChange={handleGalleryImageFileChange} onUploadSuccess={(newImages) => { setGallery(prev => [...newImages, ...prev]); }} initialValues={imagePreview}/>
+                                            </div>
+                                        </Col>
+                                    </Row>
+                                </Card>
+                            </Space>
+                        </Col>
 
-                                    <Col xs={24} lg={8}>
-                                        <Form layout="vertical">
-                                            <Form.Item label="Offer Price" validateStatus={isInvalidOffer ? "error" : ""} help={isInvalidOffer ? "Offer price cannot be greater than regular price" : "" }>
-                                                <Input placeholder="Enter Offer Price" value={offerPrice} onChange={(e) => setOfferPrice(e.target.value)}/>
-                                            </Form.Item>
-                                        </Form>
+                        <Col xs={24} lg={8}>
+                            <Space direction="vertical" size={24} style={{ width: '100%' }}>
+                                {/* Categories Section */}
+                                <Card 
+                                    title={<Space><AppstoreOutlined style={{ color: '#3b82f6' }} />Categorization</Space>}
+                                    variant="borderless"
+                                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                                >
+                                    <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '10px' }}>
+                                        <Checkbox.Group style={{ width: "100%" }} value={categoryIds} onChange={(checkedValues) => setCategoryIds(checkedValues)}>
+                                            {categories?.map(category => (
+                                                <div key={category.id} style={{ marginBottom: 16, background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+                                                    <Checkbox value={`cat-${category.id}`}>
+                                                        <Text strong style={{ fontSize: '14px', color: '#1e293b' }}>{category.name}</Text>
+                                                    </Checkbox>
+                                                    
+                                                    <div style={{ marginLeft: 24, marginTop: 10, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        {category.sub_categories?.map(sub => (
+                                                            <div key={sub.id}>
+                                                                <Checkbox value={`sub-${sub.id}`}>
+                                                                    <Text style={{ fontSize: '13px' }}>{sub.name}</Text>
+                                                                </Checkbox>
+                                                                
+                                                                <div style={{ marginLeft: 24, marginTop: 6, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                    {sub.sub_sub_categories?.map(subsub => (
+                                                                        <Checkbox key={subsub.id} value={`subsub-${subsub.id}`}>
+                                                                            <Text type="secondary" style={{ fontSize: '12px' }}>{subsub.name}</Text>
+                                                                        </Checkbox>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </Checkbox.Group>
+                                    </div>
+                                </Card>
+                            </Space>
+                        </Col>
+                    </Row>
+
+                    {/* Pricing & Variation Section */}
+                    <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
+                        <Col span={24}>
+                            <Card 
+                                id="pricing-design-a" 
+                                title={<Space><DollarOutlined style={{ color: '#3b82f6' }} />Pricing & Variations</Space>}
+                                variant="borderless"
+                                style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                                extra={
+                                    <Space>
+                                        <Button type="default" icon={<PlusOutlined />} onClick={addVariationField} style={{ borderRadius: '6px' }}>
+                                            Add Single
+                                        </Button>
+                                        <Button type="primary" icon={<RocketOutlined />} onClick={() => setVariationMultiplyModal(true)} style={{ borderRadius: '6px', background: '#0ea5e9' }}>
+                                            Variation Wizard
+                                        </Button>
+                                    </Space>
+                                }
+                            >
+                                <Row justify="space-between" style={{ marginBottom: 16 }}>
+                                    <Col>
+                                        {dynamicInputs.length > 0 && (
+                                            <Button danger ghost icon={<DeleteOutlined />} disabled={selectedVariationRows.length === 0} onClick={handleBulkDeleteVariations} style={{ borderRadius: '6px' }}>
+                                                Bulk Delete ({selectedVariationRows.length})
+                                            </Button>
+                                        )}
                                     </Col>
                                 </Row>
+            
+                            {dynamicInputs.length > 0 ? (
+                                <div style={{ overflowX: "auto" }}>
+                                    <Table bordered pagination={false} scroll={{ x: true }} dataSource={dynamicInputs.map((_, index) => ({key: index,index}))}
+                                        columns={[
+                                        {
+                                            title: (
+                                                <input type="checkbox" checked={selectAllVariations} onChange={(e) => handleSelectAllVariations(e.target.checked)}/>
+                                            ),
+                                            dataIndex: "select",
+                                            width: 50,
+                                            render: (_, record) => (
+                                                <input type="checkbox" checked={selectedVariationRows.includes(record.index)} onChange={(e) => handleSelectVariationRow(record.index,e.target.checked)}/>
+                                            ),
+                                        },
+                                        {
+                                            title: "Variations",
+                                            dataIndex: "variations",
+                                            width: 250,
+                                            render: (_, record) => (
+                                                <Space direction="vertical" style={{ width: "100%" }}>
+                                                    <Select mode="multiple" placeholder="Select Attributes" style={{ width: "100%" }} value={selectedAttributeId[record.index] || []} onChange={(val) => {
+                                                        let updated = [...selectedAttributeId];
+                                                        updated[record.index] = val;
+                                                        setSelectedAttributeId(updated);
+                                                        handleAttributeValue(record.index, val);
+                                                    }}
+                                                    options={(allVariations?.data || []).map((v) => ({label: v.name,value: v.id,}))}/>
+                                                    {attributes[record.index]?.map((attr, i) => {
+                                                        const currentValue = attributeValue[
+                                                            record.index
+                                                        ]?.find((val) => val.attribute_id === attr.id);
+                        
+                                                        return (
+                                                            <Select key={i} placeholder={`Select ${attr.name}`} style={{ width: "100%" }} value={currentValue?.id || undefined}
+                                                            onChange={(val) => {
+                                                                let updated = [...attributeValue];
+                                                                if (!updated[record.index])
+                                                                updated[record.index] = [];
+                            
+                                                                updated[record.index] = updated[
+                                                                record.index
+                                                                ].filter((v) => v.attribute_id !== attr.id);
+                            
+                                                                const selectedValue = attr.values.find((v) => v.id === val);
+                                                                if (selectedValue) {
+                                                                    updated[record.index].push(selectedValue);
+                                                                }
+                            
+                                                                setAttributeValue(updated);
+                                                            }}
+                                                            options={(attr.values || []).map((v) => ({label: v.value,value: v.id,}))}
+                                                            />
+                                                        );
+                                                    })}
+                                                </Space>
+                                            ),
+                                        },
+                                        {
+                                            title: "Regular Price",
+                                            dataIndex: "regularPrice",
+                                            width: 130,
+                                            render: (_, record) => (
+                                                <Input placeholder="0" value={variationRegularPrice[record.index]} onChange={(e) => updateVariationField(record.index,"regularPrice",e.target.value)}/>
+                                            ),
+                                        },
+                                        {
+                                            title: "Offer Price",
+                                            dataIndex: "offerPrice",
+                                            width: 120,
+                                            render: (_, record) => (
+                                                <Input placeholder="0" value={variationOfferPrice[record.index]} onChange={(e) => updateVariationField(record.index,"offerPrice",e.target.value)}/>
+                                            ),
+                                        },
+                                        {
+                                            title: "Stock",
+                                            dataIndex: "stock",
+                                            width: 100,
+                                            render: (_, record) => (
+                                                <Input placeholder="1" value={itemCurrentStock[record.index]} onChange={(e) =>updateVariationField(record.index,"stock",e.target.value)}/>
+                                            ),
+                                        },
+                                        {
+                                            title: "Default",
+                                            dataIndex: "default",
+                                            width: 100,
+                                            render: (_, record) => (
+                                                <Select placeholder="No" value={isDefault[record.index]} onChange={(val) => updateVariationField(record.index, "default", val)} options={[{ label: "No", value: 0 },{ label: "Yes", value: 1 }]}/>
+                                            ),
+                                        },
+                                        {
+                                            title: "Image",
+                                            dataIndex: "image",
+                                            width: 150,
+                                            render: (_, record) => (
+                                                <Space direction="vertical" style={{ width: "100%" }}>
+                                                    <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={(data) => handleColorImageChange(data, record.index)}/>
 
+                                                    {colorImagePreview[record.index] && (
+                                                        <div style={{ position: "relative", display: "inline-block" }}>
+                                                            <Image src={colorImagePreview[record.index]} alt={`Variation ${record.index + 1}`}
+                                                                style={{
+                                                                    width       : 50,
+                                                                    height      : 50,
+                                                                    objectFit   : "cover",
+                                                                    borderRadius: 4,
+                                                                }}
+                                                            />
+
+                                                            <Button type="text" danger icon={<DeleteOutlined />}
+                                                                onClick={() => {
+                                                                    const newImages = [...colorImages];
+                                                                    const newPreview = [...colorImagePreview];
+
+                                                                    newImages[record.index] = null;
+                                                                    newPreview[record.index] = null;
+
+                                                                    setColorImages(newImages);
+                                                                    setColorImagePreview(newPreview);
+                                                                }}
+                                                                style={{
+                                                                    position      : "absolute",
+                                                                    top           : -8,
+                                                                    right         : -8,
+                                                                    background    : "#ff4d4f",
+                                                                    color         : "white",
+                                                                    borderRadius  : "50%",
+                                                                    width         : 20,
+                                                                    height        : 20,
+                                                                    minWidth      : 20,
+                                                                    display       : "flex",
+                                                                    alignItems    : "center",
+                                                                    justifyContent: "center",
+                                                                    fontSize      : 10,
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </Space>
+                                            ),
+                                        },
+                                        {
+                                            title: "Description",
+                                            dataIndex: "description",
+                                            width: 200,
+                                            render: (_, record) => (
+                                                <Input.TextArea placeholder="Description" rows={2} value={variationDescription[record.index]} onChange={(e) =>updateVariationField(record.index,"description",e.target.value)}/>
+                                            ),
+                                        },
+                                        {
+                                            title: "Action",
+                                            dataIndex: "action",
+                                            fixed: "right",
+                                            width: 80,
+                                            render: (_, record) => (
+                                                <Button danger size="small" onClick={() => removeVariationField(record.index)}>
+                                                    Delete
+                                                </Button>
+                                            ),
+                                        },
+                                        ]}
+                                    />
+                                </div>
+                            ) : (
+                                <Card size="small" bordered style={{ background: "#f8fbff" }}>
+                                    <Space align="center">
+                                        <Tag color="#1677ff" style={{ marginRight: 8 }}>
+                                            $
+                                        </Tag>
+                                        <Text strong>Product Pricing (Without Variation)</Text>
+                                    </Space>
+
+                                    <Row gutter={12} style={{ marginTop: 12 }}>
+                                        <Col xs={24} lg={8}>
+                                            <Form layout="vertical">
+                                                <Form.Item label="Regular Price" required>
+                                                    <Input placeholder="Enter Regular Price" value={regularPrice} onChange={(e) => setRegularPrice(e.target.value)} status={errors?.mrp ? "error" : ""}/>
+
+                                                    {errors?.mrp && (
+                                                        <div style={{ color: "#ff4d4f", marginTop: 4 }}>
+                                                            {errors.mrp.map((error, index) => (
+                                                                <div key={index}>{error}</div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </Form.Item>
+                                            </Form>
+                                        </Col>
+
+                                        <Col xs={24} lg={8}>
+                                            <Form layout="vertical">
+                                                <Form.Item label="Offer Price" validateStatus={isInvalidOffer ? "error" : ""} help={isInvalidOffer ? "Offer price cannot be greater than regular price" : "" }>
+                                                    <Input placeholder="Enter Offer Price" value={offerPrice} onChange={(e) => setOfferPrice(e.target.value)}/>
+                                                </Form.Item>
+                                            </Form>
+                                        </Col>
+                                    </Row>
+
+                                </Card>
+                            )}
+                        </Card>
+                    </Col>
+                </Row>
+            
+                {/* SEO Information */}
+                    <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
+                        <Col span={24}>
+                            <Card 
+                                title={<Space><GlobalOutlined style={{ color: '#3b82f6' }} />SEO & Search Discovery</Space>}
+                                variant="borderless"
+                                style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                            >
+                                <Form layout="vertical">
+                                    <Row gutter={20}>
+                                        <Col xs={24} md={12}>
+                                            <Form.Item label="Meta Title">
+                                                <Input size="large" placeholder="Enter SEO Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)}/>
+                                            </Form.Item>
+                                        </Col>
+                                        <Col xs={24} md={12}>
+                                            <Form.Item label="Meta Keywords">
+                                                <Input size="large" placeholder="e.g. fashion, summer, dress" value={metaKeywords} onChange={(e) => setMetaKeywords(e.target.value)}/>
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={24}>
+                                            <Form.Item label="Meta Description">
+                                                <Input.TextArea rows={4} placeholder="Enter a search-friendly description..." value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)}/>
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </Form>
                             </Card>
-                        )}
-        
-                        <Row justify="end" style={{ marginTop: 16 }}>
-                            <Button type="primary" size="large" onClick={handleSubmit} loading={loading} disabled={isInvalidOffer}>
-                                Update Product
-                            </Button>
-                        </Row>
-                    </Card>
-                </Col>
-            </Row>
-        
-            <Divider />
-        
-            <Row gutter={16}>
-                <Col xs={24} lg={24}>
-                    <Card title="SEO Information" bordered>
-                        <Form layout="vertical">
-                            <Form.Item label="Meta Title">
-                                <Input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)}/>
-                            </Form.Item>
-
-                            <Form.Item label="Meta Keywords">
-                                <Input value={metaKeywords} onChange={(e) => setMetaKeywords(e.target.value)}/>
-                            </Form.Item>
-
-                            <Form.Item label="Meta Description">
-                                <Input.TextArea rows={4} value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)}/>
-                            </Form.Item>
-                        </Form>
-                    </Card>
-                </Col>
-            </Row>
+                        </Col>
+                    </Row>
+                </div>
+            </div>
         
             <Modal title="Please Choose Your Variations" open={variationMultiplyModal} onCancel={() => setVariationMultiplyModal(false)} onOk={handleVariationMultiplySubmit} okText="Submit" width={800}>
                 <Form layout="vertical">
@@ -1239,19 +1303,16 @@ export default function ProductEdit() {
                                     setSelectedVariationValues((prev) => prev.filter((val) => !removedAttributeIds.includes(val.attribute_id)));
                                 }
                             }}
-                            options={(allVariations?.data || []).map((v) => ({label: v.name,value: v.id,}))}
-                            style={{ width: "100%" }}
+                            options={(allVariations?.data || []).map((v) => ({label: v.name,value: v.id,}))} style={{ width: "100%" }}
                         />
                     </Form.Item>
         
-                    {selectedVariationId.map((attrId) => {
-                        const attribute = (allVariations?.data || []).find((v) => v.id === attrId);
+                    {selectedVariationId.map((attrId) => {const attribute = (allVariations?.data || []).find((v) => v.id === attrId);
+
                         if (!attribute) return null;
             
-                        const currentValues = selectedVariationValues.filter(
-                            (v) => v.attribute_id === attrId
-                        );
-        
+                        const currentValues = selectedVariationValues.filter((v) => v.attribute_id === attrId);
+            
                         return (
                             <Form.Item key={attrId} label={`Select ${attribute.name} Values`}>
                                 <Select mode="multiple" placeholder={`Select ${attribute.name} values`} value={currentValues.map((v) => v.id)} onChange={(valueIds) => {
@@ -1273,7 +1334,7 @@ export default function ProductEdit() {
                         </Text>
 
                         {selectedVariationValues.map((tag) => (
-                            <Tag key={tag.id} color="blue" closable onClose={() => {setSelectedVariationValues((prev) => prev.filter((v) => v.id !== tag.id));}} style={{ marginBottom: 6, marginRight: 6 }}>
+                            <Tag key={tag.id} color="blue" closable onClose={() => {setSelectedVariationValues((prev) =>prev.filter((v) => v.id !== tag.id));}} style={{ marginBottom: 6, marginRight: 6 }}>
                                 {tag.value}
                             </Tag>
                         ))}
@@ -1285,13 +1346,11 @@ export default function ProductEdit() {
                         )}
                     </div>
         
-                    {/*  Debug section to show what will be created */}
                     {selectedVariationValues.length > 0 && (
                         <div style={{marginBottom: 12,padding: 12,background: "#f0f2f5",borderRadius: 6,}}>
                             <Text strong style={{ display: "block", marginBottom: 8 }}>
                                 Preview - Combinations that will be created:
                             </Text>
-
                             {(() => {
                                 const groupedValues = {};
                                 selectedVariationValues.forEach((value) => {
@@ -1303,7 +1362,7 @@ export default function ProductEdit() {
             
                                 const attributeGroups = Object.values(groupedValues);
                                 let combinations = [];
-            
+                
                                 if (attributeGroups.length === 3) {
                                     combinations = attributeGroups[0].flatMap((v1) => attributeGroups[1].flatMap((v2) => attributeGroups[2].map((v3) => [v1.value,v2.value,v3.value,])));
                                 } else if (attributeGroups.length === 2) {
@@ -1319,6 +1378,7 @@ export default function ProductEdit() {
                                                 {combo.join(" + ")}
                                             </Tag>
                                         ))}
+                                        
                                         <div style={{ marginTop: 8 }}>
                                             <Text type="secondary">
                                                 Total variations: {combinations.length}
@@ -1347,10 +1407,10 @@ export default function ProductEdit() {
                     </Form.Item>
 
                     <Form.Item label="Is Default">
-                        <Select placeholder="Select Default" value={multiIsDefault} onChange={setMultiIsDefault} options={[{label: "No", value: 0 },{ label: "Yes", value: 1 },]}/>
+                        <Select placeholder="Select Default" value={multiIsDefault} onChange={setMultiIsDefault} options={[{ label: "No", value: 0 },{ label: "Yes", value: 1 },]}/>
                     </Form.Item>
                 </Form>
             </Modal>
-        </div>
+        </>
     )
 }
