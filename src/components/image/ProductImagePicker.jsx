@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal, Button, Row, Col, Tabs, Upload, message } from "antd";
-import { PlusOutlined, InboxOutlined } from "@ant-design/icons";
+import { InboxOutlined, PlusOutlined, CheckCircleFilled, CloudUploadOutlined } from "@ant-design/icons";
 import { postData } from "../../api/common/common";
 
 const { Dragger } = Upload;
@@ -97,21 +97,9 @@ export default function ProductImagePicker({ gallery = [], fetchMore, hasMore, l
             {preview ? (
                 <img src={preview} alt="selected" className="gallary-uploaded-img" onClick={() => setGalleryOpen(true)} style={{ cursor: "pointer", width: 120, height: 120, objectFit: "fill", borderRadius: 8 }}/>
             ) : (
-                <div className="gallary-modal-box" onClick={() => setGalleryOpen(true)}
-                    style={{
-                        width         : 120,
-                        height        : 120,
-                        display       : "flex",
-                        flexDirection : "column",
-                        justifyContent: "center",
-                        alignItems    : "center",
-                        border        : "1px dashed #ccc",
-                        borderRadius  : 8,
-                        cursor        : "pointer"
-                    }}
-                >
-                    <PlusOutlined style={{ fontSize: 24, color: "#888" }} />
-                    <div style={{ marginTop: 8, color: "#888" }}>Upload</div>
+                <div className="gallary-modal-box" onClick={() => setGalleryOpen(true)}>
+                    <CloudUploadOutlined style={{ fontSize: 28 }} />
+                    <div style={{ marginTop: 8, fontWeight: 600 }}>Media Library</div>
                 </div>
             )}
 
@@ -148,23 +136,14 @@ export default function ProductImagePicker({ gallery = [], fetchMore, hasMore, l
                             <div style={{ maxHeight: '60vh', overflowY: 'auto', overflowX: 'hidden', padding: '10px 5px' }}>
                                 <Row gutter={[16, 16]}>
                                     {gallery.map((item) => (
-                                        <Col span={6} key={item.id}>
-                                            <div className={`sub-gallary-images-box ${selectedIds.includes(item.id) ? "sub-selected" : ""}`} onClick={() => handleSelectGallery(item)}
-                                                style={{
-                                                    border      : selectedIds.includes(item.id) ? "2px solid #1890ff": "1px solid #eee",
-                                                    borderRadius: 6,
-                                                    overflow    : "hidden",
-                                                    cursor      : "pointer",
-                                                    position    : "relative"
-                                                }}
-                                            >
-                                                <img src={item.img_path} className="sub-gallery-img" style={{ width: "100%", height: 80, objectFit: "cover" }}/>
-                                                {selectedIds.includes(item.id) && (
-                                                    <div style={{
-                                                        position: 'absolute', top: 4, right: 4, background: '#1890ff', color: '#fff',
-                                                        width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                                    }}>✓</div>
-                                                )}
+                                        <Col xs={12} sm={8} md={6} lg={4} key={item.id}>
+                                            <div className={`sub-gallary-images-box ${selectedIds.includes(item.id) ? "sub-selected" : ""}`} onClick={() => handleSelectGallery(item)}>
+                                                <img src={item.img_path} className="sub-gallery-img" alt="Gallery item" />
+                                                <div className="selection-overlay">
+                                                    <div className="selection-check">
+                                                        <CheckCircleFilled />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </Col>
                                     ))}

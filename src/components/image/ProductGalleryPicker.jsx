@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal, Button, Row, Col, Tabs, Upload, message, } from "antd";
-import { PlusOutlined, DeleteOutlined, InboxOutlined } from "@ant-design/icons";
+import { PlusOutlined, DeleteOutlined, InboxOutlined, CloudUploadOutlined, CheckCircleFilled } from "@ant-design/icons";
 import { postData } from "../../api/common/common";
 
 const { Dragger } = Upload;
@@ -127,44 +127,36 @@ export default function ProductGalleryPicker({gallery = [],fetchMore,hasMore,loa
 
     return (
         <>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <div onClick={() => setGalleryOpen(true)}
-                    style={{
-                        width         : 80,
-                        height        : 80,
-                        display       : "flex",
-                        justifyContent: "center",
-                        alignItems    : "center",
-                        border        : "1px dashed #ccc",
-                        borderRadius  : 8,
-                        cursor        : "pointer"
-                    }}
-                >
-                    <PlusOutlined />
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                <div className="gallary-modal-box" onClick={() => setGalleryOpen(true)}>
+                    <CloudUploadOutlined style={{ fontSize: 24 }} />
+                    <div style={{ marginTop: 8, fontSize: '11px', fontWeight: 600 }}>Media Library</div>
                 </div>
 
                 {images.map((img) => (
-                    <div key={img.uid} style={{ position: "relative" }}>
-                        <img src={img.url}
-                            style={{
-                                width       : 80,
-                                height      : 80,
-                                objectFit   : "fill",
-                                borderRadius: 8
-                            }}
-                        />
-
-                        <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removeImage(img.uid)}
+                    <div key={img.uid} className="gallery-preview-item" style={{ position: "relative" }}>
+                        <img src={img.url} alt="product" className="gallary-uploaded-img" />
+                        <Button 
+                            type="text" 
+                            danger 
+                            icon={<DeleteOutlined style={{ fontSize: '10px' }} />} 
+                            onClick={() => removeImage(img.uid)}
+                            className="preview-remove-btn"
                             style={{
                                 position    : "absolute",
-                                top         : -8,
-                                right       : -8,
+                                top         : -6,
+                                right       : -6,
                                 background  : "#ff4d4f",
                                 color       : "#fff",
                                 borderRadius: "50%",
                                 width       : 20,
                                 height      : 20,
-                                padding     : 0
+                                padding     : 0,
+                                display     : 'flex',
+                                alignItems  : 'center',
+                                justifyContent: 'center',
+                                border      : '2px solid #fff',
+                                boxShadow   : '0 2px 4px rgba(0,0,0,0.1)'
                             }}
                         />
                     </div>
@@ -211,46 +203,14 @@ export default function ProductGalleryPicker({gallery = [],fetchMore,hasMore,loa
                                             const selected = selectedIds.includes(item.id);
 
                                             return (
-                                                <Col span={6} key={item.id}>
-                                                    <div onClick={() => handleSelect(item)}
-                                                        style={{
-                                                            border      : selected ? "2px solid #1677ff": "1px solid #eee",
-                                                            borderRadius: 6,
-                                                            overflow    : "hidden",
-                                                            cursor      : "pointer",
-                                                            position    : "relative"
-                                                        }}
-                                                    >
-                                                        <img src={item.img_path}
-                                                            style={{
-                                                                width    : "100%",
-                                                                height   : 80,
-                                                                objectFit: "cover",
-                                                                opacity  : selected ? 0.7: 1
-                                                            }}
-                                                        />
-
-                                                        {selected && (
-                                                            <div
-                                                                style={{
-                                                                    position      : "absolute",
-                                                                    top           : 4,
-                                                                    right         : 4,
-                                                                    width         : 20,
-                                                                    height        : 20,
-                                                                    borderRadius  : "50%",
-                                                                    background    : "#1677ff",
-                                                                    color         : "#fff",
-                                                                    display       : "flex",
-                                                                    alignItems    : "center",
-                                                                    justifyContent: "center",
-                                                                    fontSize      : 12,
-                                                                    fontWeight    : "bold"
-                                                                }}
-                                                            >
-                                                                ✓
+                                                <Col xs={12} sm={8} md={6} lg={4} key={item.id}>
+                                                    <div className={`sub-gallary-images-box ${selected ? "sub-selected" : ""}`} onClick={() => handleSelect(item)}>
+                                                        <img src={item.img_path} className="sub-gallery-img" alt="Gallery" />
+                                                        <div className="selection-overlay">
+                                                            <div className="selection-check">
+                                                                <CheckCircleFilled />
                                                             </div>
-                                                        )}
+                                                        </div>
                                                     </div>
                                                 </Col>
                                             );
