@@ -355,3 +355,86 @@
   transform: translateY(-1px);
   transition: all 0.2s ease;
 }
+
+/* Premium Action Buttons Styling */
+.action-buttons-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-btn {
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: 1px solid transparent !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.action-btn .anticon {
+  font-size: 14px;
+}
+
+.action-btn.quick-edit {
+  color: #1677ff !important;
+  background-color: #e6f4ff !important;
+}
+.action-btn.quick-edit:hover {
+  background-color: #1677ff !important;
+  color: #fff !important;
+}
+
+.action-btn.view {
+  color: #13c2c2 !important;
+  background-color: #e6fffb !important;
+}
+.action-btn.view:hover {
+  background-color: #13c2c2 !important;
+  color: #fff !important;
+}
+
+.action-btn.edit {
+  color: #722ed1 !important;
+  background-color: #f9f0ff !important;
+}
+.action-btn.edit:hover {
+  background-color: #722ed1 !important;
+  color: #fff !important;
+}
+
+.action-btn.duplicate {
+  color: #fa8c16 !important;
+  background-color: #fff7e6 !important;
+}
+.action-btn.duplicate:hover {
+  background-color: #fa8c16 !important;
+  color: #fff !important;
+}
+
+.action-btn.delete {
+  color: #ff4d4f !important;
+  background-color: #fff1f0 !important;
+}
+.action-btn.delete:hover {
+  background-color: #ff4d4f !important;
+  color: #fff !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-actions.action-buttons-wrapper {
+    gap: 6px;
+  }
+  
+  .mobile-actions .action-btn {
+    width: 30px !important;
+    height: 30px !important;
+  }
+}

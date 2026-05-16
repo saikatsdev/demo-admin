@@ -1,9 +1,9 @@
-import {ArrowLeftOutlined,CopyOutlined,DeleteOutlined,EditOutlined,EyeOutlined,FilterOutlined,InfoCircleOutlined,PlusOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,CopyOutlined,DeleteOutlined,EditOutlined,EyeOutlined,FilterOutlined,FormOutlined,InfoCircleOutlined,PlusOutlined} from "@ant-design/icons";
 import {Input as AntInput,Typography,Breadcrumb,Badge,Tabs,Button,Col,DatePicker,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {deleteData,getDatas,postData,putData} from "../../api/common/common";
+import {deleteData,getDatas,postData} from "../../api/common/common";
 import { useDebounce } from "../../hooks/useDebounce";
 import useTitle from "../../hooks/useTitle";
 import "./Product.css";
@@ -32,55 +32,50 @@ export default function Product() {
     // Variable
     const navigate = useNavigate();
 
-    const [searchQuery, setSearchQuery]             = useState("");
-    const [selectedRowKeys, setSelectedRowKeys]     = useState([]);
-    const [loading, setLoading]                     = useState(false);
-    const [products, setProducts]                   = useState([]);
-    const [tableData, setTableData]                 = useState(null);
-    const [currentPage, setCurrentPage]             = useState(1);
-    const [pageSize, setPageSize]                   = useState(10);
-    const [productStatus, setProductStatus]         = useState("active");
-    const [selectedAction, setSelectedAction]       = useState("");
-    const [isActionShow, setIsActionShow]           = useState(false);
-    const [filtersOpen, setFiltersOpen]             = useState(true);
-    const [activeCount, setActiveCount]             = useState(0);
-    const [inactiveCount, setInactiveCount]         = useState(0);
-    const [activeTab, setActiveTab]                 = useState("active");
-    const [previewModal, setPreviewModal]           = useState(false);
-    const [imagePreviewModal, setImagePreviewModal] = useState(false);
-    const [bulkStatusModal, setBulkStatusModal]     = useState(false);
-    const [previewData, setPreviewData]             = useState(null);
-    const [previewImage, setPreviewImage]           = useState("");
-    const [bulkStatusValue, setBulkStatusValue]     = useState("");
-    const [brandIds, setBrandIds]                   = useState([]);
-    const [categoryIds, setCategoryIds]             = useState([]);
-    const [subCategoryIds, setSubCategoryIds]       = useState([]);
-    const [subSubCategoryIds, setSubSubCategoryIds] = useState([]);
-    const [attributeValueIds, setAttributeValueIds] = useState([]);
-    const [tagIds, setTagIds]                       = useState([]);
-    const [dateRange, setDateRange]                 = useState([null, null]);
-    const [minPrice, setMinPrice]                   = useState();
-    const [maxPrice, setMaxPrice]                   = useState();
-    const [productTypeId, setProductTypeId]         = useState(null);
-    const [brands, setBrands]                       = useState([]);
-    const [categories, setCategories]               = useState([]);
-    const [subCategories, setSubCategories]         = useState([]);
+    const [searchQuery, setSearchQuery]               = useState("");
+    const [selectedRowKeys, setSelectedRowKeys]       = useState([]);
+    const [loading, setLoading]                       = useState(false);
+    const [products, setProducts]                     = useState([]);
+    const [tableData, setTableData]                   = useState(null);
+    const [currentPage, setCurrentPage]               = useState(1);
+    const [pageSize, setPageSize]                     = useState(10);
+    const [productStatus, setProductStatus]           = useState("active");
+    const [selectedAction, setSelectedAction]         = useState("");
+    const [isActionShow, setIsActionShow]             = useState(false);
+    const [filtersOpen, setFiltersOpen]               = useState(true);
+    const [activeCount, setActiveCount]               = useState(0);
+    const [inactiveCount, setInactiveCount]           = useState(0);
+    const [activeTab, setActiveTab]                   = useState("active");
+    const [previewModal, setPreviewModal]             = useState(false);
+    const [imagePreviewModal, setImagePreviewModal]   = useState(false);
+    const [bulkStatusModal, setBulkStatusModal]       = useState(false);
+    const [previewData, setPreviewData]               = useState(null);
+    const [previewImage, setPreviewImage]             = useState("");
+    const [bulkStatusValue, setBulkStatusValue]       = useState("");
+    const [brandIds, setBrandIds]                     = useState([]);
+    const [categoryIds, setCategoryIds]               = useState([]);
+    const [subCategoryIds, setSubCategoryIds]         = useState([]);
+    const [subSubCategoryIds, setSubSubCategoryIds]   = useState([]);
+    const [attributeValueIds, setAttributeValueIds]   = useState([]);
+    const [tagIds, setTagIds]                         = useState([]);
+    const [dateRange, setDateRange]                   = useState([null, null]);
+    const [minPrice, setMinPrice]                     = useState();
+    const [maxPrice, setMaxPrice]                     = useState();
+    const [productTypeId, setProductTypeId]           = useState(null);
+    const [brands, setBrands]                         = useState([]);
+    const [categories, setCategories]                 = useState([]);
+    const [subCategories, setSubCategories]           = useState([]);
     const [subCategoryList, setSubCategoryList]       = useState([]);
-    const [subSubCategories, setSubSubCategories]   = useState([]);
+    const [subSubCategories, setSubSubCategories]     = useState([]);
     const [subSubCategoryList, setSubSubCategoryList] = useState([]);
-    const [attributeValues, setAttributeValues]     = useState([]);
-    const [productTypes, setProductTypes]           = useState([]);
-    const [modal, modalContextHolder]               = Modal.useModal();
-    const [messageApi, contextHolder]               = message.useMessage();
-    const [isTrashView, setIsTrashView]             = useState(false);
-    const [trashData, setTrashData]                 = useState([]);
-    const [trashTableMeta, setTrashTableMeta]       = useState(null);
-    const [trashPage, setTrashPage]                 = useState(1);
-    const [trashPageSize, setTrashPageSize]         = useState(10);
-    const [settingsData, setSettingsData]           = useState(null);
-    const [isModalOpen, setIsModalOpen]             = useState(false);
-    const [selectedProduct, setSelectedProduct]     = useState(null);
-	const [copyLoadingId, setCopyLoadingId]         = useState(null);
+    const [attributeValues, setAttributeValues]       = useState([]);
+    const [productTypes, setProductTypes]             = useState([]);
+    const [modal, modalContextHolder]                 = Modal.useModal();
+    const [messageApi, contextHolder]                 = message.useMessage();
+    const [settingsData, setSettingsData]             = useState(null);
+    const [isModalOpen, setIsModalOpen]               = useState(false);
+    const [selectedProduct, setSelectedProduct]       = useState(null);
+    const [copyLoadingId, setCopyLoadingId]           = useState(null);
     const [quickEditOpen, setQuickEditOpen]           = useState(false);
     const [editingProduct, setEditingProduct]         = useState(null);
     const [quickEditLoading, setQuickEditLoading]     = useState(false);
@@ -307,14 +302,8 @@ export default function Product() {
                         <Space direction="vertical" size={6} style={{ width: '100%' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Text strong style={{ fontSize: '12px', color: '#135200' }}>Current Stock:</Text>
-                                <Badge 
-                                    count={current} 
-                                    showZero 
-                                    overflowCount={9999} 
-                                    style={{ 
-                                        backgroundColor: current > 5 ? '#52c41a' : '#ff4d4f',
-                                        boxShadow: 'none'
-                                    }} 
+                                <Badge count={current} showZero overflowCount={9999} 
+                                    style={{ backgroundColor: current > 5 ? '#52c41a' : '#ff4d4f', boxShadow: 'none' }} 
                                 />
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -333,36 +322,36 @@ export default function Product() {
         {
             title: "Actions",
             key: "actions",
-            width: 180,
+            width: 220,
             fixed: "right",
             render: (_, record) => (
-                <Space size="small">
-                    <Tooltip title="Quick Edit">
-                        <Button size="small" icon={<img src='/editing.png' alt="edit" style={{ width: 14, height: 14 }} />} onClick={() => handleQuickEdit(record)}/>
+                <div className="action-buttons-wrapper">
+                    <Tooltip title="Quick Edit" color="#1677ff">
+                        <Button className="action-btn quick-edit" size="small" icon={<FormOutlined />} onClick={() => handleQuickEdit(record)} />
                     </Tooltip>
 
-                    <Tooltip title="Product View">
-                        <Button size="small" icon={<EyeOutlined />} onClick={() => handlePreview(record)}/>
+                    <Tooltip title="Product View" color="#13c2c2">
+                        <Button className="action-btn view" size="small" icon={<EyeOutlined />} onClick={() => handlePreview(record)} />
                     </Tooltip>
 
                     {productUpdate && (
-                        <Tooltip title="Product Edit">
-                            <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}/>
+                        <Tooltip title="Product Edit" color="#722ed1">
+                            <Button className="action-btn edit" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
                         </Tooltip>
                     )}
         
                     {productCreate && (
-                        <Tooltip title="Product Duplicate">
-                            <Button size="small" icon={<CopyOutlined />} onClick={() => handleCopy(record.id)} loading={copyLoadingId === record.id}/>
+                        <Tooltip title="Product Duplicate" color="#fa8c16">
+                            <Button className="action-btn duplicate" size="small" icon={<CopyOutlined />} onClick={() => handleCopy(record.id)} loading={copyLoadingId === record.id} />
                         </Tooltip>
                     )}
 
                     {productDelete && (
-                        <Tooltip title="Product Delete">
-                            <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}/>
+                        <Tooltip title="Product Delete" color="#ff4d4f">
+                            <Button className="action-btn delete" size="small" icon={<DeleteOutlined />} onClick={() => handleDelete(record)} />
                         </Tooltip>
                     )}
-                </Space>
+                </div>
             ),
         },
     ];
@@ -658,152 +647,9 @@ export default function Product() {
         }
     };
 
-    const fetchTrashData = async () => {
-        setLoading(true);
-        try {
-            const res = await getDatas("/admin/products/trash", {page: trashPage,paginate_size: trashPageSize});
-
-            if (res?.success) {
-                setTrashData(res.result?.data || []);
-                setTrashTableMeta({
-                    total: res.result?.meta?.total || 0,
-                    current_page: res.result?.meta?.current_page || 1,
-                    per_page: res.result?.meta?.per_page || trashPageSize,
-                });
-            }
-        } catch {
-            message.error("Failed to load trash list");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const handleToggleTrash = () => {
         navigate("/product/trash");
-    };
-
-    const handleBulkTrashAction = async (action) => {
-        if (selectedRowKeys.length === 0) return message.error("Select at least one product");
-    
-        if (action === "bulk-restore") {
-            try {
-                const res = await putData("/admin/products/bulk/restore", {product_ids: selectedRowKeys});
-
-                if (res?.success) {
-                    message.success("Bulk restore done");
-                    setSelectedRowKeys([]);
-                    setIsActionShow(false);
-                    fetchTrashData();
-        
-                    if (!isTrashView) {
-                        setLoading(true);
-                        try {
-                            const params = new URLSearchParams();
-                            params.append("page", currentPage);
-                            params.append("paginate_size", pageSize);
-
-                            if (debouncedSearchQuery) {
-                                params.append("search_key", debouncedSearchQuery);
-                            }
-
-                            params.append("status", productStatus);
-            
-                            if (brandIds.length > 0) {
-                                brandIds.forEach((bId) => params.append("brand_ids[]", bId));
-                            }
-
-                            if (categoryIds.length > 0) {
-                                categoryIds.forEach((cId) => params.append("category_ids[]", cId));
-                            }
-
-                            if (subCategoryIds.length > 0) {
-                                subCategoryIds.forEach((sId) => params.append("sub_category_ids[]", sId));
-                            }
-
-                            if (subSubCategoryIds.length > 0) {
-                                subSubCategoryIds.forEach((ssId) => params.append("sub_sub_category_ids[]", ssId));
-                            }
-
-                            if (attributeValueIds.length > 0) {
-                                attributeValueIds.forEach((avId) => params.append("attribute_value_ids[]", avId));
-                            }
-
-                            if (tagIds.length > 0) {
-                                tagIds.forEach((tId) => params.append("tag_ids[]", tId));
-                            }
-
-                            if (productTypeId) {
-                                params.append("product_type_id", productTypeId);
-                            }
-
-                            if (dateRange?.[0] && dateRange?.[1]) {
-                                params.append("start_date", dayjs(dateRange[0]).format("YYYY-MM-DD"));
-                                params.append("end_date", dayjs(dateRange[1]).format("YYYY-MM-DD"));
-                            }
-
-                            if (minPrice !== undefined && minPrice !== null && minPrice !== "") {
-                                params.append("min_price", String(minPrice));
-                            }
-
-                            if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
-                                params.append("max_price", String(maxPrice));
-                            }
-            
-                            const paramsObj = {};
-                            params.forEach((value, key) => {
-                                if (paramsObj[key]) {
-                                    if (Array.isArray(paramsObj[key])) {
-                                        paramsObj[key].push(value);
-                                    } else {
-                                        paramsObj[key] = [paramsObj[key], value];
-                                    }
-                                } else {
-                                    paramsObj[key] = value;
-                                }
-                            });
-                
-                            const refreshed = await getDatas("/admin/products", paramsObj);
-                            if (refreshed?.success) {
-                                setTableData(refreshed.result);
-                                setProducts(refreshed.result?.data || []);
-                            }
-                        } finally {
-                            setLoading(false);
-                        }
-                    }
-                } else {
-                    message.error(res?.msg || "Bulk restore failed");
-                }
-            } catch {
-                message.error("Bulk restore failed");
-            }
-        }
-    
-        if (action === "bulk-permanent-delete") {
-            modal.confirm({
-                title: "Permanently delete selected products?",
-                content: "This cannot be undone.",
-                okText: "Yes, delete",
-                okType: "danger",
-                cancelText: "No",
-                centered: true,
-                onOk: async () => {
-                    try {
-                        const res = await deleteData("/admin/products/bulk/permanent-delete",{ product_ids: selectedRowKeys });
-                        if (res?.success) {
-                            message.success("Bulk permanent delete done");
-                            setSelectedRowKeys([]);
-                            setIsActionShow(false);
-                            fetchTrashData();
-                        } else {
-                            message.error(res?.msg || "Bulk delete failed");
-                        }
-                    } catch {
-                        message.error("Bulk delete failed");
-                    }
-                },
-            });
-        }
     };
 
     const handleBulkDelete = async (action) => {
@@ -937,19 +783,6 @@ export default function Product() {
         fetchProductsData();
     }, [currentPage,pageSize,productStatus,debouncedSearchQuery,brandIds,categoryIds,subCategoryIds,subSubCategoryIds,attributeValueIds,tagIds,dateRange,minPrice,maxPrice,productTypeId]);
 
-    useEffect(() => {
-        if (isTrashView) {
-            fetchTrashData();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isTrashView, trashPage, trashPageSize]);
-
-    useEffect(() => {
-        if (isTrashView && !loading && trashData.length === 0 && trashTableMeta?.total === 0) {
-            message.info("Trash is empty");
-            setIsTrashView(false);
-        }
-    }, [isTrashView, loading, trashData, trashTableMeta]);
 
     const handleQuickUpdate = async (values) => {
         const formData = new FormData();
@@ -1123,17 +956,8 @@ export default function Product() {
                                 </Button>
             
                                 {isActionShow && (
-                                    <Select value={selectedAction} onChange={isTrashView ? handleBulkTrashAction : handleBulkAction} placeholder="Action" style={{ width: 150 }}>
-                                    {isTrashView ? (
-                                        <>
-                                        <Option value="bulk-restore">Bulk Restore</Option>
-                                        <Option value="bulk-permanent-delete">
-                                            Bulk Permanent Delete
-                                        </Option>
-                                        </>
-                                    ) : (
+                                    <Select value={selectedAction} onChange={handleBulkAction} placeholder="Action" style={{ width: 150 }}>
                                         <Option value="bulk-status-update">Bulk Status Update</Option>
-                                    )}
                                     </Select>
                                 )}
             
@@ -1171,17 +995,8 @@ export default function Product() {
                         </Button>
         
                         {isActionShow && (
-                            <Select value={selectedAction} onChange={isTrashView ? handleBulkTrashAction : handleBulkAction} placeholder="Action" style={{ flex: 1 }}>
-                                {isTrashView ? (
-                                    <>
-                                        <Option value="bulk-restore">Bulk Restore</Option>
-                                        <Option value="bulk-permanent-delete">
-                                            Bulk Permanent Delete
-                                        </Option>
-                                    </>
-                                ) : (
-                                    <Option value="bulk-status-update">Bulk Status Update</Option>
-                                )}
+                            <Select value={selectedAction} onChange={handleBulkAction} placeholder="Action" style={{ flex: 1 }}>
+                                <Option value="bulk-status-update">Bulk Status Update</Option>
                             </Select>
                         )}
         
@@ -1461,26 +1276,56 @@ export default function Product() {
                                         )}
                 
                                         <div className="mobile-bottom">
-                                            <div className="mobile-actions">
-                                                <Tooltip title="Product View">
-                                                    <Button size="small" icon={<EyeOutlined />} onClick={() => handlePreview(item)}/>
+                                            <div className="mobile-actions action-buttons-wrapper">
+                                                <Tooltip title="Quick Edit" color="#1677ff">
+                                                    <Button 
+                                                        className="action-btn quick-edit"
+                                                        size="small" 
+                                                        icon={<FormOutlined />} 
+                                                        onClick={() => handleQuickEdit(item)}
+                                                    />
+                                                </Tooltip>
+
+                                                <Tooltip title="Product View" color="#13c2c2">
+                                                    <Button 
+                                                        className="action-btn view"
+                                                        size="small" 
+                                                        icon={<EyeOutlined />} 
+                                                        onClick={() => handlePreview(item)}
+                                                    />
                                                 </Tooltip>
 
                                                 {productUpdate && (
-                                                    <Tooltip title="Product Edit">
-                                                        <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(item)}/>
+                                                    <Tooltip title="Product Edit" color="#722ed1">
+                                                        <Button 
+                                                            className="action-btn edit"
+                                                            size="small" 
+                                                            icon={<EditOutlined />} 
+                                                            onClick={() => handleEdit(item)}
+                                                        />
                                                     </Tooltip>
                                                 )}
 
                                                 {productCreate && (
-                                                    <Tooltip title="Product Copy">
-                                                        <Button size="small" icon={<CopyOutlined />} onClick={() => handleCopy(item.id)} loading={copyLoadingId === item.id}/>
+                                                    <Tooltip title="Product Copy" color="#fa8c16">
+                                                        <Button 
+                                                            className="action-btn duplicate"
+                                                            size="small" 
+                                                            icon={<CopyOutlined />} 
+                                                            onClick={() => handleCopy(item.id)} 
+                                                            loading={copyLoadingId === item.id}
+                                                        />
                                                     </Tooltip>
                                                 )}
 
                                                 {productDelete && (
-                                                    <Tooltip title="Product Delete">
-                                                        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(item)}/>
+                                                    <Tooltip title="Product Delete" color="#ff4d4f">
+                                                        <Button 
+                                                            className="action-btn delete"
+                                                            size="small" 
+                                                            icon={<DeleteOutlined />} 
+                                                            onClick={() => handleDelete(item)}
+                                                        />
                                                     </Tooltip>
                                                 )}
                                             </div>
