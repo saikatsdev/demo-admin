@@ -242,10 +242,14 @@ export default function AddDownSell() {
                                                 <div className="antd-search-dropdown">
                                                     {results.length > 0 ? results.map((item) => (
                                                         <div className="search-item-row" key={item.id} onClick={() => handleSelect(item)}>
-                                                            <img src={item.img_path} alt="" />
+                                                            <img src={item.image} alt="" />
                                                             <div className="info">
                                                                 <div className="name">{item.name}</div>
-                                                                <div className="meta">{item.category?.name} • {item.offer_price} BDT</div>
+                                                                <div className="meta">
+                                                                    {Array.isArray(item?.categories) && item.categories.length > 0
+                                                                        ? item.categories.map(category => category?.name).join(", ") : "N/A"}{" "}
+                                                                    | ৳{item.sell_price}
+                                                                </div>
                                                             </div>
                                                             <PlusOutlined style={{ color: '#1890ff' }} />
                                                         </div>
@@ -259,10 +263,15 @@ export default function AddDownSell() {
                                         {selectedProducts.map((p) => (
                                             <div className="upsell-product-card-lite" key={p.id}>
                                                 <div className="card-top">
-                                                    <img src={p?.img_path} alt="" />
+                                                    <img src={p?.image} alt="" />
                                                     <div className="details">
                                                         <h4>{p?.name}</h4>
-                                                        <p>{p?.category_name}</p>
+                                                        <p>
+                                                            ৳{p.sell_price} |{" "}
+                                                            {Array.isArray(p?.categories) && p.categories.length > 0
+                                                                ? p.categories.map(category => category?.name).join(", ")
+                                                                : "N/A"}
+                                                        </p>
                                                     </div>
                                                     <Button type="text" danger icon={<DeleteOutlined />} onClick={() => setSelectedProducts(selectedProducts.filter(item => item.id !== p.id))} />
                                                 </div>
