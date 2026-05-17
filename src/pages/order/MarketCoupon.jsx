@@ -1,5 +1,5 @@
-import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, DatePicker, Form, message, Modal, Popconfirm, Select, Space, Table, Tag } from "antd";
+import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined, EditOutlined, GiftOutlined, PercentageOutlined, CalendarOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, DatePicker, Form, message, Modal, Popconfirm, Select, Space, Table, Tag, Row, Col, Card, Statistic, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -20,77 +20,178 @@ export default function MarketCoupon() {
     const [filteredData, setFilteredData] = useState(marketCoupons);
     const [form]                          = Form.useForm();
 
+    // Stats calculations
+    const totalCoupons = marketCoupons.length;
+    const activeCoupons = marketCoupons.filter(c => c.status === 'active').length;
+    const percentageCoupons = marketCoupons.filter(c => c.discount_type === 'percentage').length;
+
     //Table Columns
     const columns = [
         {
             title: "SL",
-            key:"sl",
-            width: 10,
-            render: (_,__, index) => (
-                index + 1
+            key: "sl",
+            width: 60,
+            align: 'center',
+            render: (_, __, index) => (
+                <span style={{ 
+                    display       : 'inline-flex',
+                    alignItems    : 'center',
+                    justifyContent: 'center',
+                    width         : '24px',
+                    height        : '24px',
+                    borderRadius  : '50%',
+                    background    : '#f3f4f6',
+                    color         : '#6b7280',
+                    fontWeight    : 500,
+                    fontSize      : '12px'
+                }}>
+                    {index + 1}
+                </span>
             )
         },
         {
             title: "Name",
             dataIndex: "name",
-            key: "name"
+            key: "name",
+            render: (text) => <span style={{ fontWeight: 600, color: '#1f2937' }}>{text}</span>
         },
         {
-            title: "Code",
+            title: "Coupon Code",
             dataIndex: "code",
-            key: "code"
+            key: "code",
+            render: (code) => (
+                <span style={{
+                    fontFamily: "monospace",
+                    fontWeight: "bold",
+                    color: "#4f46e5",
+                    background: "#e0e7ff",
+                    border: "1px dashed #6366f1",
+                    padding: "4px 10px",
+                    borderRadius: "6px",
+                    letterSpacing: "0.5px",
+                    fontSize: "13px"
+                }}>
+                    {code}
+                </span>
+            )
         },
         {
-            title: "Discount Type",
-            dataIndex: "discount_type",
-            key: "discount_type"
+            title: "Discount",
+            key: "discount",
+            render: (_, record) => {
+                const isPercent = record.discount_type === 'percentage';
+                return (
+                    <span style={{ 
+                        fontWeight: 600, 
+                        color: isPercent ? "#10b981" : "#3b82f6",
+                        background: isPercent ? "#ecfdf5" : "#eff6ff",
+                        padding: "4px 8px",
+                        borderRadius: "4px",
+                        fontSize: "13px"
+                    }}>
+                        {isPercent ? `${record.discount_amount}% OFF` : `৳${Number(record.discount_amount).toLocaleString()} OFF`}
+                    </span>
+                );
+            }
         },
         {
-            title: "Discount Amount",
-            dataIndex: "discount_amount",
-            key: "discount_amount"
-        },
-        {
-            title: "Minimum Cart Amount",
+            title: "Min. Cart Amount",
             dataIndex: "min_cart_amount",
-            key: "min_cart_amount"
+            key: "min_cart_amount",
+            render: (amount) => (
+                <span style={{ fontWeight: 500, color: "#4b5563" }}>
+                    ৳{Number(amount).toLocaleString()}
+                </span>
+            )
         },
         {
-            title: "Started At",
-            dataIndex: "started_at",
-            key: "started_at"
-        },
-        {
-            title: "Ended At",
-            dataIndex: "ended_at",
-            key: "ended_at"
+            title: "Validity",
+            key: "validity",
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px' }}>
+                    <span style={{ color: '#4b5563' }}>
+                        <span style={{ color: '#9ca3af', marginRight: '4px' }}>Start:</span>
+                        {record.started_at ? dayjs(record.started_at).format("DD MMM, YYYY") : 'N/A'}
+                    </span>
+                    <span style={{ color: '#ef4444', fontWeight: 500 }}>
+                        <span style={{ color: '#9ca3af', marginRight: '4px', fontWeight: 'normal' }}>End:</span>
+                        {record.ended_at ? dayjs(record.ended_at).format("DD MMM, YYYY") : 'N/A'}
+                    </span>
+                </div>
+            )
         },
         {
             title: "Description",
             dataIndex: "description",
-            key: "description"
+            key: "description",
+            render: (desc) => (
+                <Tooltip title={desc}>
+                    <span style={{ color: '#6b7280', fontSize: '13px', display: 'block', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {desc || "-"}
+                    </span>
+                </Tooltip>
+            )
         },
         {
             title: "Status",
             dataIndex: "status",
             key: "status",
-            render: (status) => (
-                <Tag color={status === 'active' ? "green" : "danger"} style={{textTransform:"capitalize"}}>{status}</Tag>
-            )
+            width: 100,
+            align: 'center',
+            render: (status) => {
+                const isActive = status === 'active';
+                return (
+                    <Tag 
+                        icon={isActive ? <CheckCircleOutlined /> : <CloseCircleOutlined />} 
+                        color={isActive ? "success" : "error"} 
+                        style={{ 
+                            textTransform: "capitalize", 
+                            fontWeight: 500, 
+                            borderRadius: '12px',
+                            padding: '2px 8px'
+                        }}
+                    >
+                        {status}
+                    </Tag>
+                );
+            }
         },
         {
             title: "Action",
             key: "operation",
-            width:170,
+            width: 120,
+            align: 'center',
             render: (_, record) => (
-                <Space>
-                    <Button size="small" type="primary" onClick={() => onEdit(record)}>
-                        Edit
-                    </Button>
-                    <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Button size="small" danger>
-                            Delete
-                        </Button>
+                <Space size="middle">
+                    <Tooltip title="Edit Coupon">
+                        <Button 
+                            type="text" 
+                            icon={<EditOutlined style={{ color: "#1890ff" }} />} 
+                            onClick={() => onEdit(record)} 
+                            style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                background: '#e6f7ff',
+                                borderRadius: '6px'
+                            }}
+                        />
+                    </Tooltip>
+                    <Popconfirm title="Delete this coupon?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
+                        <Tooltip title="Delete Coupon">
+                            <Button 
+                                type="text" 
+                                danger
+                                icon={<DeleteOutlined />} 
+                                style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    background: '#fff1f0',
+                                    borderRadius: '6px'
+                                }}
+                            />
+                        </Tooltip>
                     </Popconfirm>
                 </Space>
             )
@@ -249,70 +350,145 @@ export default function MarketCoupon() {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
-                <Space>
-                    <Button size="small" icon={<DeleteOutlined />}>Trash</Button>
-                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
+            {/* Quick Stat Summary Cards */}
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={8}>
+                    <Card bordered={false} style={{ background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', borderRadius: '10px' }}>
+                        <Statistic 
+                            title={<span style={{ color: '#64748b', fontSize: '13px', fontWeight: 500 }}>Total Coupons</span>}
+                            value={totalCoupons} 
+                            prefix={<GiftOutlined style={{ color: '#6366f1', marginRight: '6px' }} />}
+                            valueStyle={{ color: '#0f172a', fontWeight: 700 }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                    <Card bordered={false} style={{ background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', borderRadius: '10px' }}>
+                        <Statistic 
+                            title={<span style={{ color: '#64748b', fontSize: '13px', fontWeight: 500 }}>Active Coupons</span>}
+                            value={activeCoupons} 
+                            prefix={<CheckCircleOutlined style={{ color: '#10b981', marginRight: '6px' }} />}
+                            valueStyle={{ color: '#10b981', fontWeight: 700 }}
+                        />
+                    </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                    <Card bordered={false} style={{ background: '#f8fafc', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', borderRadius: '10px' }}>
+                        <Statistic 
+                            title={<span style={{ color: '#64748b', fontSize: '13px', fontWeight: 500 }}>Percentage Discounts</span>}
+                            value={percentageCoupons} 
+                            prefix={<PercentageOutlined style={{ color: '#3b82f6', marginRight: '6px' }} />}
+                            valueStyle={{ color: '#3b82f6', fontWeight: 700 }}
+                        />
+                    </Card>
+                </Col>
+            </Row>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <AntInput.Search allowClear placeholder="Search by name or status..." style={{ width: 320 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
+                <Space size="middle">
+                    <Button type="primary" size="large" icon={<PlusOutlined />} onClick={openCreate} style={{ borderRadius: '6px', display: 'inline-flex', alignItems: 'center' }}>
+                        Add Coupon
+                    </Button>
+                    <Button icon={<ArrowLeftOutlined />} size="large" onClick={() => window.history.back()} style={{ borderRadius: '6px', display: 'inline-flex', alignItems: 'center' }}>
+                        Back
+                    </Button>
                 </Space>
             </div>
 
-            <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
-
-            <div>
-                <Modal title={editingItems ? "Edit Coupon" : "Create New Coupon"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"}
-                    confirmLoading={loading} onCancel={() => setIsModalOpen(false)}
-                >
-                    <div>
-                        <Form form={form} layout="vertical" initialValues={{started_at: editingItems?.started_at ? dayjs(editingItems.started_at) : null, ended_at: editingItems?.ended_at ? dayjs(editingItems.ended_at) : null,}}>
-                            <div>
-                                <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:"16px"}}>
-                                    <Form.Item name="name" label="Name" rules={[{ required: true }]}>
-                                        <AntInput placeholder="Enter Name" />
-                                    </Form.Item>
-
-                                    <Form.Item name="code" label="Coupon Code" rules={[{ required: true }]}>
-                                        <AntInput placeholder="Enter Coupon Code" />
-                                    </Form.Item>
-                                </div>
-
-                                <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", gap:"16px"}}>
-                                    <Form.Item name="discount_amount" label="Discount Amount" rules={[{ required: true }]}>
-                                        <AntInput placeholder="Enter Discount Amount" />
-                                    </Form.Item>
-
-                                    <Form.Item name="min_cart_amount" label="Min. Cart Amount" rules={[{ required: true }]}>
-                                        <AntInput placeholder="Enter Cart Amount" />
-                                    </Form.Item>
-                                </div>
-
-                                <Form.Item name="discount_type" label="Discount Type" rules={[{ required: true }]}>
-                                    <Select  options={[{ value: 'fixed', label: 'Fixed' }, { value: 'percentage', label: '% Percentage' }]} />
-                                </Form.Item>
-                                
-                                <Form.Item name="started_at" label="Start Date" rules={[{ required: true }]}>
-                                    <DatePicker style={{ width: "100%" }} />
-                                </Form.Item>
-
-                                <Form.Item name="ended_at" label="End Date" rules={[{ required: true }]}>
-                                    <DatePicker style={{ width: "100%" }} />
-                                </Form.Item>
-
-
-                                <Form.Item name="description" label="Description" rules={[{ required: true }]}>
-                                    <AntInput.TextArea rows={4}  placeholder="Enter your description here..."/>
-                                </Form.Item>
-
-                                <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">
-                                    <Select options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
-                                </Form.Item>
-                            </div>
-                        </Form>
-                    </div>
-                </Modal>
+            <div style={{ background: '#ffffff', padding: '16px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                <Table 
+                    bordered={false} 
+                    loading={loading} 
+                    columns={columns}  
+                    dataSource={filteredData}
+                    rowKey="id"
+                    pagination={{
+                        showSizeChanger: true,
+                        defaultPageSize: 10,
+                        pageSizeOptions: ['10', '20', '50'],
+                        style: { marginTop: '16px' }
+                    }}
+                />
             </div>
 
+            <div>
+                <Modal 
+                    title={
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '18px', fontWeight: 700, paddingBottom: '10px', borderBottom: '1px solid #f3f4f6' }}>
+                            <GiftOutlined style={{ color: '#4f46e5' }} />
+                            <span>{editingItems ? "Edit Coupon Settings" : "Create New Coupon"}</span>
+                        </div>
+                    } 
+                    open={isModalOpen} 
+                    onOk={handleSubmit} 
+                    okText={editingItems ? "Update Coupon" : "Create Coupon"}
+                    confirmLoading={loading} 
+                    onCancel={() => setIsModalOpen(false)}
+                    width={640}
+                    bodyStyle={{ paddingTop: '20px' }}
+                    okButtonProps={{ style: { borderRadius: '6px', height: '38px', fontWeight: 500 } }}
+                    cancelButtonProps={{ style: { borderRadius: '6px', height: '38px' } }}
+                >
+                    <Form form={form} layout="vertical">
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="name" label={<span style={{ fontWeight: 500 }}>Coupon Name</span>} rules={[{ required: true, message: "Name is required" }]}>
+                                    <AntInput placeholder="e.g. Eid Mega Sale" style={{ height: '40px', borderRadius: '6px' }} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="code" label={<span style={{ fontWeight: 500 }}>Coupon Code</span>} rules={[{ required: true, message: "Code is required" }]}>
+                                    <AntInput placeholder="e.g. EIDMEGA50" prefix={<GiftOutlined style={{ color: '#a3a3a3' }} />} style={{ height: '40px', borderRadius: '6px' }} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="discount_amount" label={<span style={{ fontWeight: 500 }}>Discount Value</span>} rules={[{ required: true, message: "Discount is required" }]}>
+                                    <AntInput type="number" placeholder="Value (e.g. 10)" style={{ height: '40px', borderRadius: '6px' }} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="min_cart_amount" label={<span style={{ fontWeight: 500 }}>Min. Cart Amount (৳)</span>} rules={[{ required: true, message: "Minimum cart amount is required" }]}>
+                                    <AntInput type="number" placeholder="e.g. 500" prefix="৳" style={{ height: '40px', borderRadius: '6px' }} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="discount_type" label={<span style={{ fontWeight: 500 }}>Discount Type</span>} rules={[{ required: true, message: "Type is required" }]} initialValue="fixed">
+                                    <Select options={[{ value: 'fixed', label: 'Fixed Amount (৳)' }, { value: 'percentage', label: 'Percentage (%)' }]} style={{ height: '40px' }} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="status" label={<span style={{ fontWeight: 500 }}>Status</span>} rules={[{ required: true }]} initialValue="active">
+                                    <Select options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} style={{ height: '40px' }} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+                        
+                        <Row gutter={16}>
+                            <Col span={12}>
+                                <Form.Item name="started_at" label={<span style={{ fontWeight: 500 }}>Start Date</span>} rules={[{ required: true, message: "Start date is required" }]}>
+                                    <DatePicker style={{ width: "100%", height: '40px', borderRadius: '6px' }} suffixIcon={<CalendarOutlined />} />
+                                </Form.Item>
+                            </Col>
+                            <Col span={12}>
+                                <Form.Item name="ended_at" label={<span style={{ fontWeight: 500 }}>End Date</span>} rules={[{ required: true, message: "End date is required" }]}>
+                                    <DatePicker style={{ width: "100%", height: '40px', borderRadius: '6px' }} suffixIcon={<CalendarOutlined />} />
+                                </Form.Item>
+                            </Col>
+                        </Row>
+
+                        <Form.Item name="description" label={<span style={{ fontWeight: 500 }}>Description</span>} rules={[{ required: true, message: "Description is required" }]}>
+                            <AntInput.TextArea rows={4} placeholder="Describe the terms/details of this coupon code..." style={{ borderRadius: '6px' }} />
+                        </Form.Item>
+                    </Form>
+                </Modal>
+            </div>
         </>
     )
 }
