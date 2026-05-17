@@ -160,6 +160,7 @@ import ServerTracker from "./pages/product/catelog/ServerTracker";
 import Feedback from "./pages/order/feedback/Feedback";
 import CampaignProduct from "./pages/meta/CampaignProduct";
 import ProductTrash from "./pages/product/ProductTrash";
+import AddStatus from "./pages/order/AddStatus";
 
 function App() {
     const dispatch         = useDispatch();
@@ -292,6 +293,7 @@ function App() {
 
                     <Route path="/online-payment/discounts" element={<OnlinePaymentDiscount />}/>
                     <Route path="/statuses" element={<OrderStatus />} />
+                    <Route path="/order-status/add" element={<AddStatus />} />
                     <Route path="/coupons" element={<MarketCoupon />} />
                     <Route path="/order-tag" element={<OrderTag />} />
                     <Route path="/types/customer" element={<CustomerType />} />

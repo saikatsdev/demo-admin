@@ -1,15 +1,66 @@
 
 
-import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, message, Modal, Select, Space, Table, Tag,ColorPicker } from "antd";
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState, useContext, useMemo } from "react";
+import { ArrowLeftOutlined, MenuOutlined,PlusOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, message, Modal, Select, Space, Table, Tag, ColorPicker } from "antd";
+import { useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
+
+import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import {arrayMove,SortableContext,useSortable,verticalListSortingStrategy} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+const RowContext = React.createContext({});
+
+const DragHandle = () => {
+    const { setActivatorNodeRef, listeners } = useContext(RowContext);
+    
+    return (
+        <MenuOutlined ref={setActivatorNodeRef} style={{ cursor: 'move', color: '#999' }} {...listeners}/>
+    );
+};
+
+const Row = (props) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        setActivatorNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
+        id: props['data-row-key'],
+    });
+
+    const style = {
+        ...props.style,
+        transform: CSS.Transform.toString(transform && { ...transform, scaleY: 1 }),
+        transition,
+        ...(isDragging ? { position: 'relative', zIndex: 9999, background: '#fafafa' } : {}),
+    };
+
+    const contextValue = useMemo(
+        () => ({ setActivatorNodeRef, listeners }),
+        [setActivatorNodeRef, listeners],
+    );
+
+    return (
+        <RowContext.Provider value={contextValue}>
+            <tr {...props} ref={setNodeRef} style={style} {...attributes} />
+        </RowContext.Provider>
+    );
+};
 
 export default function OrderStatus() {
     //Hook
     useTitle("Order Status");
+
+    // Variable
+    const navigate = useNavigate();
 
     // State
     const [query, setQuery]               = useState("");
@@ -20,12 +71,18 @@ export default function OrderStatus() {
     const [editingItems, setEditingItems] = useState(null);
     const [filteredData, setFilteredData] = useState(orderStatus);
     const [form]                          = Form.useForm();
-    const [pagination, setPagination] = useState({current: 1,pageSize: 10});
+    const [pagination, setPagination] = useState({current: 1,pageSize: 20});
 
     const protectedIds = [7, 8, 9, 10, 13, 14];
 
-    //Table Columns
-    const columns = [
+    const columns = 
+    [
+        {
+            key: "sort",
+            width: 50,
+            align: 'center',
+            render: () => !query ? <DragHandle /> : null,
+        },
         {
             title: "SL",
             key: "sl",
@@ -96,6 +153,55 @@ export default function OrderStatus() {
     ];
 
     //Method
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 1,
+            },
+        }),
+    );
+
+    const onDragEnd = ({ active, over }) => {
+        if (active.id !== over?.id) {
+            const activeIndex = filteredData.findIndex((i) => i.id === active.id);
+            const overIndex = filteredData.findIndex((i) => i.id === over?.id);
+
+            const newFilteredData = arrayMove(filteredData, activeIndex, overIndex);
+
+            const basePosition = (pagination.current - 1) * pagination.pageSize;
+            const updatedItems = newFilteredData.map((item, index) => ({
+                id: item.id,
+                position: basePosition + index + 1
+            }));
+
+            // Update UI state
+            setFilteredData(newFilteredData);
+            setItems(prevItems => {
+                const newItems = [...prevItems];
+                updatedItems.forEach(u => {
+                    const idx = newItems.findIndex(i => i.id === u.id);
+                    if (idx !== -1) newItems[idx].position = u.position;
+                });
+                return newItems.sort((a, b) => a.position - b.position);
+            });
+
+            // Call API once, outside state updater
+            postData('/admin/statuses/position', { items: updatedItems }).then(res => {
+                if (res?.success) {
+                    messageApi.open({
+                        type: "success",
+                        content: res.msg || "Status position updated successfully",
+                    });
+                } else {
+                    messageApi.open({
+                        type: "error",
+                        content: res.message || "Failed to update status position",
+                    });
+                }
+            });
+        }
+    };
+
     const onEdit = (record) => {
         setEditingItems(record);
         setIsModalOpen(true);
@@ -185,6 +291,8 @@ export default function OrderStatus() {
         }, 500);
     }
 
+    const user = useSelector((state) => state.auth.user);
+
     return (
         <>
             {contextHolder}
@@ -206,23 +314,41 @@ export default function OrderStatus() {
                 <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
                 <Space>
                     <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
+
+                    {user.phone_number === '01700000017' && (
+                        <Button icon={<PlusOutlined />} size="small" type="primary" onClick={() => navigate("/order-status/add")}>
+                            Add Status
+                        </Button>
+                    )}
                 </Space>
             </div>
 
-            <Table bordered loading={loading} columns={columns} dataSource={filteredData} rowKey="id"
-                pagination={{
-                    current: pagination.current,
-                    pageSize: pagination.pageSize,
-                    total: filteredData.length,
-                    showSizeChanger: true,
-                    onChange: (page, pageSize) => {
-                        setPagination({
-                            current: page,
-                            pageSize: pageSize,
-                        });
-                    },
-                }}
-            />
+            <DndContext sensors={sensors} modifiers={[restrictToVerticalAxis]} onDragEnd={onDragEnd}>
+                <SortableContext
+                    items={filteredData.map((i) => i.id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    <Table bordered loading={loading} columns={columns} dataSource={filteredData} rowKey="id"
+                        components={{
+                            body: {
+                                row: Row,
+                            },
+                        }}
+                        pagination={{
+                            current: pagination.current,
+                            pageSize: pagination.pageSize,
+                            total: filteredData.length,
+                            showSizeChanger: true,
+                            onChange: (page, pageSize) => {
+                                setPagination({
+                                    current: page,
+                                    pageSize: pageSize,
+                                });
+                            },
+                        }}
+                    />
+                </SortableContext>
+            </DndContext>
 
             <div>
                 <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"} confirmLoading={loading}
