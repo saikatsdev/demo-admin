@@ -282,7 +282,7 @@ export default function OrderAdd() {
                         item_id    : product.id,
                         key        : `${product.id}_${Date.now()}`,
                         name       : product.name,
-                        image      : product.img_path,
+                        image      : product.image,
                         buy_price  : selectedVariation.buy_price,
                         mrp        : selectedVariation.mrp,
                         offer_price: selectedVariation.offer_price,
@@ -307,7 +307,7 @@ export default function OrderAdd() {
                     item_id    : product.id,
                     key        : `${product.id}_${Date.now()}`,
                     name       : product.name,
-                    image      : product.img_path,
+                    image      : product.image,
                     buy_price  : product.buy_price,
                     mrp        : product.mrp,
                     offer_price: product.offer_price,
@@ -737,7 +737,7 @@ export default function OrderAdd() {
                                                                 {products.map((product) => (
                                                                     <div key={product.id} onClick={() => addProduct(product)} style={{ cursor: 'pointer', padding: '12px', borderRadius: '8px', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                                                                         <Row gutter={12} align="middle">
-                                                                            <Col><Image src={product.img_path} width={48} height={48} style={{ borderRadius: '6px' }} preview={false}/></Col>
+                                                                            <Col><Image src={product.image} width={48} height={48} style={{ borderRadius: '6px' }} preview={false}/></Col>
                                                                             <Col flex="auto">
                                                                                 <Typography.Text strong style={{ fontSize: '14px' }}>{product.name}</Typography.Text>
                                                                                 <div style={{ color: '#64748b', fontSize: '12px' }}>{product.category?.name} • {currency(product.mrp)}</div>

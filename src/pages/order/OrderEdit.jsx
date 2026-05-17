@@ -392,7 +392,7 @@ const OrderEdit = () => {
             item_id  : product.id,
             key      : `${product.id}_${Date.now()}`,
             name     : product.name,
-            image    : product.img_path,
+            image    : product.image,
             quantity : quantity,
             is_upsell: 1,
         };
@@ -972,7 +972,7 @@ const OrderEdit = () => {
                                                                     <div key={p.id} onClick={() => addProduct(p)} style={{ cursor: 'pointer', padding: '12px', borderRadius: '8px', transition: 'all 0.2s' }} onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f1f5f9'} onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
                                                                         <Row gutter={12} align="middle">
                                                                             <Col>
-                                                                                <Image src={p.img_path} width={48} height={48} style={{ borderRadius: '6px' }} preview={false}/>
+                                                                                <Image src={p.image} width={48} height={48} style={{ borderRadius: '6px' }} preview={false}/>
                                                                             </Col>
 
                                                                             <Col flex="auto">
