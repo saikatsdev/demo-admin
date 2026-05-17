@@ -44,6 +44,8 @@ export default function EditSection() {
                 if (res?.success) {
                     const list = res?.result || [];
 
+                    console.log(list);
+
                     form.setFieldsValue({
                         title    : list.title,
                         position : list.position,
@@ -53,7 +55,6 @@ export default function EditSection() {
                         category_id: list.category_id
                     });
 
-                    // Determine selection type
                     if (list.category_id) {
                         setSelectionType('category');
                     } else if (list.products && list.products.length > 0) {
@@ -181,8 +182,9 @@ export default function EditSection() {
                 <Text type="secondary" size="small" style={{ fontSize: '12px', display: 'block' }}>
                     SKU: {item.sku || "N/A"}
                 </Text>
+                
                 <Text type="secondary" size="small" style={{ fontSize: '12px', display: 'block' }}>
-                    Cat: {item?.category_name || item?.category?.name ||  'N/A'}
+                    Cat: {Array.isArray(item?.categories) && item.categories.length > 0 ? item.categories.map(category => category?.name).join(", ") : "N/A"}
                 </Text>
             </div>
 
@@ -323,15 +325,7 @@ export default function EditSection() {
                                 <Card title={<span><SearchOutlined style={{ marginRight: 8 }} />Search & Add Products</span>}
                                 className="shadow-sm"
                                 style={{ borderRadius: '12px' }}>
-                                    <AntInput prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-                                    size="large"
-                                    placeholder="Search by product name, SKU or keyword..." 
-                                    value={query} 
-                                    onChange={(e) => setQuery(e.target.value)}
-                                    allowClear
-                                    style={{ marginBottom: '20px', borderRadius: '8px' }}
-                                    suffix={searching ? <LoadingOutlined /> : null}
-                                />
+                                    <AntInput prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} size="large" placeholder="Search by product name, SKU or keyword..." value={query} onChange={(e) => setQuery(e.target.value)} allowClear style={{ marginBottom: '20px', borderRadius: '8px' }} suffix={searching ? <LoadingOutlined /> : null}/>
 
                                     {results.length > 0 ? (
                                         <Row gutter={[16, 16]}>
@@ -342,7 +336,7 @@ export default function EditSection() {
                                             ))}
                                         </Row>
                                     ) : query && !searching ? (
-                                        <Empty description={`No products found for "${query}"`} />
+                                            <Empty description={`No products found for "${query}"`} />
                                     ) : (
                                         <div style={{ textAlign: 'center', padding: '40px 0' }}>
                                             <SearchOutlined style={{ fontSize: '48px', color: '#f0f0f0', marginBottom: '16px' }} />

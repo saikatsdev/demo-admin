@@ -119,7 +119,7 @@ export default function AddSection() {
         <Card hoverable className="product-card"
             cover={
                 <div style={{ position: 'relative', height: 180, overflow: 'hidden', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
-                    <img alt={item.name} src={item.img_path} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}/>
+                    <img alt={item.name} src={item.image} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}/>
                     <div style={{ position: 'absolute', top: 8, right: 8 }}>
                         <Tag style={{textTransform:"capitalize"}} color={item.status === 'active' ? 'green' : 'red'}>
                             {item.status}
@@ -140,7 +140,7 @@ export default function AddSection() {
                     SKU: {item.sku}
                 </Text>
                 <Text type="secondary" size="small" style={{ fontSize: '12px', display: 'block' }}>
-                    Cat: {item?.category_name ||  'N/A'}
+                    Cat: {Array.isArray(item?.categories) && item.categories.length > 0 ? item.categories.map(category => category?.name).join(", ") : "N/A"}
                 </Text>
             </div>
 
