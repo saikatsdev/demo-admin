@@ -190,7 +190,9 @@ export default function EditSubSubCategory() {
                             </Select>
                         </Form.Item>
 
-                        <ImagePicker form={form} name="image" label="Image" gallery={gallery}  hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])} />
+                        <Form.Item label="Image" name="image">
+                            <ImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])} />
+                        </Form.Item>
 
                         <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">
                             <Select options={[{ value: "active", label: "Active" },{ value: "inactive", label: "Inactive" }]}/>
