@@ -1,5 +1,7 @@
-import { ArrowLeftOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Popconfirm, Space, Table, Tag, message } from "antd";
+import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, AppstoreOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Card, Popconfirm, Space, Table, Tag, Typography, message } from "antd";
+
+const { Text } = Typography;
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas } from "../../../api/common/common";
@@ -21,59 +23,60 @@ export default function SubSubCategory() {
     // Variable
     const navigate = useNavigate();
 
-    const columns = 
-    [
+    const columns = [
         {
             title: "SL",
             key: "sl",
-            width: 50,
-            render: (_, __, index) =>
-                index + 1 + (pagination.current - 1) * pagination.pageSize,
-            },
+            width: 60,
+            render: (_, __, index) => <Text type="secondary">{index + 1 + (pagination.current - 1) * pagination.pageSize}</Text>,
+        },
         {
             title: "Image",
             dataIndex: "image",
             key: "image",
-            width: 70,
-            render: (src, record) => (
-                <img src={src} alt={record.name} style={{width: 32,height: 32,borderRadius: 4,objectFit: "cover"}}/>
+            width: 90,
+            render: (src, record) => src ? (
+                <div style={{ padding: 4, border: '1px solid #f0f0f0', borderRadius: 8, display: 'inline-block', background: '#fff' }}>
+                    <img src={src} alt={record.name} style={{ width: 40, height: 40, borderRadius: 6, objectFit: "cover" }}/>
+                </div>
+            ) : (
+                <Tag color="default">No Image</Tag>
             ),
         },
         {
             title: "Name",
             dataIndex: "name",
             key: "name",
+            render: (text) => <Text strong style={{ fontSize: 15 }}>{text}</Text>,
         },
         {
             title: "Sub Category",
             dataIndex: "sub_category",
             key: "sub_category",
             render: (sub_category) => (
-                sub_category?.name
+                <Text type="secondary">{sub_category?.name}</Text>
             ),
         },
         {
             title: "Status",
             dataIndex: "status",
             key: "status",
+            width: 100,
             render: (status) => (
-                <Tag color={status === "active" ? "green" : "red"} style={{textTransform:"capitalize"}}>{status}</Tag>
+                <Tag style={{textTransform:"capitalize", borderRadius: 12, padding: '2px 10px'}} color={status === "active" ? "success" : "default"}>{status}</Tag>
             ),
         },
         {
             title: "Action",
             key: "operation",
-            width: 160,
+            width: 120,
+            fixed: "right",
             render: (_, record) => (
                 <Space>
-                <Button size="small" type="primary" onClick={() => onEdit(record)}>
-                    Edit
-                </Button>
-                <Popconfirm title="Delete this item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                    <Button size="small" danger>
-                    Delete
-                    </Button>
-                </Popconfirm>
+                    <Button type="text" icon={<EditOutlined style={{ color: '#1890ff' }} />} onClick={() => onEdit(record)} title="Edit Sub-Sub Category"/>
+                    <Popconfirm title="Delete this item?" description="Are you sure you want to delete this sub-sub category?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)} okButtonProps={{ danger: true }}>
+                        <Button type="text" danger icon={<DeleteOutlined />} title="Delete Sub-Sub Category" />
+                    </Popconfirm>
                 </Space>
             ),
         },
@@ -168,43 +171,56 @@ export default function SubSubCategory() {
     };
 
     return (
-        <>
+        <div style={{ padding: 16 }}>
             {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
-                    <h1 className="title">All Sub Sub Categories</h1>
+                    <h1 className="title">All Sub-Sub Categories</h1>
+                    <p className="subtitle">Manage product sub-sub-categories</p>
                 </div>
                 <div className="head-actions">
                     <Breadcrumb
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "All Sub Sub Category" },
+                            { title: "All Sub-Sub Categories" },
                         ]}
                     />
                 </div>
             </div>
 
-            <div style={{display: "flex", justifyContent: "space-between",alignItems: "center",marginBottom: 16}}>
-                <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
+            <Card className="modern-antd-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+                    <AntInput.Search allowClear placeholder="Search Key ..." prefix={<AppstoreOutlined style={{ color: '#bfbfbf' }} />} value={query} onChange={(e) => setQuery(e.target.value)} style={{ maxWidth: 400, height: 40, borderRadius: 8 }}/>
 
-                <Space>
-                    <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-                        Add
-                    </Button>
+                    <Space size="middle">
+                        <Button size="small" type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                            Add
+                        </Button>
 
-                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                        Back
-                    </Button>
-                </Space>
-            </div>
+                        <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                            Back
+                        </Button>
+                    </Space>
+                </div>
 
-            <Table rowKey="id" loading={loading}
-                pagination={{ current: pagination.current, pageSize: pagination.pageSize, total: pagination.total, showSizeChanger: true,
-                onChange: (page, pageSize) => {
-                    setPagination((p) => ({ ...p, current: page, pageSize }));
-                },
-                }} columns={columns} dataSource={filteredData} scroll={{ x: "max-content" }}
-            />
-        </>
+                <Table 
+                    rowKey="id" 
+                    loading={loading}
+                    pagination={{ 
+                        current: pagination.current, 
+                        pageSize: pagination.pageSize, 
+                        total: pagination.total, 
+                        showSizeChanger: true,
+                        onChange: (page, pageSize) => {
+                            setPagination((p) => ({ ...p, current: page, pageSize }));
+                        },
+                    }} 
+                    columns={columns} 
+                    dataSource={filteredData} 
+                    className="modern-table"
+                    scroll={{ x: 'max-content' }}
+                />
+            </Card>
+        </div>
     )
 }
