@@ -23,7 +23,8 @@ export default function SubSubCategory() {
     // Variable
     const navigate = useNavigate();
 
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key: "sl",
