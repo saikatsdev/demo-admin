@@ -1,5 +1,5 @@
-import { ArrowLeftOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message } from "antd";
+import { ArrowLeftOutlined, DeleteOutlined, SearchOutlined, GiftOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Select, Space, message, Card, Row, Col, Tooltip } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
@@ -66,11 +66,11 @@ export default function AddCampaign() {
     // Debounced search effect
     useEffect(() => {
         const delayDebounce = setTimeout(() => {
-        if (query.trim() !== "") {
-            fetchProducts(query);
-        } else {
-            setSearchProducts([]);
-        }
+            if (query.trim() !== "") {
+                fetchProducts(query);
+            } else {
+                setSearchProducts([]);
+            }
         }, 500);
 
         return () => clearTimeout(delayDebounce);
@@ -117,9 +117,7 @@ export default function AddCampaign() {
     };
 
     const handleDiscountChange = (item, variation, value) => {
-
         const isApplyAll = applyToAll[item.id];
-
         const currentKey = `discount_value_${item.id}_${variation?.id || "default"}`;
 
         form.setFieldValue(currentKey, value);
@@ -128,20 +126,16 @@ export default function AddCampaign() {
 
         if (item.variations && item.variations.length > 0) {
             item.variations.forEach((varItem) => {
-
                 if (varItem.id === variation.id) return;
 
                 const key = `discount_value_${item.id}_${varItem.id}`;
-
                 form.setFieldValue(key, value);
             });
         }
     };
 
     const handleTypeChange = (item, variation, value) => {
-
         const isApplyAll = applyToAll[item.id];
-
         const currentKey = `discount_type_${item.id}_${variation?.id || "default"}`;
 
         form.setFieldValue(currentKey, value);
@@ -150,11 +144,9 @@ export default function AddCampaign() {
 
         if (item.variations && item.variations.length > 0) {
             item.variations.forEach((varItem) => {
-
                 if (varItem.id === variation.id) return;
 
                 const key = `discount_type_${item.id}_${varItem.id}`;
-
                 form.setFieldValue(key, value);
             });
         }
@@ -235,207 +227,324 @@ export default function AddCampaign() {
             <div className="pagehead">
                 <div className="head-left">
                     <h1 className="title" style={{ fontWeight: "600" }}>
-                        Campaign Add
+                        Create Campaign
                     </h1>
                 </div>
                 <div className="head-actions">
-                    <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> },{ title: "Campaign Add" }]}/>
+                    <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> },{ title: "Add Campaign" }]}/>
                 </div>
             </div>
 
-            <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16}}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                 <div></div>
-                <Space>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>
-                        Back
-                    </Button>
-                </Space>
+                <Button icon={<ArrowLeftOutlined />} size="large" onClick={() => window.history.back()} style={{ borderRadius: '6px', display: 'inline-flex', alignItems: 'center' }}>
+                    Back
+                </Button>
             </div>
 
-            <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" initialValues={{width:"3600", height:"1920", start_date: new Date().toISOString().split("T")[0]}}>
-                <div className="form-container">
-                    <div className="form-left">
-                        <div className="left-side-product" onClick={() => setShowInput(!showInput)}>
-                            <h2 style={{ margin: 0, color: "#000" }}>Add Product in Campaign</h2>
-                            <span style={{ fontSize: "20px" }}>{showInput ? "➖" : "➕"}</span>
-                        </div>
-
-                        <hr />
-
-                        {showInput && (
-                            <div className="campaign" style={{ position: "relative" }}>
-                                <label className="campaign-label">
-                                    Add a new product
+            <Form 
+                form={form} 
+                layout="vertical" 
+                onFinish={handleSubmit} 
+                autoComplete="off" 
+                initialValues={{ width: "3600", height: "1920", start_date: new Date().toISOString().split("T")[0] }}
+            >
+                <Row gutter={[24, 24]}>
+                    {/* Left Column: Product Selection & Configurations */}
+                    <Col xs={24} lg={16}>
+                        <Card 
+                            title={
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setShowInput(!showInput)}>
+                                    <span style={{ fontWeight: 600, fontSize: '16px', color: '#1e293b' }}>
+                                        🎯 Add Products in Campaign
+                                    </span>
+                                    <span style={{ fontSize: "14px", color: '#94a3b8' }}>{showInput ? "➖ Hide Section" : "➕ Show Section"}</span>
+                                </div>
+                            }
+                            bordered={false}
+                            style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', borderRadius: '12px', marginBottom: 24 }}
+                            bodyStyle={{ display: showInput ? 'block' : 'none', padding: '20px' }}
+                        >
+                            <div style={{ position: "relative", marginBottom: 8 }}>
+                                <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', color: '#475569', marginBottom: '8px' }}>
+                                    Search Product Catalogue
                                 </label>
-                                <input type="text" placeholder="Search Product..." className="campaign-input" value={query} onChange={(e) => setQuery(e.target.value)}/>
+                                <AntInput 
+                                    placeholder="Search by product name, brand or SKU..." 
+                                    prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                                    value={query} 
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    style={{ height: '42px', borderRadius: '6px' }}
+                                />
 
                                 {searchProducts.length > 0 && (
-                                    <ul className="campaign-ul">
+                                    <div style={{ 
+                                        position: 'absolute', 
+                                        top: '100%', 
+                                        left: 0, 
+                                        right: 0, 
+                                        zIndex: 1000, 
+                                        background: '#fff', 
+                                        borderRadius: '8px', 
+                                        boxShadow: '0 10px 25px rgba(0,0,0,0.1)', 
+                                        border: '1px solid #e2e8f0', 
+                                        maxHeight: '320px', 
+                                        overflowY: 'auto',
+                                        marginTop: '8px',
+                                        padding: '8px'
+                                    }}>
                                         {searchProducts.map((product) => {
                                             const isAdded = addedProductIds.has(product.id);
-
                                             const categoryNames = product.categories?.length ? product.categories.map((c) => c.name).join(", ") : "No Category";
-
                                             return (
-                                                <li key={product.id} className="campaign-ul-li">
-                                                    <img src={product.img_path} alt={product.name} className="campaign-product-img"/>
-                                                    <div className="product-info">
-                                                        <strong>{product.name}</strong> <br />
-                                                        <small>{categoryNames}</small>
-                                                    </div>
-                                                    <button onClick={() => handleAddProduct(product)} className="campaign-product-btn">
-                                                        {isAdded ? 'Added' : 'Add'}
-                                                    </button>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                )}
-                            </div>
-                        )}
-
-                        {selectedProducts.length > 0 && (
-                            <div className="campaign-search-product-section">
-                                {selectedProducts.map((item) => (
-                                    <div key={item.id} className="campaign-product-card">
-
-                                        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-
-                                            <img src={item.img_path || "/free.jpg"} alt={item.name || "Product"} className="campaign-product-image"/>
-
-                                            <h2 style={{ flex: 1, margin: 0, fontSize: 16 }}>
-                                                {item.name}
-                                            </h2>
-
-                                            <button type="button" onClick={() => handleRemoveProduct(item.id)} className="campaign-product-button">
-                                                <DeleteOutlined />
-                                            </button>
-
-                                        </div>
-
-                                        {item.variations && item.variations.length > 0 && (
-                                            <div style={{ marginBottom: 8, marginTop: 8 }}>
-                                                <label>
-                                                    <input type="checkbox" checked={!!applyToAll[item.id]} onChange={(e) =>
-                                                            setApplyToAll((prev) => ({
-                                                                ...prev,
-                                                                [item.id]: e.target.checked,
-                                                            }))
-                                                        }
+                                                <div 
+                                                    key={product.id} 
+                                                    style={{ 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        gap: '12px', 
+                                                        padding: '10px', 
+                                                        borderRadius: '6px', 
+                                                        transition: 'background 0.2s', 
+                                                        marginBottom: '4px',
+                                                        background: isAdded ? '#f0fdf4' : '#fff',
+                                                        border: isAdded ? '1px solid #bbf7d0' : '1px solid transparent'
+                                                    }}
+                                                >
+                                                    <img 
+                                                        src={product.image || "/placeholder.jpg"} 
+                                                        alt={product.name} 
+                                                        style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
                                                     />
-                                                    Apply same discount to all variations
-                                                </label>
-                                            </div>
-
-                                        )}
-
-                                        {(item.variations && item.variations.length > 0 ? item.variations : [null]).map((v, idx) => {
-                                            const hasVariation = !!v;
-
-                                            const fieldDiscount = `discount_value_${item.id}_${v?.id || "default"}`;
-
-                                            const fieldType = `discount_type_${item.id}_${v?.id || "default"}`;
-
-                                            return (
-                                                <div className="campaign-variations-block" key={v?.id || idx}>
-                                                    <div style={{ flex: 2 }}>
-                                                        {hasVariation ? (
-                                                            <>
-                                                                <strong>
-                                                                    {v.attribute_value_1?.value || "Default"}
-                                                                </strong>
-
-                                                                <div style={{ fontSize: 14, color: "magenta", marginTop: 4 }}>
-                                                                    MRP: <span>৳{v.mrp}</span>
-                                                                </div>
-
-                                                            </>
-                                                        ) : (
-
-                                                            <>
-                                                                <strong style={{color:"maroon"}}>Main Product</strong>
-
-                                                                <div style={{ fontSize: 14, marginTop: 4, marginBottom:10, color:"magenta" }}>
-                                                                    MRP: <span>৳{item.mrp}</span>
-                                                                </div>
-                                                            </>
-
-                                                        )}
-
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '13px' }}>{product.name}</div>
+                                                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>{categoryNames}</div>
                                                     </div>
-
-                                                    <div style={{ flex: 1, display: "flex", gap: 8 }}>
-                                                        <Form.Item name={fieldDiscount} rules={[{ required: true, message: "Enter discount value" }]} style={{ flex: 1 }}>
-                                                            <input type="number" placeholder="Discount" className="campaign-input-discount" onChange={(e) => handleDiscountChange(item, v, e.target.value)}/>
-                                                        </Form.Item>
-
-                                                        <Form.Item name={fieldType} initialValue="fixed" rules={[{ required: true, message: "Select type" }]} style={{ flex: 1 }}>
-                                                            <select className="campaign-select-box" onChange={(e) => handleTypeChange(item, v, e.target.value)}>
-                                                                <option value="">Type</option>
-                                                                <option value="percentage">Percentage</option>
-                                                                <option value="fixed">Fixed</option>
-                                                            </select>
-                                                        </Form.Item>
-                                                    </div>
+                                                    <Button 
+                                                        type={isAdded ? "primary" : "default"} 
+                                                        size="small" 
+                                                        danger={isAdded}
+                                                        onClick={() => handleAddProduct(product)}
+                                                        style={{ borderRadius: '4px' }}
+                                                    >
+                                                        {isAdded ? 'Remove' : 'Add'}
+                                                    </Button>
                                                 </div>
-
                                             );
                                         })}
                                     </div>
+                                )}
+                            </div>
+                        </Card>
 
-                                ))}
+                        {selectedProducts.length > 0 && (
+                            <div style={{ marginBottom: 24 }}>
+                                <div style={{ fontSize: '15px', fontWeight: 600, color: '#475569', marginBottom: '16px' }}>
+                                    📋 Selected Products Settings ({selectedProducts.length})
+                                </div>
+                                <Row gutter={[16, 16]}>
+                                    {selectedProducts.map((item) => (
+                                        <Col xs={24} md={12} key={item.id}>
+                                            <Card 
+                                                bordered={false}
+                                                style={{ 
+                                                    borderRadius: '12px', 
+                                                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                                    border: '1px solid #e2e8f0' 
+                                                }}
+                                                bodyStyle={{ padding: '18px' }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+                                                    <img 
+                                                        src={item.image || "/placeholder.jpg"} 
+                                                        alt={item.name} 
+                                                        style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px' }}
+                                                    />
+                                                    <div style={{ flex: 1 }}>
+                                                        <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>{item.name}</h4>
+                                                        <div style={{ color: '#64748b', fontSize: '12px', marginTop: '2px' }}>
+                                                            Standard MRP: <span style={{ fontWeight: 600, color: '#6366f1' }}>৳{item.mrp || 0}</span>
+                                                        </div>
+                                                    </div>
+                                                    <Tooltip title="Remove Product">
+                                                        <Button 
+                                                            type="text" 
+                                                            danger 
+                                                            icon={<DeleteOutlined />} 
+                                                            onClick={() => handleRemoveProduct(item.id)}
+                                                            style={{ background: '#fff1f0', borderRadius: '6px' }}
+                                                        />
+                                                    </Tooltip>
+                                                </div>
+                                                
+                                                {item.variations && item.variations.length > 0 && (
+                                                    <div style={{ marginBottom: '14px', background: '#f8fafc', padding: '8px 12px', borderRadius: '6px' }}>
+                                                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#475569' }}>
+                                                            <input 
+                                                                type="checkbox" 
+                                                                checked={!!applyToAll[item.id]} 
+                                                                onChange={(e) => setApplyToAll(prev => ({ ...prev, [item.id]: e.target.checked }))}
+                                                                style={{ accentColor: '#6366f1' }}
+                                                            />
+                                                            Apply same discount to all variations
+                                                        </label>
+                                                    </div>
+                                                )}
+                                                
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {(item.variations && item.variations.length > 0 ? item.variations : [null]).map((v, idx) => {
+                                                        const hasVariation = !!v;
+                                                        const fieldDiscount = `discount_value_${item.id}_${v?.id || "default"}`;
+                                                        const fieldType = `discount_type_${item.id}_${v?.id || "default"}`;
 
+                                                        return (
+                                                            <div 
+                                                                key={v?.id || idx} 
+                                                                style={{ 
+                                                                    display: 'flex', 
+                                                                    alignItems: 'center', 
+                                                                    justifyContent: 'space-between', 
+                                                                    gap: '12px',
+                                                                    background: '#f8fafc',
+                                                                    padding: '8px 12px',
+                                                                    borderRadius: '8px',
+                                                                    border: '1px solid #f1f5f9'
+                                                                }}
+                                                            >
+                                                                <div style={{ flex: 1 }}>
+                                                                    {hasVariation ? (
+                                                                        <div>
+                                                                            <div style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
+                                                                                {v.attribute_value_1?.value || "Default"}
+                                                                            </div>
+                                                                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                                                                                MRP: <span style={{ fontWeight: 600 }}>৳{v.mrp}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div>
+                                                                            <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748b' }}>
+                                                                                Main Product
+                                                                            </div>
+                                                                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                                                                                MRP: <span style={{ fontWeight: 600 }}>৳{item.mrp}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                <div style={{ display: 'flex', gap: '8px', width: '180px', flexShrink: 0 }}>
+                                                                    <Form.Item 
+                                                                        name={fieldDiscount} 
+                                                                        rules={[{ required: true, message: "Required" }]} 
+                                                                        style={{ margin: 0, flex: 1 }}
+                                                                    >
+                                                                        <AntInput 
+                                                                            type="number" 
+                                                                            placeholder="Discount" 
+                                                                            onChange={(e) => handleDiscountChange(item, v, e.target.value)}
+                                                                            style={{ borderRadius: '6px', height: '36px' }}
+                                                                        />
+                                                                    </Form.Item>
+
+                                                                    <Form.Item 
+                                                                        name={fieldType} 
+                                                                        initialValue="fixed" 
+                                                                        rules={[{ required: true, message: "Required" }]} 
+                                                                        style={{ margin: 0, flex: 1 }}
+                                                                    >
+                                                                        <Select 
+                                                                            options={[
+                                                                                { value: "percentage", label: "Percent (%)" },
+                                                                                { value: "fixed", label: "Fixed (৳)" }
+                                                                            ]} 
+                                                                            onChange={(value) => handleTypeChange(item, v, value)}
+                                                                            style={{ height: '36px' }}
+                                                                        />
+                                                                    </Form.Item>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </Card>
+                                        </Col>
+                                    ))}
+                                </Row>
                             </div>
                         )}
-                    </div>
+                    </Col>
 
-                    <div className="form-right">
-                        <div className="campaing-form-right" onClick={() => setShowCampaignInput(!showCampaignInput)}>
-                            <h2 style={{ color: "#000" }}>Campaign Information</h2>
-                            <span style={{ fontSize: "20px" }}>{showCampaignInput ? "➖" : "➕"}</span>
+                    {/* Right Column: Campaign Information Card */}
+                    <Col xs={24} lg={8}>
+                        <Card 
+                            title={
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setShowCampaignInput(!showCampaignInput)}>
+                                    <span style={{ fontWeight: 600, fontSize: '16px', color: '#1e293b' }}>
+                                        📝 Campaign Information
+                                    </span>
+                                    <span style={{ fontSize: "14px", color: '#94a3b8' }}>{showCampaignInput ? "➖" : "➕"}</span>
+                                </div>
+                            }
+                            bordered={false}
+                            style={{ boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', borderRadius: '12px', marginBottom: 24 }}
+                            bodyStyle={{ display: showCampaignInput ? 'block' : 'none', padding: '20px' }}
+                        >
+                            <Form.Item name="title" label={<span style={{ fontWeight: 500 }}>Campaign Title</span>} rules={[{ required: true, message: "Please enter campaign title" }]}>
+                                <AntInput placeholder="e.g. Summer Clearance Sale" style={{ height: '40px', borderRadius: '6px' }} />
+                                {errors.title && <p style={{ color: "red", margin: '4px 0 0 0', fontSize: '12px' }}>{errors.title[0]}</p>}
+                            </Form.Item>
+
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="start_date" label={<span style={{ fontWeight: 500 }}>Start Date</span>} rules={[{ required: true, message: "Start date is required" }]}>
+                                        <AntInput type="date" style={{ height: '40px', borderRadius: '6px' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="end_date" label={<span style={{ fontWeight: 500 }}>End Date</span>} rules={[{ required: true, message: "End date is required" }]}>
+                                        <AntInput type="date" style={{ height: '40px', borderRadius: '6px' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+
+                            <Form.Item name="status" label={<span style={{ fontWeight: 500 }}>Status</span>} rules={[{ required: true }]} initialValue="active">
+                                <Select options={[{ value: "active", label: "Active" },{ value: "inactive", label: "Inactive" }]} style={{ height: '40px' }} />
+                            </Form.Item>
+
+                            <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #f1f5f9' }}>
+                                <ImagePicker form={form} name="image" label="Campaign Banner" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)}/>
+                            </div>
+
+                            <Row gutter={16}>
+                                <Col span={12}>
+                                    <Form.Item name="width" label={<span style={{ fontWeight: 500 }}>Banner Width (px)</span>} rules={[{ required: true }]}>
+                                        <AntInput type="number" style={{ height: '40px', borderRadius: '6px' }} />
+                                    </Form.Item>
+                                </Col>
+                                <Col span={12}>
+                                    <Form.Item name="height" label={<span style={{ fontWeight: 500 }}>Banner Height (px)</span>} rules={[{ required: true }]}>
+                                        <AntInput type="number" style={{ height: '40px', borderRadius: '6px' }} />
+                                    </Form.Item>
+                                </Col>
+                            </Row>
+                        </Card>
+
+                        {/* Action buttons under campaign info */}
+                        <div style={{ background: '#ffffff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                            <Form.Item style={{ margin: 0 }}>
+                                <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                                    <Button type="primary" htmlType="submit" loading={loading} size="large" style={{ borderRadius: '6px', paddingLeft: 24, paddingRight: 24 }}>
+                                        {loading ? "Creating Campaign..." : "Create Campaign"}
+                                    </Button>
+                                    <Button htmlType="reset" size="large" style={{ borderRadius: '6px' }}>
+                                        Reset
+                                    </Button>
+                                </Space>
+                            </Form.Item>
                         </div>
-
-                        {showCampaignInput && (
-                            <>
-                                <Form.Item name="title" label="Campaign Title" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Campaign Name" />
-                                    {errors.title && <p style={{ color: "red" }}>{errors.title[0]}</p>}
-                                </Form.Item>
-
-                                <Form.Item name="start_date" label="Campaign Start Date" rules={[{ required: true }]}>
-                                    <AntInput type="date" />
-                                </Form.Item>
-
-                                <Form.Item name="end_date" label="Campaign End Date" rules={[{ required: true }]}>
-                                    <AntInput type="date" />
-                                </Form.Item>
-
-                                <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">
-                                    <Select options={[{ value: "active", label: "Active" },{ value: "inactive", label: "Inactive" }]}/>
-                                </Form.Item>
-
-                                <ImagePicker form={form} name="image" label="Image" gallery={gallery}  hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)}/>
-
-                                <Form.Item name="width" label="Width" rules={[{ required: true }]}>
-                                    <AntInput type="number" />
-                                </Form.Item>
-
-                                <Form.Item name="height" label="Height" rules={[{ required: true }]}>
-                                    <AntInput type="number" />
-                                </Form.Item>
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                <Form.Item>
-                    <Space>
-                        <Button type="primary" htmlType="submit" loading={loading}>
-                            Submit
-                        </Button>
-                        <Button htmlType="reset">Reset</Button>
-                    </Space>
-                </Form.Item>
+                    </Col>
+                </Row>
             </Form>
         </>
     );
