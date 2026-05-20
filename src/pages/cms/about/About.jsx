@@ -1,76 +1,84 @@
-
-import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, message, Popconfirm, Space, Table } from "antd";
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined, EditOutlined, AppstoreOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Card, Popconfirm, Space, Table, Tag, Typography, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas } from "../../../api/common/common";
 import useTitle from "../../../hooks/useTitle";
+import "./About.css";
+
+const { Text, Title } = Typography;
 
 export default function About() {
-    //Hook
-    useTitle("About");
+    // Hook
+    useTitle("About Pages");
 
     const navigate = useNavigate();
 
     // State
     const [query, setQuery]               = useState("");
     const [loading, setLoading]           = useState(false);
-    const [abouts, setItems]                = useState([]);
+    const [abouts, setItems]              = useState([]);
     const [messageApi, contextHolder]     = message.useMessage();
-    const [filteredData, setFilteredData] = useState(abouts);
 
-    //Table Columns
-    const columns = [
+    // Table Columns Configuration
+    const columns = 
+    [
         {
             title: "SL",
-            key:"sl",
-            width: 10,
-            render: (_,__, index) => (
-                index + 1
-            )
+            key: "sl",
+            width: 70,
+            align: 'center',
+            render: (_, __, index) => <Text type="secondary" style={{ fontWeight: 600 }}>{index + 1}</Text>,
         },
         {
-            title: "Image",
+            title: "Showcase Image",
             dataIndex: "image",
             key: "image",
-            render: (src, record) => (
-                <img src={src} alt={record.title} style={{width:"40px", height:"40px", borderRadius:"4px", objectFit:"cover"}}/>
-            )
+            width: 150,
+            align: 'center',
+            render: (src, record) => src ? (
+                <div style={{ padding: 4, border: '1px solid #e2e8f0', borderRadius: 10, display: 'inline-block', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                    <img src={src} alt={record.title} style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover" }}/>
+                </div>
+            ) : (
+                <Tag color="default" style={{ borderRadius: 6 }}>No Image</Tag>
+            ),
         },
         {
-            title: "Title",
+            title: "About Title",
             dataIndex: "title",
-            key: "title"
+            key: "title",
+            render: (text) => <Text strong style={{ fontSize: 15, color: '#1e293b' }}>{text}</Text>,
         },
         {
-            title: "Description",
+            title: "Description Preview",
             dataIndex: "description",
             key: "description",
             render: (text) => {
-                const plainText = text?.replace(/<[^>]+>/g, '');
-                return plainText;
+                const plainText = text?.replace(/<[^>]+>/g, '') || "";
+                return (
+                    <Text ellipsis={{ tooltip: plainText }} style={{ maxWidth: 380, display: 'inline-block', color: '#64748b' }}>
+                        {plainText}
+                    </Text>
+                );
             }
         },
         {
-            title: "Action",
+            title: "Actions",
             key: "operation",
-            width:170,
+            width: 120,
+            align: 'center',
             render: (_, record) => (
-                <Space>
-                    <Button size="small" type="primary" onClick={() => onEdit(record)}>
-                        Edit
-                    </Button>
-                    <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Button size="small" danger>
-                            Delete
-                        </Button>
+                <Space size="middle">
+                    <Button type="text" icon={<EditOutlined style={{ color: '#6366f1', fontSize: 16 }} />} onClick={() => onEdit(record)} title="Edit Page" style={{ background: '#f5f3ff', borderRadius: 8 }}/>
+                    <Popconfirm title="Delete about entry?" description="Are you sure you want to delete this about entry?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)} okButtonProps={{ danger: true }}>
+                        <Button type="text" danger icon={<DeleteOutlined style={{ fontSize: 16 }} />} title="Delete Page" style={{ background: '#fef2f2', borderRadius: 8 }}/>
                     </Popconfirm>
                 </Space>
             )
         },
     ];
 
-    //Method
     const openCreate = () => {
         navigate("/add/about");
     }
@@ -80,85 +88,128 @@ export default function About() {
     }
 
     useEffect(() => {
-        if(!query){
-            setFilteredData(abouts);
-        }
-
-        const lowerQuery = query.toLowerCase();
-
-        const filtered = abouts?.filter(item => 
-            item.title?.toLowerCase().includes(lowerQuery) || item.status?.toLowerCase().includes(lowerQuery)
-        );
-
-        setFilteredData(filtered);
-    }, [query, abouts]);
-
-    useEffect(() => {
         let isMounted = true;
 
-        const fetchContactList = async () => {
-            setLoading(true);
+        const fetchAbouts = async () => {
+            try {
+                setLoading(true);
+                const res = await getDatas("/admin/abouts");
+                const list = res?.result?.data || [];
 
-            const res = await getDatas("/admin/abouts");
-
-            const list = res?.result?.data;
-
-            if(isMounted){
-                setItems(list);
+                if (isMounted) {
+                    setItems(list);
+                }
+            } catch (error) {
+                console.error("Failed to load about list:", error);
+                message.error("Failed to retrieve about list data");
+            } finally {
+                setLoading(false);
             }
-
-            setLoading(false);
         }
 
-        fetchContactList();
+        fetchAbouts();
 
         return () => {
             isMounted = false;
         }
     }, []);
 
+    const filteredData = useMemo(() => {
+        if (!query) return abouts;
+
+        const lowerQuery = query.toLowerCase();
+
+        return abouts.filter(item => {
+            const titleMatch = item.title?.toLowerCase().includes(lowerQuery);
+            const plainDescription = item.description?.replace(/<[^>]+>/g, '').toLowerCase() || "";
+            const descMatch = plainDescription.includes(lowerQuery);
+            
+            return titleMatch || descMatch;
+        });
+    }, [query, abouts]);
+
     const onDelete = async (id) => {
-        const res = await deleteData(`/admin/abouts/${id}`);
+        try {
+            setLoading(true);
+            const res = await deleteData(`/admin/abouts/${id}`);
 
-        if(res?.success){
-            const refreshed = await getDatas("/admin/abouts");
-
-            setItems(refreshed?.result?.data);
-
-            messageApi.open({
-              type: "success",
-              content: res.msg,
-            });
+            if (res?.success) {
+                messageApi.open({
+                    type: "success",
+                    content: res.msg || "About entry deleted successfully",
+                });
+                
+                const refreshed = await getDatas("/admin/abouts");
+                setItems(refreshed?.result?.data || []);
+            } else {
+                messageApi.open({
+                    type: "error",
+                    content: res?.message || "Failed to delete About entry",
+                });
+            }
+        } catch (error) {
+            console.error("Error deleting entry:", error);
+            message.error("Something went wrong. Please try again.");
+        } finally {
+            setLoading(false);
         }
     }
 
     return (
-        <>
+        <div className="about-container">
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">All About List</h1>
-                </div>
-                <div className="head-actions">
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+                <div>
+                    <Title level={2} style={{ margin: 0, fontWeight: 800 }}>About Pages</Title>
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "All About List" },
+                            { title: "About Pages" },
                         ]}
                     />
                 </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
-                <Space>
-                    <Button type="primary" danger ghost size="small" icon={<DeleteOutlined />}>Trash</Button>
-                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
+                
+                <Space size="middle">
+                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} className="add-btn">
+                        Add About Page
+                    </Button>
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} className="premium-back-btn">
+                        Back
+                    </Button>
                 </Space>
             </div>
 
-            <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
-        </>
+            <Card className="premium-card" style={{ marginTop: 0 }}>
+                <div>
+                    <div>
+                        <AntInput.Search 
+                            allowClear 
+                            placeholder="Search by title or description..." 
+                            prefix={<AppstoreOutlined style={{ color: '#bfbfbf' }} />} 
+                            value={query} 
+                            onChange={(e) => setQuery(e.target.value)} 
+                            style={{ maxWidth: 400 }}
+                            className="premium-input"
+                        />
+                    </div>
+
+                    <Table 
+                        bordered 
+                        loading={loading} 
+                        columns={columns} 
+                        dataSource={filteredData}
+                        rowKey="id"
+                        scroll={{ x: 'max-content' }}
+                        pagination={{
+                            pageSize: 10,
+                            showSizeChanger: true,
+                            showTotal: (total) => `Total ${total} entries`
+                        }}
+                    />
+                </div>
+            </Card>
+        </div>
     )
 }

@@ -1,11 +1,14 @@
-import useTitle from "../../../hooks/useTitle"
-
-import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, message } from "antd";
+import React, { useState } from "react";
+import useTitle from "../../../hooks/useTitle";
+import { ArrowLeftOutlined, UserOutlined, PhoneOutlined, MailOutlined, ContactsOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, message, Row, Col, Space, Typography } from "antd";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { Link, useNavigate } from "react-router-dom";
 import { postData } from "../../../api/common/common";
+import "./Contacts.css";
+
+const { Text, Title } = Typography;
 
 export default function AddContact() {
     // Hook
@@ -16,24 +19,43 @@ export default function AddContact() {
     const [form]                      = Form.useForm();
     const [messageApi, contextHolder] = message.useMessage();
 
+    // States
+    const [loading, setLoading]       = useState(false);
+
     const handleSubmit = async (values) => {
-        const formData = new FormData();
+        try {
+            setLoading(true);
+            const formData = new FormData();
 
-        formData.append('name', values.name);
-        formData.append('phone', values.phone_number);
-        formData.append('email', values.email);
-        formData.append('description', values.description);
+            formData.append('name', values.name || "");
+            formData.append('phone', values.phone_number || "");
+            formData.append('email', values.email || "");
+            formData.append('description', values.description || "");
 
-        const res = await postData("/admin/contacts", formData);
+            const res = await postData("/admin/contacts", formData);
 
-        messageApi.open({
-            type: "success",
-            content: res.msg,
-        });
+            if (res && res.success) {
+                messageApi.open({
+                    type: "success",
+                    content: res.msg || "Contact details created successfully",
+                    duration: 3
+                });
 
-        setTimeout(() => {
-            navigate("/contacts");
-        }, 400);
+                setTimeout(() => {
+                    navigate("/contacts");
+                }, 400);
+            } else {
+                messageApi.open({
+                    type: "error",
+                    content: res?.message || "Failed to create contact entry",
+                });
+            }
+        } catch (error) {
+            console.error("Error creating contact entry:", error);
+            messageApi.error("Something went wrong. Please try again.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     const modules = {
@@ -67,59 +89,63 @@ export default function AddContact() {
     };
 
     return (
-        <>
+        <div className="contacts-container">
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">Add Contact</h1>
-                </div>
-                <div className="head-actions">
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+                <div>
+                    <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Add Contact</Title>
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Add Contact" },
+                            { title: <Link to="/contacts">Contacts List</Link> },
+                            { title: "New Contact" },
                         ]}
                     />
                 </div>
+                <Button className="premium-back-btn" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                    Back to List
+                </Button>
             </div>
 
-            <div className="blog-form">
-                <div className="form-head-wrapper">
-                    <h2 className="form-head-title">Create Contact</h2>
+            <div className="premium-card">
+                <div className="card-content">
+                    <Form form={form} layout="vertical" onFinish={handleSubmit} className="premium-form">
+                        <div className="form-grid">
+                            <div className="info-section">
+                                <div className="info-title-badge">
+                                    <ContactsOutlined style={{ color: '#6366f1' }} />
+                                    <span>Contact Information</span>
+                                </div>
 
-                    <button className="form-head-btn" type="button" onClick={() => window.history.back()}>
-                        <ArrowLeftOutlined className="form-head-btn-icon" />
-                        <span>Back</span>
-                    </button>
-                </div>
-                <div className="blog-form-layout">
-                    <Form layout="vertical" form={form} onFinish={handleSubmit}>
-                        <Form.Item label="Name" name="name">
-                            <AntInput placeholder="Enter name" />
-                        </Form.Item>
+                                <Form.Item label="Full Name" name="name" rules={[{ required: true, message: "Please enter contact's full name" }]}>
+                                    <AntInput className="premium-input" prefix={<UserOutlined style={{ color: '#94a3b8' }} />} placeholder="e.g. John Doe" />
+                                </Form.Item>
 
-                        <Form.Item label="Phone Number" name="phone_number">
-                            <AntInput placeholder="Enter phone number" />
-                        </Form.Item>
+                                <Form.Item label="Phone Number" name="phone_number" rules={[{ required: true, message: "Please enter phone number" }]}>
+                                    <AntInput className="premium-input" prefix={<PhoneOutlined style={{ color: '#94a3b8' }} />} placeholder="e.g. +880 1700000000" />
+                                </Form.Item>
 
-                        <Form.Item name="email" label="Email" rules={[{ required: true }]}>
-                            <AntInput placeholder="Enter Email" />
-                        </Form.Item>
+                                <Form.Item label="Email Address" name="email" rules={[{ required: true, message: "Please enter email address" },{ type: "email", message: "Please enter a valid email address" }]}>
+                                    <AntInput className="premium-input" prefix={<MailOutlined style={{ color: '#94a3b8' }} />} placeholder="e.g. john.doe@example.com" />
+                                </Form.Item>
+                            </div>
+                            <div className="form-details-section">
+                                <Form.Item label="Detailed Description" name="description" rules={[{ required: true, message: "Please write a description" }]}>
+                                    <ReactQuill className="premium-quill" theme="snow" placeholder="Write detailed description or notes here..." modules={modules} />
+                                </Form.Item>
 
-                        <Form.Item label="Description" name="description">
-                            <ReactQuill theme="snow" placeholder="Write description..." modules={modules} style={{backgroundColor: "#fff",borderRadius: 5,height: "300px",marginBottom: "20px"}}/>
-                        </Form.Item>
-
-                        <div style={{marginTop:"40px"}}>
-                            <Form.Item>
-                                <Button type="primary" htmlType="submit" block>
-                                    Submit
-                                </Button>
-                            </Form.Item>
+                                <div className="submit-section">
+                                    <Button type="primary" htmlType="submit" loading={loading} className="premium-submit-btn" block>
+                                        {loading ? "CREATING CONTACT..." : "CREATE CONTACT ENTRY"}
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
                     </Form>
                 </div>
             </div>
-        </>
-    )
+        </div>
+    );
 }

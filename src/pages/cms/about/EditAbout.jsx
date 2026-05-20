@@ -1,90 +1,161 @@
-import useTitle from "../../../hooks/useTitle"
-
-import { PlusOutlined } from '@ant-design/icons';
-import { Input as AntInput, Breadcrumb, Button, Form, message, Upload } from "antd";
+import { useState, useEffect } from "react";
+import useTitle from "../../../hooks/useTitle";
+import { ArrowLeftOutlined, InfoCircleOutlined, PictureOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Row, Col, Space, Typography, message, Spin } from "antd";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getDatas, postData } from "../../../api/common/common";
-import { useEffect } from "react";
+import { postData, getDatas } from "../../../api/common/common";
+import ImagePicker from "../../../components/image/ImagePicker";
+import "./About.css";
+
+const { Text, Title } = Typography;
 
 export default function EditAbout() {
     // Hook
-    useTitle("Add About");
+    useTitle("Edit About");
 
-    const normFile = e => {
-        if (Array.isArray(e)) {
-            return e;
-        }
-        return e?.fileList;
-    };
-
-    // Variable
-    const {id} = useParams();
+    const { id } = useParams();
     const navigate = useNavigate();
 
-    const [form] = Form.useForm();
-    const [messageApi, contextHolder]           = message.useMessage();
+    // Form Instance & Messages
+    const [form]                      = Form.useForm();
+    const [messageApi, contextHolder] = message.useMessage();
 
-    // Method
+    // States
+    const [loading, setLoading]         = useState(false);
+    const [fetching, setFetching]       = useState(true);
+    
+    // Gallery States
+    const [gallery, setGallery]         = useState([]);
+    const [page, setPage]               = useState(1);
+    const [hasMore, setHasMore]         = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+
+    // Fetch Gallery Media
     useEffect(() => {
-        const getAbout = async () => {
-            const res = await getDatas(`/admin/abouts/${id}`);
+        fetchMedia(page);
+    }, []);
 
-            if (res && res.success) {
-                const data = res.result || {};
+    const fetchMedia = async (pageNumber = 1) => {
+        try {
+            setLoadingMore(true);
+            const res = await getDatas(`/admin/gallary?page=${pageNumber}`);
 
-                form.setFieldsValue({
-                    title: data.title,
-                    description: data.description,
-                    width: data.width,
-                    height: data.height,
+            if (res && res?.success) {
+                const data = res.result.data;
 
-                    image: data.img_path
-                        ? [
-                            {
-                                uid: "-1",
-                                name: "existing.png",
-                                status: "done",
-                                url: data.img_path,
-                            }
-                        ]
-                        : [],
-                });
+                if (pageNumber > 1) {
+                    setGallery(prev => [...prev, ...data]);
+                } else {
+                    setGallery(data);
+                }
+
+                const meta = res.result.meta;
+                setPage(meta.current_page);
+                setHasMore(meta.current_page < meta.last_page);
+            }
+        } catch (error) {
+            console.error("Failed to load gallery:", error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
+    // Fetch Existing About Data
+    useEffect(() => {
+        let isAlive = true;
+
+        const fetchAboutData = async () => {
+            try {
+                setFetching(true);
+                const res = await getDatas(`/admin/abouts/${id}`);
+
+                if (isAlive && res && res.success) {
+                    const data = res.result || {};
+
+                    form.setFieldsValue({
+                        title: data.title,
+                        description: data.description,
+                        width: data.width || 800,
+                        height: data.height || 800,
+                        image: data.image
+                            ? [
+                                {
+                                    uid: "-1",
+                                    name: "existing.png",
+                                    status: "done",
+                                    url: data.image,
+                                }
+                            ]
+                            : [],
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching about entry:", error);
+                message.error("Failed to load About entry data");
+            } finally {
+                if (isAlive) setFetching(false);
             }
         };
 
-        getAbout();
+        fetchAboutData();
+
+        return () => {
+            isAlive = false;
+        };
     }, [id, form]);
 
-
     const handleSubmit = async (values) => {
-        const formData = new FormData();
+        try {
+            setLoading(true);
+            const formData = new FormData();
 
-        formData.append('title', values.title);
-        formData.append('description', values.description);
-        formData.append('width', values.width);
-        formData.append('height', values.height);
+            formData.append('title', values.title || "");
+            formData.append('description', values.description || "");
+            formData.append('width', values.width || 800);
+            formData.append('height', values.height || 800);
+            formData.append('_method', 'PUT');
 
-        if (values.image && values.image.length > 0) {
-            const file = values.image[0];
-            if (file.originFileObj) {
-                formData.append("image", file.originFileObj);
+            const imageValue = values.image;
+            if (imageValue && imageValue.length > 0) {
+                const imgObj = imageValue[0];
+                if (imgObj.isFromGallery) {
+                    formData.append("image", imgObj.galleryPath);
+                } else if (imgObj.originFileObj) {
+                    formData.append("image", imgObj.originFileObj);
+                }
             }
+
+            const res = await postData(`/admin/abouts/${id}`, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+
+            if (res && res.success) {
+                messageApi.open({
+                    type: "success",
+                    content: res.msg || "About entry updated successfully",
+                    duration: 3
+                });
+
+                setTimeout(() => {
+                    navigate("/about");
+                }, 400);
+            } else {
+                messageApi.open({
+                    type: "error",
+                    content: res?.message || "Failed to update About entry",
+                });
+            }
+        } catch (error) {
+            console.error("Error updating About entry:", error);
+            messageApi.error("Something went wrong. Please try again.");
+        } finally {
+            setLoading(false);
         }
+    };
 
-        const res = await postData("/admin/abouts", formData, {headers:{ "Content-Type": "multipart/form-data" }});
-
-        messageApi.open({
-            type: "success",
-            content: res.msg,
-        });
-
-        setTimeout(() => {
-            navigate("/about");
-        }, 400);
-    }
-
+    // ReactQuill custom toolbar modules
     const modules = {
         toolbar: {
             container: [
@@ -114,73 +185,96 @@ export default function EditAbout() {
             },
         },
     };
+
+    if (fetching) {
+        return (
+            <div style={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Spin size="large" tip="Loading about page data..." />
+            </div>
+        );
+    }
+
     return (
-        <>
+        <div className="about-container">
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">Edit About</h1>
-                </div>
-                <div className="head-actions">
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+                <div>
+                    <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Edit About</Title>
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
+                            { title: <Link to="/about">About Pages</Link> },
                             { title: "Edit About" },
                         ]}
                     />
                 </div>
+                <Button className="premium-back-btn" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                    Back to List
+                </Button>
             </div>
 
-            <div className="blog-form">
-                <h2 style={{ textAlign: "center", color: "#000", fontSize: "2rem" }}>
-                    Edit About
-                </h2>
-                <div className="blog-form-layout">
-                    <Form layout="vertical" form={form} onFinish={handleSubmit}>
-                        <Form.Item label="Title" name="title">
-                            <AntInput placeholder="Enter title" />
-                        </Form.Item>
+            <div className="premium-card">
+                <div className="card-content">
+                    <Form form={form} layout="vertical" onFinish={handleSubmit} className="premium-form" initialValues={{width:800, height:800}}>
+                        <div className="form-grid">
+                            <div className="upload-section">
+                                <div className="upload-title-badge">
+                                    <PictureOutlined style={{ color: '#6366f1' }} />
+                                    <span>About Showcase Image</span>
+                                </div>
 
-                        <Form.Item label="Description" name="description">
-                            <ReactQuill theme="snow" placeholder="Write description..." modules={modules} style={{backgroundColor: "#fff",borderRadius: 5,height: "300px",marginBottom: "20px"}}/>
-                        </Form.Item>
+                                <Form.Item name="image" rules={[{ required: true, message: "Please select/upload an image" }]} style={{ marginBottom: 8 }}>
+                                    <ImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}/>
+                                </Form.Item>
 
-                        <Form.Item
-                            label="Upload"
-                            name="image"
-                            valuePropName="fileList"
-                            getValueFromEvent={normFile}
-                        >
-                            <Upload beforeUpload={() => false} listType="picture-card">
-                                <button
-                                    style={{ color: "inherit", cursor: "inherit", border: 0, background: "none" }}
-                                    type="button"
-                                >
-                                    <PlusOutlined />
-                                    <div style={{ marginTop: 8 }}>Upload</div>
-                                </button>
-                            </Upload>
-                        </Form.Item>
+                                <div className="size-info-badge">
+                                    <div className="badge-dot" />
+                                    <Text type="secondary" style={{ fontSize: '13px' }}>
+                                        Supports JPG, PNG, WEBP (Max 2MB)
+                                    </Text>
+                                </div>
 
+                                <div className="dimensions-wrapper">
+                                    <Space style={{ marginBottom: 12 }}>
+                                        <InfoCircleOutlined style={{ color: '#6366f1' }} />
+                                        <Text strong style={{ fontSize: '13px' }}>Image Dimension (Optional)</Text>
+                                    </Space>
+                                    <Row gutter={12}>
+                                        <Col span={12}>
+                                            <Form.Item label="Width (px)" name="width" style={{ marginBottom: 0 }}>
+                                                <AntInput className="premium-input" placeholder="e.g. 800" />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item label="Height (px)" name="height" style={{ marginBottom: 0 }}>
+                                                <AntInput className="premium-input" placeholder="e.g. 600" />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </div>
+                            </div>
 
-                        <div style={{display:"flex", justifyContent:"space-between"}}>
-                            <Form.Item label="Width" name="width">
-                                <AntInput placeholder="Enter width" />
-                            </Form.Item>
+                            <div className="form-details-section">
+                                <Form.Item label="About Title" name="title" rules={[{ required: true, message: "Please enter a title" }]}>
+                                    <AntInput className="premium-input" placeholder="e.g. Who We Are & Our Vision" />
+                                </Form.Item>
 
-                            <Form.Item label="Height" name="height">
-                                <AntInput placeholder="Enter height" />
-                            </Form.Item>
+                                <Form.Item label="About Description" name="description" rules={[{ required: true, message: "Please write a description" }]}>
+                                    <ReactQuill className="premium-quill" theme="snow" placeholder="Write detailed description here..." modules={modules} />
+                                </Form.Item>
+
+                                <div className="submit-section">
+                                    <Button type="primary" htmlType="submit" loading={loading} className="premium-submit-btn" block>
+                                        {loading ? "SAVING CHANGES..." : "UPDATE ABOUT PAGE"}
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
-
-                        <Form.Item>
-                            <Button type="primary" htmlType="submit" block>
-                                Submit
-                            </Button>
-                        </Form.Item>
                     </Form>
                 </div>
             </div>
-        </>
-    )
+        </div>
+    );
 }

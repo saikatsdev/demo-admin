@@ -1,55 +1,115 @@
-import useTitle from "../../../hooks/useTitle"
-
-import { ArrowLeftOutlined } from "@ant-design/icons";
-import { PlusOutlined } from '@ant-design/icons';
-import { Input as AntInput, Breadcrumb, Button, Form, message, Upload } from "antd";
+import { useState, useEffect } from "react";
+import useTitle from "../../../hooks/useTitle";
+import { ArrowLeftOutlined, InfoCircleOutlined, PictureOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Row, Col, Space, Typography, message } from "antd";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { Link, useNavigate } from "react-router-dom";
-import { postData } from "../../../api/common/common";
+import { postData, getDatas } from "../../../api/common/common";
+import ImagePicker from "../../../components/image/ImagePicker";
+import "./About.css";
+
+const { Text, Title } = Typography;
 
 export default function AddAbout() {
     // Hook
     useTitle("Add About");
 
-    const normFile = e => {
-        if (Array.isArray(e)) {
-            return e;
-        }
-        return e?.fileList;
-    };
-
     const navigate = useNavigate();
 
+    // Form Instance & Messages
     const [form]                      = Form.useForm();
     const [messageApi, contextHolder] = message.useMessage();
 
-    const handleSubmit = async (values) => {
-        const formData = new FormData();
+    // States
+    const [loading, setLoading]         = useState(false);
+    
+    // Gallery States
+    const [gallery, setGallery]         = useState([]);
+    const [page, setPage]               = useState(1);
+    const [hasMore, setHasMore]         = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
 
-        formData.append('title', values.title);
-        formData.append('description', values.description);
-        formData.append('width', values.width);
-        formData.append('height', values.height);
+    // Load Gallery Media
+    useEffect(() => {
+        fetchMedia(page);
+    }, []);
 
-        if (values.image && values.image.length > 0) {
-            const file = values.image[0];
-            if (file.originFileObj) {
-                formData.append("image", file.originFileObj);
+    const fetchMedia = async (pageNumber = 1) => {
+        try {
+            if (pageNumber === 1) setLoading(true);
+            setLoadingMore(true);
+
+            const res = await getDatas(`/admin/gallary?page=${pageNumber}`);
+
+            if (res && res?.success) {
+                const data = res.result.data;
+
+                if (pageNumber > 1) {
+                    setGallery(prev => [...prev, ...data]);
+                } else {
+                    setGallery(data);
+                }
+
+                const meta = res.result.meta;
+                setPage(meta.current_page);
+                setHasMore(meta.current_page < meta.last_page);
             }
+        } catch (error) {
+            console.error("Failed to load gallery:", error);
+        } finally {
+            setLoading(false);
+            setLoadingMore(false);
         }
+    };
 
-        const res = await postData("/admin/abouts", formData, {headers:{ "Content-Type": "multipart/form-data" }});
+    const handleSubmit = async (values) => {
+        try {
+            setLoading(true);
+            const formData = new FormData();
 
-        messageApi.open({
-            type: "success",
-            content: res.msg,
-        });
+            formData.append('title', values.title || "");
+            formData.append('description', values.description || "");
+            formData.append('width', values.width || "");
+            formData.append('height', values.height || "");
 
-        setTimeout(() => {
-            navigate("/about");
-        }, 400);
-    }
+            const imageValue = values.image;
+            if (imageValue && imageValue.length > 0) {
+                const imgObj = imageValue[0];
+                if (imgObj.isFromGallery) {
+                    formData.append("image", imgObj.galleryPath);
+                } else if (imgObj.originFileObj) {
+                    formData.append("image", imgObj.originFileObj);
+                }
+            }
+
+            const res = await postData("/admin/abouts", formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+
+            if (res && res.success) {
+                messageApi.open({
+                    type: "success",
+                    content: res.msg || "About entry created successfully",
+                    duration: 3
+                });
+
+                setTimeout(() => {
+                    navigate("/about");
+                }, 400);
+            } else {
+                messageApi.open({
+                    type: "error",
+                    content: res?.message || "Failed to create About entry",
+                });
+            }
+        } catch (error) {
+            console.error("Error creating About entry:", error);
+            messageApi.error("Something went wrong. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const modules = {
         toolbar: {
@@ -82,68 +142,86 @@ export default function AddAbout() {
     };
 
     return (
-        <>
+        <div className="about-container">
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title">Add About</h1>
-                </div>
-                <div className="head-actions">
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+                <div>
+                    <Title level={2} style={{ margin: 0, fontWeight: 800 }}>Add About</Title>
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Add About" },
+                            { title: <Link to="/about">About Pages</Link> },
+                            { title: "New About" },
                         ]}
                     />
                 </div>
+                <Button className="premium-back-btn" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                    Back to List
+                </Button>
             </div>
 
-            <div className="blog-form">
-                <div className="form-head-wrapper">
-                    <h2 className="form-head-title">Create About</h2>
+            <div className="premium-card">
+                <div className="card-content">
+                    <Form form={form} layout="vertical" onFinish={handleSubmit} className="premium-form" initialValues={{width:800, height:800}}>
+                        <div className="form-grid">
+                            <div className="upload-section">
+                                <div className="upload-title-badge">
+                                    <PictureOutlined style={{ color: '#6366f1' }} />
+                                    <span>About Showcase Image</span>
+                                </div>
 
-                    <button className="form-head-btn" type="button" onClick={() => window.history.back()}>
-                        <ArrowLeftOutlined className="form-head-btn-icon" />
-                        <span>Back</span>
-                    </button>
-                </div>
-                <div className="blog-form-layout">
-                    <Form layout="vertical" form={form} onFinish={handleSubmit}>
-                        <Form.Item label="Title" name="title">
-                            <AntInput placeholder="Enter title" />
-                        </Form.Item>
+                                <Form.Item name="image" rules={[{ required: true, message: "Please select/upload an image" }]} style={{ marginBottom: 8 }}>
+                                    <ImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onUploadSuccess={(newItems) => setGallery(prev => [...newItems, ...prev])}/>
+                                </Form.Item>
 
-                        <Form.Item label="Description" name="description">
-                            <ReactQuill theme="snow" placeholder="Write description..." modules={modules} style={{backgroundColor: "#fff",borderRadius: 5,height: "300px",marginBottom: "20px"}}/>
-                        </Form.Item>
+                                <div className="size-info-badge">
+                                    <div className="badge-dot" />
+                                    <Text type="secondary" style={{ fontSize: '13px' }}>
+                                        Supports JPG, PNG, WEBP (Max 2MB)
+                                    </Text>
+                                </div>
 
-                        <Form.Item label="Upload" valuePropName="fileList" getValueFromEvent={normFile} name="image">
-                            <Upload beforeUpload={() => false} listType="picture-card">
-                                <button style={{ color: 'inherit', cursor: 'inherit', border: 0, background: 'none' }} type="button">
-                                    <PlusOutlined />
-                                    <div style={{ marginTop: 8 }}>Upload</div>
-                                </button>
-                            </Upload>
-                        </Form.Item>
+                                <div className="dimensions-wrapper">
+                                    <Space style={{ marginBottom: 12 }}>
+                                        <InfoCircleOutlined style={{ color: '#6366f1' }} />
+                                        <Text strong style={{ fontSize: '13px' }}>Image Dimension (Optional)</Text>
+                                    </Space>
+                                    <Row gutter={12}>
+                                        <Col span={12}>
+                                            <Form.Item label="Width (px)" name="width" style={{ marginBottom: 0 }}>
+                                                <AntInput className="premium-input" placeholder="e.g. 800" />
+                                            </Form.Item>
+                                        </Col>
+                                        <Col span={12}>
+                                            <Form.Item label="Height (px)" name="height" style={{ marginBottom: 0 }}>
+                                                <AntInput className="premium-input" placeholder="e.g. 600" />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </div>
+                            </div>
 
-                        <div style={{display:"flex", justifyContent:"space-between"}}>
-                            <Form.Item label="Width" name="width">
-                                <AntInput placeholder="Enter width" />
-                            </Form.Item>
+                            <div className="form-details-section">
+                                <Form.Item label="About Title" name="title" rules={[{ required: true, message: "Please enter a title" }]}>
+                                    <AntInput className="premium-input" placeholder="e.g. Who We Are & Our Vision" />
+                                </Form.Item>
 
-                            <Form.Item label="Height" name="height">
-                                <AntInput placeholder="Enter height" />
-                            </Form.Item>
+                                <Form.Item label="About Description" name="description" rules={[{ required: true, message: "Please write a description" }]}>
+                                    <ReactQuill className="premium-quill" theme="snow" placeholder="Write detailed description here..." modules={modules} />
+                                </Form.Item>
+
+                                <div className="submit-section">
+                                    <Button type="primary" htmlType="submit" loading={loading} className="premium-submit-btn" block>
+                                        {loading ? "CREATING ENTRY..." : "CREATE ABOUT PAGE"}
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
-
-                        <Form.Item>
-                            <Button type="primary" htmlType="submit" block>
-                                Submit
-                            </Button>
-                        </Form.Item>
                     </Form>
                 </div>
             </div>
-        </>
-    )
+        </div>
+    );
 }
