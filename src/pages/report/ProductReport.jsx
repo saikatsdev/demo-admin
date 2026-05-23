@@ -19,7 +19,8 @@ export default function ProductReport() {
     const [dateRange, setDateRange] = useState([null, null]);
     const [pagination, setPagination] = useState({current: 1,pageSize: 25,total: 0});
 
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key: "sl",
