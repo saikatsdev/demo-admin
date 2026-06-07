@@ -69,16 +69,16 @@ export default function SummaryCard({dashboardSummary}) {
 
     return (
         <div className="summary-card-top">
-            <div className="row g-3">
+            <div className="summary-sections-grid">
                 {Object.entries(sectionsData).map(([section, cards], idx) => (
-                    <div key={idx} className="col-12 col-lg-6 col-xl-6 col-xxl-4">
+                    <div key={idx}>
                         <div className="main-card">
                             <div className="top-title">
                                 <h5>{section}</h5>
                             </div>
-                            <div className="row g-3">
+                            <div className="summary-cards-grid">
                                 {cards.map((card, i) => (
-                                    <div key={i} className="col-lg-6 col-md-6 col-12">
+                                    <div key={i}>
                                         <div className="summary-card">
                                             <div className="summary-icon">
                                                 <BarChart size={20} />

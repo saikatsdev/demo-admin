@@ -75,6 +75,36 @@
 }
 
 /* Summary Cards Section */
+.summary-sections-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 992px) {
+  .summary-sections-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1400px) {
+  .summary-sections-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.summary-cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .summary-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 .summary-card-top .summary-card {
   background: #ffffff;
   padding: 14px 10px;
@@ -92,6 +122,7 @@
   background-color: #fff;
   padding: 18px;
   border-radius: 8px;
+  height: 100%;
 }
 
 .summary-card-top .summary-card::after {
