@@ -1,312 +1,244 @@
 
-import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, message, Modal, Popconfirm, Select, Space, Table, Tag } from "antd";
+import { ArrowLeftOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { Breadcrumb, Button, Card, message, Popconfirm, Space, Table, Tag, Tooltip, Typography, Input as AntInput } from "antd";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { deleteData, getDatas, postData } from "../../api/common/common";
+import { Link, useNavigate } from "react-router-dom";
+import { deleteData, getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
+
+const { Title, Text } = Typography;
 
 export default function OnlinePaymentDiscount() {
     //Hook
     useTitle("Online Payment Discount");
 
+    // Variable
+    const navigate = useNavigate();
+
     // State
     const [query, setQuery]                     = useState("");
     const [loading, setLoading]                 = useState(false);
     const [onlinePayment, setItems]             = useState([]);
-    const [isModalOpen, setIsModalOpen]         = useState(false);
     const [messageApi, contextHolder]           = message.useMessage();
-    const [editingItems, setEditingItems]       = useState(null);
-    const [filteredData, setFilteredData]       = useState(onlinePayment);
-    const [form]                                = Form.useForm();
-    const [paymentGateways, setPaymentGateways] = useState([]);
+    const [filteredData, setFilteredData]       = useState([]);
 
     //Table Columns
     const columns = [
         {
             title : "SL",
             key   : "sl",
-            width : 10,
-            render: (_,__, index) => (
-                index + 1
-            )
+            width : 60,
+            align : "center",
+            render: (_,__, index) => <span style={{ fontWeight: 500 }}>{index + 1}</span>
         },
         {
             title    : "Payment Gateway",
             dataIndex: ["payment_gateway", "name"],
             render   : (_, record) => {
                 const gateway = record?.payment_gateway;
-
                 return (
-                    <div style = {{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <img src   = {gateway?.image} alt = {gateway?.name} style = {{width: 28,height: 28,objectFit: "contain",borderRadius: 4,}}/>
-                        <span>{gateway?.name}</span>
-                    </div>
+                    <Space size="middle">
+                        <img 
+                            src={gateway?.image || "/default-gateway.png"} 
+                            alt={gateway?.name} 
+                            style={{ width: 32, height: 32, objectFit: "contain", borderRadius: 6, border: '1px solid #f0f0f0' }}
+                        />
+                        <span style={{ fontWeight: 600, color: '#1e293b' }}>{gateway?.name}</span>
+                    </Space>
                 );
             },
         },
         {
-            title    : "Discount Type",
-            dataIndex: "discount_type",
-            key      : "discount_type"
-        },
-        {
-            title    : "Discount Amount",
+            title    : "Discount",
             dataIndex: "discount_amount",
-            key      : "discount_amount"
+            key      : "discount_amount",
+            render   : (amount, record) => (
+                <Space>
+                    <Text strong style={{ color: '#2563eb' }}>{amount}</Text>
+                    <Tag color="blue">{record.discount_type === 'percentage' ? '%' : 'Fixed'}</Tag>
+                </Space>
+            )
         },
         {
-            title    : "Minimum Cart Amount",
-            dataIndex: "minimum_cart_amount",
-            key      : "minimum_cart_amount"
-        },
-        {
-            title    : "Maximum Discount Amount",
-            dataIndex: "maximum_discount_amount",
-            key      : "maximum_discount_amount"
+            title    : "Cart Limits",
+            key      : "limits",
+            render   : (_, record) => (
+                <div style={{ fontSize: '13px' }}>
+                    <div>Min: <Text strong>{record.minimum_cart_amount}</Text></div>
+                    <div>Max Dis: <Text strong>{record.maximum_discount_amount}</Text></div>
+                </div>
+            )
         },
         {
             title    : "Custom Message",
             dataIndex: "custom_message",
-            key      : "custom_message"
+            key      : "custom_message",
+            ellipsis : true,
+            render   : (text) => <Text type="secondary" style={{ fontSize: '13px' }}>{text}</Text>
         },
         {
             title    : "Status",
             dataIndex: "status",
             key      : "status",
+            align    : "center",
             render   : (status) => (
-                <Tag color = {status === 'active' ? "green" : "danger"} style = {{textTransform:"capitalize"}}>{status}</Tag>
+                <Tag color={status === 'active' ? "success" : "error"} style={{ textTransform: "capitalize", borderRadius: "10px", padding: "0 12px" }}>
+                    {status}
+                </Tag>
             )
         },
         {
             title : "Action",
             key   : "operation",
-            width : 170,
+            width : 130,
+            align : "center",
             render: (_, record) => (
-                <Space>
-                    <Button size = "small" type = "primary" onClick = {() => onEdit(record)}>
-                        Edit
-                    </Button>
-                    <Popconfirm title = "Delete Item?" okText = "Yes" cancelText = "No" onConfirm = {() => onDelete(record.id)}>
-                    <Button     size  = "small" danger>
-                            Delete
-                        </Button>
+                <Space size="middle">
+                    <Tooltip title="Edit Discount">
+                        <Button 
+                            type="text" 
+                            icon={<EditOutlined style={{ color: '#1890ff' }} />} 
+                            onClick={() => navigate(`/edit/online-payment/discount/${record.id}`)} 
+                        />
+                    </Tooltip>
+                    <Popconfirm title="Delete Discount Rule?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
+                        <Tooltip title="Delete">
+                            <Button 
+                                type="text" 
+                                danger 
+                                icon={<DeleteOutlined />} 
+                            />
+                        </Tooltip>
                     </Popconfirm>
                 </Space>
             )
         },
     ];
 
+    // Method to handle search
     useEffect(() => {
-        const fetchedDeliveryGateways = async () => {
-            const res = await getDatas("/admin/payment-gateways/list");
-
-            if(res && res?.success){
-                setPaymentGateways(res?.result);
-            }
-        };
-
-        fetchedDeliveryGateways();
-    }, []);
-
-    //Method
-    const openCreate = () => {
-        setIsModalOpen(true);
-        setEditingItems(null);
-        form.resetFields();
-    }
-
-    const onEdit = (record) => {
-        setEditingItems(record);
-        setIsModalOpen(true);
-
-        form.setFieldsValue({
-            payment_gateway_id     : record.payment_gateway.id,
-            discount_type          : record.discount_type,
-            discount_amount        : record.discount_amount,
-            minimum_cart_amount    : record.minimum_cart_amount,
-            maximum_discount_amount: record.maximum_discount_amount,
-            custom_message         : record.custom_message,
-            status                 : record.status,
-        });
-    }
-
-    useEffect(() => {
-        if(!query){
+        if (!query) {
             setFilteredData(onlinePayment);
+            return;
         }
 
         const lowerQuery = query.toLowerCase();
-
         const filtered = onlinePayment?.filter(item => 
-            item.name?.toLowerCase().includes(lowerQuery) || item.status?.toLowerCase().includes(lowerQuery)
+            item.payment_gateway?.name?.toLowerCase().includes(lowerQuery) || 
+            item.discount_type?.toLowerCase().includes(lowerQuery) || 
+            item.status?.toLowerCase().includes(lowerQuery)
         );
 
         setFilteredData(filtered);
     }, [query, onlinePayment]);
 
+    // Fetch Data
     useEffect(() => {
         let isMounted = true;
 
-        const fetchContactList = async () => {
-            setLoading(true);
-
-            const res = await getDatas("/admin/online-payment/discounts");
-
-            const list = res?.result?.data;
-
-            if(isMounted){
-                setItems(list);
+        const fetchList = async () => {
+            try {
+                setLoading(true);
+                const res = await getDatas("/admin/online-payment/discounts");
+                if (res?.success && isMounted) {
+                    setItems(res?.result?.data || []);
+                }
+            } catch (error) {
+                console.error("Failed to fetch discounts", error);
+            } finally {
+                if (isMounted) setLoading(false);
             }
-
-            setLoading(false);
         }
 
-        fetchContactList();
+        fetchList();
 
         return () => {
             isMounted = false;
         }
     }, []);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        const values = await form.validateFields();
-
-        const formData = new FormData();
-
-        formData.append('payment_gateway_id', values.payment_gateway_id);
-        formData.append('discount_type', values.discount_type);
-        formData.append('discount_amount', values.discount_amount);
-        formData.append('minimum_cart_amount', values.minimum_cart_amount);
-        formData.append('maximum_discount_amount', values.maximum_discount_amount);
-        formData.append('custom_message', values.custom_message);
-        if(values.status) formData.append('status', values.status);
-
-        if(editingItems?.id) formData.append('_method', 'PUT');
-
-        const url = editingItems?.id ? `/admin/online-payment/discounts/${editingItems.id}` : `/admin/online-payment/discounts`;
-
-        try {
-            setLoading(true);
-
-            const res = await postData(url, formData, {headers:{ "Content-Type": "multipart/form-data"}, method: editingItems?.id ? "PUT" : "POST"});
-
-            if(res?.success){
-                const refreshed = await getDatas("/admin/online-payment/discounts");
-
-                setItems(refreshed?.result?.data);
-
-                messageApi.open({
-                    type: "success",
-                    content: res.msg,
-                });
-            }else{
-                messageApi.open({
-                    type: "error",
-                    content: "Something Went Wrong",
-                });
-            }
-
-            setTimeout(() => {
-                setLoading(false);
-                setIsModalOpen(false);
-            }, 500);
-        } catch (error) {
-            console.log(error);
-        }finally{
-            setLoading(false);
-        }
-    }
-
     const onDelete = async (id) => {
-        const res = await deleteData(`/admin/online-payment/discounts/${id}`);
-
-        if(res?.success){
-            const refreshed = await getDatas("/admin/online-payment/discounts");
-
-            setItems(refreshed?.result?.data);
-
-            messageApi.open({
-                type: "success",
-                content: res.msg,
-            });
-        }else{
-            messageApi.open({
-                type: "error",
-                content: "Something Went Wrong",
-            });
+        try {
+            const res = await deleteData(`/admin/online-payment/discounts/${id}`);
+            if (res?.success) {
+                const refreshed = await getDatas("/admin/online-payment/discounts");
+                setItems(refreshed?.result?.data || []);
+                message.success(res.msg);
+            } else {
+                message.error("Failed to delete discount rule");
+            }
+        } catch (error) {
+            message.error("An error occurred during deletion");
         }
     }
 
     return (
-        <>
+        <div style={{ background: '#f8f9fa', minHeight: '100vh', paddingBottom: '40px' }}>
             {contextHolder}
-            <div className="pagehead">
+            <div className="pagehead" style={{ background: '#fff', padding: '16px 24px', borderBottom: '1px solid #e9ecef', marginBottom: '24px' }}>
                 <div className="head-left">
-                    <h1 className="title">Online Payment Discount</h1>
-                </div>
-                <div className="head-actions">
+                    <Title level={4} style={{ margin: 0 }}>Online Payment Discount</Title>
                     <Breadcrumb
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Online Payment Discount" },
+                            { title: "Payment Discounts" },
                         ]}
                     />
                 </div>
+                <div className="head-actions">
+                    <Space>
+                        <Button 
+                            type="primary" 
+                            icon={<PlusOutlined />} 
+                            onClick={() => navigate("/add/online-payment/discount")}
+                            style={{ borderRadius: '8px' }}
+                        >
+                            Add New Discount
+                        </Button>
+                        <Button 
+                            icon={<ArrowLeftOutlined />} 
+                            onClick={() => navigate(-1)}
+                            style={{ borderRadius: '8px' }}
+                        >
+                            Back
+                        </Button>
+                    </Space>
+                </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
-
-                <Space>
-                    <Button size="small" icon={<DeleteOutlined />}>Trash</Button>
-                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
-                </Space>
-            </div>
-
-            <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
-
-            <div>
-                <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"} confirmLoading={loading} onCancel={() => setIsModalOpen(false)}>
-                    <div>
-                        <Form form={form} layout="vertical">
-                            <div>
-                                <Form.Item name="payment_gateway_id" label="Payment Gatewat" rules={[{ required: true }]}>
-                                    <Select options={paymentGateways.map(item => ({label: item.name,value: item.id}))} placeholder="Select Payment Gateway"/>
-                                </Form.Item>
-
-                                <Form.Item name="discount_type" label="Discount Type" rules={[{ required: true }]}>
-                                    <Select options={[{ value: 'percentage', label: 'Percentage' }, { value: 'fixed', label: 'Fixed' }]} placeholder="Select Discount Type"/>
-                                </Form.Item>
-
-                                <Form.Item name="discount_amount" label="Discount Amount" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter Discount Amount" />
-                                </Form.Item>
-
-                                <Form.Item name="minimum_cart_amount" label="Minimum Cart Amount" rules={[{ required: true }]} placeholder="Write Cart Amount">
-                                    <AntInput placeholder="Enter Minimum Cart Amount" />
-                                </Form.Item>
-
-                                <Form.Item name="maximum_discount_amount" label="Maximum Discount Amount" rules={[{ required: true }]} placeholder="Maximum Discount Amount">
-                                    <AntInput placeholder="Enter Maximum Discount Amount" />
-                                </Form.Item>
-
-                                <Form.Item name="custom_message" label="Custom Message" rules={[{ required: true }]} placeholder="Write your message">
-                                    <AntInput placeholder="Write your message"/>
-                                </Form.Item>
-
-                                <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">
-                                    <Select options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
-                                </Form.Item>
+            <div style={{ padding: '0 24px' }}>
+                <Card 
+                    variant="borderless" 
+                    style={{ borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
+                    title={
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0' }}>
+                            <AntInput
+                                placeholder="Search by gateway or status..."
+                                prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                                allowClear
+                                style={{ width: 400, borderRadius: '10px', padding: '8px 12px' }}
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                            />
+                            <div style={{ fontSize: '13px', color: '#64748b' }}>
+                                Total Rules: <Text strong style={{ color: '#2563eb' }}>{filteredData.length}</Text>
                             </div>
-                        </Form>
-                    </div>
-                </Modal>
+                        </div>
+                    }
+                >
+                    <Table 
+                        bordered 
+                        loading={loading} 
+                        columns={columns} 
+                        dataSource={filteredData}
+                        rowKey="id"
+                        pagination={{
+                            pageSize: 10,
+                            showTotal: (total) => `Total ${total} rules`,
+                        }}
+                    />
+                </Card>
             </div>
-
-        </>
+        </div>
     )
 }

@@ -161,6 +161,8 @@ import Feedback from "./pages/order/feedback/Feedback";
 import CampaignProduct from "./pages/meta/CampaignProduct";
 import ProductTrash from "./pages/product/ProductTrash";
 import AddStatus from "./pages/order/AddStatus";
+import AddOnlinePaymentDiscount from "./pages/order/AddOnlinePaymentDiscount";
+import EditOnlinePaymentDiscount from "./pages/order/EditOnlinePaymentDiscount";
 
 function App() {
     const dispatch         = useDispatch();
@@ -292,6 +294,8 @@ function App() {
                     <Route path="/edit/payment/gateway/:id" element={<EditPaymentGateway />} />
 
                     <Route path="/online-payment/discounts" element={<OnlinePaymentDiscount />}/>
+                    <Route path="/add/online-payment/discount" element={<AddOnlinePaymentDiscount />}/>
+                    <Route path="/edit/online-payment/discount/:id" element={<EditOnlinePaymentDiscount />}/>
                     <Route path="/statuses" element={<OrderStatus />} />
                     <Route path="/order-status/add" element={<AddStatus />} />
                     <Route path="/coupons" element={<MarketCoupon />} />
