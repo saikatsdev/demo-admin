@@ -20,7 +20,8 @@ export default function CancelReason() {
     const [form]                          = Form.useForm();
 
     //Table Columns
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key:"sl",

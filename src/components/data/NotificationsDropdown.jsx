@@ -1,12 +1,23 @@
 import { useState, useEffect, useRef } from "react";
 import { BellOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import useNotifications from "./notification";
 
 const NotificationsDropdown = () => {
     // State
-    const [showNoti, setShowNoti]    = useState(false);
-    const { notifications, loading } = useNotifications();
-    const dropdownRef                = useRef(null);
+    const [showNoti, setShowNoti]                    = useState(false);
+    const { notifications, setNotifications, loading } = useNotifications();
+    const dropdownRef                                = useRef(null);
+    const navigate                                   = useNavigate();
+
+    const handleNotiClick = (id) => {
+        // Mark as read (update local state)
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+        // Navigate to order-edit page
+        navigate(`/order-edit/${id}`);
+        // Close dropdown
+        setShowNoti(false);
+    }
 
     useEffect(() => {
         function handleClickOutside(event) {
@@ -24,7 +35,9 @@ const NotificationsDropdown = () => {
         <div className="noti-wrapper" ref={dropdownRef}>
             <button type="button" className="icon-btn" aria-label="Notifications" onClick={() => setShowNoti(!showNoti)}>
                 <BellOutlined className="i" />
-                <span className="badge">{notifications.length}</span>
+                {notifications.filter(n => !n.read).length > 0 && (
+                    <span className="badge">{notifications.filter(n => !n.read).length}</span>
+                )}
             </button>
 
             {showNoti && (
@@ -37,7 +50,27 @@ const NotificationsDropdown = () => {
                         <div className="noti-empty">No notifications</div>
                     ) : (
                         notifications.map((n) => (
-                            <div key={n.id} className="noti-item">
+                            <div 
+                                key={n.id} 
+                                className={`noti-item ${!n.read ? "unread" : ""}`} 
+                                onClick={() => handleNotiClick(n.id)} 
+                                style={{ 
+                                    cursor: "pointer",
+                                    backgroundColor: !n.read ? "#f0f7ff" : "#fff",
+                                    position: "relative"
+                                }}
+                            >
+                                {!n.read && (
+                                    <div style={{
+                                        position: "absolute",
+                                        right: "15px",
+                                        top: "15px",
+                                        width: "8px",
+                                        height: "8px",
+                                        backgroundColor: "#1890ff",
+                                        borderRadius: "50%"
+                                    }} />
+                                )}
                                 <div className="noti-left">
                                     <img src={n.image || "/default-avatar.png"} alt="avatar" className="noti-avatar" />
                                 </div>

@@ -20,7 +20,8 @@ const useNotifications = () => {
                         time: new Date(order.created_at).toLocaleTimeString(),
                         phone: order.phone_number,
                         amount: `${order.net_order_price} TK`,
-                        image: order.details?.[0]?.product?.img_path || null
+                        image: order.details?.[0]?.product?.img_path || null,
+                        read: false
                     }));
 
                     setNotifications(mapped);
@@ -39,7 +40,7 @@ const useNotifications = () => {
         };
     }, []);
 
-    return { notifications, loading, error };
+    return { notifications, setNotifications, loading, error };
 };
 
 export default useNotifications;
