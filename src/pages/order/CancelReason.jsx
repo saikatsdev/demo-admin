@@ -1,5 +1,5 @@
-import { ArrowLeftOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, message, Modal, Popconfirm, Select, Space, Table, Tag } from "antd";
+import { ArrowLeftOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Card, Form, message, Modal, Popconfirm, Select, Space, Table, Tag, Tooltip } from "antd";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { deleteData, getDatas, postData } from "../../api/common/common";
@@ -20,52 +20,67 @@ export default function CancelReason() {
     const [form]                          = Form.useForm();
 
     //Table Columns
-    const columns = 
-    [
+    const columns = [
         {
             title: "SL",
-            key:"sl",
-            width: 10,
-            render: (_,__, index) => (
-                index + 1
-            )
+            key: "sl",
+            width: 60,
+            align: "center",
+            render: (_, __, index) => <span style={{ fontWeight: 500 }}>{index + 1}</span>
         },
         {
             title: "Name",
             dataIndex: "name",
-            key: "name"
+            key: "name",
+            render: (text) => <span style={{ fontWeight: 600, color: "#1890ff" }}>{text}</span>
         },
         {
             title: "Orders Count",
             dataIndex: "orders_count",
-            key: "orders_count"
+            key: "orders_count",
+            align: "center",
+            render: (count) => <Tag color="blue">{count || 0}</Tag>
         },
         {
             title: "Total Amount",
             dataIndex: "total_amount",
-            key: "total_amount"
+            key: "total_amount",
+            align: "right",
+            render: (amount) => <span style={{ fontFamily: "monospace" }}>{amount || 0} TK</span>
         },
         {
             title: "Status",
             dataIndex: "status",
             key: "status",
+            align: "center",
             render: (status) => (
-                <Tag color={status === 'active' ? "green" : "danger"} style={{textTransform:"capitalize"}}>{status}</Tag>
+                <Tag color={status === 'active' ? "success" : "error"} style={{ textTransform: "capitalize", borderRadius: "10px", padding: "0 10px" }}>
+                    {status}
+                </Tag>
             )
         },
         {
             title: "Action",
             key: "operation",
-            width:170,
+            width: 120,
+            align: "center",
             render: (_, record) => (
-                <Space>
-                    <Button size="small" type="primary" onClick={() => onEdit(record)}>
-                        Edit
-                    </Button>
+                <Space size="middle">
+                    <Tooltip title="Edit">
+                        <Button
+                            type="text"
+                            icon={<EditOutlined style={{ color: "#1890ff" }} />}
+                            onClick={() => onEdit(record)}
+                        />
+                    </Tooltip>
                     <Popconfirm title="Delete Item?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Button size="small" danger>
-                            Delete
-                        </Button>
+                        <Tooltip title="Delete">
+                            <Button
+                                type="text"
+                                danger
+                                icon={<DeleteOutlined />}
+                            />
+                        </Tooltip>
                     </Popconfirm>
                 </Space>
             )
@@ -194,16 +209,51 @@ export default function CancelReason() {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }} value={query} onChange={(e) => setQuery(e.target.value)}/>
-                <Space>
-                    <Button size="small" icon={<DeleteOutlined />}>Trash</Button>
-                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>Add</Button>
-                    <Button icon={<ArrowLeftOutlined />} size="small" onClick={() => window.history.back()}>Back</Button>
-                </Space>
-            </div>
-
-            <Table bordered loading={loading} columns={columns}  dataSource={filteredData}/>
+            <Card
+                style={{ borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}
+                title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
+                        <AntInput
+                            placeholder="Search by name or status..."
+                            prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                            allowClear
+                            style={{ width: 350, borderRadius: '8px' }}
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                        />
+                        <Space>
+                            <Button 
+                                type="primary" 
+                                icon={<PlusOutlined />} 
+                                onClick={openCreate}
+                                style={{ borderRadius: '8px' }}
+                            >
+                                Add Reason
+                            </Button>
+                            <Button 
+                                icon={<ArrowLeftOutlined />} 
+                                onClick={() => window.history.back()}
+                                style={{ borderRadius: '8px' }}
+                            >
+                                Back
+                            </Button>
+                        </Space>
+                    </div>
+                }
+            >
+                <Table 
+                    bordered 
+                    loading={loading} 
+                    columns={columns} 
+                    dataSource={filteredData} 
+                    rowKey="id"
+                    pagination={{
+                        pageSize: 10,
+                        showSizeChanger: true,
+                        showTotal: (total) => `Total ${total} items`,
+                    }}
+                />
+            </Card>
 
             <div>
                 <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"} confirmLoading={loading} onCancel={() => setIsModalOpen(false)}>
