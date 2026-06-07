@@ -1,71 +1,58 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Row, Col, Card, Tooltip } from "antd";
-import { DownloadOutlined, FileExcelOutlined, FilePdfOutlined, SearchOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Table, Input, Select, Button, DatePicker, Space, Tag, Tooltip } from "antd";
+import { FilterOutlined, RiseOutlined, FilePdfOutlined, FileExcelOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import dayjs from "dayjs";
-import useTitle from "../../hooks/useTitle";
-import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import "./report.css";
+import useTitle from "../../hooks/useTitle";
+import "./css/OrderReport.css";
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 export default function OrderReport() {
     // Hook
-    useTitle("Order Report");
+    useTitle("Global Sales Report");
 
     const [orders, setOrders]   = useState([]);
-    const [summary, setSummary] = useState({
-        total_order: 0,
-        total_quantity: 0,
-        total_payable: 0
-    });
     const [loading, setLoading] = useState(false);
-    const [dateFilter, setDateFilter] = useState("today");
+    const [dateFilter, setDateFilter] = useState("all");
     const [localSearch, setLocalSearch] = useState("");
     const [dateRange, setDateRange] = useState([null, null]);
-
     const [pagination, setPagination] = useState({current: 1, pageSize: 25, total: 0});
-
-    useEffect(() => {
-        setPagination((prev) => ({ ...prev, current: 1 }));
-    }, [dateFilter, dateRange]);
 
     const fetchOrders = async () => {
         setLoading(true);
-        try {
-            let params = {};
+        let params = {};
 
-            if (dateFilter && dateFilter !== "custom") {
-                params.filter = dateFilter;
-            } else if (dateFilter === "custom" && dateRange[0] !== null && dateRange[1] !== null) {
-                params.start_date = dateRange[0].format("YYYY-MM-DD");
-                params.end_date = dateRange[1].format("YYYY-MM-DD");
+        if (dateFilter === "all") {
+            params.filter = "all";
+        } else if (dateFilter !== "custom") {
+            params.filter = dateFilter;
+        } else {
+            if (!dateRange[0] || !dateRange[1]) {
+                setLoading(false);
+                return;
             }
+            params.from_date = dateRange[0].format("YYYY-MM-DD");
+            params.to_date = dateRange[1].format("YYYY-MM-DD");
+        }
 
-            params.page = pagination.current;
-            params.paginate_size = pagination.pageSize;
-            if (localSearch) params.search = localSearch;
+        params.page = pagination.current;
+        params.limit = pagination.pageSize;
 
+        try {
             const query = new URLSearchParams(params).toString();
             const res = await getDatas(`/admin/order/reports?${query}`);
 
             if (res?.success) {
                 setOrders(res?.result?.orders?.data || []);
-                setSummary({
-                    total_order: res?.result?.total_order || 0,
-                    total_quantity: res?.result?.total_quantity || 0,
-                    total_payable: res?.result?.total_payable || 0,
-                });
                 setPagination((prev) => ({
                     ...prev,
                     total: res?.result?.total_order || 0,
                 }));
             }
-        } catch (error) {
-            console.error("Failed to fetch orders:", error);
         } finally {
             setLoading(false);
         }
@@ -75,52 +62,62 @@ export default function OrderReport() {
         fetchOrders();
     }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
 
-    const handleSearch = (value) => {
-        setLocalSearch(value);
-        setPagination(prev => ({ ...prev, current: 1 }));
-    };
-
     const columns = [
         {
-            title: "SL",
+            title: "#",
             key: "sl",
-            render: (text, record, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
-            width: 70,
-            align: 'center',
+            render: (_, __, index) => (
+                <span style={{ fontWeight: 600, color: '#94a3b8' }}>
+                    {(pagination.current - 1) * pagination.pageSize + index + 1}
+                </span>
+            ),
+            width: 60,
+            align: 'center'
         },
         {
-            title: "Customer",
+            title: "Customer Contact",
             dataIndex: "phone_number",
             key: "customer",
-            render: (text) => <span style={{ fontWeight: 600, color: '#1c558b' }}>{text}</span>,
+            render: (text) => (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: 700, color: '#1e293b' }}>{text}</span>
+                    <span style={{ fontSize: 11, color: '#64748b' }}>Verified Mobile</span>
+                </div>
+            ),
         },
         {
-            title: "Invoice Number",
+            title: "Invoice Reference",
             dataIndex: "invoice_number",
             key: "invoice",
-            render: (text) => <code style={{ color: '#e83e8c' }}>{text}</code>
+            render: (text) => <span className="invoice-cell">#{text}</span>,
         },
         {
-            title: "Order Quantity",
+            title: "Volume",
             dataIndex: "order_quantity",
             key: "quantity",
-            align: 'center',
+            align: "center",
+            render: (val) => <Tag color="blue" style={{ borderRadius: 4 }}>{val} Items</Tag>
         },
         {
-            title: "Payable Price",
+            title: "Financials",
             dataIndex: "payable_price",
             key: "price",
-            render: (text) => <strong>৳{Number(text).toLocaleString()}</strong>,
-            align: 'right',
+            render: (val) => <span className="price-cell">৳ {Number(val).toLocaleString()}</span>,
+            align: "right",
         },
         {
-            title: "Order Date",
+            title: "Order Timeline",
             dataIndex: "created_at",
             key: "created_at",
-            render: (value) => value ? dayjs(value).format("DD MMM YYYY, hh:mm A") : "-",
+            render: (value) => (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 13, color: '#334155', fontWeight: 500 }}>{dayjs(value).format("DD MMM, YYYY")}</span>
+                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{dayjs(value).format("hh:mm A")}</span>
+                </div>
+            ),
         },
         {
-            title: "Paid Status",
+            title: "Payment State",
             dataIndex: "paid_status",
             key: "paid",
             render: (text) => (
@@ -130,219 +127,161 @@ export default function OrderReport() {
             ),
         },
         {
-            title: "Status",
+            title: "Current Status",
             dataIndex: ["current_status", "name"],
             key: "status",
-            render: (text) => <span className={`statusBadge ${text?.toLowerCase()}`}>{text}</span>,
+            render: (text) => {
+                const colors = {
+                    'delivered': 'success',
+                    'canceled': 'error',
+                    'pending': 'warning',
+                    'approved': 'processing'
+                };
+                return <Tag color={colors[text.toLowerCase()] || 'default'} style={{ borderRadius: 12, padding: '2px 12px', fontWeight: 600 }}>{text}</Tag>;
+            },
         },
         {
-            title: "Source",
+            title: "Traffic Source",
             dataIndex: ["order_from", "name"],
             key: "source",
             render: (text) => (
-                <span
-                    className={`order-status-badge ${
-                        text?.toLowerCase() === "frontend" ? "source-frontend" : 
-                        text?.toLowerCase() === "youtube" ? "source-youtube" : 
-                        text?.toLowerCase() === "facebook" ? "source-facebook" : "source-default"
-                    }`}
-                >
+                <span className={`source-badge source-${text.toLowerCase()}`}>
                     {text}
                 </span>
             ),
         },
     ];
 
-    const exportToExcel = () => {
-        const dataToExport = orders.map((order, index) => ({
-            "SL": (pagination.current - 1) * pagination.pageSize + index + 1,
-            "Customer": order.phone_number,
-            "Invoice": order.invoice_number,
-            "Quantity": order.order_quantity,
-            "Payable Price": order.payable_price,
-            "Date": dayjs(order.created_at).format("DD MMM YYYY, hh:mm A"),
-            "Paid Status": order.paid_status,
-            "Order Status": order.current_status?.name,
-            "Source": order.order_from?.name
-        }));
+    const downloadCSV = () => {
+        const headers = ["SL", "Customer", "Invoice", "Quantity", "Total Price", "Date", "Status", "Source"];
+        const rows = orders.map((item, index) => [
+            index + 1,
+            item.phone_number,
+            item.invoice_number,
+            item.order_quantity,
+            item.payable_price,
+            dayjs(item.created_at).format("YYYY-MM-DD HH:mm"),
+            item.current_status?.name,
+            item.order_from?.name
+        ]);
 
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
-        XLSX.writeFile(workbook, `Order_Report_${dayjs().format("YYYY-MM-DD")}.xlsx`);
+        let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.href = encodedUri;
+        link.download = `Orders_Report_${dayjs().format('YYYY-MM-DD')}.csv`;
+        link.click();
     };
 
-    const exportToPDF = () => {
+    const downloadPDF = () => {
         const doc = new jsPDF();
-        
-        // Add header
         doc.setFontSize(18);
-        doc.setTextColor(28, 85, 139);
-        doc.text("Order Report", 14, 22);
-        
-        doc.setFontSize(10);
+        doc.text("Sales Transaction Report", 14, 22);
+        doc.setFontSize(11);
         doc.setTextColor(100);
-        doc.text(`Generated on: ${dayjs().format("DD MMM YYYY, hh:mm A")}`, 14, 30);
-        doc.text(`Filter: ${dateFilter.toUpperCase()}`, 14, 35);
-
-        // Summary Table in PDF
-        autoTable(doc, {
-            startY: 40,
-            head: [['Total Orders', 'Total Quantity', 'Total Payable']],
-            body: [[summary.total_order, summary.total_quantity, `BTD ${summary.total_payable.toLocaleString()}`]],
-            theme: 'grid',
-            headStyles: { fillColor: [242, 249, 253], textColor: [0, 0, 0] },
-        });
-
-        // Main Data Table
-        const tableColumn = ["SL", "Customer", "Invoice", "Qty", "Price", "Date", "Status"];
-        const tableRows = orders.map((order, index) => [
-            (pagination.current - 1) * pagination.pageSize + index + 1,
-            order.phone_number,
-            order.invoice_number,
-            order.order_quantity,
-            order.payable_price,
-            dayjs(order.created_at).format("DD MMM YY"),
-            order.current_status?.name
+        
+        const dateStr = dayjs().format("YYYY-MM-DD HH:mm");
+        doc.text(`Generated on: ${dateStr}`, 14, 30);
+        doc.text(`Record Frequency: ${orders.length} transactions identifier`, 14, 36);
+        
+        const tableColumn = ["#", "Customer", "Invoice", "Qty", "Amount", "Date", "Status"];
+        const tableRows = orders.map((item, index) => [
+            index + 1,
+            item.phone_number,
+            item.invoice_number,
+            item.order_quantity,
+            `৳${Number(item.payable_price).toLocaleString()}`,
+            dayjs(item.created_at).format("DD MMM YY"),
+            item.current_status?.name
         ]);
 
         autoTable(doc, {
-            startY: (doc).lastAutoTable.cursor.y + 10,
             head: [tableColumn],
             body: tableRows,
-            theme: 'striped',
-            headStyles: { fillColor: [28, 85, 139], textColor: [255, 255, 255] },
-            styles: { fontSize: 8 },
+            startY: 45,
+            theme: 'grid',
+            headStyles: { fillColor: [28, 85, 139], textColor: 255 },
+            styles: { fontSize: 8 }
         });
 
-        doc.save(`Order_Report_${dayjs().format("YYYY-MM-DD")}.pdf`);
+        doc.save(`Orders_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
     };
 
     return (
-        <div className="reportWrapper">
-            <div className="topBar">
-                <h4 style={{ margin: 0, fontWeight: 700, color: '#1c558b' }}>Order Report</h4>
-                <Space>
-                    <Tooltip title="Reload Data">
-                        <Button icon={<ReloadOutlined />} onClick={fetchOrders} />
-                    </Tooltip>
-                    <Button 
-                        type="primary" 
-                        icon={<FileExcelOutlined />} 
-                        onClick={exportToExcel}
-                        style={{ backgroundColor: '#107c41', borderColor: '#107c41' }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button 
-                        type="primary" 
-                        danger 
-                        icon={<FilePdfOutlined />} 
-                        onClick={exportToPDF}
-                    >
-                        Export PDF
-                    </Button>
+        <div className="report-container">
+            <header className="report-header">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div>
+                        <h2>Sales Transaction Insights</h2>
+                        <p>Comprehensive overview of order flows, revenue collection, and fulfillment velocity.</p>
+                    </div>
+                </div>
+            </header>
+
+            <div className="filter-card">
+                <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
+                    <Space wrap size="middle">
+                        <Input.Search 
+                            placeholder="Filter by phone, invoice, or status..." 
+                            allowClear 
+                            onChange={(e) => setLocalSearch(e.target.value)} 
+                            style={{ width: 380 }}
+                            prefix={<FilterOutlined style={{ color: '#94a3b8' }} />}
+                        />
+                        <Select 
+                            value={dateFilter} 
+                            style={{ width: 180 }} 
+                            onChange={(val) => {
+                                setDateFilter(val);
+                                if (val !== "custom") setDateRange([null, null]);
+                            }}
+                            suffixIcon={<RiseOutlined style={{ color: '#6366f1' }} />}
+                        >
+                            <Option value="all">All Time Sales</Option>
+                            <Option value="today">Daily Report</Option>
+                            <Option value="yesterday">Yesterday</Option>
+                            <Option value="last7days">Last 7 Days</Option>
+                            <Option value="last30days">Last 30 Days</Option>
+                            <Option value="month">Current Month</Option>
+                            <Option value="year">Current Year</Option>
+                            <Option value="custom">Specific Range</Option>
+                        </Select>
+
+                        {dateFilter === "custom" && (
+                            <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear />
+                        )}
+                    </Space>
+
+                    <Space size="middle">
+                        <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
+                            Export CSV
+                        </Button>
+                        <Button type="primary" style={{ backgroundColor: '#d32f2f', border: 'none', borderRadius: 8 }} icon={<FilePdfOutlined />} onClick={downloadPDF}>
+                            Export PDF
+                        </Button>
+                    </Space>
                 </Space>
             </div>
-
-            {/* Statistics Cards */}
-            <Row gutter={[16, 16]} className="custom-report-cards">
-                <Col xs={24} sm={8}>
-                    <div className="report-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <div className="card-header"><h6>Total Orders</h6></div>
-                                <div className="card-value">{summary.total_order}</div>
-                            </div>
-                            <div className="card-icon" style={{ backgroundColor: '#e6f7ff', color: '#1890ff' }}>
-                                <DownloadOutlined />
-                            </div>
-                        </div>
-                    </div>
-                </Col>
-                <Col xs={24} sm={8}>
-                    <div className="report-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <div className="card-header"><h6>Total Quantity</h6></div>
-                                <div className="card-value">{summary.total_quantity}</div>
-                            </div>
-                            <div className="card-icon" style={{ backgroundColor: '#f6ffed', color: '#52c41a' }}>
-                                <SearchOutlined />
-                            </div>
-                        </div>
-                    </div>
-                </Col>
-                <Col xs={24} sm={8}>
-                    <div className="report-card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <div className="card-header"><h6>Total Amount</h6></div>
-                                <div className="card-value">৳{Number(summary.total_payable).toLocaleString()}</div>
-                            </div>
-                            <div className="card-icon" style={{ backgroundColor: '#fff7e6', color: '#fa8c16' }}>
-                                <strong>৳</strong>
-                            </div>
-                        </div>
-                    </div>
-                </Col>
-            </Row>
-
-            {/* Filter Section */}
-            <Card style={{ marginBottom: 20 }} bodyStyle={{ padding: '16px' }}>
-                <Row gutter={[16, 16]} align="middle">
-                    <Col xs={24} md={8}>
-                        <Input 
-                            placeholder="Search by phone / invoice / source..." 
-                            prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-                            allowClear 
-                            value={localSearch} 
-                            onChange={(e) => handleSearch(e.target.value)}
-                        />
-                    </Col>
-                    <Col xs={24} md={16}>
-                        <Space wrap>
-                            <span style={{ fontWeight: 500 }}>Filter By:</span>
-                            <Select value={dateFilter} style={{ width: 140 }} onChange={(val) => setDateFilter(val)}>
-                                <Option value="today">Today</Option>
-                                <Option value="yesterday">Yesterday</Option>
-                                <Option value="last7days">Last 7 Days</Option>
-                                <Option value="last30days">Last 30 Days</Option>
-                                <Option value="month">This Month</Option>
-                                <Option value="year">This Year</Option>
-                                <Option value="custom">Custom Range</Option>
-                            </Select>
-
-                            {dateFilter === "custom" && (
-                                <RangePicker 
-                                    value={dateRange} 
-                                    onChange={(dates) => setDateRange(dates)} 
-                                    allowClear
-                                />
-                            )}
-                        </Space>
-                    </Col>
-                </Row>
-            </Card>
 
             <Table
                 rowKey="id"
                 columns={columns}
-                dataSource={orders}
+                dataSource={orders.filter(item => 
+                    !localSearch || 
+                    item.phone_number?.toLowerCase().includes(localSearch.toLowerCase()) || 
+                    item.invoice_number?.toLowerCase().includes(localSearch.toLowerCase()) || 
+                    item.current_status?.name?.toLowerCase().includes(localSearch.toLowerCase())
+                )}
                 loading={loading}
                 pagination={{
                     current: pagination.current,
                     pageSize: pagination.pageSize,
                     total: pagination.total,
+                    onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
                     showSizeChanger: true,
-                    pageSizeOptions: ['10', '25', '50', '100'],
-                    onChange: (page, pageSize) => {
-                        setPagination((prev) => ({ ...prev, current: page, pageSize }));
-                    },
+                    className: "custom-pagination",
+                    showTotal: (total) => `Total ${total} transactions processed`,
                 }}
-                scroll={{ x: 1000 }}
-                bordered
-                className="teamTable"
             />
         </div>
     );

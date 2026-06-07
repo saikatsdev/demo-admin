@@ -211,13 +211,7 @@ export default function SettingCategory() {
                     
                     <div>
                         <Text strong style={{ display: "block", marginBottom: 8, color: '#4b5563' }}>Status</Text>
-                        <Select 
-                            size="large"
-                            value={editStatus} 
-                            onChange={(value) => setEditStatus(value)} 
-                            style={{ width: "100%" }}
-                            dropdownStyle={{ borderRadius: 8 }}
-                        >
+                        <Select size="large" value={editStatus} onChange={(value) => setEditStatus(value)} style={{ width: "100%" }} dropdownStyle={{ borderRadius: 8 }}>
                             <Option value="active">Active</Option>
                             <Option value="inactive">Inactive</Option>
                         </Select>
