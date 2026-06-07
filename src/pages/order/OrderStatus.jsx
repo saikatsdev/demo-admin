@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useContext, useMemo } from "react";
 import { ArrowLeftOutlined, MenuOutlined,PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, message, Modal, Select, Space, Table, Tag, ColorPicker } from "antd";
+import { Input as AntInput, Breadcrumb, Button, message, Space, Table, Tag } from "antd";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
@@ -66,11 +66,8 @@ export default function OrderStatus() {
     const [query, setQuery]               = useState("");
     const [loading, setLoading]           = useState(false);
     const [orderStatus, setItems]                = useState([]);
-    const [isModalOpen, setIsModalOpen]   = useState(false);
     const [messageApi, contextHolder]     = message.useMessage();
-    const [editingItems, setEditingItems] = useState(null);
     const [filteredData, setFilteredData] = useState(orderStatus);
-    const [form]                          = Form.useForm();
     const [pagination, setPagination] = useState({current: 1,pageSize: 20});
 
     const protectedIds = [7, 8, 9, 10, 13, 14];
@@ -143,7 +140,7 @@ export default function OrderStatus() {
 
                 return (
                     <Space>
-                        <Button size="small" type="primary" onClick={() => onEdit(record)} disabled={isDisabled}>
+                        <Button size="small" type="primary" onClick={() => navigate(`/order-status/edit/${record.id}`)} disabled={isDisabled}>
                             Edit
                         </Button>
                     </Space>
@@ -202,17 +199,7 @@ export default function OrderStatus() {
         }
     };
 
-    const onEdit = (record) => {
-        setEditingItems(record);
-        setIsModalOpen(true);
-
-        form.setFieldsValue({
-            name:record.name,
-            bg_color:record.bg_color ?? '',
-            text_color:record.text_color ?? '',
-            position:record.position,
-        });
-    }
+    // Removed onEdit modal logic
 
     useEffect(() => {
         if(!query){
@@ -253,43 +240,7 @@ export default function OrderStatus() {
     }, []);
 
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        const values = await form.validateFields();
-
-        const formData = new FormData();
-
-        formData.append('name', values.name);
-        formData.append("bg_color", values.bg_color || 0);
-        formData.append('text_color', values.text_color || 0);
-        formData.append('position', values.position || 0);
-        if(values.status) formData.append('status', values.status);
-
-        if(editingItems?.id) formData.append('_method', 'PUT');
-
-        const url = editingItems?.id ? `/admin/statuses/${editingItems.id}` : `/admin/statuses`;
-
-        setLoading(true);
-
-        const res = await postData(url, formData);
-
-        if(res?.success){
-            const refreshed = await getDatas("/admin/statuses");
-
-            setItems(refreshed?.result?.data);
-
-            messageApi.open({
-              type: "success",
-              content: res.msg,
-            });
-        }
-
-        setTimeout(() => {
-            setLoading(false);
-            setIsModalOpen(false);
-        }, 500);
-    }
+    // Removed handleSubmit modal logic
 
     const user = useSelector((state) => state.auth.user);
 
@@ -350,48 +301,7 @@ export default function OrderStatus() {
                 </SortableContext>
             </DndContext>
 
-            <div>
-                <Modal title={editingItems ? "Edit Info" : "Create New"} open={isModalOpen} onOk={handleSubmit} okText={editingItems ? "Update" : "Create"} confirmLoading={loading}
-                    onCancel={() => setIsModalOpen(false)}>
-                    <div>
-                        <Form form={form} layout="vertical">
-                            <div>
-                                <Form.Item name="name" label="Status Name" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter Name" />
-                                </Form.Item>
 
-                                <Form.Item name="position" label="Position" rules={[{ required: true }]}>
-                                    <AntInput placeholder="Enter Position" />
-                                </Form.Item>
-
-                                <Form.Item name="bg_color" label="Background Color" rules={[{ required: true, message: "Background color is required" }]}>
-                                    <Space>
-                                        <Form.Item name="bg_color" noStyle>
-                                            <AntInput placeholder="#ffffff" style={{ width: 140 }} />
-                                        </Form.Item>
-
-                                        <ColorPicker format="hex" onChangeComplete={(color) => {form.setFieldValue("bg_color", color.toHexString());}}/>
-                                    </Space>
-                                </Form.Item>
-
-                                <Form.Item name="text_color" label="Text Color" rules={[{ required: true, message: "Text color is required" }]}>
-                                    <Space>
-                                        <Form.Item name="text_color" noStyle>
-                                            <AntInput placeholder="#000000" style={{ width: 140 }} />
-                                        </Form.Item>
-
-                                        <ColorPicker format="hex" onChangeComplete={(color) => {form.setFieldValue("text_color", color.toHexString());}}/>
-                                    </Space>
-                                </Form.Item>
-
-                                <Form.Item name="status" label="Status" rules={[{ required: true }]} initialValue="active">
-                                    <Select options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
-                                </Form.Item>
-                            </div>
-                        </Form>
-                    </div>
-                </Modal>
-            </div>
         </>
     )
 }

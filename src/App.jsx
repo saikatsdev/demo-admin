@@ -163,6 +163,7 @@ import ProductTrash from "./pages/product/ProductTrash";
 import AddStatus from "./pages/order/AddStatus";
 import AddOnlinePaymentDiscount from "./pages/order/AddOnlinePaymentDiscount";
 import EditOnlinePaymentDiscount from "./pages/order/EditOnlinePaymentDiscount";
+import EditStatus from "./pages/order/EditStatus";
 
 function App() {
     const dispatch         = useDispatch();
@@ -298,6 +299,7 @@ function App() {
                     <Route path="/edit/online-payment/discount/:id" element={<EditOnlinePaymentDiscount />}/>
                     <Route path="/statuses" element={<OrderStatus />} />
                     <Route path="/order-status/add" element={<AddStatus />} />
+                    <Route path="/order-status/edit/:id" element={<EditStatus />} />
                     <Route path="/coupons" element={<MarketCoupon />} />
                     <Route path="/order-tag" element={<OrderTag />} />
                     <Route path="/types/customer" element={<CustomerType />} />
