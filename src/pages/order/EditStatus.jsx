@@ -193,22 +193,22 @@ export default function EditStatus() {
                             <Card 
                                 title="Live Preview" 
                                 style={{ 
-                                    height: "100%", 
-                                    minHeight: "220px", 
-                                    display: "flex", 
+                                    height       : "100%",
+                                    minHeight    : "220px",
+                                    display      : "flex",
                                     flexDirection: "column",
-                                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-                                    borderRadius: "8px",
+                                    boxShadow    : "0 4px 12px rgba(0, 0, 0, 0.05)",
+                                    borderRadius : "8px",
                                 }}
                                 headStyle={{ fontWeight: "600", borderBottom: "1px solid #f0f0f0" }}
                             >
                                 <div style={{ 
-                                    flex: 1, 
-                                    display: "flex", 
-                                    flexDirection: "column",
-                                    justifyContent: "center", 
-                                    alignItems: "center",
-                                    padding: "24px 0"
+                                    flex          : 1,
+                                    display       : "flex",
+                                    flexDirection : "column",
+                                    justifyContent: "center",
+                                    alignItems    : "center",
+                                    padding       : "24px 0"
                                 }}>
                                     <div style={{ marginBottom: "16px", color: "#888", fontSize: "13px" }}>
                                         How the status tag will look:
@@ -216,14 +216,14 @@ export default function EditStatus() {
                                     <Tag
                                         style={{
                                             backgroundColor: bgColor,
-                                            color: textColor,
-                                            border: "none",
-                                            fontWeight: 500,
-                                            padding: "6px 20px",
-                                            borderRadius: "6px",
-                                            fontSize: "15px",
-                                            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                                            transition: "all 0.3s ease"
+                                            color          : textColor,
+                                            border         : "none",
+                                            fontWeight     : 500,
+                                            padding        : "6px 20px",
+                                            borderRadius   : "6px",
+                                            fontSize       : "15px",
+                                            boxShadow      : "0 2px 8px rgba(0,0,0,0.05)",
+                                            transition     : "all 0.3s ease"
                                         }}
                                     >
                                         {name || "Preview Tag"}
