@@ -24,6 +24,13 @@ const MetaAdsReport = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
 
+    const connectMeta = async () => {
+        const res = await getDatas('/admin/meta/connect');
+        if(res){
+            window.location.href = res.result;
+        }
+    }
+
     // Method
     const fetchCampaigns = async (isRefreshing = false) => {
         if (isRefreshing) setRefreshing(true);
@@ -68,16 +75,15 @@ const MetaAdsReport = () => {
                         </div>
                     </Col>
                     <Col xs={24} md={8} style={{ textAlign: 'right' }}>
-                        <Button 
-                            type="primary" 
-                            icon={<ReloadOutlined spin={refreshing} />} 
-                            onClick={() => fetchCampaigns(true)}
-                            loading={refreshing}
-                            size="large"
-                            style={{ borderRadius: '8px', fontWeight: 600 }}
-                        >
-                            {refreshing ? 'Syncing...' : 'Sync with Meta'}
-                        </Button>
+                        <Space>
+                            <Button type="primary" icon={<ReloadOutlined spin={refreshing} />} onClick={() => fetchCampaigns(true)} loading={refreshing} size="medium">
+                                {refreshing ? 'Syncing...' : 'Sync with Meta'}
+                            </Button>
+
+                            <Button type="default" icon={<FacebookFilled style={{ color: '#1877F2' }} />} onClick={() => connectMeta()}>
+                                Connect Meta
+                            </Button>
+                        </Space>
                     </Col>
                 </Row>
             </div>
