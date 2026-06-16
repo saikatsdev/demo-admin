@@ -4,7 +4,7 @@ import useTitle from "../../hooks/useTitle"
 import { Link } from "react-router-dom";
 import { getDatas } from "../../api/common/common";
 
-export default function UnpreparedOrderList() {
+export default function AssignList() {
     // Hook
     useTitle("Unprepared Order List");
 
@@ -17,10 +17,10 @@ export default function UnpreparedOrderList() {
         try {
             setLoading(true);
 
-            const res = await getDatas('/admin/team/unprepared/list');
+            const res = await getDatas('/admin/team/assign-by-list');
 
             if(res && res?.success){
-                setOrders(res?.result?.data || []);
+                setOrders(res?.result || []);
             }
         } catch (error) {
             console.log(error);
@@ -39,14 +39,14 @@ export default function UnpreparedOrderList() {
             <div className="pagehead">
                 <div className="head-left">
                     <h1 className="title" style={{ fontWeight: "600" }}>
-                        Unprepared Order List
+                        Assigned Order List
                     </h1>
                 </div>
                 <div className="head-actions">
                     <Breadcrumb
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Unprepared Order List" },
+                            { title: "Assigned Order List" },
                         ]}
                     />
                 </div>

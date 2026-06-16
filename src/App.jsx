@@ -170,6 +170,7 @@ import AddOnlinePaymentDiscount from "./pages/order/AddOnlinePaymentDiscount";
 import EditOnlinePaymentDiscount from "./pages/order/EditOnlinePaymentDiscount";
 import EditStatus from "./pages/order/EditStatus";
 import UnpreparedOrderList from "./pages/team/UnpreparedOrderList";
+import AssignList from "./pages/team/AssignList";
 
 function App() {
     const dispatch         = useDispatch();
@@ -283,6 +284,7 @@ function App() {
 
                     {/* Team Module */}
                     <Route path="/unprepared/list" element={<UnpreparedOrderList />} />
+                    <Route path="/assign-by-list" element={<AssignList />} />
                     {/* Team Module */}
 
                     <Route path="/product/catalogs" element={<ProductCatelog />} />
