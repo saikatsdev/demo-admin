@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, DeleteOutlined, FileTextOutlined, PlusOutlined, ShoppingCartOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Modal, Space, Table, message, Select, Card, Row, Col, Typography, Divider, Tooltip } from "antd";
+import { Input as AntInput, Breadcrumb, Button, Form, Modal, Space, Table, message, Select, Card, Row, Col, Typography, Divider, Tooltip, Spin } from "antd";
 const { Text, Title } = Typography;
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -132,6 +132,7 @@ export default function EditIncomepleteOrder() {
         const delayDebounce = setTimeout(async () => {
             try {
                 const res = await getDatas('/admin/products/search', {search_key : query});
+
                 if(res && res?.success){
                     setResults(res.result || []);
                 }
@@ -189,7 +190,7 @@ export default function EditIncomepleteOrder() {
             _method: "PUT",
         };
 
-        const res = await postData(`/admin/incomplete-orders/${id}`, payload, {headers: {"Content-Type": "multipart/form-data",}});
+        const res = await postData(`/admin/incomplete-orders/${id}`, payload);
 
         if(res && res?.success){
             messageApi.open({
@@ -292,11 +293,7 @@ export default function EditIncomepleteOrder() {
                         </Col>
 
                         <Col xs={24} lg={16}>
-                            <Card 
-                                title={<Space><ShoppingCartOutlined /> Order Items</Space>} 
-                                bordered={false} 
-                                style={{ borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', minHeight: '600px' }}
-                            >
+                            <Card title={<Space><ShoppingCartOutlined /> Order Items</Space>} bordered={false} style={{ borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', minHeight: '600px' }}>
                                 <div style={{ position: "relative", marginBottom: 24 }}>
                                     <AntInput 
                                         prefix={<PlusOutlined style={{ color: '#bfbfbf' }} />}
@@ -325,9 +322,7 @@ export default function EditIncomepleteOrder() {
                                             }}
                                         >
                                             {results.map((item) => (
-                                                <div 
-                                                    key={item.id} 
-                                                    onClick={() => handleAddProduct(item)} 
+                                                <div key={item.id} onClick={() => handleAddProduct(item)} 
                                                     style={{ 
                                                         padding: '12px 16px', 
                                                         display: 'flex', 
@@ -340,10 +335,15 @@ export default function EditIncomepleteOrder() {
                                                     onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f7fa")} 
                                                     onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
                                                 >
-                                                    <img src={item.img_path} alt={item.name} style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }} />
+                                                    <img src={item.image} alt="Product" style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }} />
                                                     <div style={{ flex: 1 }}>
-                                                        <div style={{ fontWeight: 500 }}>{item.name}</div>
-                                                        <div style={{ color: '#1890ff', fontWeight: 600 }}>৳{Number(item.sell_price).toFixed(0)}</div>
+                                                        <div style={{ fontWeight: 500 }}>
+                                                            {item.name}
+                                                        </div>
+
+                                                        <div style={{ color: '#1890ff', fontWeight: 600 }}>
+                                                            ৳{Number(item.sell_price).toFixed(0)}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             ))}
@@ -364,8 +364,8 @@ export default function EditIncomepleteOrder() {
                     </Row>
                 </Form>
             ) : (
-                <div style={{ textAlign: 'center', padding: '100px 0' }}>
-                    <p>Loading Order Details...</p>
+                <div style={{ textAlign: 'center', padding: '150px 0', background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                    <Spin size="large" tip="Loading Order Details..." />
                 </div>
             )}
 
