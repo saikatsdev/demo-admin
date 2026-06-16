@@ -1,5 +1,6 @@
-import { ArrowLeftOutlined, DeleteOutlined, FileTextOutlined, PlusOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Form, Modal, Space, Table, message, Select } from "antd";
+import { ArrowLeftOutlined, DeleteOutlined, FileTextOutlined, PlusOutlined, ShoppingCartOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Form, Modal, Space, Table, message, Select, Card, Row, Col, Typography, Divider, Tooltip } from "antd";
+const { Text, Title } = Typography;
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
@@ -63,15 +64,17 @@ export default function EditIncomepleteOrder() {
         {
             title: "Actions",
             key: "actions",
-            width:150,
+            width: 120,
+            align: "center",
             render: (_, record) => (
-                <Space size="middle">
-                    <Button type="default" icon={<FileTextOutlined />} onClick={() => handleNote(record)} >
-                        Note
-                    </Button>
-                    <Button type="primary" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)}>
-                        Delete
-                    </Button>
+                <Space size={6}>
+                    <Tooltip title="Add Note">
+                        <Button size="small" type="text" style={{ color: '#faad14', backgroundColor: '#fff7e6' }} icon={<FileTextOutlined />} onClick={() => handleNote(record)} />
+                    </Tooltip>
+
+                    <Tooltip title="Remove Product">
+                        <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} onClick={() => handleDelete(record)} />
+                    </Tooltip>
                 </Space>
             ),
         },
@@ -146,9 +149,8 @@ export default function EditIncomepleteOrder() {
             setLoading(true);
 
             const res = await getDatas(`/admin/incomplete-orders/${id}`);
-            const list = res?.result || [];
 
-            console.log(list);
+            const list = res?.result || [];
 
             if(isMounted){
                 setInCompleteOrders(list);
@@ -231,63 +233,117 @@ export default function EditIncomepleteOrder() {
 
             <div className="pagehead">
                 <div className="head-left">
-                    <h1 className="title" style={{fontWeight:"600"}}>Edit</h1>
+                    <h1 className="title" style={{fontWeight:"600"}}>Edit Incomplete Order</h1>
                 </div>
                 <div className="head-actions">
-                    <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> },{ title: "Edit" }]}/>
+                    <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> },{ title: "Edit Incomplete Order" }]}/>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <AntInput.Search allowClear placeholder="Search Key ..." style={{ width: 300 }}/>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <AntInput.Search allowClear placeholder="Quick Search Incomplete Orders..." style={{ width: 350, height: 40 }} />
                 <Space>
-                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+                    <Button type="primary" ghost icon={<ArrowLeftOutlined />} onClick={() => navigate("/incomplete/orders")}>Back to List</Button>
                 </Space>
             </div>
 
             {!loading ? (
-                <div style={{boxShadow:"0 0 10px rgba(0,0,0,0.1)", padding:"10px"}}>
-                    <div>
-                        <Form form={form} onFinish={handleUpdate}>
-                            <div style={{display:"grid",  gridTemplateColumns: "repeat(5, 1fr)",  gap: "12px"}}>
-                                <Form.Item label="Name" name="name">
-                                    <AntInput placeholder="Enter Name" />
+                <Form form={form} onFinish={handleUpdate} layout="vertical" requiredMark={false}>
+                    <Row gutter={[24, 24]}>
+                        <Col xs={24} lg={8}>
+                            <Card 
+                                title={<Space><FileTextOutlined /> Customer Information</Space>} 
+                                bordered={false} 
+                                style={{ borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
+                            >
+                                <Form.Item label="Customer Name" name="name" rules={[{ required: true, message: 'Name is required' }]}>
+                                    <AntInput placeholder="Enter Customer Name" size="large" />
                                 </Form.Item>
 
-                                <Form.Item label="Phone Number" name="phone_number">
-                                    <AntInput placeholder="Enter Phone Number" />
+                                <Form.Item label="Phone Number" name="phone_number" rules={[{ required: true, message: 'Phone number is required' }]}>
+                                    <AntInput placeholder="Enter Phone Number" size="large" />
                                 </Form.Item>
 
-                                <Form.Item label="Address" name="address">
-                                    <AntInput placeholder="Enter Address" />
+                                <Form.Item label="Delivery Address" name="address">
+                                    <AntInput.TextArea placeholder="Enter Full Address" rows={3} />
                                 </Form.Item>
 
-                                <Form.Item name="status" label="Status" rules={[{ required: true }]}>
-                                    <Select placeholder="Select Status">
+                                <Divider />
+
+                                <Form.Item name="status" label="Order Status" rules={[{ required: true }]}>
+                                    <Select placeholder="Select Status" size="large" style={{ width: '100%' }}>
                                         <Select.Option value={3}>Approved</Select.Option>
                                         <Select.Option value={1}>Pending</Select.Option>
                                         <Select.Option value={8}>Canceled</Select.Option>
                                     </Select>
                                 </Form.Item>
-                            </div>
 
-                            <div style={{display:"grid",  gridTemplateColumns: "repeat(2, 1fr)",  gap: "12px"}}>
-                                <div style={{ position: "relative", width: "100%" }}>
-                                    <Form.Item label="Search Product" name="product">
-                                        <AntInput placeholder="Write Product Name" onChange={(e) => setQuery(e.target.value)} value={query}/>
-                                    </Form.Item>
+                                <div style={{ marginTop: 24 }}>
+                                    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+                                        <Button type="primary" htmlType="submit" block icon={<PlusOutlined />} size="large" style={{ height: 45, fontWeight: 600 }}>
+                                            Update Incomplete Order
+                                        </Button>
+                                        <Button onClick={handleOrder} block size="large" style={{ height: 45, color: '#1c558b', borderColor: '#1c558b' }}>
+                                            Convert to Real Order
+                                        </Button>
+                                    </Space>
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} lg={16}>
+                            <Card 
+                                title={<Space><ShoppingCartOutlined /> Order Items</Space>} 
+                                bordered={false} 
+                                style={{ borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.06)', minHeight: '600px' }}
+                            >
+                                <div style={{ position: "relative", marginBottom: 24 }}>
+                                    <AntInput 
+                                        prefix={<PlusOutlined style={{ color: '#bfbfbf' }} />}
+                                        placeholder="Type Product Name to Add..." 
+                                        size="large"
+                                        onChange={(e) => setQuery(e.target.value)} 
+                                        value={query}
+                                        style={{ borderRadius: 8 }}
+                                    />
                                     {results.length > 0 && (
-                                        <div className="edit_div" ref={dropdownRef}>
+                                        <div 
+                                            className="product-search-results" 
+                                            ref={dropdownRef}
+                                            style={{
+                                                position: 'absolute',
+                                                top: '100%',
+                                                left: 0,
+                                                right: 0,
+                                                zIndex: 1000,
+                                                background: '#fff',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                                borderRadius: '0 0 8px 8px',
+                                                marginTop: 4,
+                                                maxHeight: '400px',
+                                                overflowY: 'auto'
+                                            }}
+                                        >
                                             {results.map((item) => (
-                                                <div key={item.id} className="edit_div_id" onClick={() => handleAddProduct(item)} onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f5f5")} onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}>
-                                                    <img className="edit_div_image_img" src={item.img_path} alt={item.name}/>
+                                                <div 
+                                                    key={item.id} 
+                                                    onClick={() => handleAddProduct(item)} 
+                                                    style={{ 
+                                                        padding: '12px 16px', 
+                                                        display: 'flex', 
+                                                        alignItems: 'center', 
+                                                        gap: 12, 
+                                                        cursor: 'pointer',
+                                                        borderBottom: '1px solid #f0f0f0',
+                                                        transition: 'background 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f5f7fa")} 
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = "#fff")}
+                                                >
+                                                    <img src={item.img_path} alt={item.name} style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }} />
                                                     <div style={{ flex: 1 }}>
-                                                        <div style={{ fontWeight: "500", fontSize: "14px", marginBottom: "4px" }}>
-                                                            {item.name.length > 50 ? item.name.slice(0, 50) + "..." : item.name}
-                                                        </div>
-                                                        <div style={{ color: "#1890ff", fontWeight: "600" }}>
-                                                            {Number(item.sell_price).toFixed(0)} টাকা
-                                                        </div>
+                                                        <div style={{ fontWeight: 500 }}>{item.name}</div>
+                                                        <div style={{ color: '#1890ff', fontWeight: 600 }}>৳{Number(item.sell_price).toFixed(0)}</div>
                                                     </div>
                                                 </div>
                                             ))}
@@ -295,32 +351,22 @@ export default function EditIncomepleteOrder() {
                                     )}
                                 </div>
 
-                                <Button style={{width:"100px"}} type="primary" onClick={() => window.history.back()}>
-                                    <PlusOutlined />
-                                    Add
-                                </Button>
-                            </div>
-
-                            <div>
-                                <Table  loading={loading} dataSource={inCompleteOrders?.items.map(item => ({ ...item, key: item.id }))} columns={columns}  pagination={false} bordered/>
-                            </div>
-
-                            <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginTop:"20px"}}>
-                                <div></div>
-                                <div style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
-                                    <Form.Item style={{marginRight:"10px"}}>
-                                        <Button type="primary" onClick={handleOrder}>Get Order</Button>
-                                    </Form.Item>
-                                    <Form.Item>
-                                        <Button type="primary" htmlType="submit">Update</Button>
-                                    </Form.Item>
-                                </div>
-                            </div>
-                        </Form>
-                    </div>
-              </div>
+                                <Table 
+                                    loading={loading} 
+                                    dataSource={inCompleteOrders?.items.map(item => ({ ...item, key: item.id }))} 
+                                    columns={columns} 
+                                    pagination={false} 
+                                    bordered
+                                    style={{ borderRadius: 8, overflow: 'hidden' }}
+                                />
+                            </Card>
+                        </Col>
+                    </Row>
+                </Form>
             ) : (
-                <p>Loading...</p>
+                <div style={{ textAlign: 'center', padding: '100px 0' }}>
+                    <p>Loading Order Details...</p>
+                </div>
             )}
 
             <Modal title="Note your custom feedback" open={noteModalVisible} onCancel={() => setNoteModalVisible(false)} onOk={handleUpdateNote} okText="Update">
