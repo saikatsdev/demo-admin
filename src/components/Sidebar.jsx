@@ -1,4 +1,4 @@
-import {BarChartOutlined,DeliveredProcedureOutlined,FallOutlined,NotificationOutlined,ProductOutlined,PropertySafetyOutlined,ToolOutlined,FileTextOutlined,BulbOutlined,PictureOutlined,} from "@ant-design/icons";
+import {BarChartOutlined,DeliveredProcedureOutlined,FallOutlined,NotificationOutlined,TeamOutlined,ProductOutlined,PropertySafetyOutlined,ToolOutlined,FileTextOutlined,BulbOutlined,PictureOutlined,} from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePermission } from "../hooks/usePermission";
@@ -32,7 +32,13 @@ const Sidebar = ({ onMenuSelect }) => {
     const metaAdsSubmenus = [
         can('meta-ads-read') && { label: "Meta Ads Report", path: "/meta-ads-report" },
         can('campaign-products-read') && { label: "Campaign Products", path: "/campaign-products" },
-        can('campaign-products-read') && { label: "Meta Ad Account", path: "/meta-ad-account" },
+        can('meta-ad-account-read') && { label: "Meta Ad Account", path: "/meta-ad-account" },
+    ].filter(Boolean);
+
+    const teamSubmenus = [
+        can('orders-team-list-read') && { label: "Unprepare Order List", path: "/unprepared/list" },
+        can('orders-update') && { label: "Order Assign", path: "/assign" },
+        can('orders-team-list-read') && { label: "Team Assign List", path: "/assign-by-list" },
     ].filter(Boolean);
 
     const productSubmenus = [
@@ -159,6 +165,12 @@ const Sidebar = ({ onMenuSelect }) => {
             title: "Meta Ads",
             icon: <NotificationOutlined />,
             submenus: metaAdsSubmenus
+        },
+
+        teamSubmenus.length > 0 && {
+            title: "Team",
+            icon: <TeamOutlined />,
+            submenus: teamSubmenus
         },
 
         mediaMenu,

@@ -7,6 +7,7 @@ import { getDatas, postData } from "../../api/common/common";
 const { Option } = Select;
 
 export default function SEO() {
+    // States
     const [loading, setLoading] = useState(false);
     const [form] = Form.useForm();
     const [isModalOpen, setIsModalOpen] = useState(false);

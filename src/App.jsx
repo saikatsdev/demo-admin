@@ -169,6 +169,7 @@ import AddStatus from "./pages/order/AddStatus";
 import AddOnlinePaymentDiscount from "./pages/order/AddOnlinePaymentDiscount";
 import EditOnlinePaymentDiscount from "./pages/order/EditOnlinePaymentDiscount";
 import EditStatus from "./pages/order/EditStatus";
+import UnpreparedOrderList from "./pages/team/UnpreparedOrderList";
 
 function App() {
     const dispatch         = useDispatch();
@@ -279,6 +280,10 @@ function App() {
                     <Route path="/campaign-products" element={<CampaignProduct />} />
                     <Route path="/meta-ad-account" element={<MetaAdAccount />} />
                     {/* Meta Module */}
+
+                    {/* Team Module */}
+                    <Route path="/unprepared/list" element={<UnpreparedOrderList />} />
+                    {/* Team Module */}
 
                     <Route path="/product/catalogs" element={<ProductCatelog />} />
                     <Route path="/add/prodcut/catelog" element={<AddProductCatelog />} />
