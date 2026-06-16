@@ -1,5 +1,5 @@
-import { ArrowLeftOutlined, PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, UserOutlined, MailOutlined, PhoneOutlined, CalendarOutlined, ShoppingOutlined, WalletOutlined, CheckCircleOutlined, TeamOutlined, UserAddOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Popconfirm, Space, Table, Tag, Typography, Card, Row, Col, Avatar, Tooltip } from "antd";
+import { ArrowLeftOutlined, PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, MailOutlined, PhoneOutlined, CalendarOutlined, ShoppingOutlined, WalletOutlined, CheckCircleOutlined, TeamOutlined, UserAddOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Popconfirm, Space, Table, Tag, Typography, Card, Row, Col,Tooltip } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas } from "../../api/common/common";
@@ -94,12 +94,6 @@ export default function Customer() {
             width: 300,
             render: (text, record) => (
                 <Space size="middle">
-                    <Avatar 
-                        src={record.image || "https://static.vecteezy.com/system/resources/previews/024/983/914/non_2x/simple-user-default-icon-free-png.png"} 
-                        size={44} 
-                        icon={<UserOutlined />} 
-                        style={{ border: '2px solid #e2e8f0' }}
-                    />
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <Text strong style={{ fontSize: '14px', color: '#1e293b', textTransform: 'capitalize' }}>{text}</Text>
                         <Text type="secondary" style={{ fontSize: '12px' }}>

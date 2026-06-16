@@ -1,5 +1,5 @@
-import { ArrowLeftOutlined, PlusOutlined } from "@ant-design/icons";
-import {Input as AntInput,Breadcrumb,Button,Popconfirm,Space,Table,Tag} from "antd";
+import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined } from "@ant-design/icons";
+import {Input as AntInput,Breadcrumb,Button,Popconfirm,Space,Table,Tag, Tooltip} from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas } from "../../api/common/common";
@@ -22,6 +22,12 @@ export default function Employee() {
 
     const columns = 
     [
+        {
+            title: "SL",
+            key: "sl",
+            width: 40,
+            render: (_, __, index) => (current - 1) * pageSize + index + 1,
+        },
         {
             title: "Image",
             dataIndex: "image",
@@ -80,16 +86,22 @@ export default function Employee() {
         {
             title: "Action",
             key: "operation",
-            width: 160,
+            width: 120,
+            align: "center",
             render: (_, record) => (
                 <Space>
-                    <Button size="small" type="primary" onClick={() => onEdit(record)}>
-                        Edit
-                    </Button>
+                    <Tooltip title="Edit Employee">
+                        <Button size="small" type="text" style={{ color: '#1890ff', backgroundColor: '#e6f7ff' }} icon={<EditOutlined />} onClick={() => onEdit(record)} />
+                    </Tooltip>
+                    
+                    <Tooltip title="Update Password">
+                        <Button size="small" type="text" style={{ color: '#faad14', backgroundColor: '#fff7e6' }} icon={<KeyOutlined />} onClick={() => navigate(`/edit/employee/password/${record.id}`)} />
+                    </Tooltip>
+
                     <Popconfirm title="Delete user?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Button size="small" danger>
-                        Delete
-                        </Button>
+                        <Tooltip title="Delete Employee">
+                            <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} />
+                        </Tooltip>
                     </Popconfirm>
                 </Space>
             ),
