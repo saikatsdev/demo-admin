@@ -3,40 +3,35 @@ import { DollarOutlined, GlobalOutlined, WalletOutlined, SafetyCertificateOutlin
 
 const { Text } = Typography;
 
-const SummaryCards = ({ campaigns, loading }) => {
-    const data = Array.isArray(campaigns) ? campaigns : [];
-    const totalUSD = data.reduce((acc, curr) => acc + parseFloat(curr.spend || 0), 0);
-    const exchangeRate = 120; // Example rate
-    const totalBDT = totalUSD * exchangeRate;
-
+const SummaryCards = ({ summary, loading }) => {
     const cardData = [
         {
             title: 'Total Expense (USD)',
-            value: totalUSD,
+            value: summary?.total_expense_usd || 0,
             prefix: <DollarOutlined />,
             color: '#1677ff',
             format: (val) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
         },
         {
             title: 'Total Expense (BDT)',
-            value: totalBDT,
+            value: summary?.total_expense_bdt || 0,
             prefix: <GlobalOutlined />,
             color: '#52c41a',
-            format: (val) => `৳${val.toLocaleString(undefined, { minimumFractionDigits: 0 })}`
+            format: (val) => `${val.toLocaleString(undefined, { minimumFractionDigits: 0 })} BDT`
         },
         {
             title: 'Accounts',
-            value: 1, // Defaulting to 1 for now
+            value: summary?.accounts || 0,
             prefix: <WalletOutlined />,
             color: '#722ed1',
             format: (val) => val
         },
         {
             title: 'Spending Limits',
-            value: 'Unlimited',
+            value: summary?.spending_limits || 0,
             prefix: <SafetyCertificateOutlined />,
             color: '#faad14',
-            format: (val) => val
+            format: (val) => `$${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
         }
     ];
 

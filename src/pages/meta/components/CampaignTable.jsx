@@ -1,168 +1,267 @@
-import { Table, Card, Row, Col, Tag, Button,Typography, Space, Input, Select, Divider } from 'antd';
-import { 
-    SearchOutlined, 
-    FilterOutlined, 
-    ReloadOutlined, 
-    RightOutlined, 
-    DownOutlined,
-    BarChartOutlined
-} from '@ant-design/icons';
+import { Table, Card, Tag, Row, Col, Typography, Space, Tabs, Button, Spin } from 'antd';
+import { RightOutlined, DownOutlined, TableOutlined, PartitionOutlined, EllipsisOutlined, } from '@ant-design/icons';
 import { useMemo, useState } from 'react';
+import PerformanceFilter from './PerformanceFilter';
 
-const { Text, Title } = Typography;
-const { Option } = Select;
+const { Text } = Typography;
 
-const CampaignTable = ({ campaigns, loading, refreshing, onRefresh, pagination, setPagination }) => {
-    const [searchText, setSearchText] = useState('');
-    const [statusFilter, setStatusFilter] = useState('ALL');
+const CampaignTable = ({ campaigns, loading, refreshing, onRefresh, pagination, setPagination, showFilter = true }) => {
+    // States
+    const [searchText, setSearchText]               = useState('');
+    const [statusFilter, setStatusFilter]           = useState('ALL');
+    const [selectedDateRange, setSelectedDateRange] = useState('Today');
+    const [viewMode, setViewMode]                   = useState('table');
+    const [selectedRowKeys, setSelectedRowKeys]     = useState([]);
+    const [loadingStates, setLoadingStates]         = useState({});
 
-    const filteredCampaigns = useMemo(() => {
+    const filteredData = useMemo(() => {
         const data = Array.isArray(campaigns) ? campaigns : [];
+        if (!showFilter) return data;
         return data.filter(item => {
-            const matchesSearch = item.name?.toLowerCase().includes(searchText.toLowerCase()) || 
-                                 item.id?.includes(searchText);
+            const matchesSearch = item.name?.toLowerCase().includes(searchText.toLowerCase()) || item.id?.includes(searchText);
             const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
             return matchesSearch && matchesStatus;
         });
-    }, [campaigns, searchText, statusFilter]);
+    }, [campaigns, searchText, statusFilter, showFilter]);
 
     const formatCurrency = (amount) => {
-        if (!amount || isNaN(amount)) return '$0.00';
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-        }).format(amount);
+        if (amount === undefined || amount === null || isNaN(amount)) return '$0.00';
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
     };
+
+    const formatCompact = (val) => new Intl.NumberFormat('en', { notation: 'compact' }).format(val || 0);
 
     const getStatusTag = (status) => {
         const s = status?.toUpperCase();
         switch (s) {
-            case 'ACTIVE': return <Tag color="success">ACTIVE</Tag>;
-            case 'PAUSED': return <Tag color="warning">PAUSED</Tag>;
-            default: return <Tag color="default">{status}</Tag>;
+            case 'ACTIVE': return <Tag color="#10b981" style={{ border: 'none', fontWeight: '600', fontSize: '10px', borderRadius: '4px' }}>ACTIVE</Tag>;
+            case 'PAUSED': return <Tag color="#e5e7eb" style={{ border: 'none', color: '#6b7280', fontSize: '10px', fontWeight: '600', borderRadius: '4px' }}>PAUSED</Tag>;
+            default: return <Tag color="default" style={{ fontSize: '10px' }}>{status}</Tag>;
         }
     };
 
-    const columns = [
+    const simulateLoading = (key) => {
+        setLoadingStates(prev => ({ ...prev, [key]: true }));
+        setTimeout(() => setLoadingStates(prev => ({ ...prev, [key]: false })), 400);
+    };
+
+    const tableColumns = [
         {
-            title: '#',
-            width: 50,
-            fixed: 'left',
-            render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
-        },
-        {
-            title: 'Campaign Details',
+            title: 'Campaign',
             key: 'campaign',
             fixed: 'left',
             render: (_, record) => (
                 <Space direction="vertical" size={0}>
                     <Text strong style={{ fontSize: '13px' }}>{record.name}</Text>
-                    <Space size={4}>
-                        <Text type="secondary" style={{ fontSize: '11px' }}>ID: {record.id}</Text>
-                        {getStatusTag(record.status)}
-                    </Space>
+                    <Text type="secondary" style={{ fontSize: '11px' }}>
+                        {record.account_name}
+                    </Text>
                 </Space>
             ),
-            width: 220,
+            width: 280,
         },
+        { title: 'Status', dataIndex: 'status', key: 'status', render: getStatusTag, width: 100 },
         {
             title: 'Budget',
             key: 'budget',
-            render: (_, record) => (
-                <Text strong style={{ color: '#1677ff' }}>{formatCurrency(record.daily_budget || record.lifetime_budget)}</Text>
-            ),
+            render: (_, record) => formatCurrency(record.daily_budget || record.lifetime_budget),
             width: 110,
         },
-        { title: 'Spent', dataIndex: 'spend', key: 'spend', render: (val) => <Text strong style={{ color: '#cf1322' }}>{formatCurrency(val)}</Text> },
-        { title: 'Purchase', dataIndex: 'purchases', key: 'purchases', render: (val) => <Text strong style={{ color: '#389e0d' }}>{val || 0}</Text> },
-        { 
-            title: 'CTR', 
-            dataIndex: 'ctr', 
-            key: 'ctr', 
-            render: (val) => <Tag color="blue">{parseFloat(val || 0).toFixed(2)}%</Tag> 
-        },
-        { 
-            title: 'Impressions', 
-            dataIndex: 'impressions', 
-            key: 'impressions', 
-            render: (val) => new Intl.NumberFormat('en', { notation: 'compact' }).format(val) 
-        },
-        { 
-            title: 'Clicks', 
-            dataIndex: 'clicks', 
-            key: 'clicks', 
-            render: (val) => new Intl.NumberFormat('en', { notation: 'compact' }).format(val) 
-        },
+        { title: 'Spent', dataIndex: 'spend', key: 'spend', render: formatCurrency, width: 100 },
+        { title: 'Purch.', dataIndex: 'purchases', key: 'purchases', render: v => v || 0, width: 80 },
+        { title: 'ROAS', dataIndex: 'roas', key: 'roas', render: v => v ? `${parseFloat(v).toFixed(2)}x` : '—', width: 100 },
+        { title: 'Impr.', dataIndex: 'impressions', key: 'impressions', render: formatCompact, width: 100 },
+        { title: 'Clicks', dataIndex: 'clicks', key: 'clicks', render: formatCompact, width: 100 },
+        { title: '', key: 'actions', fixed: 'right', width: 50, render: () => <Button type="text" icon={<EllipsisOutlined />} /> }
     ];
 
-    return (
-        <>
-            <Card className="table-card-premium" style={{ marginBottom: '16px' }} bordered={false}>
-                <Row gutter={[16, 16]} align="middle">
-                    <Col xs={24} md={10} lg={8}>
-                        <Input
-                            placeholder="Search campaigns..."
-                            prefix={<SearchOutlined />}
-                            value={searchText}
-                            onChange={e => setSearchText(e.target.value)}
-                            allowClear
-                        />
+    const adLevelColumns = [
+        {
+            title: 'Ad Name',
+            key: 'ad_name',
+            render: (_, ad) => (
+                <Space align="center" style={{ paddingLeft: '48px' }}>
+                    <Text strong style={{ fontSize: '12px', color: '#4b5563' }}>{ad.name}</Text>
+                    {getStatusTag(ad.status)}
+                </Space>
+            )
+        },
+        {
+            title: 'Performance',
+            align: 'right',
+            render: (_, ad) => (
+                <Row gutter={16} justify="end" style={{ paddingRight: '24px' }}>
+                    <Col><Text style={{ fontSize: '12px' }}>{formatCurrency(ad.spend)}</Text></Col>
+                    <Col><Text type="secondary" style={{ fontSize: '12px' }}>{formatCompact(ad.impressions)} impr</Text></Col>
+                    <Col><Text type="secondary" style={{ fontSize: '12px' }}>{formatCompact(ad.clicks)} clicks</Text></Col>
+                </Row>
+            )
+        }
+    ];
+
+    const adSetLevelColumns = [
+        {
+            title: 'Ad Set Name',
+            key: 'adset_name',
+            render: (_, adset) => (
+                <Space align="center" style={{ paddingLeft: '24px' }}>
+                    <Text strong style={{ fontSize: '13px', color: '#1f2937' }}>{adset.name}</Text>
+                    {getStatusTag(adset.status)}
+                </Space>
+            )
+        },
+        {
+            title: 'Performance',
+            align: 'right',
+            render: (_, adset) => (
+                <Row gutter={16} justify="end" style={{ paddingRight: '24px' }}>
+                    <Col><Text strong style={{ fontSize: '13px' }}>{formatCurrency(adset.spend)}</Text></Col>
+                    <Col><Text type="secondary" style={{ fontSize: '13px' }}>{formatCompact(adset.impressions)} impr</Text></Col>
+                    <Col><Text type="secondary" style={{ fontSize: '13px' }}>{formatCompact(adset.clicks)} clicks</Text></Col>
+                </Row>
+            )
+        }
+    ];
+
+    const campaignLevelColumns = [
+        {
+            title: 'Campaign Details',
+            key: 'campaign_info',
+            render: (_, record) => (
+                <div>
+                    <Space align="center">
+                        <Text strong style={{ fontSize: '14px' }}>{record.name}</Text>
+                        {getStatusTag(record.status)}
+                    </Space>
+                    <div style={{ paddingLeft: '0px' }}>
+                        <Text type="secondary" style={{ fontSize: '11px' }}>
+                            {record.account_name} • {record.objective?.replace(/_/g, ' ') || 'OUTCOME SALES'}
+                        </Text>
+                    </div>
+                </div>
+            )
+        },
+        {
+            title: 'Performance Cluster',
+            align: 'right',
+            width: 450,
+            render: (_, record) => (
+                <Row gutter={24} justify="end" style={{ paddingRight: '24px' }}>
+                    <Col style={{ textAlign: 'right', minWidth: '85px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600' }}>{formatCurrency(record.spend)}</div>
+                        <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>Spend</div>
                     </Col>
-                    <Col xs={12} md={6} lg={4}>
-                        <Select defaultValue="ALL" style={{ width: '100%' }} onChange={setStatusFilter}>
-                            <Option value="ALL">All Status</Option>
-                            <Option value="ACTIVE">Active</Option>
-                            <Option value="PAUSED">Paused</Option>
-                        </Select>
+                    <Col style={{ textAlign: 'right', minWidth: '85px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600' }}>{formatCompact(record.clicks)}</div>
+                        <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>Clicks</div>
                     </Col>
-                    <Col xs={12} md={4} lg={3}>
-                        <Button icon={<ReloadOutlined spin={refreshing} />} onClick={() => onRefresh(true)} block>
-                            Refresh
-                        </Button>
+                    <Col style={{ textAlign: 'right', minWidth: '85px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600' }}>{record.purchases || 0}</div>
+                        <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>Purchases</div>
                     </Col>
-                    <Col xs={24} md={4} lg={9} style={{ textAlign: 'right' }}>
-                        <Text type="secondary">Found {filteredCampaigns.length} campaigns</Text>
+                    <Col style={{ textAlign: 'right', minWidth: '85px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '600' }}>{record.roas ? `${parseFloat(record.roas).toFixed(2)}x` : '—'}</div>
+                        <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>ROAS</div>
                     </Col>
                 </Row>
-            </Card>
+            )
+        }
+    ];
 
-            <Card className="table-card-premium" bordered={false}>
+    // Nested Expand Logic for Ad Sets (Level 3 render)
+    const renderAds = (adset) => {
+        if (loadingStates[adset.id]) return <div style={{ padding: '16px 64px' }}><Spin size="small" /> <Text type="secondary">Loading ads...</Text></div>;
+        return (
+            <Table
+                columns={adLevelColumns}
+                dataSource={adset.ads || []}
+                pagination={false}
+                rowKey="id"
+                showHeader={false}
+                size="small"
+                style={{ background: '#fcfcfc' }}
+            />
+        );
+    };
+
+    // Nested Expand Logic for Campaigns (Level 2 render)
+    const renderAdSets = (campaign) => {
+        if (loadingStates[campaign.id]) return <div style={{ padding: '16px 48px' }}><Spin size="small" /> <Text type="secondary">Loading ad sets...</Text></div>;
+        return (
+            <Table
+                columns={adSetLevelColumns}
+                dataSource={campaign.ad_sets || []}
+                pagination={false}
+                rowKey="id"
+                showHeader={false}
+                size="small"
+                style={{ background: '#f9fafb' }}
+                onExpand={(expanded, record) => expanded && simulateLoading(record.id)}
+                expandable={{
+                    expandedRowRender: renderAds,
+                    expandRowByClick: true,
+                    expandIcon: ({ expanded, onExpand, record }) => (
+                        <div onClick={e => { e.stopPropagation(); onExpand(record, e); }} style={{ cursor: 'pointer', display: 'inline-block', marginRight: '12px', paddingLeft: '24px' }}>
+                            {expanded ? <DownOutlined style={{ fontSize: '10px' }} /> : <RightOutlined style={{ fontSize: '10px' }} />}
+                        </div>
+                    )
+                }}
+            />
+        );
+    };
+
+    return (
+        <div className="campaign-table-container">
+            {showFilter && (
+                <PerformanceFilter 
+                    searchText={searchText}
+                    setSearchText={setSearchText}
+                    statusFilter={statusFilter}
+                    setStatusFilter={setStatusFilter}
+                    selectedDateRange={selectedDateRange}
+                    setSelectedDateRange={setSelectedDateRange}
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                />
+            )}
+
+            <Card className="table-card-premium" bordered={false} styles={{ body: { padding: 0 } }}>
+                <div style={{ padding: '0 24px' }}>
+                    <Tabs 
+                        activeKey={viewMode} 
+                        onChange={setViewMode} 
+                        items={[
+                            { key: 'table', label: <span><TableOutlined /> Table View</span> },
+                            { key: 'hierarchy', label: <span><PartitionOutlined /> Hierarchy View</span> }
+                        ]}
+                        className="table-view-tabs"
+                    />
+                </div>
+                
                 <Table
-                    columns={columns}
-                    dataSource={filteredCampaigns}
+                    columns={viewMode === 'table' ? tableColumns : campaignLevelColumns}
+                    dataSource={filteredData}
                     rowKey="id"
                     loading={loading && !refreshing}
                     scroll={{ x: 'max-content' }}
                     pagination={pagination}
                     onChange={(p) => setPagination(p)}
-                    expandable={{
-                        expandedRowRender: (record) => (
-                            <div style={{ padding: '20px', background: '#f9fafb', borderRadius: '8px' }}>
-                                <Title level={5}><BarChartOutlined /> Full Advanced Data Breakdown</Title>
-                                <Divider style={{ margin: '12px 0' }} />
-                                <Row gutter={[24, 24]}>
-                                    <Col span={24}>
-                                        <Text strong>Actions & Performance Insights</Text>
-                                        <Row gutter={[8, 8]} style={{ marginTop: '12px' }}>
-                                            {record.actions?.map((action, i) => (
-                                                <Col key={i} xs={24} sm={12} md={6}>
-                                                    <div style={{ background: '#fff', padding: '10px', borderRadius: '6px', border: '1px solid #eee', display: 'flex', justifyContent: 'space-between' }}>
-                                                        <Text type="secondary" style={{ fontSize: '11px' }}>{action.action_type?.replace(/_/g, ' ')}</Text>
-                                                        <Text strong>{action.value}</Text>
-                                                    </div>
-                                                </Col>
-                                            ))}
-                                        </Row>
-                                    </Col>
-                                </Row>
+                    rowSelection={viewMode === 'table' ? { selectedRowKeys, onChange: setSelectedRowKeys } : null}
+                    className={viewMode === 'table' ? "meta-campaign-table-new" : "meta-hierarchy-table"}
+                    showHeader={viewMode === 'table'}
+                    onExpand={(expanded, record) => expanded && viewMode === 'hierarchy' && simulateLoading(record.id)}
+                    expandable={viewMode === 'hierarchy' ? {
+                        expandedRowRender: renderAdSets,
+                        expandRowByClick: true,
+                        expandIcon: ({ expanded, onExpand, record }) => (
+                            <div onClick={e => { e.stopPropagation(); onExpand(record, e); }} style={{ cursor: 'pointer', display: 'inline-block', marginRight: '12px' }}>
+                                {expanded ? <DownOutlined style={{ fontSize: '12px' }} /> : <RightOutlined style={{ fontSize: '12px' }} />}
                             </div>
-                        ),
-                        expandIcon: ({ expanded, onExpand, record }) =>
-                            expanded ? <DownOutlined onClick={e => onExpand(record, e)} /> : <RightOutlined onClick={e => onExpand(record, e)} />
-                    }}
+                        )
+                    } : null}
                 />
             </Card>
-        </>
+        </div>
     );
 };
 

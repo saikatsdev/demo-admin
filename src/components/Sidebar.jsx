@@ -30,8 +30,9 @@ const Sidebar = ({ onMenuSelect }) => {
     ].filter(Boolean);
     
     const metaAdsSubmenus = [
-        can('meta-ads-read') && { label: "Meta Ads Report", path: "/meta-ads" },
+        can('meta-ads-read') && { label: "Meta Ads Report", path: "/meta-ads-report" },
         can('campaign-products-read') && { label: "Campaign Products", path: "/campaign-products" },
+        can('campaign-products-read') && { label: "Meta Ad Account", path: "/meta-ad-account" },
     ].filter(Boolean);
 
     const productSubmenus = [

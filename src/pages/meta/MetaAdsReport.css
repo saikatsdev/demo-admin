@@ -81,3 +81,568 @@
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
+
+.account-select .ant-select-selector {
+    border-radius: 8px !important;
+    border-color: #d9d9d9 !important;
+    transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1) !important;
+}
+
+.account-select:hover .ant-select-selector {
+    border-color: #1877F2 !important;
+}
+
+.account-select .ant-select-selection-item {
+    font-weight: 500;
+}
+
+
+/* SettingCard Styles */
+.setting-card-container {
+    background: #fff;
+    padding: 24px;
+    border-radius: 12px;
+}
+
+.header-section .main-title {
+    margin-bottom: 4px !important;
+}
+
+.header-section .sub-title {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.add-account-btn {
+    background-color: #0d9488 !important;
+    border-color: #0d9488 !important;
+    height: 40px;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.add-account-btn:hover {
+    background-color: #0f766e !important;
+    border-color: #0f766e !important;
+}
+
+.header-divider {
+    margin: 24px -24px !important;
+    width: calc(100% + 48px) !important;
+}
+
+.card-wrapper {
+    margin-top: 24px;
+}
+
+.account-setting-card {
+    width: 100%;
+    max-width: 450px;
+    border-radius: 8px !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: none !important;
+    height: auto !important;
+    min-height: min-content !important;
+    overflow: visible !important;
+}
+
+.card-inner-body {
+    padding: 20px;
+    flex: 1 0 auto;
+}
+
+.account-name {
+    margin-bottom: 2px !important;
+    font-size: 16px !important;
+}
+
+.account-id {
+    font-size: 12px;
+    color: #9ca3af;
+    margin: 0 !important;
+}
+
+.more-icon {
+    font-size: 18px;
+    color: #374151;
+}
+
+.inner-divider {
+    margin: 16px -20px !important;
+    width: calc(100% + 40px) !important;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.info-label {
+    color: #6b7280;
+}
+
+.info-value {
+    color: #111827;
+}
+
+.status-badge-premium {
+    background-color: #22c55e;
+    color: #fff;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+
+.custom-connection-status {
+    margin-top: 16px;
+    background-color: #f0fdf4;
+    border: 1px solid #dcfce7;
+    border-radius: 6px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.custom-connection-status .status-icon {
+    color: #22c55e;
+    font-size: 18px;
+    margin-top: 2px;
+}
+
+.custom-connection-status .status-text-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.custom-connection-status .status-title {
+    color: #166534 !important;
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+    font-weight: 700 !important;
+}
+
+.custom-connection-status .status-desc {
+    color: #15803d !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    margin: 0 !important;
+    margin-top: 2px !important;
+}
+
+.setting-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background-color: #ffffff;
+    border-top: 1px solid #e5e7eb;
+}
+
+.toggle-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toggle-label {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.account-switch.ant-switch-checked {
+    background-color: #0d9488 !important;
+}
+
+.test-connection-btn {
+    border-radius: 4px !important;
+    font-weight: 500;
+    height: 36px;
+}
+
+/* Add Meta Ads Account Modal Styles */
+.add-meta-modal .ant-modal-content {
+    padding: 0 !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+}
+
+.modal-inner {
+    padding: 32px;
+}
+
+.modal-header {
+    margin-bottom: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+    text-align: left;
+}
+
+.modal-header h3 {
+    margin-bottom: 4px !important;
+    font-weight: 700 !important;
+}
+
+.modal-subtitle {
+    color: #6b7280;
+    font-size: 14px;
+    margin: 0;
+}
+
+.meta-form .ant-form-item-label label {
+    font-weight: 600 !important;
+    color: #374151 !important;
+    height: auto !important;
+    padding-bottom: 4px !important;
+}
+
+.meta-form .ant-input {
+    height: 42px;
+    border-radius: 6px;
+}
+
+.meta-form .ant-form-item-extra {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 4px;
+}
+
+.form-action-section {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border: 1px solid #f3f4f6;
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+
+.action-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.action-desc {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 0;
+    margin-top: 2px;
+}
+
+.test-btn {
+    height: 40px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.form-footer {
+    margin-top: 32px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.form-footer .cancel-btn {
+    height: 40px;
+    padding: 0 24px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.form-footer .create-btn {
+    height: 40px;
+    padding: 0 32px;
+    border-radius: 6px;
+    font-weight: 600;
+    background-color: #26a69a !important;
+    border-color: #26a69a !important;
+}
+
+/* AccountLimit Styles */
+.account-limit-container {
+    background: #fff;
+    padding: 0;
+}
+
+.account-limit-card {
+    padding: 24px;
+    border-radius: 12px !important;
+}
+
+.table-actions {
+    margin-bottom: 20px;
+}
+
+.table-search {
+    max-width: 300px;
+    height: 38px;
+    border-radius: 4px !important;
+}
+
+.download-btn {
+    height: 38px;
+    border-radius: 4px !important;
+    font-weight: 500;
+}
+
+.account-limit-table .ant-table-thead > tr > th {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.status-tag {
+    border-radius: 12px;
+    padding: 2px 12px;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    color: #374151;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.spend-info p {
+    margin: 0;
+    font-size: 13px;
+}
+
+.yesterday-spend {
+    color: #9ca3af;
+    font-size: 12px !important;
+    margin-top: 2px !important;
+}
+
+.budget-balance-info {
+    max-width: 350px;
+}
+
+.limit-balance {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+}
+
+.budget-progress {
+    margin: 4px 0 !important;
+}
+
+.budget-progress .ant-progress-inner {
+    background-color: #f3f4f6 !important;
+    height: 6px !important;
+}
+
+.days-left {
+    display: block;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+.last-updated-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.table-footer-info {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.custom-pagination {
+    margin-top: 24px !important;
+}
+
+.account-limit-table .ant-table-pagination-left {
+    display: none;
+}
+
+.form-footer .create-btn:hover {
+    background-color: #219186 !important;
+    border-color: #219186 !important;
+}
+
+/* AccountExpense Styles */
+.account-expense-container {
+    background: #fff;
+    padding: 0;
+}
+
+.expense-card {
+    padding: 24px;
+    border-radius: 12px !important;
+}
+
+.expense-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+}
+
+.header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.account-select .ant-select-selector {
+    border-radius: 4px !important;
+    height: 38px !important;
+    display: flex;
+    align-items: center;
+}
+
+.table-actions-row {
+    margin-bottom: 20px;
+}
+
+.account-expense-table .ant-table-thead > tr > th {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.account-expense-table {
+    border: 1px solid #f3f4f6;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.account-expense-table .ant-table-row:hover {
+    background-color: #f9fafb !important;
+}
+
+/* OrderAnalysis Styles */
+.order-analysis-container {
+    padding: 0;
+}
+
+.analysis-metric-card {
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    height: 100%;
+}
+
+.card-header-v2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.header-text {
+    flex: 1;
+}
+
+.metric-title {
+    font-size: 13px;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.metric-value {
+    margin: 4px 0 !important;
+    font-weight: 700 !important;
+}
+
+.metric-subtitle {
+    font-size: 11px;
+    display: block;
+}
+
+.header-icon {
+    font-size: 18px;
+    padding-top: 4px;
+}
+
+.icon-green {
+    color: #10b981;
+}
+
+.metric-divider {
+    margin: 16px 0 12px 0 !important;
+}
+
+.metric-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.detail-row .ant-typography {
+    font-size: 12px;
+}
+
+/* CampaignTable Enhanced Styles */
+.date-picker-btn, .actions-btn {
+    border-radius: 6px !important;
+    height: 36px !important;
+    font-weight: 500 !important;
+    border-color: #e5e7eb !important;
+    color: #374151 !important;
+}
+
+.date-picker-btn:hover, .actions-btn:hover {
+    border-color: #10b981 !important;
+    color: #10b981 !important;
+}
+
+.date-range-menu {
+    border-radius: 12px !important;
+    padding: 8px !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    min-width: 200px !important;
+}
+
+.date-range-menu .ant-dropdown-menu-item-group-title {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #9ca3af !important;
+    padding: 8px 12px 4px 12px !important;
+    letter-spacing: 0.05em !important;
+}
+
+.date-range-menu .ant-dropdown-menu-item {
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    margin: 2px 0 !important;
+}
+
+.date-range-menu .ant-dropdown-menu-item-active {
+    background-color: #f0fdf4 !important;
+    color: #0d9488 !important;
+}
+
+.table-actions-col {
+    display: flex;
+    justify-content: flex-end;
+}

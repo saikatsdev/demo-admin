@@ -1,12 +1,59 @@
-import { Tabs, Card, Typography } from 'antd';
+import { Tabs, Typography } from 'antd';
 import { DatabaseOutlined, BarChartOutlined } from '@ant-design/icons';
-import CampaignCardView from './CampaignCardView';
 import { MetaAdsStatsCards, DecisionCards } from './PerformanceCards';
+import CampaignActualTable from './CampaignActualTable';
+import PerformanceFilter from './PerformanceFilter';
+import { useEffect, useState, useMemo } from 'react';
+import { getDatas } from '../../../api/common/common';
 import CampaignTable from './CampaignTable';
 
 const { Title } = Typography;
 
-const PerformanceTabs = ({ campaigns, loading, refreshing, onRefresh, pagination, setPagination }) => {
+const PerformanceTabs = ({ selectedAccount }) => {
+    // State
+    const [campaigns, setCampaigns]             = useState([]);
+    const [loading, setLoading]                 = useState(true);
+    const [refreshing, setRefreshing]           = useState(false);
+    const [pagination, setPagination]           = useState({ current: 1, pageSize: 10 });
+    
+    // Filter State
+    const [searchText, setSearchText]               = useState('');
+    const [statusFilter, setStatusFilter]           = useState('ALL');
+    const [selectedDateRange, setSelectedDateRange] = useState('Today');
+
+    const getCampaigns = async (isRefreshing = false) => {
+        try {
+            if (isRefreshing) setRefreshing(true);
+            else setLoading(true);
+            
+            const res = await getDatas('/admin/meta/campaigns', { ad_account_id: selectedAccount });
+            if (res && res.success) {
+                setCampaigns(res?.result || []);
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }
+
+    useEffect(() => {
+        if (selectedAccount) {
+            getCampaigns();
+        }
+    }, [selectedAccount]);
+
+    const filteredCampaigns = useMemo(() => {
+        const data = Array.isArray(campaigns) ? campaigns : [];
+        return data.filter(item => {
+            const matchesSearch = item.name?.toLowerCase().includes(searchText.toLowerCase()) || 
+                                 item.id?.includes(searchText);
+            const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+    }, [campaigns, searchText, statusFilter]);
+
     const items = [
         {
             key: 'meta_data',
@@ -18,14 +65,26 @@ const PerformanceTabs = ({ campaigns, loading, refreshing, onRefresh, pagination
             ),
             children: (
                 <div style={{ marginTop: '16px' }}>
-                    <MetaAdsStatsCards campaigns={campaigns} loading={loading} />
+                    <PerformanceFilter 
+                        searchText={searchText}
+                        setSearchText={setSearchText}
+                        statusFilter={statusFilter}
+                        setStatusFilter={setStatusFilter}
+                        selectedDateRange={selectedDateRange}
+                        setSelectedDateRange={setSelectedDateRange}
+                        refreshing={refreshing}
+                        onRefresh={getCampaigns}
+                    />
+
+                    <MetaAdsStatsCards campaigns={filteredCampaigns} loading={loading} />
+                    
                     <CampaignTable 
-                        campaigns={campaigns} 
+                        campaigns={filteredCampaigns} 
                         loading={loading} 
                         refreshing={refreshing} 
-                        onRefresh={onRefresh} 
                         pagination={pagination} 
                         setPagination={setPagination} 
+                        showFilter={false} 
                     />
                 </div>
             ),
@@ -40,19 +99,25 @@ const PerformanceTabs = ({ campaigns, loading, refreshing, onRefresh, pagination
             ),
             children: (
                 <div style={{ marginTop: '16px' }}>
-                    <DecisionCards campaigns={campaigns} loading={loading} />
-                    <CampaignTable 
-                        campaigns={campaigns} 
+                    <PerformanceFilter 
+                        searchText={searchText}
+                        setSearchText={setSearchText}
+                        statusFilter={statusFilter}
+                        setStatusFilter={setStatusFilter}
+                        selectedDateRange={selectedDateRange}
+                        setSelectedDateRange={setSelectedDateRange}
+                        refreshing={refreshing}
+                        onRefresh={getCampaigns}
+                    />
+
+                    <DecisionCards campaigns={filteredCampaigns} loading={loading} />
+                    
+                    <CampaignActualTable 
+                        campaigns={filteredCampaigns} 
                         loading={loading} 
-                        refreshing={refreshing} 
-                        onRefresh={onRefresh} 
                         pagination={pagination} 
                         setPagination={setPagination} 
                     />
-                    <div style={{ marginTop: '32px' }}>
-                        <Title level={4}>Campaign Visual Cards</Title>
-                        <CampaignCardView campaigns={campaigns} loading={loading} />
-                    </div>
                 </div>
             ),
         },

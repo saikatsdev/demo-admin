@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
     Table, 
     Card, 
@@ -33,21 +33,41 @@ const CampaignProduct = () => {
     useTitle("Campaign Product");
 
     // State
-    const [data, setData]             = useState([]);
-    const [loading, setLoading]       = useState(true);
-    const [error, setError]           = useState(null);
-    const [searchText, setSearchText] = useState('');
-    const [statusFilter, setStatusFilter] = useState('ALL');
-    const [refreshing, setRefreshing] = useState(false);
+    const [data, setData]                       = useState([]);
+    const [loading, setLoading]                 = useState(true);
+    const [error, setError]                     = useState(null);
+    const [searchText, setSearchText]           = useState('');
+    const [statusFilter, setStatusFilter]       = useState('ALL');
+    const [refreshing, setRefreshing]           = useState(false);
+    const [accounts, setAccounts]               = useState([]);
+    const [selectedAccount, setSelectedAccount] = useState(null);
+
+    const getAccounts = async () => {
+        try {
+            const res = await getDatas('/admin/meta');
+            
+            if(res){
+                setAccounts(res?.result);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    useEffect(() => {
+        getAccounts();
+    }, []);
 
     // Method
-    const fetchProducts = async (isRefreshing = false) => {
+    const fetchProducts = useCallback(async (isRefreshing = false) => {
+        if (!selectedAccount) return;
+
         if (isRefreshing) setRefreshing(true);
         else setLoading(true);
         
         setError(null);
         try {
-            const response = await getDatas('admin/facebook-ads/products');
+            const response = await getDatas('admin/meta/products', { ad_account_id: selectedAccount });
             
             if (response.data) {
                 setData(response.data);
@@ -63,11 +83,17 @@ const CampaignProduct = () => {
             setLoading(false);
             setRefreshing(false);
         }
-    };
+    }, [selectedAccount]);
 
     useEffect(() => {
         fetchProducts();
-    }, []);
+    }, [fetchProducts]);
+
+    useEffect(() => {
+        if (accounts.length > 0 && !selectedAccount) {
+            setSelectedAccount(accounts[0].ad_account_id);
+        }
+    }, [accounts]);
 
     // Frontend Filtering Logic
     const filteredData = useMemo(() => {
@@ -153,28 +179,44 @@ const CampaignProduct = () => {
         <div className="meta-ads-page">
             {/* Header Section */}
             <div className="page-header-wrapper">
-                <Row gutter={[16, 16]} align="middle" justify="space-between">
-                    <Col xs={24} md={16}>
+                <Row gutter={[16, 16]} align="middle">
+                    <Col xs={24} lg={10}>
                         <Breadcrumb items={[{ title: 'Dashboard' }, { title: 'Meta Ads' }, { title: 'Campaign Products' }]} />
                         <div style={{ marginTop: '12px' }}>
-                            <Title level={2} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Title level={3} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <FacebookFilled style={{ color: '#1877F2' }} />
                                 Campaign Products
                             </Title>
-                            <Text type="secondary">Manage and filter your product-specific Facebook campaigns</Text>
                         </div>
                     </Col>
-                    <Col xs={24} md={8} style={{ textAlign: 'right' }}>
-                        <Button 
-                            type="primary" 
-                            icon={<ReloadOutlined spin={refreshing} />} 
-                            onClick={() => fetchProducts(true)}
-                            loading={refreshing}
-                            size="large"
-                            style={{ borderRadius: '8px', fontWeight: 600 }}
-                        >
-                            {refreshing ? 'Syncing...' : 'Sync Products'}
-                        </Button>
+                    <Col xs={24} lg={14} style={{ textAlign: 'right' }}>
+                        <Space wrap={false} style={{ width: '100%', justifyContent: 'flex-end' }}>
+                            <Select
+                                placeholder="Select Ad Account"
+                                style={{ width: 220, height: '40px' }}
+                                dropdownStyle={{ borderRadius: '8px' }}
+                                options={accounts?.map(acc => ({ 
+                                    label: (
+                                        <Space>
+                                            <FacebookFilled style={{ color: '#1877F2' }} />
+                                            {acc.name}
+                                        </Space>
+                                    ), 
+                                    value: acc.ad_account_id 
+                                }))}
+                                value={selectedAccount}
+                                onChange={setSelectedAccount}
+                            />
+                            <Button 
+                                type="primary" 
+                                icon={<ReloadOutlined spin={refreshing} />} 
+                                onClick={() => fetchProducts(true)}
+                                loading={refreshing}
+                                style={{ height: '40px', borderRadius: '8px', fontWeight: 600 }}
+                            >
+                                {refreshing ? 'Syncing...' : 'Sync Products'}
+                            </Button>
+                        </Space>
                     </Col>
                 </Row>
             </div>

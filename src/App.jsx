@@ -77,7 +77,13 @@ import OrderReport from "./pages/report/OrderReport";
 import UpsellSetting from "./pages/product/thankyou/UpsellSetting";
 import Tutorial from "./pages/tutorial/Tutorial";
 import FacebookMeta from "./pages/product/catelog/FacebookMeta";
+
+// Meta Module
 import MetaAdsReport from "./pages/meta/MetaAdsReport";
+import CampaignProduct from "./pages/meta/CampaignProduct";
+import MetaAdAccount from "./pages/meta/MetaAdAccount";
+// Meta Module
+
 import AddDownSell from "./pages/order/downsell/AddDownSell";
 import EditDownSell from "./pages/order/downsell/EditDownSell";
 import AddCustomer from "./pages/auth/AddCustomer";
@@ -158,7 +164,6 @@ import TrashPaymentGatewayList from "./pages/order/payment_gateway/TrashPaymentG
 import Profile from "./pages/auth/user/Profile";
 import ServerTracker from "./pages/product/catelog/ServerTracker";
 import Feedback from "./pages/order/feedback/Feedback";
-import CampaignProduct from "./pages/meta/CampaignProduct";
 import ProductTrash from "./pages/product/ProductTrash";
 import AddStatus from "./pages/order/AddStatus";
 import AddOnlinePaymentDiscount from "./pages/order/AddOnlinePaymentDiscount";
@@ -269,7 +274,11 @@ function App() {
 
                     <Route path="/section-banner" element={<SectionBanner />} />
 
-                    <Route path="/meta-ads" element={<MetaAdsReport />} />
+                    {/* Meta Module */}
+                    <Route path="/meta-ads-report" element={<MetaAdsReport />} />
+                    <Route path="/campaign-products" element={<CampaignProduct />} />
+                    <Route path="/meta-ad-account" element={<MetaAdAccount />} />
+                    {/* Meta Module */}
 
                     <Route path="/product/catalogs" element={<ProductCatelog />} />
                     <Route path="/add/prodcut/catelog" element={<AddProductCatelog />} />
