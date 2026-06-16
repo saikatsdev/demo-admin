@@ -1,4 +1,4 @@
-import {CopyOutlined,DeleteFilled,DeleteOutlined,TransactionOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined} from "@ant-design/icons";
+import {CopyOutlined,DeleteFilled,DeleteOutlined,TransactionOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined} from "@ant-design/icons";
 import {Badge,Button,Col,DatePicker,Dropdown,Form,Input,InputNumber,message,Modal,Popover,Row,Select,Space,Spin,Table,Tag,Tooltip} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
@@ -1784,41 +1784,45 @@ export default function Order() {
             align: "center",
             fixed: !isMobile ? "right" : false,
             render: (_, record) => (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
                     {!isTrash && (
-                        <>
-                            <Space size={6} wrap style={{ justifyContent: 'center' }}>
-                                <Tooltip title="Preview Order">
-                                    <Button size="small" type="text" style={{ color: '#1890ff', backgroundColor: '#e6f7ff' }} icon={<EyeOutlined />} onClick={() => openPreview(record)}/>
+                        <Space size={6} wrap style={{ justifyContent: 'center', maxWidth: '110px' }}>
+                            <Tooltip title="Preview Order">
+                                <Button size="small" type="text" style={{ color: '#1890ff', backgroundColor: '#e6f7ff' }} icon={<EyeOutlined />} onClick={() => openPreview(record)}/>
+                            </Tooltip>
+                            
+                            {can("orders-create") && (
+                                <Tooltip title={record?.locked_by_id ? "Locked" : "Edit Order"}>
+                                    <Button size="small" type="text" style={{ color: '#52c41a', backgroundColor: '#f6ffed' }} icon={record?.locked_by_id ? <LockOutlined /> : <EditOutlined />} onClick={() => handleEdit(record)} />
                                 </Tooltip>
-                                
-                                {can("orders-create") && (
-                                    <Tooltip title={record?.locked_by_id ? "Locked" : "Edit Order"}>
-                                        <Button size="small" type="text" style={{ color: '#52c41a', backgroundColor: '#f6ffed' }} icon={record?.locked_by_id ? <LockOutlined /> : <EditOutlined />} onClick={() => handleEdit(record)} />
-                                    </Tooltip>
-                                )}
+                            )}
 
-                                <Tooltip title="Delete Order">
-                                    <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} onClick={() => trashDestroy(record.id)} />
-                                </Tooltip>
-                            </Space>
+                            <Tooltip title="Delete Order">
+                                <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} onClick={() => trashDestroy(record.id)} />
+                            </Tooltip>
 
-                            <Space size={6} wrap style={{ justifyContent: 'center' }}>
-                                <Tooltip title="Block User">
-                                    <button className="block-user-btn" style={{ padding: '2px 8px', fontSize: '12px', height: '24px' }} onClick={() => handleBlockUser(record.phone_number)}>
-                                        Block
-                                    </button>
+                            <Tooltip title="Block User">
+                                <Button 
+                                    size="small" 
+                                    type="text" 
+                                    style={{ color: '#ff4d4f', backgroundColor: '#fff1f0' }} 
+                                    icon={<StopOutlined />} 
+                                    onClick={() => handleBlockUser(record.phone_number)}
+                                />
+                            </Tooltip>
+                            
+                            {statusId >= 5 && (
+                                <Tooltip title="Return & Damage">
+                                    <Button 
+                                        size="small" 
+                                        type="text" 
+                                        style={{ backgroundColor: "#fff7e6", color: "#faad14" }} 
+                                        icon={<RollbackOutlined />}
+                                        onClick={() => returnAndDamage(record.id)}
+                                    />
                                 </Tooltip>
-                                
-                                {statusId >= 5 && (
-                                    <Tooltip title="Return & Damage">
-                                        <Button size="small" type="default" style={{backgroundColor: "#faad14", borderColor: "#faad14", color: "white", fontSize: '12px', padding: '0 8px'}} onClick={() => returnAndDamage(record.id)}>
-                                            Return
-                                        </Button>
-                                    </Tooltip>
-                                )}
-                            </Space>
-                        </>
+                            )}
+                        </Space>
                     )}
                 </div>
             ),
