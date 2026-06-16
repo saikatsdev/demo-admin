@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
+import { usePermission } from "../../hooks/usePermission";
 
 export default function Employee() {
     // Hook
@@ -19,6 +20,10 @@ export default function Employee() {
 
     // Variable
     const navigate = useNavigate();
+    const {permissions} = usePermission();
+
+    const can = (permission) => permissions?.includes(permission);
+    
 
     const columns = 
     [
@@ -91,16 +96,16 @@ export default function Employee() {
             render: (_, record) => (
                 <Space>
                     <Tooltip title="Edit Employee">
-                        <Button size="small" type="text" style={{ color: '#1890ff', backgroundColor: '#e6f7ff' }} icon={<EditOutlined />} onClick={() => onEdit(record)} />
+                        <Button size="small" type="text" style={{ color: '#1890ff', backgroundColor: '#e6f7ff' }} icon={<EditOutlined />} onClick={() => onEdit(record)} disabled={can("users.update")} />
                     </Tooltip>
                     
                     <Tooltip title="Update Password">
-                        <Button size="small" type="text" style={{ color: '#faad14', backgroundColor: '#fff7e6' }} icon={<KeyOutlined />} onClick={() => navigate(`/edit/employee/password/${record.id}`)} />
+                        <Button size="small" type="text" style={{ color: '#faad14', backgroundColor: '#fff7e6' }} icon={<KeyOutlined />} onClick={() => navigate(`/edit/employee/password/${record.id}`)} disabled={can("users.update")} />
                     </Tooltip>
 
                     <Popconfirm title="Delete user?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
                         <Tooltip title="Delete Employee">
-                            <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} />
+                            <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} disabled={can("users.delete")} />
                         </Tooltip>
                     </Popconfirm>
                 </Space>
@@ -196,10 +201,10 @@ export default function Employee() {
             <div style={{display: "flex",justifyContent: "space-between",alignItems: "*",marginBottom: 16}}>
                 <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
                 <Space>
-                    <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate} disabled={can("users.create")}>
                         Add
                     </Button>
-                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                         Back
                     </Button>
                 </Space>

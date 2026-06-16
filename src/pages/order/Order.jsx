@@ -342,8 +342,7 @@ export default function Order() {
     }, [settings]);
 
     const addOrder = () => {
-        if (can("orders-create")
-        ) {
+        if (can("orders-create")) {
             navigate("/order-add");
         } else {
             message.error("You don't have permission to create Order");

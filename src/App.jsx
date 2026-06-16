@@ -171,6 +171,7 @@ import EditOnlinePaymentDiscount from "./pages/order/EditOnlinePaymentDiscount";
 import EditStatus from "./pages/order/EditStatus";
 import UnpreparedOrderList from "./pages/team/UnpreparedOrderList";
 import AssignList from "./pages/team/AssignList";
+import UpdatePassword from "./pages/auth/employee/UpdatePassword";
 
 function App() {
     const dispatch         = useDispatch();
@@ -224,6 +225,7 @@ function App() {
                     <Route path="/customer" element={<Customer />} />
                     <Route path="/add/customer" element={<AddCustomer />} />
                     <Route path="/edit/customer/:id" element={<EditCustomer />} />
+                    <Route path="/edit/employee/password/:id" element={<UpdatePassword />} />
 
                     <Route path="/management" element={<Management />} />
                     <Route path="/add/management" element={<AddManagement />} />
@@ -429,14 +431,6 @@ function App() {
                         element={
                             <div className="empty">
                                 <h1>Basic Setting</h1>
-                            </div>
-                        }
-                    />
-
-                    <Route path="/system/user-management"
-                        element={
-                            <div className="empty">
-                                <h1>User Management</h1>
                             </div>
                         }
                     />
