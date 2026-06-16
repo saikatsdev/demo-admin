@@ -19,7 +19,12 @@ export default function UpdatePassword() {
     const onFinish = async (values) => {
         try {
             setLoading(true);
-            const res = await postData(`/admin/users/password/${id}`, values);
+
+            const formData = new FormData();
+            formData.append("password", values.new_password);
+            formData.append("_method", "PUT");
+
+            const res = await postData(`/admin/users/password/${id}`, formData);
 
             if (res && res?.success) {
                 message.success(res.msg || "Password updated successfully");
