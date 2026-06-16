@@ -1,6 +1,6 @@
-import {ArrowLeftOutlined,ShoppingCartOutlined,RollbackOutlined,WhatsAppOutlined,CopyOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,ShoppingCartOutlined,RollbackOutlined,WhatsAppOutlined,CopyOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined,EditOutlined,UndoOutlined,SwapOutlined,DeleteFilled} from "@ant-design/icons";
 import * as XLSX from "xlsx";
-import {Input as AntInput,Breadcrumb,Button,message,DatePicker,Popconfirm,Space,Table,Modal,Tooltip,Image} from "antd";
+import {Input as AntInput,Breadcrumb,Button,message,DatePicker,Popconfirm,Space,Table,Modal,Tooltip,Image,Row,Col} from "antd";
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { Link, useNavigate } from "react-router-dom";
@@ -119,10 +119,8 @@ export default function InCompleteOrder() {
                     setCompleteOrders(orders);
                     setTotalOrders(res?.result?.orders_count);
 
-                    const totalRevenue = orders.reduce(
-                        (sum, order) => sum + parseFloat(order.payable_price || 0),
-                        0
-                    );
+                    const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.payable_price || 0),0);
+                    
                     setTotalRevenue(totalRevenue);
                 }
             }
@@ -273,42 +271,43 @@ export default function InCompleteOrder() {
         {
             title: "Action",
             key: "operation",
-            width: 100,
+            width: 140,
+            align: "center",
             render: (_, record) => (
-                <Space>
+                <Space size={6}>
                     {showTrash ? (
-                        <Space>
-                            <Popconfirm title="Restore this order?" okText="Yes" cancelText="No" onConfirm={() => onRestore(record.id)}>
-                                <Button size="small" type="primary">
-                                    Restore
-                                </Button>
-                            </Popconfirm>
-
-                            <Popconfirm title="Permanently delete this order?" description="This action cannot be undone!" okText="Delete" cancelText="Cancel" onConfirm={() => onForceDelete(record.id)}>
-                                <Button size="small" danger>
-                                    Delete Permanently
-                                </Button>
-                            </Popconfirm>
-                        </Space>
-                        ) : (
                         <>
-                            {record.status.id === 1 && (
-                                <>
-                                    <Button size="small" className="incomplete-edit" onClick={() => onEdit(record.id)}>
-                                        Edit
-                                    </Button>
+                            <Tooltip title="Restore Order">
+                                <Popconfirm title="Restore this order?" okText="Yes" cancelText="No" onConfirm={() => onRestore(record.id)}>
+                                    <Button size="small" type="text" style={{ color: '#52c41a', backgroundColor: '#f6ffed' }} icon={<UndoOutlined />} />
+                                </Popconfirm>
+                            </Tooltip>
 
-                                    <Button size="small" className="incomplete-convert" onClick={() => handleOrder(record)}>
-                                        Convert
-                                    </Button>
+                            <Tooltip title="Permanent Delete">
+                                <Popconfirm title="Permanently delete this order?" description="This action cannot be undone!" okText="Delete" cancelText="Cancel" onConfirm={() => onForceDelete(record.id)}>
+                                    <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteFilled />} />
+                                </Popconfirm>
+                            </Tooltip>
+                        </>
+                    ) : (
+                        <>
+                            {record.status?.id === 1 && (
+                                <>
+                                    <Tooltip title="Edit Order">
+                                        <Button size="small" type="text" style={{ color: '#1890ff', backgroundColor: '#e6f7ff' }} icon={<EditOutlined />} onClick={() => onEdit(record.id)} />
+                                    </Tooltip>
+
+                                    <Tooltip title="Convert to Order">
+                                        <Button size="small" type="text" style={{ color: '#faad14', backgroundColor: '#fff7e6' }} icon={<SwapOutlined />} onClick={() => handleOrder(record)} />
+                                    </Tooltip>
                                 </>
                             )}
 
-                            <Popconfirm title="Delete Order?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                                <Button size="small" className="incomplete-delete">
-                                    Delete
-                                </Button>
-                            </Popconfirm>
+                            <Tooltip title="Delete Order">
+                                <Popconfirm title="Delete Order?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
+                                    <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} />
+                                </Popconfirm>
+                            </Tooltip>
                         </>
                     )}
                 </Space>
@@ -637,14 +636,30 @@ export default function InCompleteOrder() {
                 </div>
             </div>
 
-            <div className="incomplete-order-head">
-                <AntInput.Search allowClear placeholder="Search by Invoice / Phone / Name" style={{ width: 300 }} onChange={(e) => {setSearchText(e.target.value);setCurrentPage(1);}}/>
+            <div className="incomplete-order-head" style={{ marginBottom: 24 }}>
+                <AntInput.Search allowClear placeholder="Search by Invoice / Phone / Name" style={{ width: 350, height: 40 }} onChange={(e) => {setSearchText(e.target.value);setCurrentPage(1);}}/>
                 <Space>
-                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                    <Button type="primary" ghost icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                         Back
                     </Button>
                 </Space>
             </div>
+
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                {stats.map((s) => (
+                    <Col xs={24} sm={12} md={6} key={s.key}>
+                        <div className={`io-card ${s.colorClass}`} style={{ borderBottom: `4px solid ${s.key === 'incomplete' ? '#1890ff' : s.key === 'recovered' ? '#52c41a' : s.key === 'rate' ? '#722ed1' : '#faad14'}` }}>
+                            <div className={`io-badge ${s.colorClass}`} style={{ backgroundColor: s.key === 'incomplete' ? '#e6f7ff' : s.key === 'recovered' ? '#f6ffed' : s.key === 'rate' ? '#f9f0ff' : '#fff7e6', color: s.key === 'incomplete' ? '#1890ff' : s.key === 'recovered' ? '#52c41a' : s.key === 'rate' ? '#722ed1' : '#faad14' }}>
+                                {s.icon}
+                            </div>
+                            <div className="io-card-body">
+                                <div className="io-card-label" style={{ fontWeight: 500 }}>{s.label}</div>
+                                <div className="io-card-value" style={{ fontSize: 22, fontWeight: 700 }}>{s.value}</div>
+                            </div>
+                        </div>
+                    </Col>
+                ))}
+            </Row>
 
             <div className="page-header-block">
                 <div className="filter-data">
