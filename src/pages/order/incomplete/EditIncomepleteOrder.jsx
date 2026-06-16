@@ -22,6 +22,7 @@ export default function EditIncomepleteOrder() {
     const [currentNoteRecord, setCurrentNoteRecord] = useState(null);
     const [messageApi, contextHolder]               = message.useMessage();
     const [form]                                    = Form.useForm();
+    const [formLoading, setFormLoading]             = useState(false);
 
     const columns = 
     [
@@ -174,33 +175,41 @@ export default function EditIncomepleteOrder() {
     }, [id, form]);
 
     const handleUpdate = async (values) => {
-        const payload = {
-            name: values.name,
-            phone_number: values.phone_number,
-            address: values.address,
-            ip_address: values.ip_address || "",
-            status_id: values.status,
-            items: inCompleteOrders.items.map((item) => ({
-                product_id: item.product?.id,
-                attribute_value_id_1: item.attribute_value_1?.id || null,
-                attribute_value_id_2: item.attribute_value_2?.id || null,
-                attribute_value_id_3: item.attribute_value_3?.id || null,
-                note: item.note || "",
-            })),
-            _method: "PUT",
-        };
+        const formData = new FormData();
+        formData.append("name", values.name);
+        formData.append("phone_number", values.phone_number);
+        formData.append("address", values.address);
+        formData.append("ip_address", values.ip_address || "");
+        formData.append("status_id", values.status);
+        formData.append("_method", "PUT");
 
-        const res = await postData(`/admin/incomplete-orders/${id}`, payload);
+        inCompleteOrders.items.forEach((item, index) => {
+            formData.append(`items[${index}][product_id]`, item.product?.id || item.product_id || "");
+            formData.append(`items[${index}][attribute_value_id_1]`, item.attribute_value_1?.id || item.attribute_value_id_1 || "");
+            formData.append(`items[${index}][attribute_value_id_2]`, item.attribute_value_2?.id || item.attribute_value_id_2 || "");
+            formData.append(`items[${index}][attribute_value_id_3]`, item.attribute_value_3?.id || item.attribute_value_id_3 || "");
+            formData.append(`items[${index}][note]`, item.note || "");
+        });
 
-        if(res && res?.success){
-            messageApi.open({
-                type: "success",
-                content: res?.msg,
-            });
+        try {
+            setFormLoading(true);
 
-            setTimeout(() => {
-                navigate("/incomplete/orders");
-            }, 500);
+            const res = await postData(`/admin/incomplete-orders/${id}`, formData);
+
+            if (res && res?.success) {
+                messageApi.open({
+                    type: "success",
+                    content: res?.msg,
+                });
+
+                setTimeout(() => {
+                    navigate("/incomplete/orders");
+                }, 500);
+            }
+        } catch (error) {
+            console.log(error);
+        }finally{
+            setFormLoading(false);
         }
     };
 
@@ -281,7 +290,7 @@ export default function EditIncomepleteOrder() {
 
                                 <div style={{ marginTop: 24 }}>
                                     <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                                        <Button type="primary" htmlType="submit" block icon={<PlusOutlined />} size="large" style={{ height: 45, fontWeight: 600 }}>
+                                        <Button type="primary" htmlType="submit" block icon={<PlusOutlined />} size="large" style={{ height: 45, fontWeight: 600 }} loading={formLoading}>
                                             Update Incomplete Order
                                         </Button>
                                         <Button onClick={handleOrder} block size="large" style={{ height: 45, color: '#1c558b', borderColor: '#1c558b' }}>
