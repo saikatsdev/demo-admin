@@ -80,8 +80,6 @@ export default function Order() {
     const [duplicateOrder, setDuplicateOrder]                                                          = useState(0);
     const [isMobile, setIsMobile]                                                                      = useState(false);
     const [invoiceNumber, setInvoiceNumber]                                                            = useState("");
-    const [phoneNumber, setPhoneNumber]                                                                = useState("");
-    const [websiteName, setWebsiteName]                                                                = useState("");
     const [courierData, setCourierData]                                                                = useState([]);
     const [courierDataTableShow, setCourierDataTableShow]                                              = useState(false);
     const [localOrderSummary,setLocalOrderSummary]                                                     = useState({});
@@ -326,20 +324,15 @@ export default function Order() {
         return () => {
             window.removeEventListener("resize", checkScreenSize);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
         if (!settings) return;
 
         const invoiceNumber = settings.invoice_number;
-        const phoneNumber   = settings.phone_number;
-        const websiteName   = settings.title;
         const adminbaseUrl  =  window.location.origin;
 
         setInvoiceNumber(invoiceNumber);
-        setPhoneNumber(phoneNumber);
-        setWebsiteName(websiteName);
 
         if(adminbaseUrl !== ""){
             setWebsiteAdminBaseUrl(adminbaseUrl);
@@ -553,7 +546,7 @@ export default function Order() {
 
     const orderAssignUpdate = async () => {
         try {
-            const res = await postData("/admin/orders/assign", {user_id: orderAssign,order_ids: selectedOrderIds});
+            const res = await postData("/admin/team/assign", {user_id: orderAssign,order_ids: selectedOrderIds});
             if (res?.success) {
             
                 messageApi.open({
