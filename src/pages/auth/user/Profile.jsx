@@ -29,8 +29,11 @@ export default function Profile() {
         const load = async () => {
             try {
                 const res = await getDatas(`/admin/users/${userId}`);
+
                 if (!active) return;
+
                 const userData = res?.result || null;
+
                 setUser(userData);
                 
                 if (userData) {
