@@ -1,4 +1,4 @@
-import {ArrowLeftOutlined,ShoppingCartOutlined,RollbackOutlined,WhatsAppOutlined,CopyOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined,EditOutlined,UndoOutlined,SwapOutlined,DeleteFilled} from "@ant-design/icons";
+import {ArrowLeftOutlined,ShoppingCartOutlined,WhatsAppOutlined,CopyOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined,EditOutlined,SwapOutlined} from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import {Input as AntInput,Breadcrumb,Button,message,DatePicker,Popconfirm,Space,Table,Modal,Tooltip,Image,Row,Col} from "antd";
 import { useEffect, useState } from "react";
@@ -34,7 +34,7 @@ export default function InCompleteOrder() {
     const [activePeriod, setActivePeriod]           = useState("week");
     const [recentActivity, setRecentActivity]       = useState([]);
     const [abandonedProducts, setAbandonedProducts] = useState([]);
-    const [showTrash, setShowTrash]                 = useState(false);
+
     const [searchText, setSearchText]               = useState("");
 
     // Variable
@@ -55,30 +55,36 @@ export default function InCompleteOrder() {
         setLoading(true);
 
         try {
-            const params = {};
+            const params = {
+                search_key: searchText,
+                page: currentPage,
+                per_page: pageSize,
+            };
 
             if (dateRange?.[0] && dateRange?.[1]) {
                 params.start_date = dayjs(dateRange[0]).format("YYYY-MM-DD");
-                params.end_date = dayjs(dateRange[1]).format("YYYY-MM-DD");
+                params.end_date = dayjs(dayjs(dateRange[1])).format("YYYY-MM-DD");
             }
 
             if (activeStatus) {
                 params.status_id = activeStatus;
             }
 
-            if (showTrash) {
-                params.trash = 1;
-                params.status_id = null;
-            }
-
             const res = await getDatas("/admin/incomplete-orders", params);
 
             if (res && res?.success) {
-                setIncompleteOrders(res.result?.orders?.data || []);
+                setIncompleteOrders(res.result?.orders?.data || res.result?.orders || []);
+                setTotalOrders(res.result?.orders?.total || (res.result?.orders?.length || 0));
 
                 const summary = res?.result?.summary;
-
-                setOrderCounts({total:summary.total_orders,pending:summary?.total_pending,approved:summary?.total_approved, canceled:summary?.total_cancelled});
+                if (summary) {
+                    setOrderCounts({
+                        total: summary.total_orders,
+                        pending: summary?.total_pending,
+                        approved: summary?.total_approved,
+                        canceled: summary?.total_cancelled
+                    });
+                }
             }
         } catch (err) {
             console.log(err);
@@ -90,7 +96,7 @@ export default function InCompleteOrder() {
 
     useEffect(() => {
         fetchIncompleteOrders();
-    }, [dateRange, activeStatus, showTrash]);
+    }, [dateRange, activeStatus, searchText, currentPage, pageSize]);
 
     const filteredOrders = incompleteOrders.filter((order) => {
         if (!searchText) return true;
@@ -275,41 +281,19 @@ export default function InCompleteOrder() {
             align: "center",
             render: (_, record) => (
                 <Space size={6}>
-                    {showTrash ? (
-                        <>
-                            <Tooltip title="Restore Order">
-                                <Popconfirm title="Restore this order?" okText="Yes" cancelText="No" onConfirm={() => onRestore(record.id)}>
-                                    <Button size="small" type="text" style={{ color: '#52c41a', backgroundColor: '#f6ffed' }} icon={<UndoOutlined />} />
-                                </Popconfirm>
-                            </Tooltip>
+                    <Tooltip title="Edit Order">
+                        <Button size="small" type="text" style={{ color: '#1890ff', backgroundColor: '#e6f7ff' }} icon={<EditOutlined />} onClick={() => onEdit(record.id)} />
+                    </Tooltip>
 
-                            <Tooltip title="Permanent Delete">
-                                <Popconfirm title="Permanently delete this order?" description="This action cannot be undone!" okText="Delete" cancelText="Cancel" onConfirm={() => onForceDelete(record.id)}>
-                                    <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteFilled />} />
-                                </Popconfirm>
-                            </Tooltip>
-                        </>
-                    ) : (
-                        <>
-                            {record.status?.id === 1 && (
-                                <>
-                                    <Tooltip title="Edit Order">
-                                        <Button size="small" type="text" style={{ color: '#1890ff', backgroundColor: '#e6f7ff' }} icon={<EditOutlined />} onClick={() => onEdit(record.id)} />
-                                    </Tooltip>
+                    <Tooltip title="Convert to Order">
+                        <Button size="small" type="text" style={{ color: '#faad14', backgroundColor: '#fff7e6' }} icon={<SwapOutlined />} onClick={() => handleOrder(record)} />
+                    </Tooltip>
 
-                                    <Tooltip title="Convert to Order">
-                                        <Button size="small" type="text" style={{ color: '#faad14', backgroundColor: '#fff7e6' }} icon={<SwapOutlined />} onClick={() => handleOrder(record)} />
-                                    </Tooltip>
-                                </>
-                            )}
-
-                            <Tooltip title="Delete Order">
-                                <Popconfirm title="Delete Order?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                                    <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} />
-                                </Popconfirm>
-                            </Tooltip>
-                        </>
-                    )}
+                    <Tooltip title="Delete Order">
+                        <Popconfirm title="Delete Order?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
+                            <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} />
+                        </Popconfirm>
+                    </Tooltip>
                 </Space>
             ),
         },
@@ -428,54 +412,11 @@ export default function InCompleteOrder() {
     const onDelete = async (id) => {
         const res = await deleteData(`/admin/incomplete-orders/${id}`);
         
-        if (res?.success) {
-            const refreshed = await getDatas("/admin/incomplete-orders");
-            
-            setIncompleteOrders(refreshed?.result?.orders?.data || []);
-
-            messageApi.open({
-                type: "success",
-                content: res?.msg,
-            });
+        if (res && res?.success) {
+            message.success(res?.msg || "Order moved to trash");
+            fetchIncompleteOrders();
         }
     };
-
-    const onRestore = async (id) => {
-        await restoreIncompleteOrder(id);
-        fetchIncompleteOrders();
-    };
-
-    const onForceDelete = async (id) => {
-        await forceDeleteIncompleteOrder(id);
-        fetchIncompleteOrders();
-    };
-
-    const restoreIncompleteOrder = async (id) => {
-        const res = await postData(`/admin/incomplete-orders/${id}/restore`);
-
-        if(res && res?.success){
-            messageApi.open({
-                type: "success",
-                content: res?.message,
-            });
-        }else if(res?.success === false){
-            messageApi.open({
-                type: "success",
-                content: res?.message,
-            });
-        }
-    }
-
-    const forceDeleteIncompleteOrder = async (id) => {
-        const res = await deleteData(`/admin/incomplete-orders/${id}/permanent`);
-
-        if(res && res?.success){
-            messageApi.open({
-                type: "success",
-                content: res?.msg,
-            });
-        }
-    }
 
     const handleBulkDelete = async () => {
         if (!selectedOrders?.length) {
@@ -508,82 +449,6 @@ export default function InCompleteOrder() {
                 });
             } else {
                 message.error("Bulk delete failed.");
-            }
-
-        } catch (err) {
-            message.error("Something went wrong!", err);
-        }
-    };
-
-    const handleBulkPermanentDelete = async () => {
-        if (!selectedOrders?.length) {
-            alert("Please select at least one order.");
-            return;
-        }
-
-        const confirmDelete = window.confirm(
-            `Are you sure you want to permanent delete ${selectedOrders.length} orders?`
-        );
-
-        if (!confirmDelete) return;
-
-        try {
-            const orderIds = selectedOrders.map(o => o.id);
-
-            const res = await postData("/admin/incomplete-orders/bulk-permanent-delete", {
-                ids: orderIds,
-            });
-
-            if (res.success) {
-                messageApi.open({
-                    type: "success",
-                    content: "Orders permanent deleted successfully.",
-                    duration: 1.5,
-                    onClose: () => {
-                        setSelectedRowKeys([]);
-                        fetchIncompleteOrders();
-                    },
-                });
-            } else {
-                message.error("Bulk permanent delete failed.");
-            }
-
-        } catch (err) {
-            message.error("Something went wrong!", err);
-        }
-    };
-
-    const handleBulkRestore = async () => {
-        if (!selectedOrders?.length) {
-            alert("Please select at least one order.");
-            return;
-        }
-
-        const confirmRestore = window.confirm(
-            `Are you sure you want to restore ${selectedOrders.length} orders?`
-        );
-
-        if (!confirmRestore) return;
-
-        try {
-            const orderIds = selectedOrders.map(o => o.id);
-
-            const res = await postData("/admin/incomplete-orders/bulk-restore", {
-                ids: orderIds,
-            });
-
-            if (res.success) {
-                messageApi.open({
-                    type: "success",
-                    content: "Orders Restore successfully.",
-                    duration: 1.5,
-                    onClose: () => {
-                        setSelectedRowKeys([]);
-                        fetchIncompleteOrders();
-                    },
-                });
-            } else {
-                message.error("Bulk Restore failed.");
             }
 
         } catch (err) {
@@ -645,22 +510,6 @@ export default function InCompleteOrder() {
                 </Space>
             </div>
 
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-                {stats.map((s) => (
-                    <Col xs={24} sm={12} md={6} key={s.key}>
-                        <div className={`io-card ${s.colorClass}`} style={{ borderBottom: `4px solid ${s.key === 'incomplete' ? '#1890ff' : s.key === 'recovered' ? '#52c41a' : s.key === 'rate' ? '#722ed1' : '#faad14'}` }}>
-                            <div className={`io-badge ${s.colorClass}`} style={{ backgroundColor: s.key === 'incomplete' ? '#e6f7ff' : s.key === 'recovered' ? '#f6ffed' : s.key === 'rate' ? '#f9f0ff' : '#fff7e6', color: s.key === 'incomplete' ? '#1890ff' : s.key === 'recovered' ? '#52c41a' : s.key === 'rate' ? '#722ed1' : '#faad14' }}>
-                                {s.icon}
-                            </div>
-                            <div className="io-card-body">
-                                <div className="io-card-label" style={{ fontWeight: 500 }}>{s.label}</div>
-                                <div className="io-card-value" style={{ fontSize: 22, fontWeight: 700 }}>{s.value}</div>
-                            </div>
-                        </div>
-                    </Col>
-                ))}
-            </Row>
-
             <div className="page-header-block">
                 <div className="filter-data">
                     <Space style={{ marginBottom: 16 }}>
@@ -672,39 +521,25 @@ export default function InCompleteOrder() {
 
                 <div className="incomplete-bulk-action">
                     <Space style={{ marginBottom: 16 }}>
-                        {!showTrash ? (
                             <Button icon={<DeleteOutlined />} danger="danger" disabled={selectedOrders?.length === 0} onClick={() => handleBulkDelete()}>
                                 Bulk Delete
                             </Button>
-                        ) : (
-                            <Button icon={<DeleteOutlined />} danger="danger" disabled={selectedOrders?.length === 0} onClick={() => handleBulkPermanentDelete()}>
-                                Bulk Permanent Delete
-                            </Button>
-                        )}
 
-                        {showTrash && (
-                            <Button type="primary" icon={<RollbackOutlined />} style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }} disabled={selectedOrders?.length === 0} onClick={handleBulkRestore}>
-                                Bulk Restore
-                            </Button>
-                        )}
 
-                        <Tooltip title={showTrash ? "Show Active" : "Show Trash"}>
-                            <Button danger={ !showTrash } icon={<DeleteOutlined />} onClick={() => setShowTrash(prev => !prev)}>
-                                {showTrash ? "Back to List" : "Show Trash"}
+
+                        <Tooltip title="Show Trash">
+                            <Button danger icon={<DeleteOutlined />} onClick={() => navigate("/incomplete/orders-trash")}>
+                                Show Trash
                             </Button>
                         </Tooltip>
 
-                        {!showTrash && (
-                            <Button icon={<ExportOutlined />} onClick={handleExport}>
-                                {csvLoader ? "Exporting..." : "Export CSV"}
-                            </Button>
-                        )}
+                        <Button icon={<ExportOutlined />} onClick={handleExport}>
+                            {csvLoader ? "Exporting..." : "Export CSV"}
+                        </Button>
 
-                        {!showTrash && (
-                            <Button icon={<BarChartOutlined />} onClick={handleStatistics}>
-                                Statistics
-                            </Button>
-                        )}
+                        <Button icon={<BarChartOutlined />} onClick={handleStatistics}>
+                            Statistics
+                        </Button>
                     </Space>
                 </div>
             </div>
@@ -733,7 +568,7 @@ export default function InCompleteOrder() {
                 pagination={{
                 current: currentPage,
                 pageSize: pageSize,
-                total: filteredOrders.length,
+                total: totalOrders,
                 showSizeChanger: true,
                 pageSizeOptions: ["10", "20", "50", "100"],
                 showQuickJumper: true,

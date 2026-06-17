@@ -36,6 +36,7 @@ import DownSellCoupon from "./pages/order/DownSellCoupon";
 import FreeDelivery from "./pages/order/FreeDelivery";
 import EditIncomepleteOrder from "./pages/order/incomplete/EditIncomepleteOrder";
 import InCompleteOrder from "./pages/order/incomplete/InCompleteOrder";
+import InCompleteOrderTrash from "./pages/order/incomplete/InCompleteOrderTrash";
 import MarketCoupon from "./pages/order/MarketCoupon";
 import OnlinePaymentDiscount from "./pages/order/OnlinePaymentDiscount";
 import Order from "./pages/order/Order";
@@ -303,6 +304,7 @@ function App() {
                     <Route path="/pusher/settings" element={<Pusher />} />
 
                     <Route path="/incomplete/orders" element={<InCompleteOrder />} />
+                    <Route path="/incomplete/orders-trash" element={<InCompleteOrderTrash />} />
                     <Route path="/edit/incomplete-order/:id" element={<EditIncomepleteOrder />}/>
                     <Route path="/delivery/charge" element={<DeliveryCharge />} />
                     <Route path="/free/delivery" element={<FreeDelivery />} />
