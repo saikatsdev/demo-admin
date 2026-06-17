@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import useTitle from "../../hooks/useTitle";
-import { getDatas } from "../../api/common/common";
+import useTitle from "../../../hooks/useTitle";
+import { getDatas } from "../../../api/common/common";
 import { Table, Tag, Card, Typography, Space, Breadcrumb, Input, DatePicker, Button, Tooltip, Badge, Select, Popconfirm } from "antd";
 import {SearchOutlined, CalendarOutlined, ClockCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FilterOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
@@ -161,7 +161,7 @@ function Attendance() {
                         <Button type="text" size="small" icon={<EyeOutlined style={{ color: '#1677ff' }} />} />
                     </Tooltip>
                     <Tooltip title="Edit Record">
-                        <Button type="text" size="small" icon={<EditOutlined style={{ color: '#1890ff' }} />} />
+                        <Button type="text" size="small" icon={<EditOutlined style={{ color: '#1890ff' }} />} onClick={() => navigate(`/team/attendance/edit/${record.id}`)} />
                     </Tooltip>
                     <Tooltip title="Delete Record">
                         <Popconfirm title="Delete entry" description="Are you sure you want to delete this record?" onConfirm={() => console.log('Delete', record.id)} okText="Yes" cancelText="No" icon={<DeleteOutlined style={{ color: 'red' }} />}

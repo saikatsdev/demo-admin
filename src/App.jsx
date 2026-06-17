@@ -173,7 +173,8 @@ import EditStatus from "./pages/order/EditStatus";
 import UnpreparedOrderList from "./pages/team/UnpreparedOrderList";
 import AssignList from "./pages/team/AssignList";
 import UpdatePassword from "./pages/auth/employee/UpdatePassword";
-import Attendance from "./pages/team/Attendance";
+import Attendance from "./pages/team/attendance/Attendance";
+import EditAttendance from "./pages/team/attendance/EditAttendance";
 
 function App() {
     const dispatch         = useDispatch();
@@ -288,6 +289,8 @@ function App() {
 
                     {/* Team Module */}
                     <Route path="/team/attendance" element={<Attendance />} />
+                    <Route path="/team/attendance/edit/:id" element={<EditAttendance />} />
+
                     <Route path="/unprepared/list" element={<UnpreparedOrderList />} />
                     <Route path="/assign-by-list" element={<AssignList />} />
                     {/* Team Module */}
