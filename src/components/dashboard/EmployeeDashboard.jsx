@@ -67,7 +67,7 @@ export default function EmployeeDashboard() {
                 </Space>
             </div>
 
-            <TimeTrackingBanner initialCheckIn={login_at} initialCheckOut={logout_at} />
+            <TimeTrackingBanner userId={id} initialCheckIn={login_at} initialCheckOut={logout_at} />
 
             <Row gutter={[24, 24]}>
                 <Col xs={24} sm={12} lg={6}>

@@ -168,7 +168,7 @@ const Sidebar = ({ onMenuSelect }) => {
         },
 
         teamSubmenus.length > 0 && {
-            title: "Team",
+            title: "Team Management",
             icon: <TeamOutlined />,
             submenus: teamSubmenus
         },

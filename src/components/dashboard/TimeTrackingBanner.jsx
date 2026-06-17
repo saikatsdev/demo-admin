@@ -6,7 +6,7 @@ import { postData } from '../../api/common/common';
 
 const { Text } = Typography;
 
-const TimeTrackingBanner = ({ initialCheckIn, initialCheckOut, onUpdate }) => {
+const TimeTrackingBanner = ({ initialCheckIn, initialCheckOut, onUpdate, userId }) => {
     const [currentTime, setCurrentTime] = useState(dayjs());
     const [checkIn, setCheckIn] = useState(initialCheckIn);
     const [checkOut, setCheckOut] = useState(initialCheckOut);
@@ -30,7 +30,7 @@ const TimeTrackingBanner = ({ initialCheckIn, initialCheckOut, onUpdate }) => {
     const handleCheckIn = async () => {
         setLoading(prev => ({ ...prev, in: true }));
         try {
-            const res = await postData('/admin/attendance/check-in');
+            const res = await postData('/admin/attendance/check-in', { user_id: userId });
             if (res && res.success) {
                 const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
                 setCheckIn(now);
@@ -53,7 +53,7 @@ const TimeTrackingBanner = ({ initialCheckIn, initialCheckOut, onUpdate }) => {
     const handleCheckOut = async () => {
         setLoading(prev => ({ ...prev, out: true }));
         try {
-            const res = await postData('/admin/check-out')
+            const res = await postData('/admin/attendance/check-out', { user_id: userId })
             if (res && res.success) {
                 const now = dayjs().format("YYYY-MM-DD HH:mm:ss");
                 setCheckOut(now);
