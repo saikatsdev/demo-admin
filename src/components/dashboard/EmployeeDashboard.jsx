@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo} from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Card, Row, Col, Statistic, Badge, Avatar, Typography, Divider, Button, Space, Tag, Descriptions } from "antd";
 import { UserOutlined, MailOutlined, PhoneOutlined, DollarCircleOutlined, LoginOutlined, CheckCircleFilled, WarningFilled, SafetyCertificateOutlined, EditOutlined, CustomerServiceOutlined, IdcardOutlined, ClockCircleOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import "./css/EmployeeDashboard.css";
+import TimeTrackingBanner from "./TimeTrackingBanner";
 
 const { Title, Text } = Typography;
 
@@ -65,6 +66,8 @@ export default function EmployeeDashboard() {
                     <Badge status={safeStatus === "active" ? "processing" : "default"} text={<Tag color={safeStatus === "active" ? "blue" : "error"}>{statusLabel}</Tag>} />
                 </Space>
             </div>
+
+            <TimeTrackingBanner initialCheckIn={login_at} initialCheckOut={logout_at} />
 
             <Row gutter={[24, 24]}>
                 <Col xs={24} sm={12} lg={6}>
