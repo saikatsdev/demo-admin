@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button, Typography, message } from 'antd';
 import { ClockCircleOutlined, LoginOutlined, LogoutOutlined, PlusOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { postData } from '../../api/common/common';
+import { postData, getDatas } from '../../api/common/common';
 
 const { Text } = Typography;
 
@@ -26,6 +26,23 @@ const TimeTrackingBanner = ({ initialCheckIn, initialCheckOut, onUpdate, userId 
     useEffect(() => {
         if (initialCheckOut) setCheckOut(initialCheckOut);
     }, [initialCheckOut]);
+
+    useEffect(() => {
+        const fetchAttendance = async () => {
+            if (!userId) return;
+            try {
+                const res = await getDatas('/admin/attendance/my-attendance', { user_id: userId });
+                if (res && res.success && res.result) {
+                    if (res.result.check_in_at) setCheckIn(res.result.check_in_at);
+                    if (res.result.check_out_at) setCheckOut(res.result.check_out_at);
+                }
+            } catch (err) {
+                console.error("Failed to fetch attendance:", err);
+            }
+        };
+
+        fetchAttendance();
+    }, [userId]);
 
     const handleCheckIn = async () => {
         setLoading(prev => ({ ...prev, in: true }));
