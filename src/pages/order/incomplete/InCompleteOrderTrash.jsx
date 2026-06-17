@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, DeleteFilled, UndoOutlined, CopyOutlined, WhatsAppOutlined } from "@ant-design/icons";
-import { Breadcrumb, Button, message, Popconfirm, Space, Table, Tooltip, Image } from "antd";
+import { Breadcrumb, Button, message, Popconfirm, Space, Table, Tooltip, Image, Input as AntInput, DatePicker } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas, postData } from "../../../api/common/common";
@@ -20,6 +20,8 @@ export default function InCompleteOrderTrash() {
     const [totalOrders, setTotalOrders]           = useState(0);
     const [selectedRowKeys, setSelectedRowKeys]   = useState([]);
     const [selectedOrders, setSelectedOrders]     = useState([]);
+    const [searchText, setSearchText]               = useState("");
+    const [dateRange, setDateRange]                 = useState(null);
 
     const rowSelection = {
         selectedRowKeys,
@@ -33,10 +35,16 @@ export default function InCompleteOrderTrash() {
         setLoading(true);
         try {
             const params = {
-                trash: 1,
-                page: currentPage,
-                paginate_size: pageSize,
+                trash     : 1,
+                page      : currentPage,
+                per_page  : pageSize,
+                search_key: searchText,
             };
+
+            if (dateRange && dateRange[0] && dateRange[1]) {
+                params.start_date = dayjs(dateRange[0]).format("YYYY-MM-DD");
+                params.end_date = dayjs(dateRange[1]).format("YYYY-MM-DD");
+            }
 
             const res = await getDatas("/admin/incomplete-orders/trashed", params);
             
@@ -54,7 +62,7 @@ export default function InCompleteOrderTrash() {
 
     useEffect(() => {
         fetchTrashOrders();
-    }, [currentPage, pageSize]);
+    }, [currentPage, pageSize, searchText, dateRange]);
 
     const copyPhoneNo = async (phoneNumber) => {
         if (!phoneNumber) return;
@@ -268,6 +276,44 @@ export default function InCompleteOrderTrash() {
                 <div className="head-actions">
                     <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> }, { title: <Link to="/incomplete/orders">Incomplete Orders</Link> }, { title: "Trash" }]} />
                 </div>
+            </div>
+
+            <div style={{ marginBottom: 24, display: 'flex', flexWrap: 'wrap', gap: '16px', backgroundColor: '#f9f9f9', padding: '16px', borderRadius: '8px' }}>
+                <AntInput.Search 
+                    allowClear 
+                    placeholder="Search by name or phone..." 
+                    style={{ width: 300 }} 
+                    onSearch={(value) => {
+                        setSearchText(value);
+                        setCurrentPage(1);
+                    }}
+                    onChange={(e) => {
+                        if (!e.target.value) {
+                            setSearchText("");
+                            setCurrentPage(1);
+                        }
+                    }}
+                />
+
+                <DatePicker.RangePicker 
+                    value={dateRange} 
+                    onChange={(dates) => {
+                        setDateRange(dates);
+                        setCurrentPage(1);
+                    }} 
+                    format="YYYY-MM-DD" 
+                    placeholder={['Start Date', 'End Date']}
+                />
+                
+                {(searchText || dateRange) && (
+                    <Button onClick={() => {
+                        setSearchText("");
+                        setDateRange(null);
+                        setCurrentPage(1);
+                    }}>
+                        Clear Filters
+                    </Button>
+                )}
             </div>
 
             <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
