@@ -1,5 +1,5 @@
-import { ArrowLeftOutlined, DeleteFilled, RollbackOutlined, UndoOutlined } from "@ant-design/icons";
-import { Breadcrumb, Button, message, Popconfirm, Space, Table, Tooltip } from "antd";
+import { ArrowLeftOutlined, DeleteFilled, UndoOutlined, CopyOutlined, WhatsAppOutlined } from "@ant-design/icons";
+import { Breadcrumb, Button, message, Popconfirm, Space, Table, Tooltip, Image } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas, postData } from "../../../api/common/common";
@@ -14,6 +14,7 @@ export default function InCompleteOrderTrash() {
     const navigate                                = useNavigate();
     const [incompleteOrders, setIncompleteOrders] = useState([]);
     const [loading, setLoading]                   = useState(false);
+    const [messageApi, contextHolder]           = message.useMessage();
     const [currentPage, setCurrentPage]           = useState(1);
     const [pageSize, setPageSize]                 = useState(10);
     const [totalOrders, setTotalOrders]           = useState(0);
@@ -35,7 +36,7 @@ export default function InCompleteOrderTrash() {
             }
         } catch (err) {
             console.log(err);
-            message.error("Error fetching trash orders");
+            messageApi.error("Error fetching trash orders");
         } finally {
             setLoading(false);
         }
@@ -45,10 +46,37 @@ export default function InCompleteOrderTrash() {
         fetchTrashOrders();
     }, [currentPage, pageSize]);
 
+    const copyPhoneNo = async (phoneNumber) => {
+        if (!phoneNumber) return;
+        try {
+            await navigator.clipboard.writeText(phoneNumber);
+            messageApi.open({
+                type: "success",
+                content: "Phone Number Copied",
+            });
+        } catch (err) {
+            console.log(err);
+            messageApi.open({
+                type: "error",
+                content: "Failed to copy phone number",
+            });
+        }
+    };
+
+    const openWhatsApp = (phone) => {
+        if (!phone) return;
+        let formattedPhone = phone.replace(/\D/g, "");
+        if (!formattedPhone.startsWith("88")) {
+            formattedPhone = "88" + formattedPhone;
+        }
+        const whatsappUrl = `https://wa.me/${formattedPhone}`;
+        window.open(whatsappUrl, "_blank");
+    };
+
     const onRestore = async (id) => {
         const res = await postData(`/admin/incomplete-orders/${id}/restore`);
         if (res && res.success) {
-            message.success(res.message || "Order restored successfully");
+            messageApi.success(res.message || "Order restored successfully");
             fetchTrashOrders();
         }
     };
@@ -56,12 +84,13 @@ export default function InCompleteOrderTrash() {
     const onForceDelete = async (id) => {
         const res = await deleteData(`/admin/incomplete-orders/${id}/permanent`);
         if (res && res.success) {
-            message.success(res.msg || "Order deleted permanently");
+            messageApi.success(res.msg || "Order deleted permanently");
             fetchTrashOrders();
         }
     };
 
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key: "sl",
@@ -69,25 +98,102 @@ export default function InCompleteOrderTrash() {
             render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
         },
         {
-            title: "Name",
-            dataIndex: "name",
-            key: "name",
+            title: "Products",
+            key: "products",
+            width: 300,
+            render: (_, record) => {
+                if (!record?.items?.length) return "N/A";
+                return (
+                    <div>
+                        {record.items.map((item, index) => {
+                            const product = item?.product;
+                            if (!product) return "N/A";
+                            const variations = [item?.attribute_value_1, item?.attribute_value_2, item?.attribute_value_3].filter(val => val && typeof val === "string");
+
+                            return (
+                                <div key={index} style={{ display: "flex", gap: 10, marginBottom: 8, paddingBottom: 8, borderBottom: index !== record.items.length - 1 ? "1px dashed #ddd" : "none" }}>
+                                    <Image src={product?.image} alt={product?.name || "Product"} width={40} height={50} style={{ objectFit: "cover", borderRadius: 4 }} preview={{ mask: "Preview" }} />
+                                    <div>
+                                        <div style={{ fontWeight: 600 }}>
+                                            {product?.name || "N/A"}
+                                        </div>
+                                        {variations.length > 0 && (
+                                            <div style={{ fontSize: 12, color: "#666" }}>
+                                                Variation: {variations.join(" / ")}
+                                            </div>
+                                        )}
+                                        {item.note && (
+                                            <div style={{ fontSize: 11, color: "#999", fontStyle: "italic" }}>
+                                                Note: {item.note}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                );
+            }
         },
         {
-            title: "Phone Number",
-            dataIndex: "phone_number",
-            key: "phone_number",
+            title: "Customer Info",
+            key: "customer_info",
+            width: 250,
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ fontWeight: 600 }}>{record.name || "N/A"}</div>
+                    <Space>
+                        <span>{record.phone_number}</span>
+                        <Tooltip title="Copy Phone Number">
+                            <CopyOutlined style={{ color: "#1890ff", cursor: "pointer" }} onClick={() => copyPhoneNo(record.phone_number)} />
+                        </Tooltip>
+                        <Tooltip title="WhatsApp">
+                            <WhatsAppOutlined style={{ color: "#25D366", cursor: "pointer" }} onClick={() => openWhatsApp(record.phone_number)} />
+                        </Tooltip>
+                    </Space>
+                    <div style={{ fontSize: '12px', color: '#666' }}>{record.address || "No Address"}</div>
+                </div>
+            ),
         },
         {
-            title: "Deleted At",
-            dataIndex: "deleted_at",
-            key: "deleted_at",
-            render: (date) => date ? dayjs(date).format("MMMM DD, YYYY hh:mm A") : "N/A",
+            title: "IP Address",
+            dataIndex: "ip_address",
+            key: "ip_address",
+            width: 130,
+        },
+        {
+            title: "Date Info",
+            key: "date_info",
+            width: 200,
+            render: (_, record) => (
+                <div style={{ fontSize: '12px' }}>
+                    <div><strong>Created:</strong> {record.created_at ? dayjs(record.created_at).format("DD MMM, YYYY hh:mm A") : "N/A"}</div>
+                    <div style={{ color: '#ff4d4f' }}><strong>Deleted:</strong> {record.deleted_at ? dayjs(record.deleted_at).format("DD MMM, YYYY hh:mm A") : "N/A"}</div>
+                </div>
+            )
+        },
+        {
+            title: "Status",
+            key: "status",
+            width: 120,
+            render: (_, record) => (
+                <span style={{ 
+                    color: record.status?.text_color || "#007bff", 
+                    backgroundColor: record.status?.bg_color || "#e6f2ff", 
+                    padding: "4px 10px", 
+                    borderRadius: "12px", 
+                    fontWeight: "600", 
+                    fontSize: "11px", 
+                    display: "inline-block" 
+                }}>
+                    {record.status?.name || "N/A"}
+                </span>
+            ),
         },
         {
             title: "Actions",
             key: "actions",
-            width: 150,
+            width: 120,
             align: "center",
             render: (_, record) => (
                 <Space size={6}>
@@ -109,6 +215,7 @@ export default function InCompleteOrderTrash() {
 
     return (
         <div style={{ padding: "20px" }}>
+            {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
                     <h1 className="title" style={{ fontWeight: "600" }}>Incomplete Order Trash</h1>
@@ -134,6 +241,9 @@ export default function InCompleteOrderTrash() {
                     current: currentPage,
                     pageSize: pageSize,
                     total: totalOrders,
+                    showSizeChanger: true,
+                    pageSizeOptions: ["10", "20", "50", "100"],
+                    showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
                     onChange: (page, size) => {
                         setCurrentPage(page);
                         setPageSize(size);
