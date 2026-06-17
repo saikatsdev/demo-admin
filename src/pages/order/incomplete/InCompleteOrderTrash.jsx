@@ -18,6 +18,16 @@ export default function InCompleteOrderTrash() {
     const [currentPage, setCurrentPage]           = useState(1);
     const [pageSize, setPageSize]                 = useState(10);
     const [totalOrders, setTotalOrders]           = useState(0);
+    const [selectedRowKeys, setSelectedRowKeys]   = useState([]);
+    const [selectedOrders, setSelectedOrders]     = useState([]);
+
+    const rowSelection = {
+        selectedRowKeys,
+        onChange: (newSelectedRowKeys, selectedRows) => {
+            setSelectedRowKeys(newSelectedRowKeys);
+            setSelectedOrders(selectedRows);
+        },
+    };
 
     const fetchTrashOrders = async () => {
         setLoading(true);
@@ -86,6 +96,41 @@ export default function InCompleteOrderTrash() {
         if (res && res.success) {
             messageApi.success(res.msg || "Order deleted permanently");
             fetchTrashOrders();
+        }
+    };
+
+    const handleBulkRestore = async () => {
+        if (!selectedRowKeys.length) return;
+        
+        try {
+            const res = await postData("/admin/incomplete-orders/bulk-restore", {
+                ids: selectedRowKeys
+            });
+            if (res && res.success) {
+                messageApi.success(res.message || "Selected orders restored");
+                setSelectedRowKeys([]);
+                setSelectedOrders([]);
+                fetchTrashOrders();
+            }
+        } catch (err) {
+            messageApi.error("Bulk restore failed");
+        }
+    };
+
+    const handleBulkPermanentDelete = async () => {
+        if (!selectedRowKeys.length) return;
+
+        try {
+            const res = await postData("/admin/incomplete-orders/bulk-permanent-delete", {ids: selectedRowKeys});
+            
+            if (res && res.success) {
+                messageApi.success(res.msg || "Selected orders deleted permanently");
+                setSelectedRowKeys([]);
+                setSelectedOrders([]);
+                fetchTrashOrders();
+            }
+        } catch (err) {
+            messageApi.error("Bulk permanent delete failed");
         }
     };
 
@@ -225,10 +270,42 @@ export default function InCompleteOrderTrash() {
                 </div>
             </div>
 
-            <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between' }}>
-                <Button type="primary" ghost icon={<ArrowLeftOutlined />} onClick={() => navigate("/incomplete/orders")}>
-                    Back to List
-                </Button>
+            <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Space>
+                    <Button type="primary" ghost icon={<ArrowLeftOutlined />} onClick={() => navigate("/incomplete/orders")}>
+                        Back to List
+                    </Button>
+                </Space>
+
+                <Space>
+                    <Popconfirm 
+                        title={`Restore ${selectedRowKeys.length} items?`} 
+                        disabled={!selectedRowKeys.length} 
+                        onConfirm={handleBulkRestore}
+                    >
+                        <Button 
+                            icon={<UndoOutlined />} 
+                            style={{ color: '#52c41a', borderColor: '#52c41a' }} 
+                            disabled={!selectedRowKeys.length}
+                        >
+                            Bulk Restore
+                        </Button>
+                    </Popconfirm>
+
+                    <Popconfirm 
+                        title={`Permanently delete ${selectedRowKeys.length} items?`} 
+                        disabled={!selectedRowKeys.length} 
+                        onConfirm={handleBulkPermanentDelete}
+                    >
+                        <Button 
+                            danger 
+                            icon={<DeleteFilled />} 
+                            disabled={!selectedRowKeys.length}
+                        >
+                            Bulk Permanent Delete
+                        </Button>
+                    </Popconfirm>
+                </Space>
             </div>
 
             <Table 
@@ -237,6 +314,7 @@ export default function InCompleteOrderTrash() {
                 columns={columns} 
                 dataSource={incompleteOrders} 
                 rowKey="id"
+                rowSelection={rowSelection}
                 pagination={{
                     current: currentPage,
                     pageSize: pageSize,
