@@ -1,16 +1,17 @@
+import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
 import { Button, Typography, message } from 'antd';
-import { ClockCircleOutlined, LoginOutlined, LogoutOutlined, PlusOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
 import { postData, getDatas } from '../../api/common/common';
+import { ClockCircleOutlined, LoginOutlined, LogoutOutlined, PlusOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
 const TimeTrackingBanner = ({ initialCheckIn, initialCheckOut, onUpdate, userId }) => {
+    // States
     const [currentTime, setCurrentTime] = useState(dayjs());
-    const [checkIn, setCheckIn] = useState(initialCheckIn);
-    const [checkOut, setCheckOut] = useState(initialCheckOut);
-    const [loading, setLoading] = useState({ in: false, out: false });
+    const [checkIn, setCheckIn]         = useState(initialCheckIn);
+    const [checkOut, setCheckOut]       = useState(initialCheckOut);
+    const [loading, setLoading]         = useState({ in: false, out: false });
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -146,15 +147,7 @@ const TimeTrackingBanner = ({ initialCheckIn, initialCheckOut, onUpdate, userId 
                             {dayjs(checkOut).format("hh-mm-ss A")}
                         </div>
                     ) : (
-                        <Button 
-                            type="primary" 
-                            danger 
-                            size="small" 
-                            icon={<PlusOutlined />} 
-                            loading={loading.out}
-                            disabled={!checkIn} // Can't check out without checking in
-                            onClick={handleCheckOut}
-                        >
+                        <Button type="primary" danger size="small" icon={<PlusOutlined />} loading={loading.out} disabled={!checkIn} onClick={handleCheckOut}>
                             Add Check Out
                         </Button>
                     )}
