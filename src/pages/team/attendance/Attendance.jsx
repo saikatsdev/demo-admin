@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import useTitle from "../../../hooks/useTitle";
-import { getDatas } from "../../../api/common/common";
-import { Table, Tag, Card, Typography, Space, Breadcrumb, Input, DatePicker, Button, Tooltip, Badge, Select, Popconfirm } from "antd";
-import {SearchOutlined, CalendarOutlined, ClockCircleOutlined, EditOutlined, DeleteOutlined, EyeOutlined, FilterOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import { deleteData, getDatas } from "../../../api/common/common";
+import { Table, Tag, Card, Typography, Space, Breadcrumb, Input, DatePicker, Button, Tooltip, message,Badge, Select, Popconfirm } from "antd";
+import {SearchOutlined, CalendarOutlined, ClockCircleOutlined, EditOutlined, DeleteOutlined, FilterOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -54,6 +54,24 @@ function Attendance() {
 
     const handleTableChange = (pagination) => {
         fetchAttendance(pagination.current, pagination.pageSize);
+    };
+
+    const deleteAttendance = async (id) => {
+        setLoading(true);
+        try {
+            const res = await deleteData(`/admin/attendance/${id}`);
+            if (res?.success) {
+                message.success(res.message || "Attendance record deleted successfully");
+                fetchAttendance();
+            } else {
+                message.error(res.message || "Failed to delete record");
+            }
+        } catch (error) {
+            console.error(error);
+            message.error("An error occurred while deleting the record");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const columns = 
@@ -157,14 +175,11 @@ function Attendance() {
             width: 150,
             render: (_, record) => (
                 <Space size="small">
-                    <Tooltip title="View Record">
-                        <Button type="text" size="small" icon={<EyeOutlined style={{ color: '#1677ff' }} />} />
-                    </Tooltip>
                     <Tooltip title="Edit Record">
                         <Button type="text" size="small" icon={<EditOutlined style={{ color: '#1890ff' }} />} onClick={() => navigate(`/team/attendance/edit/${record.id}`)} />
                     </Tooltip>
                     <Tooltip title="Delete Record">
-                        <Popconfirm title="Delete entry" description="Are you sure you want to delete this record?" onConfirm={() => console.log('Delete', record.id)} okText="Yes" cancelText="No" icon={<DeleteOutlined style={{ color: 'red' }} />}
+                        <Popconfirm title="Delete entry" description="Are you sure you want to delete this record?" onConfirm={() => deleteAttendance(record.id)} okText="Yes" cancelText="No" icon={<DeleteOutlined style={{ color: 'red' }} />}
                         >
                             <Button type="text" size="small" danger icon={<DeleteOutlined />} />
                         </Popconfirm>
