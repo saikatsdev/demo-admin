@@ -3,7 +3,7 @@ import {Breadcrumb, message, Select,Table, Tag,Button, Row, Col, Card, Space, Ty
 import { useEffect, useState } from "react";
 import useTitle from "../../hooks/useTitle"
 import { Link } from "react-router-dom";
-import { getDatas } from "../../api/common/common";
+import { getDatas, postData } from "../../api/common/common";
 
 const { Text, Title } = Typography;
 
@@ -22,7 +22,7 @@ export default function AssignList() {
     const getAssignedOrders = async (page = 1) => {
         try {
             setLoading(true);
-            const res = await getDatas('/admin/team/assign-by-list', { page, paginate_size: 25 });
+            const res = await getDatas('/admin/team/assign-by-list', { page, paginate_size: pagination.pageSize });
 
             if (res && res?.success) {
                 setOrders(res?.result?.data || []);
@@ -33,7 +33,7 @@ export default function AssignList() {
                 });
                 setPagination({
                     current : res?.result?.meta?.current_page || 1,
-                    pageSize: res?.result?.meta?.per_page || 50,
+                    pageSize: res?.result?.meta?.per_page || 25,
                     total   : res?.result?.meta?.total || 0,
                 });
             }
@@ -72,13 +72,14 @@ export default function AssignList() {
             try {
                 setLoading(true);
                 const res = await postData('/admin/team/assign/removed', {
-                    order_ids: selectedRowKeys
+                    order_ids: selectedRowKeys,
+                    _method: "PUT"
                 });
 
                 if (res && res?.success) {
                     messageApi.success(res?.message || "Orders removed from assign");
                     setSelectedRowKeys([])
-                    getUnpreparedOrders(pagination.current, pagination.pageSize);
+                    getAssignedOrders(pagination.current, pagination.pageSize);
                 } else {
                     messageApi.error(res?.message || "Failed to remove orders");
                 }
