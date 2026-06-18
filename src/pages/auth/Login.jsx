@@ -15,15 +15,17 @@ export default function Login() {
     const [password, setPassword]         = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [rememberMe, setRememberMe]     = useState(false);
+    const [otp, setOtp]                   = useState('');
+    const [showOtp, setShowOtp]           = useState(false);
     const [loading, setLoading]           = useState(false);
-    const [errors, setErrors]             = useState({ phone: '', password: '' });
+    const [errors, setErrors]             = useState({ phone: '', password: '', otp: '' });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setErrors({ phone: '', password: '' });
+        setErrors({ phone: '', password: '', otp: '' });
 
         let hasError = false;
-        const newErrors = { phone: '', password: '' };
+        const newErrors = { phone: '', password: '', otp: '' };
 
         if (!phone) {
             newErrors.phone = 'Phone number is required';
@@ -35,6 +37,11 @@ export default function Login() {
             hasError = true;
         }
 
+        if (showOtp && !otp) {
+            newErrors.otp = 'OTP is required';
+            hasError = true;
+        }
+
         if (hasError) {
             setErrors(newErrors);
             return;
@@ -43,20 +50,53 @@ export default function Login() {
         setLoading(true);
 
         try {
-            const res = await api.post('/admin/login', {phone_number: phone, password});
+            const payload = {
+                phone_number: phone, 
+                password,
+                staff_login_otp: showOtp ? otp : undefined
+            };
+            
+            const res = await api.post('/admin/login', payload);
             const resData = res?.data;
 
+            // Step 1: Check Success
             if (resData && resData.success) {
                 login(resData.result.user, resData.result.token);
                 navigate('/dashboard', { replace: true });
                 return;
             }
 
-            const msg = res?.data?.msg || 'Login failed';
-            setErrors({ ...newErrors, phone: msg, password: msg });
+            // Step 2: Check for OTP requirement message if success is false
+            if (resData?.success === false && resData?.message === "Please provided your login otp") {
+                setShowOtp(true);
+                setErrors({ ...newErrors, otp: resData.message });
+                setLoading(false);
+                return;
+            }
+
+            // Other errors
+            const msg = resData?.message || resData?.msg || 'Login failed';
+            setErrors({ ...newErrors, phone: msg });
+
         } catch (err) {
-            const msg = err?.response?.data?.msg || 'Login failed';
-            setErrors({ ...newErrors, phone: msg, password: msg });
+            const resData = err?.response?.data;
+            
+            // Check for OTP requirement in catch block too (some APIs return 4xx/5xx for validation)
+            if (resData?.success === false && resData?.message === "Please provided your login otp") {
+                setShowOtp(true);
+                setLoading(false);
+                return;
+            }
+
+            // Handle specific OTP invalid error
+            if (resData?.message === "Your provided otp is invalid") {
+                setErrors({ ...newErrors, otp: resData.message });
+                setLoading(false);
+                return;
+            }
+
+            const msg = resData?.message || resData?.msg || 'Login failed';
+            setErrors({ ...newErrors, phone: msg });
         } finally {
             setLoading(false);
         }
@@ -140,6 +180,45 @@ export default function Login() {
                         <small className="help">Use at least 8 characters for your password</small>
                     </div>
 
+                    {showOtp && (
+                        <div className={`field ${errors.otp ? 'error' : ''}`}>
+                            <label htmlFor="otp">
+                                <Shield size={14} style={{ display: 'inline-block', marginRight: '4px', verticalAlign: 'text-bottom' }} />
+                                Login OTP
+                            </label>
+                            <input
+                                id="otp"
+                                className="input"
+                                name="otp"
+                                type="text"
+                                placeholder="Enter Login OTP"
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value)}
+                                required
+                                autoFocus
+                            />
+                            {errors.otp && <div className="error-message">{errors.otp}</div>}
+                            <small className="help">Check your assigned contact for the login OTP</small>
+                            <button 
+                                type="button" 
+                                className="muted-btn" 
+                                onClick={() => setShowOtp(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: '0',
+                                    marginTop: '8px',
+                                    fontSize: '12px',
+                                    color: '#6366f1',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline'
+                                }}
+                            >
+                                Back to login
+                            </button>
+                        </div>
+                    )}
+
                     <div className="row">
                         <label className="checkbox">
                             <input
@@ -154,7 +233,7 @@ export default function Login() {
                     </div>
 
                     <button className="btn btn--primary" type="submit" disabled={loading} aria-busy={loading}>
-                        {loading ? "Signing in..." : "Sign In"}
+                        {loading ? "Processing..." : (showOtp ? "Verify OTP & Login" : "Sign In")}
                     </button>
 
                     <div className="security-badge">

@@ -1,6 +1,6 @@
-import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined } from "@ant-design/icons";
-import {Input as AntInput,Breadcrumb,Button,Popconfirm,Space,Table,Tag, Tooltip} from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, CopyOutlined, ReloadOutlined } from "@ant-design/icons";
+import {Input as AntInput,Breadcrumb,Button,Popconfirm,Space,Table,Tag, Tooltip, message} from "antd";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
@@ -24,6 +24,34 @@ export default function Employee() {
 
     const can = (permission) => permissions?.includes(permission);
     
+    const fetchUsers = useCallback(async () => {
+        setLoading(true);
+        const params = {
+            user_category_id: 3,
+            page: pagination.current,
+            per_page: pagination.pageSize,
+            search_key: debouncedQuery || undefined,
+        };
+        const res = await getDatas("/admin/users", params);
+        const list = res?.result?.data || [];
+        const meta = res?.result?.meta;
+
+        setUsers(list);
+        if (meta) {
+            setPagination((p) => ({
+                ...p,
+                current: meta.current_page || p.current,
+                pageSize: meta.per_page || p.pageSize,
+                total: meta.total || p.total,
+            }));
+        }
+        setLoading(false);
+    }, [pagination.current, pagination.pageSize, debouncedQuery]);
+
+    const handleRefresh = () => {
+        fetchUsers();
+        message.success("Data refreshed");
+    };
 
     const columns = 
     [
@@ -56,6 +84,28 @@ export default function Employee() {
             title: "Phone",
             dataIndex: "phone_number",
             key: "phone_number",
+        },
+        {
+            title: "OTP",
+            dataIndex: "staff_login_otp",
+            key: "staff_login_otp",
+            render: (text) => text ? (
+                 <Space>
+                    <Tag color="blue" style={{ fontWeight: 700, fontSize: '13px', padding: '2px 10px', borderRadius: '4px', letterSpacing: '0.5px' }}>{text}</Tag>
+                    <Tooltip title="Copy OTP">
+                        <Button 
+                            size="small" 
+                            type="text" 
+                            icon={<CopyOutlined style={{ fontSize: '12px' }} />} 
+                            onClick={() => {
+                                navigator.clipboard.writeText(text);
+                                message.success("OTP copied to clipboard");
+                            }}
+                            style={{ color: '#1890ff', padding: '0 4px' }}
+                        />
+                    </Tooltip>
+                </Space>
+            ) : <Tag color="default">N/A</Tag>,
         },
         {
             title: "Category",
@@ -102,7 +152,6 @@ export default function Employee() {
                     <Tooltip title="Update Password">
                         <Button size="small" type="text" style={{ color: '#faad14', backgroundColor: '#fff7e6' }} icon={<KeyOutlined />} onClick={() => navigate(`/edit/employee/password/${record.id}`)} disabled={can("users.update")} />
                     </Tooltip>
-
                     <Popconfirm title="Delete user?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
                         <Tooltip title="Delete Employee">
                             <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} disabled={can("users.delete")} />
@@ -125,35 +174,8 @@ export default function Employee() {
     }, [debouncedQuery]);
 
     useEffect(() => {
-        let isMounted = true;
-        const fetchUsers = async () => {
-            setLoading(true);
-
-            const params = {user_category_id:3,page: current,per_page: pageSize,search_key: debouncedQuery || undefined,};
-            const res = await getDatas("/admin/users", params);
-            const list = res?.result?.data || [];
-            
-            const meta = res?.result?.meta;
-
-            if (isMounted) {
-                setUsers(list);
-                
-                if (meta) {
-                    setPagination((p) => {
-                        const next = {...p,current: meta.current_page || p.current,pageSize: meta.per_page || p.pageSize,total: meta.total || p.total,};
-                        const unchanged =
-                        p.current === next.current &&
-                        p.pageSize === next.pageSize &&
-                        p.total === next.total;
-                        return unchanged ? p : next;
-                    });
-                }
-            }
-            setLoading(false);
-        };
         fetchUsers();
-        return () => {isMounted = false};
-    }, [current, pageSize, debouncedQuery]);
+    }, [fetchUsers]);
 
     const filteredData = useMemo(() => users, [users]);
 
@@ -168,11 +190,8 @@ export default function Employee() {
     const onDelete = async (id) => {
         const res = await deleteData(`/admin/users/${id}`);
         if (res && res?.success) {
-            const params = {user_category_id:3,page: current,per_page: pageSize,search_key: debouncedQuery || undefined};
-            const refreshed = await getDatas("/admin/users", params);
-            setUsers(refreshed?.result?.data || []);
-            const meta = refreshed?.result?.meta;
-            if (meta) setPagination((p) => ({ ...p, total: meta.total || p.total }));
+            fetchUsers();
+            message.success("Employee deleted successfully");
         }
     };
 
@@ -203,6 +222,9 @@ export default function Employee() {
                 <Space>
                     <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate} disabled={can("users.create")}>
                         Add
+                    </Button>
+                    <Button size="small" icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading}>
+                        Refresh
                     </Button>
                     <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                         Back
