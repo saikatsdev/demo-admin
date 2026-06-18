@@ -11,11 +11,12 @@ export default function Employee() {
     useTitle("Employees");
 
     // State
-    const [query, setQuery] = useState("");
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [pagination, setPagination] = useState({current: 1,pageSize: 10,total: 0});
-    const { current, pageSize } = pagination;
+    const [query, setQuery]                   = useState("");
+    const [users, setUsers]                   = useState([]);
+    const [loading, setLoading]               = useState(false);
+    const [pagination, setPagination]         = useState({current: 1,pageSize: 10,total: 0});
+    const { current, pageSize }               = pagination;
+    const [messageApi, contextHolder]         = message.useMessage();
     const [debouncedQuery, setDebouncedQuery] = useState("");
 
     // Variable
@@ -28,9 +29,9 @@ export default function Employee() {
         setLoading(true);
         const params = {
             user_category_id: 3,
-            page: pagination.current,
-            per_page: pagination.pageSize,
-            search_key: debouncedQuery || undefined,
+            page            : pagination.current,
+            per_page        : pagination.pageSize,
+            search_key      : debouncedQuery || undefined,
         };
         const res = await getDatas("/admin/users", params);
         const list = res?.result?.data || [];
@@ -74,6 +75,11 @@ export default function Employee() {
             title: "Username",
             dataIndex: "username",
             key: "username",
+            render: (text, record) => (
+                <Space>
+                    <Tag color="green" style={{ fontWeight: 700, fontSize: '13px', padding: '2px 10px', borderRadius: '4px', letterSpacing: '0.5px', textTransform: "capitalize" }}>{text}</Tag>
+                </Space>
+            ),
         },
         {
             title: "Email",
@@ -93,13 +99,13 @@ export default function Employee() {
                  <Space>
                     <Tag color="blue" style={{ fontWeight: 700, fontSize: '13px', padding: '2px 10px', borderRadius: '4px', letterSpacing: '0.5px' }}>{text}</Tag>
                     <Tooltip title="Copy OTP">
-                        <Button 
-                            size="small" 
-                            type="text" 
-                            icon={<CopyOutlined style={{ fontSize: '12px' }} />} 
+                        <Button size="small" type="text" icon={<CopyOutlined style={{ fontSize: '12px' }} />} 
                             onClick={() => {
                                 navigator.clipboard.writeText(text);
-                                message.success("OTP copied to clipboard");
+                                messageApi.open({
+                                    type: "success",
+                                    content: "OTP copied to clipboard",
+                                });
                             }}
                             style={{ color: '#1890ff', padding: '0 4px' }}
                         />
@@ -203,6 +209,7 @@ export default function Employee() {
 
     return (
         <>
+            {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
                     <h1 className="title">Employee</h1>
