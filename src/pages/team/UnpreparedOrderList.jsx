@@ -1,10 +1,14 @@
-import { Breadcrumb, message, Table, Tag, Card, Typography, Space, Button, Tooltip, Row, Col, Statistic, Select } from "antd";
+import { Breadcrumb, message, Table, Tag, Card, Typography, Space, Button, Tooltip, Row, Col, Statistic, Select, Dropdown } from "antd";
 import { useEffect, useState } from "react";
 import useTitle from "../../hooks/useTitle";
 import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
-import { EyeOutlined, ReloadOutlined, UserOutlined, PhoneOutlined, InfoCircleOutlined, ShoppingCartOutlined,DollarCircleOutlined,CopyOutlined} from "@ant-design/icons";
+import { EyeOutlined, ReloadOutlined, UserOutlined, PhoneOutlined, InfoCircleOutlined, ShoppingCartOutlined, DollarCircleOutlined, CopyOutlined, DownloadOutlined, FilePdfOutlined, PrinterOutlined, DownOutlined} from "@ant-design/icons";
 import dayjs from "dayjs";
+
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const { Text, Title } = Typography;
 
@@ -77,6 +81,140 @@ export default function UnpreparedOrderList() {
                 setLoading(false);
             }
         }
+    };
+
+    const handlePrintAction = ({ key }) => {
+        if (!selectedRowKeys.length) {
+            messageApi.warning("Please select orders first");
+            return;
+        }
+
+        const selectedOrders = orders.filter(o => selectedRowKeys.includes(o.id));
+
+        if (key === 'csv') {
+            const dataToExport = selectedOrders.map(o => ({
+                "Invoice Number": o.invoice_number,
+                "Date": dayjs(o.created_at).format("DD MMM YYYY"),
+                "Customer": o.customer_name,
+                "Phone": o.phone_number,
+                "Net Price": o.net_order_price,
+                "Payable": o.payable_price,
+                "Status": o.paid_status
+            }));
+            const ws = XLSX.utils.json_to_sheet(dataToExport);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Unprepared_Orders");
+            XLSX.writeFile(wb, `Unprepared_Orders_${dayjs().format('YYYY-MM-DD')}.csv`);
+            messageApi.success("CSV file downloaded");
+        } else if (key === 'pdf') {
+            const doc = new jsPDF();
+            const tableColumn = ["Invoice", "Date", "Customer", "Phone", "Net", "Payable"];
+            const tableRows = selectedOrders.map(o => [
+                o.invoice_number,
+                dayjs(o.created_at).format("DD MMM YYYY"),
+                o.customer_name,
+                o.phone_number,
+                o.net_order_price,
+                o.payable_price
+            ]);
+            doc.text("Unprepared Orders Report", 14, 15);
+            autoTable(doc, {
+                head: [tableColumn],
+                body: tableRows,
+                startY: 20,
+            });
+            doc.save(`Unprepared_Orders_${dayjs().format('YYYY-MM-DD')}.pdf`);
+            messageApi.success("PDF file downloaded");
+        } else if (key === 'print') {
+            const selectedOrders = orders.filter(o => selectedRowKeys.includes(o.id));
+            const printWindow = window.open('', '_blank', 'width=1000,height=750');
+            const printDate = dayjs().format('DD MMM YYYY, hh:mm A');
+
+            const rows = selectedOrders.map((o, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${o.invoice_number}</td>
+                    <td>${dayjs(o.created_at).format('DD MMM YYYY')}</td>
+                    <td>${o.customer_name}</td>
+                    <td>${o.phone_number}</td>
+                    <td style="font-size:10px">${o.address_details || '-'}</td>
+                    <td>&#2547;${parseFloat(o.net_order_price).toLocaleString()}</td>
+                    <td>&#2547;${parseFloat(o.payable_price).toLocaleString()}</td>
+                    <td>${o.paid_status}</td>
+                </tr>
+            `).join('');
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Unprepared Orders Print</title>
+                    <style>
+                        * { box-sizing: border-box; margin: 0; padding: 0; }
+                        body { font-family: Arial, sans-serif; font-size: 12px; color: #000; padding: 20px; }
+                        h2 { text-align: center; margin-bottom: 4px; font-size: 18px; font-weight: bold; }
+                        .meta { text-align: center; color: #555; margin-bottom: 20px; font-size: 11px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                        th { background: #263238; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; }
+                        td { border: 1px solid #ccc; padding: 6px 10px; font-size: 11px; vertical-align: top; }
+                        tr:nth-child(even) td { background: #f9f9f9; }
+                        @media print {
+                            body { padding: 5mm; }
+                            @page { margin: 10mm; size: landscape; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h2>Unprepared Orders</h2>
+                    <p class="meta">Printed: ${printDate} &nbsp;|&nbsp; Total Orders: ${selectedOrders.length}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Invoice</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Net Price</th>
+                                <th>Payable</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            window.onafterprint = function() { window.close(); };
+                        };
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+    };
+
+    const printMenu = {
+        items: [
+            {
+                key: 'csv',
+                label: 'Download CSV',
+                icon: <DownloadOutlined />,
+            },
+            {
+                key: 'pdf',
+                label: 'Download PDF',
+                icon: <FilePdfOutlined />,
+            },
+            {
+                key: 'print',
+                label: 'Print Selected',
+                icon: <PrinterOutlined />,
+            },
+        ],
+        onClick: handlePrintAction,
     };
 
     const getUnpreparedOrders = async (page = 1, pageSize = 25) => {
@@ -280,12 +418,17 @@ export default function UnpreparedOrderList() {
                             </Select>
                         </Space>
                         <Space>
-                            <Button type="primary" size="middle" ghost icon={<ShoppingCartOutlined />}>Print Selected</Button>
+                            <Dropdown menu={printMenu} trigger={['click']}>
+                                <Button type="primary" size="middle" ghost icon={<PrinterOutlined />}>
+                                    Print Selected <DownOutlined style={{ fontSize: '12px' }} />
+                                </Button>
+                            </Dropdown>
                             <Button type="link" size="small" danger onClick={() => setSelectedRowKeys([])}>Clear Selection</Button>
                         </Space>
                     </Space>
                 )}
             </div>
+
 
 
             <Card bodyStyle={{ padding: 0 }} style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)',border: 'none'}}>
