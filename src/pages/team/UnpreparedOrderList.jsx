@@ -219,8 +219,8 @@ export default function UnpreparedOrderList() {
             align: 'center',
             render: (_, record) => (
                 <Space size="middle">
-                    <Tooltip title="View Details">
-                        <Button type="primary" ghost shape="circle" icon={<EyeOutlined />} onClick={() => navigate(`/admin/order/details/${record.id}`)}/>
+                    <Tooltip title="Edit Order">
+                        <Button type="primary" ghost shape="circle" icon={<EyeOutlined />} onClick={() => navigate(`/order-edit/${record.id}`)}/>
                     </Tooltip>
                 </Space>
             ),
