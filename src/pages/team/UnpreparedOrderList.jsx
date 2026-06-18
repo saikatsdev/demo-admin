@@ -2,7 +2,7 @@ import { Breadcrumb, message, Table, Tag, Card, Typography, Space, Button, Toolt
 import { useEffect, useState } from "react";
 import useTitle from "../../hooks/useTitle";
 import { Link, useNavigate } from "react-router-dom";
-import { getDatas } from "../../api/common/common";
+import { getDatas, postData } from "../../api/common/common";
 import { EyeOutlined, ReloadOutlined, UserOutlined, PhoneOutlined, InfoCircleOutlined, ShoppingCartOutlined,DollarCircleOutlined,CopyOutlined} from "@ant-design/icons";
 import dayjs from "dayjs";
 
@@ -30,11 +30,52 @@ export default function UnpreparedOrderList() {
         onChange: onSelectChange,
     };
 
-    const handleBatchAction = (value) => {
+    const handleBatchAction = async (value) => {
+        if (!selectedRowKeys.length) {
+            messageApi.warning("Please select at least one order");
+            return;
+        }
+
         if (value === 'assign_prepare') {
-            messageApi.info("Assign Prepare action triggered for " + selectedRowKeys.length + " items");
+            try {
+                setLoading(true);
+                const res = await postData('/admin/team/assign-prepared-by-me', {
+                    order_ids: selectedRowKeys
+                });
+
+                if (res && res?.success) {
+                    messageApi.success(res?.message || "Orders assigned for preparation");
+                    setSelectedRowKeys([])
+                    getUnpreparedOrders(pagination.current, pagination.pageSize);
+                } else {
+                    messageApi.error(res?.message || "Failed to assign orders");
+                }
+            } catch (error) {
+                console.error(error);
+                messageApi.error("An error occurred during assignment");
+            } finally {
+                setLoading(false);
+            }
         } else if (value === 'remove_assign_prepare') {
-            messageApi.info("Remove Assign Prepare action triggered for " + selectedRowKeys.length + " items");
+            try {
+                setLoading(true);
+                const res = await postData('/admin/team/removed-prepared-by', {
+                    order_ids: selectedRowKeys
+                });
+
+                if (res && res?.success) {
+                    messageApi.success(res?.message || "Orders assigned for preparation");
+                    setSelectedRowKeys([])
+                    getUnpreparedOrders(pagination.current, pagination.pageSize);
+                } else {
+                    messageApi.error(res?.message || "Failed to assign orders");
+                }
+            } catch (error) {
+                console.error(error);
+                messageApi.error("An error occurred during assignment");
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
