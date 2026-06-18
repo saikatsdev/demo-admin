@@ -273,9 +273,9 @@ const OrderEdit = () => {
     }, [searchQuery]);
 
     const getAttributeList = async () => {
-        const res = await getDatas('/admin/attributes')
+        const res = await getDatas('/admin/attributes/list')
         if (res?.success) {
-            setAttributesList(res?.result?.data || [])
+            setAttributesList(res?.result || [])
         }
     }
 
