@@ -61,6 +61,8 @@ export default function Product() {
     const [dateRange, setDateRange]                   = useState([null, null]);
     const [minPrice, setMinPrice]                     = useState();
     const [maxPrice, setMaxPrice]                     = useState();
+    const [minStock, setMinStock]                     = useState();
+    const [maxStock, setMaxStock]                     = useState();
     const [productTypeId, setProductTypeId]           = useState(null);
     const [brands, setBrands]                         = useState([]);
     const [categories, setCategories]                 = useState([]);
@@ -488,6 +490,8 @@ export default function Product() {
         setDateRange([null, null]);
         setMinPrice(undefined);
         setMaxPrice(undefined);
+        setMinStock(undefined);
+        setMaxStock(undefined);
         setProductTypeId(null);
         setProductStatus("active");
         setSearchQuery("");
@@ -553,6 +557,8 @@ export default function Product() {
         setDateRange(params.get("start_date") && params.get("end_date") ? [dayjs(params.get("start_date")), dayjs(params.get("end_date"))] : []);
         setMinPrice(params.get("min_price") ? Number(params.get("min_price")) : undefined);
         setMaxPrice(params.get("max_price") ? Number(params.get("max_price")) : undefined);
+        setMinStock(params.get("min_stock") ? Number(params.get("min_stock")) : undefined);
+        setMaxStock(params.get("max_stock") ? Number(params.get("max_stock")) : undefined);
     }, [location.search]);
 
     const handleCopy = async (id) => {
@@ -791,6 +797,14 @@ export default function Product() {
                 if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
                     params.append("max_price", String(maxPrice));
                 }
+
+                if (minStock !== undefined && minStock !== null && minStock !== "") {
+                    params.append("min_stock", String(minStock));
+                }
+
+                if (maxStock !== undefined && maxStock !== null && maxStock !== "") {
+                    params.append("max_stock", String(maxStock));
+                }
         
                 const paramsObj = {};
 
@@ -825,7 +839,7 @@ export default function Product() {
         };
     
         fetchProductsData();
-    }, [currentPage,pageSize,productStatus,debouncedSearchQuery,brandIds,categoryIds,subCategoryIds,subSubCategoryIds,attributeValueIds,tagIds,dateRange,minPrice,maxPrice,productTypeId]);
+    }, [currentPage,pageSize,productStatus,debouncedSearchQuery,brandIds,categoryIds,subCategoryIds,subSubCategoryIds,attributeValueIds,tagIds,dateRange,minPrice,maxPrice,minStock,maxStock,productTypeId]);
 
 
     const handleQuickUpdate = async (values) => {
@@ -1132,6 +1146,10 @@ export default function Product() {
                                     <InputNumber value={minPrice} onChange={setMinPrice} placeholder="Min Price" style={{ width: 120 }} min={0}/>
                 
                                     <InputNumber value={maxPrice} onChange={setMaxPrice} placeholder="Max Price" style={{ width: 120 }} min={0}/>
+
+                                    <InputNumber value={minStock} onChange={setMinStock} placeholder="Min Stock" style={{ width: 120 }} min={0}/>
+                
+                                    <InputNumber value={maxStock} onChange={setMaxStock} placeholder="Max Stock" style={{ width: 120 }} min={0}/>
                 
                                     <Button onClick={clearFilters}>Clear Filters</Button>
                                 </Space>
