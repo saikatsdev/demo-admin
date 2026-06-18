@@ -1,4 +1,4 @@
-import { Breadcrumb, message, Table, Tag, Card, Typography, Space, Button, Tooltip, Row, Col, Statistic } from "antd";
+import { Breadcrumb, message, Table, Tag, Card, Typography, Space, Button, Tooltip, Row, Col, Statistic, Select } from "antd";
 import { useEffect, useState } from "react";
 import useTitle from "../../hooks/useTitle";
 import { Link, useNavigate } from "react-router-dom";
@@ -28,6 +28,14 @@ export default function UnpreparedOrderList() {
     const rowSelection = {
         selectedRowKeys,
         onChange: onSelectChange,
+    };
+
+    const handleBatchAction = (value) => {
+        if (value === 'assign_prepare') {
+            messageApi.info("Assign Prepare action triggered for " + selectedRowKeys.length + " items");
+        } else if (value === 'remove_assign_prepare') {
+            messageApi.info("Remove Assign Prepare action triggered for " + selectedRowKeys.length + " items");
+        }
     };
 
     const getUnpreparedOrders = async (page = 1, pageSize = 25) => {
@@ -157,7 +165,7 @@ export default function UnpreparedOrderList() {
             key: "assignee",
             width: 120,
             render: (_, record) => (
-                <Tag icon={<UserOutlined />} color="default">
+                <Tag icon={<UserOutlined />} color="default" style={{textTransform: 'capitalize'}}>
                     {record.assign_user?.username || 'Unassigned'}
                 </Tag>
             ),
@@ -222,15 +230,27 @@ export default function UnpreparedOrderList() {
 
             <div style={{ marginBottom: 16 }}>
                 {selectedRowKeys.length > 0 && (
-                    <Space style={{ backgroundColor: '#e6f7ff', padding: '8px 16px', borderRadius: '8px', border: '1px solid #91d5ff', width: '100%', justifyContent: 'space-between' }}>
-                        <Text strong>Selected {selectedRowKeys.length} items</Text>
+                    <Space style={{ backgroundColor: '#e6f7ff', padding: '12px 20px', borderRadius: '12px', border: '1px solid #91d5ff', width: '100%', justifyContent: 'space-between' }}>
+                        <Space size="large">
+                            <Text strong><InfoCircleOutlined style={{ color: '#1890ff', marginRight: 8 }} />{selectedRowKeys.length} orders selected</Text>
+                            <Select 
+                                placeholder="Bulk Actions" 
+                                style={{ width: 220 }} 
+                                onChange={handleBatchAction}
+                                size="middle"
+                            >
+                                <Select.Option value="assign_prepare">Assign Prepare</Select.Option>
+                                <Select.Option value="remove_assign_prepare">Remove Assign Prepare</Select.Option>
+                            </Select>
+                        </Space>
                         <Space>
-                            <Button type="primary" size="small" ghost>Print Selected</Button>
+                            <Button type="primary" size="middle" ghost icon={<ShoppingCartOutlined />}>Print Selected</Button>
                             <Button type="link" size="small" danger onClick={() => setSelectedRowKeys([])}>Clear Selection</Button>
                         </Space>
                     </Space>
                 )}
             </div>
+
 
             <Card bodyStyle={{ padding: 0 }} style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)',border: 'none'}}>
                 <Table 
