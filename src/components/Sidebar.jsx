@@ -38,7 +38,6 @@ const Sidebar = ({ onMenuSelect }) => {
     const teamSubmenus = [
         can('orders-team-list-read') && { label: "Team Attendance", path: "/team/attendance" },
         can('orders-team-list-read') && { label: "Unprepare Order List", path: "/unprepared/list" },
-        can('orders-update') && { label: "Order Assign", path: "/assign" },
         can('orders-team-list-read') && { label: "Team Assign List", path: "/assign-by-list" },
     ].filter(Boolean);
 
