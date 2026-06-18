@@ -20,6 +20,7 @@ import { useSelector } from "react-redux";
 import CourierStatusModal from "../../components/order/CourierStatusModal";
 import DigitalSaleModal from "../../components/order/DigitalSaleModal";
 import { usePermission } from "../../hooks/usePermission";
+import { useRole } from "../../hooks/useRole";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -30,6 +31,7 @@ export default function Order() {
     useTitle("All Orders");
     const { settings} = useAppSettings();
     const {permissions} = usePermission();
+    const { hasAnyRole } = useRole();
     
     const can = (permission) => permissions?.includes(permission);
 
@@ -1387,7 +1389,7 @@ export default function Order() {
 
                         <div>
                             <Space>
-                                {![1, 2].includes(record.current_status?.id) ? (
+                                {![1].includes(record.current_status?.id) ? (
                                     <Dropdown
                                         menu={{
                                             items: [
@@ -2344,12 +2346,14 @@ export default function Order() {
                     <Row>
                         <Col span={24}>
                             <div className="all-status-tags">
-                                <span className={isAllOrders ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${orders?.total_amount}`} onClick={allOrderStatus}>
-                                    All Orders
-                                    <span className={isAllOrders ? "status-tags-child-child-active" : "status-tags-child-child"}>
-                                        {totalOrder}
+                                {hasAnyRole(['admin', 'superadmin']) && (
+                                    <span className={isAllOrders ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${orders?.total_amount}`} onClick={allOrderStatus}>
+                                        All Orders
+                                        <span className={isAllOrders ? "status-tags-child-child-active" : "status-tags-child-child"}>
+                                            {totalOrder}
+                                        </span>
                                     </span>
-                                </span>
+                                )}
 
                                 {orderStatus?.slice(0, 8).map((status) => (
                                     <span key={status.status_id} className={Number(status.status_id) === statusId ? "status-tags-child-active" : "status-tags-child"}
