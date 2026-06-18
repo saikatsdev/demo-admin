@@ -18,7 +18,17 @@ export default function UnpreparedOrderList() {
     const [orders, setOrders]         = useState([]);
     const [summary, setSummary]       = useState({orders_count: 0,duplicate_orders_count: 0,total_amount: "0.00"});
     const [pagination, setPagination] = useState({current: 1,pageSize: 25,total: 0});
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [messageApi, contextHolder] = message.useMessage();
+
+    const onSelectChange = (newSelectedRowKeys) => {
+        setSelectedRowKeys(newSelectedRowKeys);
+    };
+
+    const rowSelection = {
+        selectedRowKeys,
+        onChange: onSelectChange,
+    };
 
     const getUnpreparedOrders = async (page = 1, pageSize = 25) => {
         try {
@@ -28,14 +38,14 @@ export default function UnpreparedOrderList() {
             if (res && res?.success) {
                 setOrders(res?.result?.data || []);
                 setSummary({
-                    orders_count: res.result.orders_count,
+                    orders_count          : res.result.orders_count,
                     duplicate_orders_count: res.result.duplicate_orders_count,
-                    total_amount: res.result.total_amount
+                    total_amount          : res.result.total_amount
                 });
                 setPagination({
-                    current: res.result.meta.current_page,
+                    current : res.result.meta.current_page,
                     pageSize: res.result.meta.per_page,
-                    total: res.result.meta.total,
+                    total   : res.result.meta.total,
                 });
             }
         } catch (error) {
@@ -210,8 +220,26 @@ export default function UnpreparedOrderList() {
                 </Col>
             </Row>
 
+            <div style={{ marginBottom: 16 }}>
+                {selectedRowKeys.length > 0 && (
+                    <Space style={{ backgroundColor: '#e6f7ff', padding: '8px 16px', borderRadius: '8px', border: '1px solid #91d5ff', width: '100%', justifyContent: 'space-between' }}>
+                        <Text strong>Selected {selectedRowKeys.length} items</Text>
+                        <Space>
+                            <Button type="primary" size="small" ghost>Print Selected</Button>
+                            <Button type="link" size="small" danger onClick={() => setSelectedRowKeys([])}>Clear Selection</Button>
+                        </Space>
+                    </Space>
+                )}
+            </div>
+
             <Card bodyStyle={{ padding: 0 }} style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)',border: 'none'}}>
-                <Table columns={columns} dataSource={orders} rowKey="id" loading={loading} pagination={{...pagination,showSizeChanger: true,
+                <Table 
+                    rowSelection={rowSelection}
+                    columns={columns} 
+                    dataSource={orders} 
+                    rowKey="id" 
+                    loading={loading} 
+                    pagination={{...pagination,showSizeChanger: true,
                         pageSizeOptions: ['20', '50', '100', '200'],
                         showTotal: (total, range) => (
                             <Text type="secondary">
@@ -228,4 +256,5 @@ export default function UnpreparedOrderList() {
         </div>
     )
 }
+
 
