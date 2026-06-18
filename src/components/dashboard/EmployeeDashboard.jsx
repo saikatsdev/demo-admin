@@ -48,7 +48,9 @@ export default function EmployeeDashboard() {
             const name = r?.name || r?.title || r?.role || r?.slug || (typeof r === "string" ? r : `Role ${idx + 1}`);
             return {key: r?.id ?? `${idx}`,name: String(name).toUpperCase(),};
         });
-    }, [roles]);    return (
+    }, [roles]);    
+
+    return (
         <div style={{ padding: "24px", background: "#f0f2f5", minHeight: "100vh" }}>
             <div className="dashboard-header" style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>

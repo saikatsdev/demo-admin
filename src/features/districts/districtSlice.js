@@ -4,8 +4,8 @@ import { getDatas } from "../../api/common/common";
 export const fetchDistricts = createAsyncThunk(
     "districts/fetchDistricts",
     async () => {
-        const res = await getDatas("/admin/districts");
-        return res.result?.data || [];
+        const res = await getDatas("/admin/districts/list");
+        return res.result || [];
     }
 );
 
