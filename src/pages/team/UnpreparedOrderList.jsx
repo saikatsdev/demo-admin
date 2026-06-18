@@ -274,12 +274,7 @@ export default function UnpreparedOrderList() {
                     <Space style={{ backgroundColor: '#e6f7ff', padding: '12px 20px', borderRadius: '12px', border: '1px solid #91d5ff', width: '100%', justifyContent: 'space-between' }}>
                         <Space size="large">
                             <Text strong><InfoCircleOutlined style={{ color: '#1890ff', marginRight: 8 }} />{selectedRowKeys.length} orders selected</Text>
-                            <Select 
-                                placeholder="Bulk Actions" 
-                                style={{ width: 220 }} 
-                                onChange={handleBatchAction}
-                                size="middle"
-                            >
+                            <Select placeholder="Bulk Actions" style={{ width: 220 }} onChange={handleBatchAction} size="middle">
                                 <Select.Option value="assign_prepare">Assign Prepare</Select.Option>
                                 <Select.Option value="remove_assign_prepare">Remove Assign Prepare</Select.Option>
                             </Select>

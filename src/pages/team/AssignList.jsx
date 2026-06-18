@@ -1,9 +1,9 @@
-import {Breadcrumb, message, Table, Tag, Row, Col, Card, Space, Typography, Tooltip} from "antd";
+import { ClockCircleOutlined, UserOutlined, InfoCircleOutlined,ShoppingCartOutlined,DollarCircleOutlined, FileTextOutlined,CheckCircleOutlined,WarningOutlined} from "@ant-design/icons";
+import {Breadcrumb, message, Select,Table, Tag,Button, Row, Col, Card, Space, Typography, Tooltip} from "antd";
 import { useEffect, useState } from "react";
 import useTitle from "../../hooks/useTitle"
 import { Link } from "react-router-dom";
 import { getDatas } from "../../api/common/common";
-import { ClockCircleOutlined, UserOutlined, DollarCircleOutlined, FileTextOutlined,CheckCircleOutlined,WarningOutlined} from "@ant-design/icons";
 
 const { Text, Title } = Typography;
 
@@ -17,6 +17,7 @@ export default function AssignList() {
     const [summary, setSummary]       = useState({orders_count: 0,duplicate_orders_count: 0,total_amount: "0.00"});
     const [pagination, setPagination] = useState({current: 1,pageSize: 25,total: 0});
     const [messageApi, contextHolder] = message.useMessage();
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
     const getAssignedOrders = async (page = 1) => {
         try {
@@ -51,6 +52,44 @@ export default function AssignList() {
     const handleTableChange = (pagination) => {
         getAssignedOrders(pagination.current);
     };
+
+    const onSelectChange = (newSelectedRowKeys) => {
+        setSelectedRowKeys(newSelectedRowKeys);
+    };
+
+    const rowSelection = {
+        selectedRowKeys,
+        onChange: onSelectChange,
+    };
+
+    const handleBatchAction = async (value) => {
+        if (!selectedRowKeys.length) {
+            messageApi.warning("Please select at least one order");
+            return;
+        }
+
+        if (value === 'remove_assign') {
+            try {
+                setLoading(true);
+                const res = await postData('/admin/team/assign/removed', {
+                    order_ids: selectedRowKeys
+                });
+
+                if (res && res?.success) {
+                    messageApi.success(res?.message || "Orders removed from assign");
+                    setSelectedRowKeys([])
+                    getUnpreparedOrders(pagination.current, pagination.pageSize);
+                } else {
+                    messageApi.error(res?.message || "Failed to remove orders");
+                }
+            } catch (error) {
+                console.error(error);
+                messageApi.error("An error occurred during assignment");
+            } finally {
+                setLoading(false);
+            }
+        }
+    }
 
     const columns = 
     [
@@ -217,8 +256,26 @@ export default function AssignList() {
                 </Col>
             </Row>
 
+            <div style={{ marginBottom: 16 }}>
+                {selectedRowKeys.length > 0 && (
+                    <Space style={{ backgroundColor: '#e6f7ff', padding: '12px 20px', borderRadius: '12px', border: '1px solid #91d5ff', width: '100%', justifyContent: 'space-between' }}>
+                        <Space size="large">
+                            <Text strong><InfoCircleOutlined style={{ color: '#1890ff', marginRight: 8 }} />{selectedRowKeys.length} orders selected</Text>
+                            <Select placeholder="Bulk Actions" style={{ width: 220 }} onChange={handleBatchAction} size="middle">
+                                <Select.Option value="remove_assign">Remove Assign</Select.Option>
+                            </Select>
+                        </Space>
+                        <Space>
+                            <Button type="primary" size="middle" ghost icon={<ShoppingCartOutlined />}>Print Selected</Button>
+                            <Button type="link" size="small" danger onClick={() => setSelectedRowKeys([])}>Clear Selection</Button>
+                        </Space>
+                    </Space>
+                )}
+            </div>
+
             <Card style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }} bodyStyle={{ padding: 0 }}>
                 <Table
+                    rowSelection={rowSelection}
                     columns={columns}
                     dataSource={orders}
                     rowKey="id"
