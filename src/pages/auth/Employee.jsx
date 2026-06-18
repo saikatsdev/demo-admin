@@ -197,7 +197,7 @@ export default function Employee() {
         const res = await deleteData(`/admin/users/${id}`);
         if (res && res?.success) {
             fetchUsers();
-            message.success("Employee deleted successfully");
+            messageApi.success("Employee deleted successfully");
         }
     };
 
