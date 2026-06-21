@@ -189,7 +189,7 @@ export default function OrderReport() {
             title: "Traffic Source",
             key: "source",
             render: (record) => (
-                <span className={`source-badge source-${record?.order_from?.name?.toLowerCase()}`} style={{background: record?.order_from?.color, color: '#fff'}}>
+                <span className={`source-badge source-${record?.order_from?.name?.toLowerCase()}`} style={{background: record?.order_from?.color, color: '#fff', padding:5, borderRadius:12}}>
                     {record?.order_from?.name}
                 </span>
             ),
