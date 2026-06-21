@@ -5,14 +5,42 @@
 /* ----- Base: common rules for all print layouts ----- */
 @media print {
   /* ব্রাউজার header/footer এড়াতে */
-  @page { margin: 0; }
+  @page { margin: 1cm; }
 
-  /* শুধুই .printable অংশ প্রিন্ট হবে */
-  body * { visibility: hidden !important; }
-  .printable, .printable * { visibility: visible !important; }
+  /* Hide layout elements that occupy space */
+  .topbar, .sidebar, .sidewrap, .scrim, .no-print, .ant-pagination, .ant-divider { 
+    display: none !important; 
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Reset body and root for print flow */
+  body, #root, .layout, .content, main, .reportWrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    background: #fff !important;
+    height: auto !important;
+    overflow: visible !important;
+    visibility: visible !important;
+  }
+
+  /* Ensure printable content starts at the top of the flow */
+  .printable {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: visible !important;
+  }
+
+  .printable * {
+    visibility: visible !important;
+  }
 
   /* টেবিল ব্রেক/কালার ফিক্স */
-  .printable table { page-break-inside: auto; border-collapse: collapse; }
+  .printable table { page-break-inside: auto; border-collapse: collapse; width: 100% !important; }
   .printable thead { display: table-header-group; }
   .printable tfoot { display: table-footer-group; }
   .printable tr    { page-break-inside: avoid; page-break-after: auto; }

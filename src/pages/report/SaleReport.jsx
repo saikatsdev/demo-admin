@@ -338,9 +338,11 @@ export default function SaleReport() {
                     <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
                         CSV
                     </Button>
+
                     <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>
                         PDF
                     </Button>
+                    
                     <Button icon={<PrinterOutlined />} onClick={handlePrint}>
                         Print
                     </Button>
