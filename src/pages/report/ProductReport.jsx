@@ -1,15 +1,26 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Tag, Progress, Tooltip } from "antd";
-import { DownloadOutlined, FilterOutlined, RiseOutlined, EyeOutlined, StockOutlined, DollarOutlined } from "@ant-design/icons";
+import { Table, Input, Select, Button, DatePicker, Space, Tag, Progress, Tooltip, Typography, Divider } from "antd";
+import { 
+    FilePdfOutlined, 
+    FileExcelOutlined, 
+    ReloadOutlined, 
+    EyeOutlined, 
+    ArrowLeftOutlined, 
+    PrinterOutlined,
+    CalendarOutlined,
+    SearchOutlined,
+    RiseOutlined
+} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
-import "./css/ProductReport.css";
-
-const { Option } = Select;
-const { RangePicker } = DatePicker;
-
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import dayjs from "dayjs";
+import "./report.css";
+
+const { Title, Text } = Typography;
+const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 export default function ProductReport() {
     // Hook
@@ -21,6 +32,7 @@ export default function ProductReport() {
     const [dateFilter, setDateFilter]   = useState("all");
     const [products, setProducts]       = useState([]);
     const [dateRange, setDateRange]     = useState([null, null]);
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [pagination, setPagination]   = useState({ current: 1, pageSize: 25, total: 0 });
 
     const getOrderReport = async () => {
@@ -62,6 +74,22 @@ export default function ProductReport() {
         getOrderReport();
     }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
 
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const getExportData = () => {
+        const filtered = products.filter(p => 
+            !localSearch || 
+            p.name.toLowerCase().includes(localSearch.toLowerCase()) || 
+            p.category?.name?.toLowerCase().includes(localSearch.toLowerCase())
+        );
+        if (selectedRowKeys.length > 0) {
+            return filtered.filter(item => selectedRowKeys.includes(item.id));
+        }
+        return filtered;
+    };
+
     const columns = [
         {
             title: "#",
@@ -78,11 +106,11 @@ export default function ProductReport() {
             title: "Product Identity",
             key: "product",
             render: (_, record) => (
-                <div className="product-info-cell">
-                    <img src={record.img_path} className="product-image" alt={record.name} />
-                    <div className="product-details">
-                        <h4>{record.name}</h4>
-                        <span>{record.category?.name} • SKU: {record.slug}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <img src={record.img_path} style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} alt={record.name} />
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <Text strong style={{ color: '#1e293b' }}>{record.name}</Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>{record.category?.name} • SKU: {record.slug}</Text>
                     </div>
                 </div>
             ),
@@ -92,51 +120,28 @@ export default function ProductReport() {
             title: "Price Details",
             key: "revenue",
             align: "right",
-            render: (_, record) => {
-                const hasDiscount = record.discount > 0;
-                const discountPercentage = hasDiscount ? Math.round((Number(record.discount) / Number(record.mrp)) * 100) : 0;
-
-                return (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                        {hasDiscount && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <span style={{ fontSize: 11, color: '#94a3b8', textDecoration: 'line-through' }}>
-                                    ৳ {Number(record.mrp).toLocaleString()}
-                                </span>
-                                <Tag color="green" style={{ border: 'none', fontSize: 10, margin: 0, padding: '0 4px', borderRadius: 4 }}>
-                                    {discountPercentage}% OFF
-                                </Tag>
-                            </div>
-                        )}
-
-                        <div className="price-tag" style={{ fontSize: 16, color: '#0f172a' }}>
-                            ৳ {Number(record.sell_price).toLocaleString()}
-                        </div>
-
-                        {hasDiscount && (
-                            <div style={{ fontSize: 10, color: '#10b981', fontWeight: 600 }}>
-                                Save ৳ {Number(record.discount).toLocaleString()}
-                            </div>
-                        )}
-                    </div>
-                );
-            },
-            width: 180
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    <Text strong style={{ color: '#0f172a' }}>৳ {Number(record.sell_price).toLocaleString()}</Text>
+                    {record.discount > 0 && <Text delete type="secondary" style={{ fontSize: 11 }}>৳ {Number(record.mrp).toLocaleString()}</Text>}
+                </div>
+            ),
+            width: 140
         },
         {
             title: "Sales Velocity",
             key: "sales",
             align: "center",
             render: (_, record) => (
-                <div style={{ textAlign: 'left', minWidth: 150, padding: '0 10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                <div style={{ minWidth: 150 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
                         <span style={{ fontSize: 11, color: '#64748b' }}>Units Sold</span>
-                        <b style={{ fontSize: 13, color: '#6366f1' }}>{record.order_count}</b>
+                        <Text strong style={{ fontSize: 12, color: '#6366f1' }}>{record.order_count}</Text>
                     </div>
-                    <Progress percent={Math.min(100, (record.order_count / 2000) * 100)} size="small" showInfo={false} strokeColor={{ '0%': '#8b5cf6', '100%': '#6366f1' }} />
+                    <Progress percent={Math.min(100, (record.order_count / 1000) * 100)} size={[100, 4]} showInfo={false} strokeColor="#6366f1" />
                 </div>
             ),
-            width: 200
+            width: 180
         },
         {
             title: "Inventory Level",
@@ -145,31 +150,10 @@ export default function ProductReport() {
             align: "center",
             render: (stock) => {
                 const color = stock < 10 ? "red" : stock < 50 ? "orange" : "green";
-                const label = stock < 10 ? "Critical" : stock < 50 ? "Low" : "Optimal";
                 return (
-                    <Tooltip title={`${label} Stock Level`}>
-                        <Tag color={color} style={{ borderRadius: 12, fontWeight: 700, padding: '2px 10px', minWidth: 80, textAlign: 'center' }}>
-                            {stock} Items
-                        </Tag>
-                    </Tooltip>
-                );
-            }
-        },
-        {
-            title: "Fulfillment Status",
-            key: "status_summary",
-            render: (_, record) => {
-                const delivered = record.status_counts?.find(s => s.slug === 'delivered')?.total || 0;
-                const canceled = record.status_counts?.find(s => s.slug === 'canceled')?.total || 0;
-                return (
-                    <div className="status-summary">
-                        <Tag color="success" className="mini-status" style={{ border: 'none' }}>
-                            <span style={{ marginRight: 4 }}>✓</span> {delivered}
-                        </Tag>
-                        <Tag color="error" className="mini-status" style={{ border: 'none' }}>
-                            <span style={{ marginRight: 4 }}>✕</span> {canceled}
-                        </Tag>
-                    </div>
+                    <Tag color={color} style={{ borderRadius: 12, fontWeight: 700, padding: '2px 10px' }}>
+                        {stock} Items
+                    </Tag>
                 );
             }
         },
@@ -190,11 +174,8 @@ export default function ProductReport() {
                 return (
                     <div style={{ width: 100, margin: '0 auto' }}>
                         <Tooltip title={`${delivered} Delivered / ${canceled} Canceled`}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: color }}>{rate}%</span>
-                            </div>
-
                             <Progress percent={rate} size={[100, 4]} showInfo={false} strokeColor={color} trailColor="#f1f5f9" />
+                            <Text strong style={{ fontSize: 11, color: color }}>{rate}%</Text>
                         </Tooltip>
                     </div>
                 );
@@ -203,158 +184,175 @@ export default function ProductReport() {
     ];
 
     const expandedRowRender = (record) => (
-        <div className="expanded-row-content">
-            <h5 style={{ marginBottom: 20, fontSize: 14, color: '#475569', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <EyeOutlined /> Full Order Status Distribution
-            </h5>
-            <div className="status-grid">
+        <div style={{ padding: '16px 24px', background: '#fafafa', borderRadius: 8 }}>
+            <h5 style={{ marginBottom: 16, fontSize: 13, color: '#64748b', fontWeight: 600 }}>Order Status Breakdown</h5>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
                 {record.status_counts?.map((status, i) => (
-                    <div key={i} className="status-item">
-                        <span className="label">{status.name}</span>
-                        <span className="count">{status.total}</span>
+                    <div key={i} style={{ background: '#fff', padding: '12px', borderRadius: 8, border: '1px solid #f0f0f0' }}>
+                        <span style={{ display: 'block', fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>{status.name}</span>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: '#1c558b' }}>{status.total}</span>
                     </div>
                 ))}
-                {(!record.status_counts || record.status_counts.length === 0) && (
-                    <div style={{ color: '#94a3b8', fontSize: 12, fontStyle: 'italic' }}>No status data available for this product.</div>
-                )}
             </div>
         </div>
     );
 
     const downloadCSV = () => {
-        const headers = ["Product", "SKU", "Category", "Orders", "Stock", "Price", "Revenue"];
-        const rows = products.map(p => [
-            p.name, p.slug, p.category?.name, p.order_count, p.current_stock, p.sell_price, (p.order_count * p.sell_price)
+        const dataToExport = getExportData();
+        const headers = ["Product", "SKU", "Orders", "Stock", "Price"];
+        const rows = dataToExport.map(p => [
+            p.name, p.slug, p.order_count, p.current_stock, p.sell_price
         ]);
-        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+        let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
         const link = document.createElement("a");
         link.href = encodeURI(csvContent);
-        link.download = `Product_Report_${new Date().toLocaleDateString()}.csv`;
+        link.download = `Product_Report_${dayjs().format('YYYY-MM-DD')}.csv`;
         link.click();
     };
 
     const downloadPDF = () => {
+        const dataToExport = getExportData();
         const doc = new jsPDF();
-        
         doc.setFontSize(18);
         doc.text("Product Performance Report", 14, 22);
         doc.setFontSize(11);
         doc.setTextColor(100);
         
-        const dateStr = new Date().toLocaleDateString();
+        const dateStr = dayjs().format("YYYY-MM-DD");
         doc.text(`Generated on: ${dateStr}`, 14, 30);
-        doc.text(`Total Products: ${products.length}`, 14, 36);
         
-        const tableColumn = ["#", "Product Name", "Category", "Orders", "Stock", "Price"];
-        const tableRows = products.map((p, index) => [
+        const tableColumn = ["#", "Product Name", "SKU", "Orders", "Stock", "Price"];
+        const tableRows = dataToExport.map((p, index) => [
             index + 1,
             p.name,
-            p.category?.name || "N/A",
+            p.slug,
             p.order_count,
             p.current_stock,
-            `TK ${Number(p.sell_price).toLocaleString()}`
+            `৳${Number(p.sell_price).toLocaleString()}`
         ]);
 
         autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
-            startY: 45,
+            startY: 40,
             theme: 'grid',
-            headStyles: { fillColor: [28, 85, 139], textColor: 255, fontStyle: 'bold' },
-            styles: { fontSize: 9, cellPadding: 3 },
-            columnStyles: {
-                0: { cellWidth: 10 },
-                1: { cellWidth: 'auto' },
-                5: { halign: 'right' }
-            }
+            headStyles: { fillColor: [28, 85, 139], textColor: 255 },
+            styles: { fontSize: 9 }
         });
 
         doc.save(`Product_Report_${dateStr}.pdf`);
     };
 
     return (
-        <div className="report-container">
-            <header className="report-header">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div>
-                        <h2>Product Performance Insights</h2>
-                        <p>Analyze high-velocity products and track fulfillment life cycles.</p>
-                    </div>
-                    <div className="table-stats">
-                        Showing {products.length} Products
-                    </div>
-                </div>
-            </header>
-
-            <div className="filter-card">
-                <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
-                    <Space wrap size="middle">
-                        <Input.Search placeholder="Filter by name, category or SKU..." allowClear onChange={(e) => setLocalSearch(e.target.value)} style={{ width: 380 }} prefix={<FilterOutlined style={{ color: '#94a3b8' }} />} />
-                        <Select value={dateFilter} style={{ width: 180 }} onChange={(val) => {
-                                setDateFilter(val);
-                                if (val !== "custom") setDateRange([null, null]);
-                                setPagination(prev => ({ ...prev, current: 1 }));
-                            }}
-                            suffixIcon={<RiseOutlined style={{ color: '#6366f1' }} />}
-                        >
-                            <Option value="all">All Time History</Option>
-                            <Option value="today">Today's Performance</Option>
-                            <Option value="yesterday">Yesterday</Option>
-                            <Option value="last7days">Last 7 Days</Option>
-                            <Option value="last30days">Last 30 Days</Option>
-                            <Option value="month">Current Month</Option>
-                            <Option value="year">Current Year</Option>
-                            <Option value="custom">Custom Date Range</Option>
-                        </Select>
-
-                        {dateFilter === "custom" && (
-                            <RangePicker value={dateRange} onChange={(dates) => {
-                                    setDateRange(dates);
-                                    setPagination(prev => ({ ...prev, current: 1 }));
-                                }} />
-                        )}
-                    </Space>
-
-                    <Space size="middle">
-                        <Button type="primary" icon={<DownloadOutlined />} onClick={downloadCSV}>
-                            Download CSV
-                        </Button>
-                        
-                        <Button type="primary" style={{ backgroundColor: '#d32f2f', border: 'none', borderRadius: 8 }} icon={<DownloadOutlined />} onClick={downloadPDF}>
-                            Download PDF
-                        </Button>
-                    </Space>
+        <div className="reportWrapper">
+            <div className="topBar no-print">
+                <Space size="large">
+                    <Button 
+                        icon={<ArrowLeftOutlined />} 
+                        onClick={() => window.history.back()}
+                    >
+                        Back
+                    </Button>
+                    <Title level={4} style={{ margin: 0 }}>Product Performance Analysis</Title>
                 </Space>
             </div>
 
-            <Table
-                rowKey="id"
-                columns={columns}
-                dataSource={products.filter(p => 
-                    !localSearch || 
-                    p.name.toLowerCase().includes(localSearch.toLowerCase()) || 
-                    p.category?.name?.toLowerCase().includes(localSearch.toLowerCase())
-                )}
-                loading={loading}
-                expandable={{ 
-                    expandedRowRender,
-                    expandIcon: ({ expanded, onExpand, record }) =>
-                        expanded ? (
-                            <EyeOutlined style={{ color: '#6366f1', cursor: 'pointer' }} onClick={e => onExpand(record, e)} />
-                        ) : (
-                            <EyeOutlined style={{ color: '#94a3b8', cursor: 'pointer' }} onClick={e => onExpand(record, e)} />
-                        )
-                }}
-                pagination={{
-                    current: pagination.current,
-                    pageSize: pagination.pageSize,
-                    total: pagination.total,
-                    onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
-                    showSizeChanger: true,
-                    className: "custom-pagination",
-                    showTotal: (total) => `Total ${total} entries identified`,
-                }}
-            />
+            <Divider className="no-print" style={{ margin: '12px 0' }} />
+
+            <div className="topBar no-print">
+                <Space wrap size="middle">
+                    <Input 
+                        placeholder="Search products..." 
+                        allowClear 
+                        value={localSearch}
+                        onChange={(e) => setLocalSearch(e.target.value)} 
+                        style={{ width: 250 }}
+                        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                    />
+                    
+                    <Select 
+                        value={dateFilter} 
+                        style={{ width: 160 }} 
+                        onChange={(val) => {
+                            setDateFilter(val);
+                            if (val !== "custom") setDateRange([null, null]);
+                        }}
+                        suffixIcon={<CalendarOutlined style={{ color: '#bfbfbf' }} />}
+                    >
+                        <Option value="all">Lifetime History</Option>
+                        <Option value="today">Today</Option>
+                        <Option value="yesterday">Yesterday</Option>
+                        <Option value="last7days">Last 7 Days</Option>
+                        <Option value="last30days">Last 30 Days</Option>
+                        <Option value="month">Current Month</Option>
+                        <Option value="year">Current Year</Option>
+                        <Option value="custom">Custom Range</Option>
+                    </Select>
+
+                    {dateFilter === "custom" && (
+                        <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear style={{ width: 250 }} />
+                    )}
+
+                    <Button icon={<ReloadOutlined />} onClick={() => {
+                        setDateFilter("all");
+                        setLocalSearch("");
+                        setDateRange([null, null]);
+                        setSelectedRowKeys([]);
+                    }}>
+                        Reset
+                    </Button>
+                </Space>
+
+                <Space size="middle">
+                    {selectedRowKeys.length > 0 && (
+                        <Text strong style={{ color: '#1677ff' }}>
+                            {selectedRowKeys.length} selected
+                        </Text>
+                    )}
+                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
+                        CSV
+                    </Button>
+                    <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>
+                        PDF
+                    </Button>
+                    <Button icon={<PrinterOutlined />} onClick={handlePrint}>
+                        Print
+                    </Button>
+                </Space>
+            </div>
+
+            <div className="printable">
+                <Table
+                    rowSelection={{
+                        selectedRowKeys,
+                        onChange: (keys) => setSelectedRowKeys(keys),
+                    }}
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={getExportData().length === products.length ? products : getExportData()}
+                    loading={loading}
+                    expandable={{ 
+                        expandedRowRender,
+                        expandIcon: ({ expanded, onExpand, record }) =>
+                            expanded ? (
+                                <EyeOutlined style={{ color: '#1c558b', cursor: 'pointer' }} onClick={e => onExpand(record, e)} />
+                            ) : (
+                                <EyeOutlined style={{ color: '#94a3b8', cursor: 'pointer' }} onClick={e => onExpand(record, e)} />
+                            )
+                    }}
+                    scroll={{ x: 1300 }}
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
+                        onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
+                        showSizeChanger: true,
+                        size: "small",
+                        className: "custom-pagination no-print",
+                        showTotal: (total) => `Total ${total} entries`,
+                    }}
+                />
+            </div>
         </div>
     );
 }

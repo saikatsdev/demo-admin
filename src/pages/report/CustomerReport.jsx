@@ -1,12 +1,24 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Tag, Tooltip, Progress } from "antd";
-import { FilterOutlined, RiseOutlined, FilePdfOutlined, FileExcelOutlined, UserOutlined } from "@ant-design/icons";
+import { Table, Input, Select, Button, DatePicker, Space, Tag, Tooltip, Progress, Typography, Divider } from "antd";
+import { 
+    FilePdfOutlined, 
+    FileExcelOutlined, 
+    UserOutlined, 
+    ArrowLeftOutlined, 
+    PrinterOutlined,
+    ReloadOutlined,
+    CalendarOutlined,
+    SearchOutlined,
+    RiseOutlined
+} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import useTitle from "../../hooks/useTitle";
-import "./css/CustomerReport.css";
+import dayjs from "dayjs";
+import "./report.css";
 
+const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
@@ -18,6 +30,7 @@ export default function CustomerReport() {
     const [dateFilter, setDateFilter] = useState("all");
     const [customers, setCustomers] = useState([]);
     const [dateRange, setDateRange] = useState([null, null]);
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 25, total: 0 });
 
     const getCustomerReport = async () => {
@@ -59,6 +72,22 @@ export default function CustomerReport() {
         getCustomerReport();
     }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
 
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const getExportData = () => {
+        const filtered = customers.filter(c => 
+            !localSearch || 
+            c.customer_name?.toLowerCase().includes(localSearch.toLowerCase()) || 
+            c.phone_number?.toLowerCase().includes(localSearch.toLowerCase())
+        );
+        if (selectedRowKeys.length > 0) {
+            return filtered.filter(item => selectedRowKeys.includes(item.id));
+        }
+        return filtered;
+    };
+
     const columns = [
         {
             title: "#",
@@ -80,8 +109,8 @@ export default function CustomerReport() {
                         <UserOutlined style={{ color: '#64748b' }} />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span className="customer-name">{record.customer_name}</span>
-                        <span className="customer-phone">{record.phone_number}</span>
+                        <Text strong style={{ color: '#1e293b' }}>{record.customer_name}</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>{record.phone_number}</Text>
                     </div>
                 </div>
             ),
@@ -91,14 +120,14 @@ export default function CustomerReport() {
             dataIndex: "order_count",
             key: "order_count",
             align: "center",
-            render: (count) => <span className="count-cell">{count} Orders</span>,
+            render: (count) => <Tag color="blue" style={{ borderRadius: 4 }}>{count} Orders</Tag>,
         },
         {
             title: "Lifetime Value",
             dataIndex: "order_value",
             key: "order_value",
             align: "right",
-            render: (val) => <span className="value-cell">৳ {Number(val).toLocaleString()}</span>,
+            render: (val) => <Text strong style={{ color: '#0f172a' }}>৳ {Number(val).toLocaleString()}</Text>,
         },
         {
             title: "Fulfillment Status",
@@ -135,10 +164,8 @@ export default function CustomerReport() {
                 return (
                     <div style={{ width: 100, margin: '0 auto' }}>
                         <Tooltip title={`${delivered} Delivered / ${canceled} Canceled`}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                                <span style={{ fontSize: 10, fontWeight: 700, color: color }}>{rate}%</span>
-                            </div>
                             <Progress percent={rate} size={[100, 4]} showInfo={false} strokeColor={color} trailColor="#f1f5f9" />
+                            <Text strong style={{ fontSize: 11, color: color }}>{rate}%</Text>
                         </Tooltip>
                     </div>
                 );
@@ -147,22 +174,20 @@ export default function CustomerReport() {
     ];
 
     const expandedRowRender = (record) => (
-        <div className="expanded-row-content" style={{ padding: '4px 24px' }}>
-            <h5 style={{ marginBottom: 20, fontSize: 14, color: '#475569', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <RiseOutlined /> Full Engagement Distribution
-            </h5>
-            <div className="status-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16 }}>
+        <div style={{ padding: '16px 24px', background: '#fafafa', borderRadius: 8 }}>
+            <h5 style={{ marginBottom: 16, fontSize: 13, color: '#64748b', fontWeight: 600 }}>Full Engagement Distribution</h5>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
                 {[
                     { label: 'Pending', count: record.pending_orders, color: '#94a3b8' },
-                    { label: 'On Hold', count: record.on_hold_orders, color: '#f59e0b' },
+                    { label: 'Hold', count: record.on_hold_orders, color: '#f59e0b' },
                     { label: 'Approved', count: record.approved_orders, color: '#3b82f6' },
                     { label: 'On Way', count: record.on_way_orders, color: '#8b5cf6' },
                     { label: 'Delivered', count: record.delivered_orders, color: '#10b981' },
                     { label: 'Canceled', count: record.canceled_orders, color: '#ef4444' }
                 ].map((item, i) => (
-                    <div key={i} className="status-item" style={{ background: '#f8fafc', padding: '12px', borderRadius: 12, border: '1px solid #f1f5f9' }}>
-                        <span className="label" style={{ display: 'block', fontSize: 11, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>{item.label}</span>
-                        <span className="count" style={{ fontSize: 18, fontWeight: 800, color: item.color }}>{item.count}</span>
+                    <div key={i} style={{ background: '#fff', padding: '12px', borderRadius: 8, border: '1px solid #f0f0f0' }}>
+                        <span style={{ display: 'block', fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>{item.label}</span>
+                        <span style={{ fontSize: 16, fontWeight: 700, color: item.color }}>{item.count}</span>
                     </div>
                 ))}
             </div>
@@ -170,36 +195,36 @@ export default function CustomerReport() {
     );
 
     const downloadCSV = () => {
-        const headers = ["SL", "Customer Name", "Phone", "Orders", "Total Value", "Avg Order Value"];
-        const rows = customers.map((c, i) => [
+        const dataToExport = getExportData();
+        const headers = ["SL", "Customer Name", "Phone", "Orders", "Total Value"];
+        const rows = dataToExport.map((c, i) => [
             i + 1,
             c.customer_name,
             c.phone_number,
             c.order_count,
-            c.order_value,
-            Math.round(c.order_value / c.order_count)
+            c.order_value
         ]);
 
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
         const link = document.createElement("a");
         link.href = encodeURI(csvContent);
-        link.download = `Customer_Report_${new Date().toLocaleDateString()}.csv`;
+        link.download = `Customer_Report_${dayjs().format('YYYY-MM-DD')}.csv`;
         link.click();
     };
 
     const downloadPDF = () => {
+        const dataToExport = getExportData();
         const doc = new jsPDF();
         doc.setFontSize(18);
         doc.text("Customer Engagement Report", 14, 22);
         doc.setFontSize(11);
         doc.setTextColor(100);
         
-        const dateStr = new Date().toLocaleDateString();
+        const dateStr = dayjs().format("YYYY-MM-DD");
         doc.text(`Generated on: ${dateStr}`, 14, 30);
-        doc.text(`Identified Base: ${customers.length} high-intent customers`, 14, 36);
         
         const tableColumn = ["#", "Customer Name", "Phone", "Orders", "Total LTV"];
-        const tableRows = customers.map((c, i) => [
+        const tableRows = dataToExport.map((c, i) => [
             i + 1,
             c.customer_name,
             c.phone_number,
@@ -210,7 +235,7 @@ export default function CustomerReport() {
         autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
-            startY: 45,
+            startY: 40,
             theme: 'grid',
             headStyles: { fillColor: [28, 85, 139], textColor: 255 },
             styles: { fontSize: 9 }
@@ -220,79 +245,106 @@ export default function CustomerReport() {
     };
 
     return (
-        <div className="report-container">
-            <header className="report-header">
-                <div>
-                    <h2>Customer Engagement Insights</h2>
-                    <p>Track lifetime value, order frequency, and retention metrics across your client base.</p>
-                </div>
-            </header>
-
-            <div className="filter-card">
-                <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
-                    <Space wrap size="middle">
-                        <Input.Search 
-                            placeholder="Filter by name or mobile number..." 
-                            allowClear 
-                            onChange={(e) => setLocalSearch(e.target.value)} 
-                            style={{ width: 380 }}
-                            prefix={<FilterOutlined style={{ color: '#94a3b8' }} />}
-                        />
-                        <Select 
-                            value={dateFilter} 
-                            style={{ width: 180 }} 
-                            onChange={(val) => {
-                                setDateFilter(val);
-                                if (val !== "custom") setDateRange([null, null]);
-                            }}
-                            suffixIcon={<RiseOutlined style={{ color: '#6366f1' }} />}
-                        >
-                            <Option value="all">Lifetime History</Option>
-                            <Option value="today">Today's Activity</Option>
-                            <Option value="yesterday">Yesterday</Option>
-                            <Option value="last7days">Last 7 Days</Option>
-                            <Option value="last30days">Last 30 Days</Option>
-                            <Option value="month">Current Month</Option>
-                            <Option value="year">Current Year</Option>
-                            <Option value="custom">Specific Range</Option>
-                        </Select>
-
-                        {dateFilter === "custom" && (
-                            <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear />
-                        )}
-                    </Space>
-
-                    <Space size="middle">
-                        <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
-                            Export CSV
-                        </Button>
-                        <Button type="primary" style={{ backgroundColor: '#d32f2f', border: 'none', borderRadius: 8 }} icon={<FilePdfOutlined />} onClick={downloadPDF}>
-                            Export PDF
-                        </Button>
-                    </Space>
+        <div className="reportWrapper">
+            <div className="topBar no-print">
+                <Space size="large">
+                    <Button 
+                        icon={<ArrowLeftOutlined />} 
+                        onClick={() => window.history.back()}
+                    >
+                        Back
+                    </Button>
+                    <Title level={4} style={{ margin: 0 }}>Customer Engagement Report</Title>
                 </Space>
             </div>
 
-            <Table
-                rowKey="id"
-                columns={columns}
-                dataSource={customers.filter(c => 
-                    !localSearch || 
-                    c.customer_name?.toLowerCase().includes(localSearch.toLowerCase()) || 
-                    c.phone_number?.toLowerCase().includes(localSearch.toLowerCase())
-                )}
-                loading={loading}
-                expandable={{ expandedRowRender }}
-                pagination={{
-                    current: pagination.current,
-                    pageSize: pagination.pageSize,
-                    total: pagination.total,
-                    onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
-                    showSizeChanger: true,
-                    className: "custom-pagination",
-                    showTotal: (total) => `Total ${total} customers identified`,
-                }}
-            />
+            <Divider className="no-print" style={{ margin: '12px 0' }} />
+
+            <div className="topBar no-print">
+                <Space wrap size="middle">
+                    <Input 
+                        placeholder="Search customers..." 
+                        allowClear 
+                        value={localSearch}
+                        onChange={(e) => setLocalSearch(e.target.value)} 
+                        style={{ width: 250 }}
+                        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                    />
+                    
+                    <Select 
+                        value={dateFilter} 
+                        style={{ width: 160 }} 
+                        onChange={(val) => {
+                            setDateFilter(val);
+                            if (val !== "custom") setDateRange([null, null]);
+                        }}
+                        suffixIcon={<CalendarOutlined style={{ color: '#bfbfbf' }} />}
+                    >
+                        <Option value="all">Lifetime History</Option>
+                        <Option value="today">Today</Option>
+                        <Option value="yesterday">Yesterday</Option>
+                        <Option value="last7days">Last 7 Days</Option>
+                        <Option value="last30days">Last 30 Days</Option>
+                        <Option value="month">Current Month</Option>
+                        <Option value="year">Current Year</Option>
+                        <Option value="custom">Custom Range</Option>
+                    </Select>
+
+                    {dateFilter === "custom" && (
+                        <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear style={{ width: 250 }} />
+                    )}
+
+                    <Button icon={<ReloadOutlined />} onClick={() => {
+                        setDateFilter("all");
+                        setLocalSearch("");
+                        setDateRange([null, null]);
+                        setSelectedRowKeys([]);
+                    }}>
+                        Reset
+                    </Button>
+                </Space>
+
+                <Space size="middle">
+                    {selectedRowKeys.length > 0 && (
+                        <Text strong style={{ color: '#1677ff' }}>
+                            {selectedRowKeys.length} selected
+                        </Text>
+                    )}
+                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
+                        CSV
+                    </Button>
+                    <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>
+                        PDF
+                    </Button>
+                    <Button icon={<PrinterOutlined />} onClick={handlePrint}>
+                        Print
+                    </Button>
+                </Space>
+            </div>
+
+            <div className="printable">
+                <Table
+                    rowSelection={{
+                        selectedRowKeys,
+                        onChange: (keys) => setSelectedRowKeys(keys),
+                    }}
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={getExportData().length === customers.length ? customers : getExportData()}
+                    loading={loading}
+                    expandable={{ expandedRowRender }}
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
+                        onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
+                        showSizeChanger: true,
+                        size: "small",
+                        className: "custom-pagination no-print",
+                        showTotal: (total) => `Total ${total} entries`,
+                    }}
+                />
+            </div>
         </div>
     );
 }

@@ -1,13 +1,22 @@
-import { useEffect, useState, useCallback } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Tag, Tooltip, Card, Typography, Row, Col } from "antd";
-import { FilterOutlined, RiseOutlined, FilePdfOutlined, FileExcelOutlined, ReloadOutlined, SearchOutlined, ShoppingOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Table, Input, Select, Button, DatePicker, Space, Tag, Tooltip, Typography, Row, Col, Divider } from "antd";
+import { 
+    FilePdfOutlined, 
+    FileExcelOutlined, 
+    ReloadOutlined, 
+    SearchOutlined, 
+    ShoppingOutlined,
+    PrinterOutlined,
+    ArrowLeftOutlined,
+    CalendarOutlined
+} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import { useSelector } from "react-redux";
 import dayjs from "dayjs";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import useTitle from "../../hooks/useTitle";
-import "./css/OrderReport.css";
+import "./report.css";
 
 const { Option }   = Select;
 const { RangePicker } = DatePicker;
@@ -196,6 +205,10 @@ export default function OrderReport() {
         },
     ];
 
+    const handlePrint = () => {
+        window.print();
+    };
+
     const downloadCSV = () => {
         const dataToExport = getExportData();
         const headers = ["SL", "Customer", "Invoice", "Quantity", "Total Price", "Date", "Status", "Source"];
@@ -222,14 +235,13 @@ export default function OrderReport() {
         const dataToExport = getExportData();
         const doc = new jsPDF();
         doc.setFontSize(18);
-        doc.text("Sales Transaction Report", 14, 22);
+        doc.text("Global Sales Report", 14, 22);
         doc.setFontSize(11);
         doc.setTextColor(100);
         
         const dateStr = dayjs().format("YYYY-MM-DD HH:mm");
         doc.text(`Generated on: ${dateStr}`, 14, 30);
-        doc.text(`Record Scope: ${selectedRowKeys.length > 0 ? 'Selected Items' : 'Primary View'}`, 14, 36);
-        doc.text(`Total Records: ${dataToExport.length}`, 14, 42);
+        doc.text(`Scope: ${selectedRowKeys.length > 0 ? 'Selected Items' : 'All Items'}`, 14, 36);
         
         const tableColumn = ["#", "Customer", "Invoice", "Qty", "Amount", "Date", "Status"];
         const tableRows = dataToExport.map((item, index) => [
@@ -245,7 +257,7 @@ export default function OrderReport() {
         autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
-            startY: 50,
+            startY: 45,
             theme: 'grid',
             headStyles: { fillColor: [28, 85, 139], textColor: 255 },
             styles: { fontSize: 8 }
@@ -255,125 +267,111 @@ export default function OrderReport() {
     };
 
     return (
-        <div className="report-container">
-            <header className="report-header">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div>
-                        <h2>Sales Transaction Insights</h2>
-                        <p>Comprehensive overview of order flows, revenue collection, and fulfillment velocity.</p>
-                    </div>
-                </div>
-            </header>
-
-            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-                <Col xs={24} sm={8}>
-                    <Card className="summary-card" bordered={false}>
-                        <Text type="secondary">Total Orders</Text>
-                        <Title level={3} style={{ margin: 0 }}>{summary.total_order.toLocaleString()}</Title>
-                    </Card>
-                </Col>
-                <Col xs={24} sm={8}>
-                    <Card className="summary-card" bordered={false}>
-                        <Text type="secondary">Total Revenue</Text>
-                        <Title level={3} style={{ margin: 0, color: '#10b981' }}>৳ {summary.total_amount.toLocaleString()}</Title>
-                    </Card>
-                </Col>
-                <Col xs={24} sm={8}>
-                    <Card className="summary-card" bordered={false}>
-                        <Text type="secondary">Items Sold</Text>
-                        <Title level={3} style={{ margin: 0, color: '#6366f1' }}>{summary.total_quantity.toLocaleString()}</Title>
-                    </Card>
-                </Col>
-            </Row>
-
-            <div className="filter-card">
-                <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
-                    <Space wrap size="middle">
-                        <Input 
-                            placeholder="Phone, status or source..." 
-                            allowClear 
-                            value={localSearch}
-                            onChange={(e) => setLocalSearch(e.target.value)} 
-                            onPressEnter={handleSearch}
-                            style={{ width: 300 }}
-                            prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
-                            suffix={
-                                <Button type="text" icon={<SearchOutlined />} onClick={handleSearch}/>
-                            }
-                        />
-                        
-                        <Select 
-                            placeholder="Order Source"
-                            value={orderFromId} 
-                            style={{ width: 160 }} 
-                            onChange={setOrderFromId}
-                            allowClear
-                            suffixIcon={<ShoppingOutlined style={{ color: '#6366f1' }} />}
-                        >
-                            {orderFromList?.map(item => (
-                                <Option key={item.id} value={item.id}>{item.name}</Option>
-                            ))}
-                        </Select>
-
-                        <Select 
-                            value={dateFilter} 
-                            style={{ width: 160 }} 
-                            onChange={(val) => {
-                                setDateFilter(val);
-                                if (val !== "custom") setDateRange([null, null]);
-                            }}
-                            suffixIcon={<RiseOutlined style={{ color: '#6366f1' }} />}
-                        >
-                            <Option value="all">All Time</Option>
-                            <Option value="today">Today</Option>
-                            <Option value="yesterday">Yesterday</Option>
-                            <Option value="week">Last 7 Days</Option>
-                            <Option value="month">This Month</Option>
-                            <Option value="year">This Year</Option>
-                            <Option value="custom">Custom Range</Option>
-                        </Select>
-
-                        {dateFilter === "custom" && (
-                            <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear />
-                        )}
-
-                        <Button icon={<ReloadOutlined />} onClick={handleClearFilters}>
-                            Reset
-                        </Button>
-                    </Space>
-
-                    <Space size="middle">
-                        {selectedRowKeys.length > 0 && (
-                            <div style={{ marginRight: 8, color: '#6366f1', fontWeight: 600 }}>
-                                {selectedRowKeys.length} Selected
-                            </div>
-                        )}
-                        <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
-                            {selectedRowKeys.length > 0 ? 'Export Selected' : 'CSV'}
-                        </Button>
-                        <Button type="primary" style={{ backgroundColor: '#ef4444', border: 'none' }} icon={<FilePdfOutlined />} onClick={downloadPDF}>
-                            {selectedRowKeys.length > 0 ? 'Export Selected' : 'PDF'}
-                        </Button>
-                    </Space>
+        <div className="reportWrapper">
+            <div className="topBar no-print">
+                <Space size="large">
+                    <Button 
+                        icon={<ArrowLeftOutlined />} 
+                        onClick={() => window.history.back()}
+                        style={{ display: 'flex', alignItems: 'center' }}
+                    >
+                        Back
+                    </Button>
+                    <Title level={4} style={{ margin: 0 }}>Global Sales Report</Title>
                 </Space>
             </div>
 
-            <Table
-                rowSelection={rowSelection}
-                rowKey="id"
-                columns={columns}
-                dataSource={orders}
-                loading={loading}
-                pagination={{
-                    current: pagination.current,
-                    pageSize: pagination.pageSize,
-                    total: pagination.total,
-                    onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
-                    showSizeChanger: true,
-                    className: "custom-pagination",
-                    showTotal: (total) => `Total ${total} transactions processed`,
-                }}
-            />
+            <Divider className="no-print" style={{ margin: '12px 0' }} />
+
+            <div className="topBar no-print">
+                <Space wrap size="middle">
+                    <Input 
+                        placeholder="Search..." 
+                        allowClear 
+                        value={localSearch}
+                        onChange={(e) => setLocalSearch(e.target.value)} 
+                        onPressEnter={handleSearch}
+                        style={{ width: 250 }}
+                        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                    />
+                    
+                    <Select 
+                        placeholder="Source"
+                        value={orderFromId} 
+                        style={{ width: 140 }} 
+                        onChange={setOrderFromId}
+                        allowClear
+                        suffixIcon={<ShoppingOutlined style={{ color: '#bfbfbf' }} />}
+                    >
+                        {orderFromList?.map(item => (
+                            <Option key={item.id} value={item.id}>{item.name}</Option>
+                        ))}
+                    </Select>
+
+                    <Select 
+                        value={dateFilter} 
+                        style={{ width: 140 }} 
+                        onChange={(val) => {
+                            setDateFilter(val);
+                            if (val !== "custom") setDateRange([null, null]);
+                        }}
+                        suffixIcon={<CalendarOutlined style={{ color: '#bfbfbf' }} />}
+                    >
+                        <Option value="all">All Time</Option>
+                        <Option value="today">Today</Option>
+                        <Option value="yesterday">Yesterday</Option>
+                        <Option value="week">Last 7 Days</Option>
+                        <Option value="month">This Month</Option>
+                        <Option value="year">This Year</Option>
+                        <Option value="custom">Custom Range</Option>
+                    </Select>
+
+                    {dateFilter === "custom" && (
+                        <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear style={{ width: 250 }} />
+                    )}
+
+                    <Button icon={<ReloadOutlined />} onClick={handleClearFilters}>
+                        Reset
+                    </Button>
+                </Space>
+
+                <Space size="middle">
+                    {selectedRowKeys.length > 0 && (
+                        <Text strong style={{ color: '#1677ff' }}>
+                            {selectedRowKeys.length} selected
+                        </Text>
+                    )}
+                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
+                        CSV
+                    </Button>
+                    <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>
+                        PDF
+                    </Button>
+                    <Button icon={<PrinterOutlined />} onClick={handlePrint}>
+                        Print
+                    </Button>
+                </Space>
+            </div>
+
+            <div className="printable">
+                <Table
+                    rowSelection={rowSelection}
+                    rowKey="id"
+                    columns={columns}
+                    dataSource={orders}
+                    loading={loading}
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
+                        onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
+                        showSizeChanger: true,
+                        size: "small",
+                        className: "custom-pagination no-print",
+                        showTotal: (total) => `Total ${total} entries`,
+                    }}
+                />
+            </div>
         </div>
     );
 }
