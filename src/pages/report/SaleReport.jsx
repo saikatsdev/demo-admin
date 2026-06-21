@@ -175,31 +175,32 @@ export default function SaleReport() {
     }, [dateFilter, dateRange]);
 
     const getOrderReport = async () => {
-        let params = {};
+        let params = {
+            page: pagination.current,
+            paginate_size: pagination.pageSize,
+        };
 
-        if (dateFilter && dateFilter !== "custom") {
+        if (dateFilter) {
             params.filter = dateFilter;
-        } else if (dateFilter === "custom" && dateRange && dateRange[0] && dateRange[1]) {
-            params.start_date = dateRange[0].format("YYYY-MM-DD");
-            params.end_date = dateRange[1].format("YYYY-MM-DD");
+            
+            if (dateFilter === "custom" && dateRange && dateRange[0] && dateRange[1]) {
+                params.from_date = dateRange[0].format("YYYY-MM-DD");
+                params.to_date   = dateRange[1].format("YYYY-MM-DD");
+            }
         }
-
-        params.page = pagination.current;
-        params.paginate_size = pagination.pageSize;
 
         const query = new URLSearchParams(params).toString();
 
         try {
             setLoading(true);
-
             const res = await getDatas(`/admin/order/reports/by-selling?${query}`);
 
-            if(res && res.success){
-                const data = res.result?.data || [];
-                setOrders(data);
+            if (res && res.success) {
+                // The backend paginate() returns a standard Laravel pagination object
+                setOrders(res.result?.data || []);
                 setPagination((prev) => ({
                     ...prev,
-                    total: res.result?.total || res.result?.data?.length || 0,
+                    total: res.result?.total || 0,
                 }));
             }
         } catch (error) {
