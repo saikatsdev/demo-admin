@@ -1,124 +1,109 @@
-import {ShoppingCart,CheckCircle,FileText,Truck,PauseCircle,Package,XCircle,RotateCcw,AlertTriangle,Clock,Archive} from "lucide-react";
+import { useState, useEffect } from "react";
+import {BarChart,Bar,XAxis,YAxis,CartesianGrid,Tooltip,ResponsiveContainer,Cell} from "recharts";
+import { DatePicker } from 'antd';
 
-import { getDatas } from "../../api/common/common";
-import { useEffect, useState } from "react";
-import DateFilter from "../filter/DateFilter";
-import useDateFilter from "../../hooks/DateFilter";
-import { Skeleton } from "antd";
-import { useNavigate } from "react-router-dom";
+const { RangePicker } = DatePicker;
 
-export default function OrderStatictisCard() {
+export default function OrderStatictisCard({statuses, onFilterChange}) {
     // State
-    const [loading, setLoading]   = useState(false);
-    const [statuses, setStatuses] = useState([]);
+    const [activeFilter, setActiveFilter] = useState("today");
+    const [dateRange, setDateRange]       = useState(null);
 
-    // Variable
-    const navigate = useNavigate();
-
-    const orderFilter = useDateFilter("today");
-
-    const statusIcons = {
-        "new-order"       : ShoppingCart,
-        "approved"        : CheckCircle,
-        "invoiced"        : FileText,
-        "in-courier"      : Truck,
-        "on-hold"         : PauseCircle,
-        "stock-pending"   : Clock,
-        "delivered"       : Package,
-        "canceled"        : XCircle,
-        "pending-returned": RotateCcw,
-        "returned"        : RotateCcw,
-        "partial-returned": RotateCcw,
-        "damaged"         : AlertTriangle,
-        "courier-pending" : Archive,
-        "courier-received": Archive,
-    };
-
-    const fetchedOrderStatus = async () => {
-        try {
-            setLoading(true);
-
-            const params = {
-                filter: orderFilter.filter,
-                start_date: orderFilter.range?.[0]?.format("YYYY-MM-DD"),
-                end_date: orderFilter.range?.[1]?.format("YYYY-MM-DD"),
-            };
-
-            const res = await getDatas("/admin/statuses", params);
-
-            if (res && res.success) {
-                setStatuses(res.result?.data || []);
-            }
-
-        } catch (error) {
-            console.log(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    // Effect to notify parent of filter changes
     useEffect(() => {
-        fetchedOrderStatus();
-    }, [orderFilter.filter, orderFilter.range]);
+        if (onFilterChange) {
+            onFilterChange(activeFilter, dateRange);
+        }
+    }, [activeFilter, dateRange, onFilterChange]);
 
-    const handleCardClick = (statusId) => {
-        navigate("/orders", { state: { statusId } });
-    };
+    // Methods to handle internal change
+    const handleFilterChange = (val) => {
+        setActiveFilter(val);
+    }
+
+    const handleDateRangeChange = (values) => {
+        setDateRange(values);
+    }
 
     return (
         <>
-            <div className="cust-product">
-                <h4></h4>
-
-                <DateFilter value={orderFilter.filter} range={orderFilter.range} onChange={orderFilter.setFilter} onRangeChange={orderFilter.setRange}/>
+            <div className="sec-label" style={{ marginTop: "1.25rem" }}>
+                Order by status
             </div>
 
-            <div className="order-stats-container">
+            <div className="card" style={{ marginBottom: "1.25rem" }}>
+                <div className="card-header">
+                    <div className="card-title">
+                        Order by status
+                    </div>
 
-                {loading &&
-                    Array.from({ length: 8 }).map((_, index) => (
-                        <div className="order-stats-card" key={index}>
-                            <div className="order-stats-content">
-                                <Skeleton.Input active size="small" style={{ width: 120 }} />
-                                <br />
-                                <Skeleton.Input active size="small" style={{ width: 60 }} />
-                                <br />
-                                <Skeleton.Input active size="small" style={{ width: 80 }} />
-                            </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {activeFilter === 'custom' && (
+                            <RangePicker 
+                                size="small"
+                                value={dateRange}
+                                onChange={handleDateRangeChange}
+                                style={{
+                                    borderRadius: "6px",
+                                    border: "1px solid var(--border-md)",
+                                    background: "var(--bg-card)",
+                                    height: "32px",
+                                    fontSize: "12px"
+                                }}
+                                placeholder={['Start', 'End']}
+                            />
+                        )}
+                        <select 
+                            className="date-chip" 
+                            value={activeFilter} 
+                            onChange={(e) => handleFilterChange(e.target.value)}
+                            style={{ 
+                                outline: "none", 
+                                cursor: "pointer", 
+                                fontFamily: "inherit",
+                                height: "32px"
+                            }}
+                        >
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="week">This week</option>
+                            <option value="month">This month</option>
+                            <option value="year">This year</option>
+                            <option value="custom">Custom...</option>
+                        </select>
+                    </div>
+                </div>
 
-                            <div className="order-stats-icon-container">
-                                <Skeleton.Avatar active shape="circle" size="small" />
-                            </div>
-                        </div>
-                    ))
-                }
+                <div style={{ overflowX: "auto", width: "100%" }}>
+                    <div style={{ width: "100%", minWidth: "680px", height: "240px", padding: "0 0.5rem" }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={statuses || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                                <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#9CA3AF" }} tickLine={false} axisLine={false}/>
 
-                {!loading && statuses.map((item) => {
+                                <YAxis tick={{ fontSize: 10, fill: "#9CA3AF" }} tickLine={false} axisLine={false}/>
 
-                    const Icon = statusIcons[item.slug] || ShoppingCart;
+                                <Tooltip cursor={{ fill: "rgba(0,0,0,0.03)" }}
+                                    contentStyle={{
+                                        backgroundColor: "#0F1724",
+                                        borderRadius   : "8px",
+                                        border         : "none",
+                                        color          : "#FFF",
+                                        fontSize       : "12px"
+                                    }}
+                                    itemStyle={{ color: "#D1D5DB" }}
+                                    formatter={(value) => [`${value} orders`]}
+                                />
 
-                    return (
-                        <div className="order-stats-card" key={item.id} onClick={handleCardClick.bind(null, item.id)} style={{ cursor: "pointer" }}>
-
-                            <div className="order-stats-content">
-                                <span className="order-stats-title">{item.name}</span>
-
-                                <span className="order-stats-value">
-                                    {item.orders_count || 0}
-                                </span>
-
-                                <span className="order-stats-subvalue">
-                                    {item.total_amount || 0} ৳
-                                </span>
-                            </div>
-
-                            <div className="order-stats-icon-container" style={{ background: item.bg_color }}>
-                                <Icon size={20} color={item.text_color} />
-                            </div>
-
-                        </div>
-                    );
-                })}
+                                <Bar dataKey="orders_count" radius={[6, 6, 0, 0]} barSize={24}>
+                                    {statuses.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.bg_color} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
             </div>
         </>
     );
