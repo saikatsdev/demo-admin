@@ -17,15 +17,17 @@ export default function OrderReport() {
     // Hook
     useTitle("Global Sales Report");
 
-    const orderFromList                 = useSelector((state) => state.orderFrom.list);
-    const [orders, setOrders]           = useState([]);
-    const [loading, setLoading]         = useState(false);
-    const [dateFilter, setDateFilter]   = useState("all");
-    const [localSearch, setLocalSearch] = useState("");
-    const [orderFromId, setOrderFromId] = useState(null);
-    const [dateRange, setDateRange]     = useState([null, null]);
-    const [summary, setSummary]         = useState({ total_order: 0, total_amount: 0, total_quantity: 0 });
-    const [pagination, setPagination]   = useState({current: 1, pageSize: 25, total: 0});
+    // States
+    const orderFromList                         = useSelector((state) => state.orderFrom.list);
+    const [orders, setOrders]                   = useState([]);
+    const [loading, setLoading]                 = useState(false);
+    const [dateFilter, setDateFilter]           = useState("all");
+    const [localSearch, setLocalSearch]         = useState("");
+    const [orderFromId, setOrderFromId]         = useState(null);
+    const [dateRange, setDateRange]             = useState([null, null]);
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+    const [summary, setSummary]                 = useState({ total_order: 0, total_amount: 0, total_quantity: 0 });
+    const [pagination, setPagination]           = useState({current: 1, pageSize: 25, total: 0});
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -80,7 +82,20 @@ export default function OrderReport() {
         setLocalSearch("");
         setOrderFromId(null);
         setDateRange([null, null]);
+        setSelectedRowKeys([]);
         setPagination(prev => ({ ...prev, current: 1 }));
+    };
+
+    const rowSelection = {
+        selectedRowKeys,
+        onChange: (keys) => setSelectedRowKeys(keys),
+    };
+
+    const getExportData = () => {
+        if (selectedRowKeys.length > 0) {
+            return orders.filter(order => selectedRowKeys.includes(order.id));
+        }
+        return orders;
     };
 
     const columns = 
@@ -157,12 +172,12 @@ export default function OrderReport() {
                 return (
                     <Tag 
                         style={{ 
-                            borderRadius: 12, 
-                            padding: '2px 12px', 
-                            fontWeight: 600,
+                            borderRadius   : 12,
+                            padding        : '2px 12px',
+                            fontWeight     : 600,
                             backgroundColor: status?.bg_color + '15',
-                            color: status?.bg_color,
-                            borderColor: status?.bg_color
+                            color          : status?.bg_color,
+                            borderColor    : status?.bg_color
                         }}
                     >
                         {text || 'N/A'}
@@ -172,38 +187,39 @@ export default function OrderReport() {
         },
         {
             title: "Traffic Source",
-            dataIndex: ["order_from", "name"],
             key: "source",
-            render: (text) => (
-                <span className={`source-badge source-${text.toLowerCase()}`}>
-                    {text}
+            render: (record) => (
+                <span className={`source-badge source-${record?.order_from?.name?.toLowerCase()}`} style={{background: record?.order_from?.color, color: '#fff'}}>
+                    {record?.order_from?.name}
                 </span>
             ),
         },
     ];
 
     const downloadCSV = () => {
+        const dataToExport = getExportData();
         const headers = ["SL", "Customer", "Invoice", "Quantity", "Total Price", "Date", "Status", "Source"];
-        const rows = orders.map((item, index) => [
+        const rows = dataToExport.map((item, index) => [
             index + 1,
             item.phone_number,
             item.invoice_number,
             item.order_quantity,
             item.payable_price,
             dayjs(item.created_at).format("YYYY-MM-DD HH:mm"),
-            item.current_status?.name,
-            item.order_from?.name
+            item.current_status?.name || 'N/A',
+            item.order_from?.name || 'N/A'
         ]);
 
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.href = encodedUri;
-        link.download = `Orders_Report_${dayjs().format('YYYY-MM-DD')}.csv`;
+        link.download = `Orders_Report_${selectedRowKeys.length > 0 ? 'Selected' : 'All'}_${dayjs().format('YYYY-MM-DD')}.csv`;
         link.click();
     };
 
     const downloadPDF = () => {
+        const dataToExport = getExportData();
         const doc = new jsPDF();
         doc.setFontSize(18);
         doc.text("Sales Transaction Report", 14, 22);
@@ -212,29 +228,30 @@ export default function OrderReport() {
         
         const dateStr = dayjs().format("YYYY-MM-DD HH:mm");
         doc.text(`Generated on: ${dateStr}`, 14, 30);
-        doc.text(`Record Frequency: ${orders.length} transactions identifier`, 14, 36);
+        doc.text(`Record Scope: ${selectedRowKeys.length > 0 ? 'Selected Items' : 'Primary View'}`, 14, 36);
+        doc.text(`Total Records: ${dataToExport.length}`, 14, 42);
         
         const tableColumn = ["#", "Customer", "Invoice", "Qty", "Amount", "Date", "Status"];
-        const tableRows = orders.map((item, index) => [
+        const tableRows = dataToExport.map((item, index) => [
             index + 1,
             item.phone_number,
             item.invoice_number,
             item.order_quantity,
             `৳${Number(item.payable_price).toLocaleString()}`,
             dayjs(item.created_at).format("DD MMM YY"),
-            item.current_status?.name
+            item.current_status?.name || 'N/A'
         ]);
 
         autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
-            startY: 45,
+            startY: 50,
             theme: 'grid',
             headStyles: { fillColor: [28, 85, 139], textColor: 255 },
             styles: { fontSize: 8 }
         });
 
-        doc.save(`Orders_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
+        doc.save(`Orders_Report_${selectedRowKeys.length > 0 ? 'Selected' : 'All'}_${dayjs().format('YYYY-MM-DD')}.pdf`);
     };
 
     return (
@@ -326,17 +343,23 @@ export default function OrderReport() {
                     </Space>
 
                     <Space size="middle">
+                        {selectedRowKeys.length > 0 && (
+                            <div style={{ marginRight: 8, color: '#6366f1', fontWeight: 600 }}>
+                                {selectedRowKeys.length} Selected
+                            </div>
+                        )}
                         <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
-                            CSV
+                            {selectedRowKeys.length > 0 ? 'Export Selected' : 'CSV'}
                         </Button>
                         <Button type="primary" style={{ backgroundColor: '#ef4444', border: 'none' }} icon={<FilePdfOutlined />} onClick={downloadPDF}>
-                            PDF
+                            {selectedRowKeys.length > 0 ? 'Export Selected' : 'PDF'}
                         </Button>
                     </Space>
                 </Space>
             </div>
 
             <Table
+                rowSelection={rowSelection}
                 rowKey="id"
                 columns={columns}
                 dataSource={orders}
