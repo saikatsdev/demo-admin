@@ -1,15 +1,6 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Typography, Tag, Avatar, Progress, Tooltip, Divider } from "antd";
-import { 
-    FilePdfOutlined, 
-    FileExcelOutlined, 
-    ReloadOutlined, 
-    InboxOutlined, 
-    ArrowLeftOutlined, 
-    PrinterOutlined,
-    CalendarOutlined,
-    ShoppingCartOutlined
-} from "@ant-design/icons";
+import { Table, Input, Select, Button, DatePicker, Space, Typography, Tag, Avatar, Divider } from "antd";
+import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, InboxOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, ShoppingCartOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import jsPDF from "jspdf";
@@ -25,17 +16,13 @@ export default function SaleReport() {
     useTitle("Sale Report");
 
     // State
-    const [localSearch, setLocalSearch] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [dateFilter, setDateFilter] = useState("");
-    const [orders, setOrders] = useState([]);
-    const [dateRange, setDateRange] = useState([null, null]);
+    const [localSearch, setLocalSearch]         = useState("");
+    const [loading, setLoading]                 = useState(false);
+    const [dateFilter, setDateFilter]           = useState("");
+    const [orders, setOrders]                   = useState([]);
+    const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-    const [pagination, setPagination] = useState({
-        current: 1,
-        pageSize: 20,
-        total: 0
-    });
+    const [pagination, setPagination]           = useState({current: 1,pageSize: 20,total: 0});
     
     const columns = 
     [
@@ -47,61 +34,79 @@ export default function SaleReport() {
             align: "center",
         },
         {
-            title: "Product Details",
+            title: "Product",
             key: "product",
-            width: 350,
+            width: 380,
             render: (_, record) => (
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                     <Avatar 
                         shape="square" 
-                        size={54} 
+                        size={48} 
                         src={record.img_path} 
                         icon={<InboxOutlined />}
-                        style={{ borderRadius: 8, border: "1px solid #f0f0f0" }}
+                        style={{ borderRadius: 8, flexShrink: 0, border: "1px solid #f0f0f0" }}
                     />
-                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        <Text strong style={{ fontSize: 14, color: "#262626" }}>
+                    <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                        <Text strong style={{ fontSize: 14, color: "#262626", lineHeight: "1.4" }} ellipsis={{ tooltip: record.name }}>
                             {record.name}
                         </Text>
-                        <Space split={<Text type="secondary">|</Text>} size={4}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                                Brand: <span style={{ color: "#1890ff" }}>{record.brand?.name || "N/A"}</span>
-                            </Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                                Cat: {record.categories?.[0]?.name || "N/A"}
-                            </Text>
-                        </Space>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                            Brand: <span style={{ color: "#1890ff", fontWeight: 500 }}>{record.brand?.name || "N/A"}</span>
+                        </Text>
                     </div>
                 </div>
             ),
         },
         {
-            title: "Pricing",
+            title: "Categories",
+            key: "categories",
+            width: 250,
+            render: (_, record) => (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                    {record.categories?.map(cat => (
+                        <Tag key={cat.id} style={{ margin: 0, borderRadius: 4, fontSize: 11, background: "#f0f5ff", border: "1px solid #adc6ff", color: "#2f54eb" }}>
+                            {cat.name}
+                        </Tag>
+                    ))}
+                    {(!record.categories || record.categories.length === 0) && <Text type="secondary" italic style={{ fontSize: 12 }}>Uncategorized</Text>}
+                </div>
+            ),
+        },
+        {
+            title: "Inventory",
+            dataIndex: "current_stock",
+            key: "stock",
+            width: 120,
+            align: "center",
+            render: (value) => (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                    <Tag color={value <= 0 ? "error" : value <= 10 ? "warning" : "success"} style={{ margin: 0, borderRadius: 12, minWidth: 60 }}>
+                        {value > 0 ? `${value} in stock` : "Out of stock"}
+                    </Tag>
+                </div>
+            ),
+        },
+        {
+            title: "Price Range",
             key: "pricing",
             width: 200,
+            align: "right",
             render: (_, record) => {
-                const hasVariations = record.variations?.length > 1;
+                const isRange = record.min_sell_price !== record.max_sell_price;
                 return (
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                        <Text strong style={{ color: "#1C558B", whiteSpace: "nowrap" }}>
-                            {hasVariations ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                        <Text strong style={{ color: "#1C558B", fontSize: 15 }}>
+                            {isRange ? (
                                 <>
-                                    ৳ {Number(record.min_sell_price).toLocaleString()} 
-                                    <span style={{ margin: "0 4px", color: "#8c8c8c", fontWeight: "normal" }}>-</span> 
-                                    {Number(record.max_sell_price).toLocaleString()}
+                                    ৳{Number(record.min_sell_price).toLocaleString()} - {Number(record.max_sell_price).toLocaleString()}
                                 </>
                             ) : (
-                                `৳ ${Number(record.sell_price).toLocaleString()}`
+                                `৳${Number(record.sell_price).toLocaleString()}`
                             )}
                         </Text>
-                        {!hasVariations && record.discount > 0 && (
+                        {record.discount > 0 && !isRange && (
                             <Text delete type="secondary" style={{ fontSize: 11 }}>
-                                ৳ {Number(record.mrp).toLocaleString()}
-                            </Text>
-                        )}
-                        {hasVariations && (
-                            <Text type="secondary" style={{ fontSize: 11 }}>
-                                {record.variations.length} Variations
+                                ৳{Number(record.mrp).toLocaleString()}
                             </Text>
                         )}
                     </div>
@@ -109,73 +114,25 @@ export default function SaleReport() {
             },
         },
         {
-            title: "Stock",
-            dataIndex: "current_stock",
-            key: "stock",
-            width: 100,
-            align: "center",
-            render: (value) => (
-                <Tag color={value <= 0 ? "error" : value <= 10 ? "warning" : "success"} style={{ borderRadius: 12, padding: "0 10px" }}>
-                    {value}
-                </Tag>
-            ),
-        },
-        {
-            title: "Total Order",
+            title: "Total Orders",
             dataIndex: "order_count",
             key: "order_count",
-            width: 110,
+            width: 130,
             align: "center",
-            render: (value) => <Text strong style={{ color: "#1890ff" }}>{value || 0}</Text>,
-        },
-        {
-            title: "Success Rate",
-            key: "success_rate",
-            width: 140,
-            align: "center",
-            render: (_, record) => {
-                const total = record.order_count || 0;
-                const delivered = record.status_counts?.find(s => s.slug === 'delivered')?.total || 0;
-                const rate = total > 0 ? Math.round((delivered / total) * 100) : 0;
-                return (
-                    <Tooltip title={`${delivered} Delivered / ${total} Total`}>
-                        <div style={{ padding: "0 10px" }}>
-                            <Progress 
-                                percent={rate} 
-                                size="small" 
-                                strokeColor={rate >= 80 ? "#52c41a" : rate >= 50 ? "#1C558B" : "#faad14"}
-                                format={(p) => <span style={{ fontSize: 11, fontWeight: 600 }}>{p}%</span>}
-                            />
-                        </div>
-                    </Tooltip>
-                );
-            }
-        },
-        {
-            title: "Order Breakdown",
-            key: "breakdown",
-            width: 450,
-            render: (_, record) => (
-                <Space wrap size={[8, 8]} style={{ padding: '4px 0' }}>
-                    {record.status_counts?.map((status) => (
-                        <div key={status.slug} style={{ 
-                            display     : 'inline-flex',
-                            alignItems  : 'center',
-                            background  : '#f5f5f5',
-                            border      : '1px solid #d9d9d9',
-                            borderRadius: '6px',
-                            padding     : '2px 10px',
-                            fontSize    : '12px',
-                            boxShadow   : '0 1px 2px rgba(0,0,0,0.02)'
-                        }}>
-                            <span style={{ color: '#595959', marginRight: 8, fontWeight: 500 }}>{status.name}</span>
-                            <Text strong style={{ color: '#1C558B' }}>{status.total}</Text>
-                        </div>
-                    ))}
-                    {(!record.status_counts || record.status_counts.length === 0) && (
-                        <Text type="secondary" italic style={{ fontSize: 12 }}>No order history</Text>
-                    )}
-                </Space>
+            render: (value) => (
+                <div style={{ 
+                    background: "#e6f7ff", 
+                    color: "#1890ff", 
+                    padding: "4px 12px", 
+                    borderRadius: "6px", 
+                    display: "inline-block",
+                    fontWeight: 700,
+                    fontSize: 14,
+                    border: "1px solid #91d5ff"
+                }}>
+                    <ShoppingCartOutlined style={{ marginRight: 6 }} />
+                    {value || 0}
+                </div>
             ),
         },
     ];
@@ -246,77 +203,67 @@ export default function SaleReport() {
     const downloadPDF = () => {
         const dataToExport = getExportData();
         const doc = new jsPDF("landscape");
-        doc.text("Sale Report: Top Selling Inventory", 14, 20);
+        doc.text("Sale Report: Top Selling Products", 14, 20);
         doc.setFontSize(10);
         doc.setTextColor(100);
-        doc.text(`Generated on: ${new Date().toLocaleString()} | Filter: ${dateFilter}`, 14, 28);
+        doc.text(`Generated on: ${new Date().toLocaleString()} | Filter: ${dateFilter || 'All'}`, 14, 28);
 
         const tableData = dataToExport.map((item, index) => {
-            const hasVariations = item.variations?.length > 1;
-            const pricing = hasVariations ? `${item.min_sell_price} - ${item.max_sell_price}` : item.sell_price;
+            const pricing = item.min_sell_price !== item.max_sell_price 
+                ? `${item.min_sell_price} - ${item.max_sell_price}` 
+                : item.sell_price;
             
-            const total = item.order_count || 0;
-            const delivered = item.status_counts?.find(s => s.slug === 'delivered')?.total || 0;
-            const rate = total > 0 ? Math.round((delivered / total) * 100) : 0;
-
-            const breakdown = item.status_counts?.map(s => `${s.name}: ${s.total}`).join(" | ") || "No History";
+            const cats = item.categories?.map(c => c.name).join(", ") || "N/A";
 
             return [
                 index + 1,
                 item.name,
                 item.brand?.name || "N/A",
+                cats,
                 pricing,
                 item.current_stock,
-                total,
-                `${rate}%`,
-                breakdown
+                item.order_count || 0
             ];
         });
 
         autoTable(doc, {
             startY: 35,
-            head: [["SL", "Product Name", "Brand", "Pricing", "Stock", "Orders", "Success", "Breakdown"]],
+            head: [["SL", "Product Name", "Brand", "Categories", "Pricing Range", "Stock", "Total Sold"]],
             body: tableData,
             theme: 'grid',
             headStyles: { fillColor: [28, 85, 139], fontSize: 9, halign: 'center' },
             bodyStyles: { fontSize: 8 },
             columnStyles: {
                 0: { cellWidth: 10, halign: 'center' },
-                3: { halign: 'right' },
-                4: { halign: 'center' },
-                5: { halign: 'center' },
-                6: { halign: 'center', cellWidth: 15 },
-                7: { cellWidth: 60 }
+                2: { cellWidth: 30 },
+                3: { cellWidth: 40 },
+                4: { halign: 'right', cellWidth: 35 },
+                5: { halign: 'center', cellWidth: 20 },
+                6: { halign: 'center', cellWidth: 25 }
             }
         });
 
-        doc.save(`Sale_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
+        doc.save(`Top_Selling_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
     };
 
     const downloadCSV = () => {
         const dataToExport = getExportData();
-        const headers = ["Product Name", "Brand", "Pricing", "Stock", "Total Orders", "Success Rate", "Breakdown"];
+        const headers = ["Product Name", "Brand", "Categories", "Pricing", "Stock", "Total Sold"];
         
         const rows = dataToExport.map((item) => {
-            const hasVariations = item.variations?.length > 1;
-            const price = hasVariations 
+            const price = item.min_sell_price !== item.max_sell_price 
                 ? `${item.min_sell_price} - ${item.max_sell_price}` 
                 : item.sell_price;
             
-            const total = item.order_count || 0;
-            const delivered = item.status_counts?.find(s => s.slug === 'delivered')?.total || 0;
-            const rate = total > 0 ? Math.round((delivered / total) * 100) : 0;
-
-            const breakdown = item.status_counts?.map(s => `${s.name} (${s.total})`).join(" | ") || "";
+            const cats = item.categories?.map(c => c.name).join(" | ") || "N/A";
 
             return [
                 `"${item.name}"`,
                 `"${item.brand?.name || "N/A"}"`,
+                `"${cats}"`,
                 price,
                 item.current_stock,
-                total,
-                `${rate}%`,
-                `"${breakdown}"`
+                item.order_count || 0
             ];
         });
 
@@ -324,7 +271,7 @@ export default function SaleReport() {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.href = encodedUri;
-        link.download = `Sale_Report_${dayjs().format('YYYY-MM-DD')}.csv`;
+        link.download = `Top_Selling_Report_${dayjs().format('YYYY-MM-DD')}.csv`;
         link.click();
     };
 
@@ -332,10 +279,7 @@ export default function SaleReport() {
         <div className="reportWrapper">
             <div className="topBar no-print">
                 <Title level={4} style={{ margin: 0 }}>Analytics: Top Selling Sales Report</Title>
-                <Button 
-                    icon={<ArrowLeftOutlined />} 
-                    onClick={() => window.history.back()}
-                >
+                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                     Back
                 </Button>
             </div>
