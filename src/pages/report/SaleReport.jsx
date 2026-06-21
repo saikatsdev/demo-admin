@@ -191,8 +191,8 @@ export default function SaleReport() {
 
         try {
             setLoading(true);
+
             const res = await getDatas(`/admin/order/reports/by-selling?${query}`);
-            console.log("Sale Report API Response:", res);
 
             if(res && res.success){
                 const data = res.result?.data || [];
@@ -314,13 +314,11 @@ export default function SaleReport() {
         document.body.removeChild(link);
     };
 
-    // Advanced Design: Summary Metrics
     const totalOrders = orders.reduce((acc, curr) => acc + (curr.order_count || 0), 0);
     const totalStock = orders.reduce((acc, curr) => acc + (curr.current_stock || 0), 0);
 
     return (
         <div style={{ padding: "0px" }}>
-            {/* Top Metric Cards */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 20 }}>
                 <Card bordered={false} style={{ borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)", background: "linear-gradient(135deg, #1C558B 0%, #2d74b8 100%)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -331,6 +329,7 @@ export default function SaleReport() {
                         <Avatar size={48} style={{ backgroundColor: "rgba(255,255,255,0.2)" }} icon={<ShoppingCartOutlined style={{ color: "#fff" }} />} />
                     </div>
                 </Card>
+
                 <Card bordered={false} style={{ borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
@@ -340,6 +339,7 @@ export default function SaleReport() {
                         <Avatar size={48} style={{ backgroundColor: "#f6ffed" }} icon={<InboxOutlined style={{ color: "#52c41a" }} />} />
                     </div>
                 </Card>
+
                 <Card bordered={false} style={{ borderRadius: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <div>
@@ -394,6 +394,7 @@ export default function SaleReport() {
                                 style={{ width: 400 }}
                                 prefix={<ShoppingCartOutlined style={{ color: "#bfbfbf" }} />}
                             />
+
                             <Select 
                                 value={dateFilter} 
                                 size="large"
@@ -405,10 +406,9 @@ export default function SaleReport() {
                                 <Option value="">All Time</Option>
                                 <Option value="today">Today's Sales</Option>
                                 <Option value="yesterday">Yesterday</Option>
-                                <Option value="last7days">Past 7 Days</Option>
-                                <Option value="last30days">Past 30 Days</Option>
-                                <Option value="month">Current Month</Option>
-                                <Option value="year">Fiscal Year</Option>
+                                <Option value="week">This Week</Option>
+                                <Option value="month">This Month</Option>
+                                <Option value="year">This Year</Option>
                                 <Option value="custom">📅 Custom Range</Option>
                             </Select>
                             {dateFilter === "custom" && (
