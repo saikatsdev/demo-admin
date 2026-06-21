@@ -176,19 +176,19 @@ export default function LocationReport() {
                     
                     <Select 
                         value={dateFilter} 
-                        style={{ width: 150 }} 
+                        style={{ width: 140 }} 
                         onChange={(val) => {
                             setDateFilter(val);
                             if (val !== "custom") setDateRange([null, null]);
                         }}
                         suffixIcon={<CalendarOutlined style={{ color: '#bfbfbf' }} />}
                     >
+                        <Option value="all">All Time</Option>
                         <Option value="today">Today</Option>
                         <Option value="yesterday">Yesterday</Option>
-                        <Option value="last7days">Last 7 Days</Option>
-                        <Option value="last30days">Last 30 Days</Option>
-                        <Option value="month">Current Month</Option>
-                        <Option value="year">Current Year</Option>
+                        <Option value="week">This Week</Option>
+                        <Option value="month">This Month</Option>
+                        <Option value="year">This Year</Option>
                         <Option value="custom">Custom Range</Option>
                     </Select>
 

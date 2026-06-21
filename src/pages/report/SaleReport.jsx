@@ -355,14 +355,14 @@ export default function SaleReport() {
                     
                     <Select 
                         value={dateFilter} 
-                        style={{ width: 150 }} 
+                        style={{ width: 140 }} 
                         onChange={(val) => {
                             setDateFilter(val);
                             if (val !== "custom") setDateRange([null, null]);
                         }}
                         suffixIcon={<CalendarOutlined style={{ color: '#bfbfbf' }} />}
                     >
-                        <Option value="">All Time</Option>
+                        <Option value="all">All Time</Option>
                         <Option value="today">Today</Option>
                         <Option value="yesterday">Yesterday</Option>
                         <Option value="week">This Week</Option>
@@ -376,7 +376,7 @@ export default function SaleReport() {
                     )}
 
                     <Button icon={<ReloadOutlined />} onClick={() => {
-                        setDateFilter("");
+                        setDateFilter("all");
                         setLocalSearch("");
                         setDateRange([null, null]);
                         setSelectedRowKeys([]);
