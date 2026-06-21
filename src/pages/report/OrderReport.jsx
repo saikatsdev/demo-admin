@@ -1,53 +1,61 @@
-import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Tag, Tooltip } from "antd";
-import { FilterOutlined, RiseOutlined, FilePdfOutlined, FileExcelOutlined } from "@ant-design/icons";
+import { useEffect, useState, useCallback } from "react";
+import { Table, Input, Select, Button, DatePicker, Space, Tag, Tooltip, Card, Typography, Row, Col } from "antd";
+import { FilterOutlined, RiseOutlined, FilePdfOutlined, FileExcelOutlined, ReloadOutlined, SearchOutlined, ShoppingOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
+import { useSelector } from "react-redux";
 import dayjs from "dayjs";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import useTitle from "../../hooks/useTitle";
 import "./css/OrderReport.css";
 
-const { Option } = Select;
+const { Option }   = Select;
 const { RangePicker } = DatePicker;
+const { Title, Text } = Typography;
 
 export default function OrderReport() {
     // Hook
     useTitle("Global Sales Report");
 
-    const [orders, setOrders]   = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [dateFilter, setDateFilter] = useState("all");
+    const orderFromList                 = useSelector((state) => state.orderFrom.list);
+    const [orders, setOrders]           = useState([]);
+    const [loading, setLoading]         = useState(false);
+    const [dateFilter, setDateFilter]   = useState("all");
     const [localSearch, setLocalSearch] = useState("");
-    const [dateRange, setDateRange] = useState([null, null]);
-    const [pagination, setPagination] = useState({current: 1, pageSize: 25, total: 0});
+    const [orderFromId, setOrderFromId] = useState(null);
+    const [dateRange, setDateRange]     = useState([null, null]);
+    const [summary, setSummary]         = useState({ total_order: 0, total_amount: 0, total_quantity: 0 });
+    const [pagination, setPagination]   = useState({current: 1, pageSize: 25, total: 0});
 
     const fetchOrders = async () => {
         setLoading(true);
-        let params = {};
+        let params = {
+            page         : pagination.current,
+            paginate_size: pagination.pageSize,
+            search       : localSearch,
+            order_from_id: orderFromId,
+        };
 
-        if (dateFilter === "all") {
-            params.filter = "all";
-        } else if (dateFilter !== "custom") {
+        if (dateFilter !== "all" && dateFilter !== "custom") {
             params.filter = dateFilter;
-        } else {
-            if (!dateRange[0] || !dateRange[1]) {
-                setLoading(false);
-                return;
-            }
-            params.from_date = dateRange[0].format("YYYY-MM-DD");
-            params.to_date = dateRange[1].format("YYYY-MM-DD");
         }
 
-        params.page = pagination.current;
-        params.limit = pagination.pageSize;
+        if (dateFilter === "custom" && dateRange?.[0] && dateRange?.[1]) {
+            params.start_date = dateRange[0].format("YYYY-MM-DD");
+            params.end_date = dateRange[1].format("YYYY-MM-DD");
+        }
 
         try {
-            const query = new URLSearchParams(params).toString();
+            const query = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([_, v]) => v != null && v !== ""))).toString();
             const res = await getDatas(`/admin/order/reports?${query}`);
 
             if (res?.success) {
                 setOrders(res?.result?.orders?.data || []);
+                setSummary({
+                    total_order: res?.result?.total_order || 0,
+                    total_amount: res?.result?.total_amount || 0,
+                    total_quantity: res?.result?.total_quantity || 0,
+                });
                 setPagination((prev) => ({
                     ...prev,
                     total: res?.result?.total_order || 0,
@@ -60,9 +68,23 @@ export default function OrderReport() {
 
     useEffect(() => {
         fetchOrders();
-    }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
+    }, [dateFilter, dateRange, pagination.current, pagination.pageSize, orderFromId]);
 
-    const columns = [
+    const handleSearch = () => {
+        setPagination(prev => ({ ...prev, current: 1 }));
+        fetchOrders();
+    };
+
+    const handleClearFilters = () => {
+        setDateFilter("all");
+        setLocalSearch("");
+        setOrderFromId(null);
+        setDateRange([null, null]);
+        setPagination(prev => ({ ...prev, current: 1 }));
+    };
+
+    const columns = 
+    [
         {
             title: "#",
             key: "sl",
@@ -130,14 +152,22 @@ export default function OrderReport() {
             title: "Current Status",
             dataIndex: ["current_status", "name"],
             key: "status",
-            render: (text) => {
-                const colors = {
-                    'delivered': 'success',
-                    'canceled': 'error',
-                    'pending': 'warning',
-                    'approved': 'processing'
-                };
-                return <Tag color={colors[text.toLowerCase()] || 'default'} style={{ borderRadius: 12, padding: '2px 12px', fontWeight: 600 }}>{text}</Tag>;
+            render: (text, record) => {
+                const status = record?.current_status;
+                return (
+                    <Tag 
+                        style={{ 
+                            borderRadius: 12, 
+                            padding: '2px 12px', 
+                            fontWeight: 600,
+                            backgroundColor: status?.bg_color + '15',
+                            color: status?.bg_color,
+                            borderColor: status?.bg_color
+                        }}
+                    >
+                        {text || 'N/A'}
+                    </Tag>
+                );
             },
         },
         {
@@ -218,46 +248,89 @@ export default function OrderReport() {
                 </div>
             </header>
 
+            <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+                <Col xs={24} sm={8}>
+                    <Card className="summary-card" bordered={false}>
+                        <Text type="secondary">Total Orders</Text>
+                        <Title level={3} style={{ margin: 0 }}>{summary.total_order.toLocaleString()}</Title>
+                    </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                    <Card className="summary-card" bordered={false}>
+                        <Text type="secondary">Total Revenue</Text>
+                        <Title level={3} style={{ margin: 0, color: '#10b981' }}>৳ {summary.total_amount.toLocaleString()}</Title>
+                    </Card>
+                </Col>
+                <Col xs={24} sm={8}>
+                    <Card className="summary-card" bordered={false}>
+                        <Text type="secondary">Items Sold</Text>
+                        <Title level={3} style={{ margin: 0, color: '#6366f1' }}>{summary.total_quantity.toLocaleString()}</Title>
+                    </Card>
+                </Col>
+            </Row>
+
             <div className="filter-card">
                 <Space wrap style={{ width: '100%', justifyContent: 'space-between' }}>
                     <Space wrap size="middle">
-                        <Input.Search 
-                            placeholder="Filter by phone, invoice, or status..." 
+                        <Input 
+                            placeholder="Phone, status or source..." 
                             allowClear 
+                            value={localSearch}
                             onChange={(e) => setLocalSearch(e.target.value)} 
-                            style={{ width: 380 }}
-                            prefix={<FilterOutlined style={{ color: '#94a3b8' }} />}
+                            onPressEnter={handleSearch}
+                            style={{ width: 300 }}
+                            prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                            suffix={
+                                <Button type="text" icon={<SearchOutlined />} onClick={handleSearch}/>
+                            }
                         />
+                        
+                        <Select 
+                            placeholder="Order Source"
+                            value={orderFromId} 
+                            style={{ width: 160 }} 
+                            onChange={setOrderFromId}
+                            allowClear
+                            suffixIcon={<ShoppingOutlined style={{ color: '#6366f1' }} />}
+                        >
+                            {orderFromList?.map(item => (
+                                <Option key={item.id} value={item.id}>{item.name}</Option>
+                            ))}
+                        </Select>
+
                         <Select 
                             value={dateFilter} 
-                            style={{ width: 180 }} 
+                            style={{ width: 160 }} 
                             onChange={(val) => {
                                 setDateFilter(val);
                                 if (val !== "custom") setDateRange([null, null]);
                             }}
                             suffixIcon={<RiseOutlined style={{ color: '#6366f1' }} />}
                         >
-                            <Option value="all">All Time Sales</Option>
-                            <Option value="today">Daily Report</Option>
+                            <Option value="all">All Time</Option>
+                            <Option value="today">Today</Option>
                             <Option value="yesterday">Yesterday</Option>
-                            <Option value="last7days">Last 7 Days</Option>
-                            <Option value="last30days">Last 30 Days</Option>
-                            <Option value="month">Current Month</Option>
-                            <Option value="year">Current Year</Option>
-                            <Option value="custom">Specific Range</Option>
+                            <Option value="week">Last 7 Days</Option>
+                            <Option value="month">This Month</Option>
+                            <Option value="year">This Year</Option>
+                            <Option value="custom">Custom Range</Option>
                         </Select>
 
                         {dateFilter === "custom" && (
                             <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear />
                         )}
+
+                        <Button icon={<ReloadOutlined />} onClick={handleClearFilters}>
+                            Reset
+                        </Button>
                     </Space>
 
                     <Space size="middle">
                         <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
-                            Export CSV
+                            CSV
                         </Button>
-                        <Button type="primary" style={{ backgroundColor: '#d32f2f', border: 'none', borderRadius: 8 }} icon={<FilePdfOutlined />} onClick={downloadPDF}>
-                            Export PDF
+                        <Button type="primary" style={{ backgroundColor: '#ef4444', border: 'none' }} icon={<FilePdfOutlined />} onClick={downloadPDF}>
+                            PDF
                         </Button>
                     </Space>
                 </Space>
@@ -266,12 +339,7 @@ export default function OrderReport() {
             <Table
                 rowKey="id"
                 columns={columns}
-                dataSource={orders.filter(item => 
-                    !localSearch || 
-                    item.phone_number?.toLowerCase().includes(localSearch.toLowerCase()) || 
-                    item.invoice_number?.toLowerCase().includes(localSearch.toLowerCase()) || 
-                    item.current_status?.name?.toLowerCase().includes(localSearch.toLowerCase())
-                )}
+                dataSource={orders}
                 loading={loading}
                 pagination={{
                     current: pagination.current,
