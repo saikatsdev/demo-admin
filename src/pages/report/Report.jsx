@@ -146,21 +146,21 @@ export default function Report() {
     return (
         <div className="reportWrapper">
             <div className="topBar no-print">
+                <Title level={4} style={{ margin: 0 }}>All Report Dashboard</Title>
                 <Space size="large">
+                    <Breadcrumb
+                        items={[
+                            { title: <Link to="/dashboard">Dashboard</Link> },
+                            { title: "Report" },
+                        ]}
+                    />
                     <Button 
                         icon={<ArrowLeftOutlined />} 
                         onClick={() => window.history.back()}
                     >
                         Back
                     </Button>
-                    <Title level={4} style={{ margin: 0 }}>All Report Dashboard</Title>
                 </Space>
-                <Breadcrumb
-                    items={[
-                        { title: <Link to="/dashboard">Dashboard</Link> },
-                        { title: "Report" },
-                    ]}
-                />
             </div>
 
             <Divider className="no-print" style={{ margin: '12px 0' }} />

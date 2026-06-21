@@ -247,15 +247,13 @@ export default function CustomerReport() {
     return (
         <div className="reportWrapper">
             <div className="topBar no-print">
-                <Space size="large">
-                    <Button 
-                        icon={<ArrowLeftOutlined />} 
-                        onClick={() => window.history.back()}
-                    >
-                        Back
-                    </Button>
-                    <Title level={4} style={{ margin: 0 }}>Customer Engagement Report</Title>
-                </Space>
+                <Title level={4} style={{ margin: 0 }}>Customer Engagement Report</Title>
+                <Button 
+                    icon={<ArrowLeftOutlined />} 
+                    onClick={() => window.history.back()}
+                >
+                    Back
+                </Button>
             </div>
 
             <Divider className="no-print" style={{ margin: '12px 0' }} />

@@ -269,16 +269,14 @@ export default function OrderReport() {
     return (
         <div className="reportWrapper">
             <div className="topBar no-print">
-                <Space size="large">
-                    <Button 
-                        icon={<ArrowLeftOutlined />} 
-                        onClick={() => window.history.back()}
-                        style={{ display: 'flex', alignItems: 'center' }}
-                    >
-                        Back
-                    </Button>
-                    <Title level={4} style={{ margin: 0 }}>Global Sales Report</Title>
-                </Space>
+                <Title level={4} style={{ margin: 0 }}>Global Sales Report</Title>
+                <Button 
+                    icon={<ArrowLeftOutlined />} 
+                    onClick={() => window.history.back()}
+                    style={{ display: 'flex', alignItems: 'center' }}
+                >
+                    Back
+                </Button>
             </div>
 
             <Divider className="no-print" style={{ margin: '12px 0' }} />
@@ -320,7 +318,7 @@ export default function OrderReport() {
                         <Option value="all">All Time</Option>
                         <Option value="today">Today</Option>
                         <Option value="yesterday">Yesterday</Option>
-                        <Option value="week">Last 7 Days</Option>
+                        <Option value="week">This Week</Option>
                         <Option value="month">This Month</Option>
                         <Option value="year">This Year</Option>
                         <Option value="custom">Custom Range</Option>
