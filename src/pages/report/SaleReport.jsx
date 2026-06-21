@@ -18,7 +18,7 @@ export default function SaleReport() {
     // State
     const [localSearch, setLocalSearch]         = useState("");
     const [loading, setLoading]                 = useState(false);
-    const [dateFilter, setDateFilter]           = useState("");
+    const [dateFilter, setDateFilter]           = useState("all");
     const [orders, setOrders]                   = useState([]);
     const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -342,7 +342,7 @@ export default function SaleReport() {
                     <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>
                         PDF
                     </Button>
-                    
+
                     <Button icon={<PrinterOutlined />} onClick={handlePrint}>
                         Print
                     </Button>
