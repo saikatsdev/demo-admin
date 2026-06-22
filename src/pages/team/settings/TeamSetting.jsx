@@ -41,6 +41,7 @@ export default function TeamSetting() {
         setIsModalOpen(true);
         form.setFieldsValue({
             ...item,
+            team_module_active: item.team_module_active ? 1 : 0,
             otp_required: item.otp_required ? 1 : 0
         });
     }
@@ -50,6 +51,7 @@ export default function TeamSetting() {
             setSubmitting(true);
             const formData = new FormData();
             formData.append('team_id', setting[0]?.id || 1);
+            formData.append('team_module_active', values.team_module_active);
             formData.append('otp_required', values.otp_required);
             formData.append('screening_duration', values.screening_duration);
             formData.append('assign_rule', values.assign_rule);
@@ -82,6 +84,12 @@ export default function TeamSetting() {
 
     const columns = 
     [
+        { 
+            title: 'Team Module', 
+            dataIndex: 'team_module_active', 
+            key: 'team_module_active', 
+            render: v => v ? <Tag color="green">Yes</Tag> : <Tag color="red">No</Tag> 
+        },
         { 
             title: 'OTP Required', 
             dataIndex: 'otp_required', 
@@ -126,10 +134,7 @@ export default function TeamSetting() {
                     <p className="subtitle">Manage Team Settings</p>
                 </div>
                 <div className="head-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                    <Button 
-                        icon={<ArrowLeftOutlined />} 
-                        onClick={() => window.history.back()}
-                    >
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                         Back
                     </Button>
                     <Breadcrumb
@@ -153,11 +158,19 @@ export default function TeamSetting() {
             <Modal title="Edit Team Settings" open={isModalOpen} onCancel={() => setIsModalOpen(false)} footer={null} destroyOnClose>
                 <Form form={form} layout="vertical" onFinish={onFinish}
                     initialValues={{
+                        team_module_active: 1,
                         otp_required      : 0,
                         assign_rule       : 'all',
                         screening_duration: 10
                     }}
                 >
+                    <Form.Item label="Team Module" name="team_module_active" rules={[{ required: true, message: 'Please select Team Module' }]}>
+                        <Select>
+                            <Select.Option value={1}>Yes</Select.Option>
+                            <Select.Option value={0}>No</Select.Option>
+                        </Select>
+                    </Form.Item>
+
                     <Form.Item label="OTP Required" name="otp_required" rules={[{ required: true, message: 'Please select OTP requirement' }]}>
                         <Select>
                             <Select.Option value={1}>Yes</Select.Option>

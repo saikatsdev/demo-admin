@@ -6,6 +6,7 @@ import useTitle from "../../hooks/useTitle";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import "./report.css";
+import dayjs from "dayjs";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
