@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Typography, Divider, Avatar } from "antd";
+import { Table, Input, Select, Button, DatePicker, Space, Typography, Divider, Avatar, Tag } from "antd";
 import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined,CalendarOutlined,SearchOutlined,InboxOutlined} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
@@ -35,7 +35,7 @@ export default function StockReport() {
             align: 'center'
         },
         {
-            title: "Product Details",
+            title: "Product",
             key: "product",
             render: (_, record) => (
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
@@ -51,15 +51,23 @@ export default function StockReport() {
             ),
         },
         {
-            title: "Available Stock",
+            title: "Current Stock",
             dataIndex: "current_stock",
             key: "current_stock",
             align: "center",
-            render: (stock) => (
-                <Text type={stock <= 5 ? "danger" : "default"} strong={stock <= 5}>
-                    {stock}
-                </Text>
-            )
+            render: (stock) => {
+                let color = "green";
+                if (stock <= 5) color = "red";
+                else if (stock <= 20) color = "orange";
+                return <Tag color={color}>{stock} units</Tag>;
+            }
+        },
+        {
+            title: "Sold Qty",
+            dataIndex: "sold_qty",
+            key: "sold_qty",
+            align: "center",
+            render: (qty) => <Text>{qty}</Text>
         },
     ];
 
@@ -123,11 +131,12 @@ export default function StockReport() {
         doc.setFontSize(11);
         doc.text(`Generated on: ${dateStr} | Status: Low Stock Alert`, 14, 30);
         
-        const tableColumn = ["#", "Product", "Available Stock"];
+        const tableColumn = ["#", "Product", "Current Stock", "Sold Qty"];
         const tableRows = dataToExport.map((o, i) => [
             i + 1,
             o.name,
-            o.current_stock
+            o.current_stock,
+            o.sold_qty
         ]);
 
         autoTable(doc, {
@@ -143,11 +152,12 @@ export default function StockReport() {
 
     const downloadCSV = () => {
         const dataToExport = getExportData();
-        const headers = ["SL", "Product Name", "Current Stock"];
+        const headers = ["SL", "Product Name", "Current Stock", "Sold Qty"];
         const rows = dataToExport.map((o, i) => [
             i + 1,
             o.name,
-            o.current_stock
+            o.current_stock,
+            o.sold_qty
         ]);
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
         const encodedUri = encodeURI(csvContent);
