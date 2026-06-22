@@ -131,10 +131,11 @@ export default function Dashboard() {
                 <Ticker/>
             )}
 
-            <Intro/>
 
             {canSeeAdminWidgets ? (
                 <>
+                    <Intro/>
+                    
                     <SummaryCard dashboardSummary={dashboardSummary}/>
 
                     {orderByStatus && (

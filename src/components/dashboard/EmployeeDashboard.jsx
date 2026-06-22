@@ -1,7 +1,13 @@
-import { useMemo, useState } from "react";
+import { useMemo} from "react";
 import { useAuth } from "../../hooks/useAuth";
-import "./css/EmployeeDashboard.css";
 import { useNavigate } from "react-router-dom";
+import { Card, Row, Col, Statistic, Badge, Avatar, Typography, Divider, Button, Space, Tag, Descriptions } from "antd";
+import { UserOutlined, MailOutlined, PhoneOutlined, DollarCircleOutlined, LoginOutlined, CheckCircleFilled, WarningFilled, SafetyCertificateOutlined, EditOutlined, CustomerServiceOutlined, IdcardOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
+import "./css/EmployeeDashboard.css";
+import TimeTrackingBanner from "./TimeTrackingBanner";
+
+const { Title, Text } = Typography;
 
 export default function EmployeeDashboard() {
     const { user } = useAuth();
@@ -10,8 +16,6 @@ export default function EmployeeDashboard() {
     const navigate = useNavigate();
 
     const {id,username,phone_number,email,status,salary,is_verified,image,login_at,logout_at,roles} = data;
-
-    const [imgOk, setImgOk] = useState(true);
 
     const safeStatus = useMemo(() => {
         const s = String(status || "unknown").toLowerCase();
@@ -26,16 +30,6 @@ export default function EmployeeDashboard() {
         return (status ? String(status).toUpperCase() : "UNKNOWN");
     }, [safeStatus, status]);
 
-    const initials = useMemo(() => {
-        const name = (username || "Employee").trim();
-        const parts = name.split(/\s+/).slice(0, 2);
-        return (
-        parts
-            .map((p) => p[0]?.toUpperCase())
-            .join("")
-            .slice(0, 2) || "E"
-        );
-    }, [username]);
 
     const formatMoney = (value) => {
         const n = Number(value);
@@ -54,165 +48,182 @@ export default function EmployeeDashboard() {
             const name = r?.name || r?.title || r?.role || r?.slug || (typeof r === "string" ? r : `Role ${idx + 1}`);
             return {key: r?.id ?? `${idx}`,name: String(name).toUpperCase(),};
         });
-    }, [roles]);
+    }, [roles]);    
 
-  return (
-        <div className="ed-app">
-            <header className="ed-topbar">
-                <div className="ed-topbar__left">
-                    <div className="ed-brandMark" />
-                    <div>
-                        <div className="ed-topTitle">EMPLOYEE DASHBOARD</div>
-                        <div className="ed-topSub">
-                            {username ? `WELCOME, ${String(username).toUpperCase()}` : "WELCOME"}
-                        </div>
-                    </div>
+    return (
+        <div style={{ padding: "24px", background: "#f0f2f5", minHeight: "100vh" }}>
+            <div className="dashboard-header" style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <Title level={2} style={{ margin: 0 }}>Employee Dashboard</Title>
+                    <Text type="secondary" style={{textTransform: "capitalize"}}>
+                        Welcome back, {username ?? "Employee"}! Here's what's happening with your account.
+                    </Text>
                 </div>
-
-                <div className="ed-topbar__right">
-                    <Pill variant={`status-${safeStatus}`}>{statusLabel}</Pill>
-
+                <Space size="middle">
                     {is_verified ? (
-                        <span className="ed-verifiedBadge" title="This account is verified">
-                        <span className="ed-verifiedBadge__icon" aria-hidden="true">✓</span>
-                            VERIFIED
-                        </span>
+                        <Tag color="success" icon={<CheckCircleFilled />}>VERIFIED ACCOUNT</Tag>
                     ) : (
-                        <span className="ed-unverifiedBadge" title="This account is not verified">
-                            NOT VERIFIED
-                        </span>
+                        <Tag color="warning" icon={<WarningFilled />}>UNVERIFIED ACCOUNT</Tag>
                     )}
-                </div>
-            </header>
+                    <Badge status={safeStatus === "active" ? "processing" : "default"} text={<Tag color={safeStatus === "active" ? "blue" : "error"}>{statusLabel}</Tag>} />
+                </Space>
+            </div>
 
-            <div className="ed-shell">
-                <aside className="ed-sidebar">
-                    <div className="ed-card ed-card--sidebar">
-                        <div className="ed-profile">
-                            <div className="ed-avatar">
-                                {image && imgOk ? (
-                                    <img src={image} alt={username || "Employee"} className="ed-avatar__img" onError={() => setImgOk(false)}/>
-                                ) : (
-                                    <div className="ed-avatar__fallback">{initials}</div>
-                                )}
-                                <span className={`ed-statusDot ed-statusDot--${safeStatus}`} />
-                            </div>
+            <TimeTrackingBanner userId={id} initialCheckIn={login_at} initialCheckOut={logout_at} />
 
-                            <div className="ed-profile__info">
-                                <div className="ed-name" title={valueOrDash(username)}>
-                                    {valueOrDash(username)}
+            <Row gutter={[24, 24]}>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} className="stat-card" hoverable>
+                        <Statistic
+                            title="Current Salary"
+                            value={salary || 0}
+                            precision={2}
+                            prefix={<DollarCircleOutlined style={{ color: '#52c41a' }} />}
+                            suffix="BDT"
+                        />
+                        <div style={{ marginTop: 8, fontSize: '12px', color: '#8c8c8c' }}>Assigned monthly base</div>
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} className="stat-card" hoverable>
+                        <Statistic
+                            title="Account Status"
+                            value={statusLabel}
+                            valueStyle={{ color: safeStatus === 'active' ? '#3f8600' : '#cf1322', fontSize: '20px', fontWeight: '600' }}
+                            prefix={safeStatus === 'active' ? <CheckCircleFilled /> : <WarningFilled />}
+                        />
+                        <div style={{ marginTop: 8, fontSize: '12px', color: '#8c8c8c' }}>Currently {safeStatus}</div>
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} className="stat-card" hoverable>
+                        <Statistic
+                            title="Last Login"
+                            value={login_at ? dayjs(login_at).format("HH:mm A") : "N/A"}
+                            prefix={<LoginOutlined style={{ color: '#1890ff' }} />}
+                            valueStyle={{ fontSize: '20px' }}
+                        />
+                        <div style={{ marginTop: 8, fontSize: '12px', color: '#8c8c8c' }}>{login_at ? dayjs(login_at).format("MMM DD, YYYY") : "No recent activity"}</div>
+                    </Card>
+                </Col>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card bordered={false} className="stat-card" hoverable>
+                        <Statistic
+                            title="Employee ID"
+                            value={id || "—"}
+                            prefix={<IdcardOutlined style={{ color: '#722ed1' }} />}
+                        />
+                        <div style={{ marginTop: 8, fontSize: '12px', color: '#8c8c8c' }}>Unique identification</div>
+                    </Card>
+                </Col>
+
+                <Col xs={24} lg={8}>
+                    <Card bordered={false} style={{ height: '100%', borderRadius: '12px', textAlign: 'center' }}>
+                        <div style={{ padding: '32px 0' }}>
+                            <Avatar 
+                                size={120} 
+                                src={image} 
+                                icon={<UserOutlined />} 
+                                style={{ 
+                                    backgroundColor: '#1890ff', 
+                                    border: '4px solid #e6f7ff',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}
+                            />
+
+                            <Title level={3} style={{ marginTop: 16, marginBottom: 4, textTransform: "capitalize" }}>
+                                {username || "Unnamed User"}
+                            </Title>
+
+                            <Text type="secondary">{roleBadges.length > 0 ? roleBadges[0].name : "General Employee"}</Text>
+                            
+                            <Divider />
+                            
+                            <Space direction="vertical" style={{ width: '100%' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary"><PhoneOutlined /> Phone</Text>
+                                    <Text strong>{valueOrDash(phone_number)}</Text>
                                 </div>
-                                <div className="ed-miniMuted">EMPLOYEE ID: {valueOrDash(id)}</div>
-
-                                <div className="ed-miniRow">
-                                    <span className="ed-miniLabel">PHONE</span>
-                                    <span className="ed-miniValue">{valueOrDash(phone_number)}</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary"><MailOutlined /> Email</Text>
+                                    <Text strong>{email || "N/A"}</Text>
                                 </div>
+                            </Space>
 
-                                <div className="ed-miniRow">
-                                    <span className="ed-miniLabel">EMAIL</span>
-                                    <span className={`ed-miniValue ${email ? "" : "is-muted"}`}>
-                                        {email || "NOT PROVIDED"}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
+                            <Divider />
 
-                        <div className="ed-sep" />
-
-                        <div className="ed-sidebarSection">
-                            <div className="ed-sectionHead">
-                                <div className="ed-sectionTitle">ROLES</div>
-                                <div className="ed-sectionMeta">{roleBadges.length} TOTAL</div>
-                            </div>
-
-                            {roleBadges.length ? (
-                                <div className="ed-badges">
-                                    {roleBadges.map((r) => (
-                                        <span key={r.key} className="ed-roleBadge">
-                                            {r.name}
-                                        </span>
+                            <div style={{ textAlign: 'left' }}>
+                                <Text strong style={{ display: 'block', marginBottom: 8 }}>Assigned Roles</Text>
+                                <Space wrap>
+                                    {roleBadges.map(role => (
+                                        <Tag color="blue" key={role.key}>{role.name}</Tag>
                                     ))}
-                                </div>
-                            ) : (
-                                <div className="ed-empty">NO ROLES ASSIGNED</div>
-                            )}
-                        </div>
-
-                        <div className="ed-sep" />
-
-                        <div className="ed-sidebarSection">
-                            <div className="ed-sectionTitle">QUICK ACTIONS</div>
-                            <div className="ed-actionsCol">
-                                <button type="button" className="ed-btn ed-btn--primary" onClick={() => navigate('/system/user-management')}>
-                                    VIEW PROFILE
-                                </button>
-                                <button type="button" className="ed-btn ed-btn--ghost" onClick={() => console.log("Support clicked")}>
-                                    SUPPORT
-                                </button>
+                                    {roleBadges.length === 0 && <Text type="secondary">No roles assigned</Text>}
+                                </Space>
+                            </div>
+                            
+                            <div style={{ marginTop: 32 }}>
+                                <Button type="primary" block icon={<EditOutlined />} onClick={() => navigate('/system/user-management')}>
+                                    Update Profile
+                                </Button>
+                                <Button block style={{ marginTop: 12 }} icon={<CustomerServiceOutlined />}>
+                                    Contact Support
+                                </Button>
                             </div>
                         </div>
-                    </div>
-                </aside>
+                    </Card>
+                </Col>
 
-                <main className="ed-main">
-                    <div className="ed-mainGrid">
-                        <div className="ed-stats">
-                            <StatCard title="STATUS" value={statusLabel} hint="ACCOUNT STATE" variant={`status-${safeStatus}`}/>
+                <Col xs={24} lg={16}>
+                    <Card title="Detailed Information" bordered={false} style={{ borderRadius: '12px', height: '100%' }} extra={<Button type="link" icon={<ClockCircleOutlined />}>View Log History</Button>}>
+                        <Descriptions bordered column={{ xxl: 2, xl: 2, lg: 2, md: 1, sm: 1, xs: 1 }}>
 
-                            <StatCard title="SALARY" value={`${formatMoney(salary)} BDT`} hint="CURRENT BASE"/>
+                            <Descriptions.Item label="Employee Name" style={{textTransform: 'capitalize'}}>
+                                {username || "—"}
+                            </Descriptions.Item>
 
-                            <StatCard title="LAST LOGIN" value={valueOrDash(login_at)} hint="AUTH ACTIVITY"/>
+                            <Descriptions.Item label="Employee ID">{id || "—"}</Descriptions.Item>
+                            <Descriptions.Item label="Official Email">{email || "—"}</Descriptions.Item>
+                            <Descriptions.Item label="Contact Number">{phone_number || "—"}</Descriptions.Item>
+                            <Descriptions.Item label="Monthly Salary">{formatMoney(salary)} BDT</Descriptions.Item>
+                            <Descriptions.Item label="Account Verification">
+                                {is_verified ? <Tag color="success">Verified</Tag> : <Tag color="error">Unverified</Tag>}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Last Login Time">{login_at ? dayjs(login_at).format("MMMM DD, YYYY hh:mm A") : "—"}</Descriptions.Item>
+                            <Descriptions.Item label="Last Logout Time">{logout_at ? dayjs(logout_at).format("MMMM DD, YYYY hh:mm A") : "—"}</Descriptions.Item>
+                            <Descriptions.Item label="System Roles" span={2}>
+                                <Space wrap>
+                                    {roleBadges.map(role => (
+                                        <Badge key={role.key} status="processing" text={role.name} />
+                                    ))}
+                                </Space>
+                            </Descriptions.Item>
+                        </Descriptions>
 
-                            <StatCard title="LAST LOGOUT" value={logout_at ? logout_at : "—"} hint="AUTH ACTIVITY"/>
-                        </div>
-
-                        <div className="ed-card ed-card--main">
-                            <div className="ed-cardHeader">
-                                <div>
-                                <div className="ed-cardTitle">ACCOUNT DETAILS</div>
-                                <div className="ed-cardSub">Summary of your profile information</div>
-                                </div>
-                            </div>
-
-                            <div className="ed-details">
-                                <Detail label="EMPLOYEE ID" value={valueOrDash(id)} />
-                                <Detail label="USERNAME" value={valueOrDash(username)} />
-                                <Detail label="PHONE NUMBER" value={valueOrDash(phone_number)} />
-                                <Detail label="EMAIL" value={email || "NOT PROVIDED"} muted={!email} />
-                                <Detail label="STATUS" value={statusLabel} />
-                                <Detail label="VERIFIED" value={is_verified ? "YES" : "NO"} />
-                                <Detail label="SALARY" value={`${formatMoney(salary)} BDT`} />
-                            </div>
-                        </div>
-                    </div>
-                </main>
-            </div>
-        </div>
-  );
-}
-
-function Pill({ children, variant = "neutral" }) {
-    return <span className={`ed-pill ed-pill--${variant}`}>{children}</span>;
-}
-
-function StatCard({ title, value, hint, variant }) {
-    return (
-        <div className={`ed-stat ${variant ? `ed-stat--${variant}` : ""}`}>
-            <div className="ed-stat__title">{title}</div>
-            <div className="ed-stat__value" title={String(value)}>{value}</div>
-            <div className="ed-stat__hint">{hint}</div>
-        </div>
-    );
-}
-
-function Detail({ label, value, muted = false }) {
-    return (
-        <div className="ed-detail">
-            <div className="ed-detail__label">{label}</div>
-            <div className={`ed-detail__value ${muted ? "is-muted" : ""}`} title={String(value)}>
-                {value}
-            </div>
+                        <Divider orientation="left">Quick Links & Resources</Divider>
+                        <Row gutter={16}>
+                            <Col span={8}>
+                                <Card size="small" hoverable style={{ textAlign: 'center', background: '#f6ffed', border: '1px solid #b7eb8f' }}>
+                                    <SafetyCertificateOutlined style={{ fontSize: 24, color: '#52c41a' }} />
+                                    <div style={{ marginTop: 8, fontWeight: 500 }}>Security</div>
+                                </Card>
+                            </Col>
+                            <Col span={8}>
+                                <Card size="small" hoverable style={{ textAlign: 'center', background: '#e6f7ff', border: '1px solid #91d5ff' }}>
+                                    <IdcardOutlined style={{ fontSize: 24, color: '#1890ff' }} />
+                                    <div style={{ marginTop: 8, fontWeight: 500 }}>Documents</div>
+                                </Card>
+                            </Col>
+                            <Col span={8}>
+                                <Card size="small" hoverable style={{ textAlign: 'center', background: '#fff7e6', border: '1px solid #ffd591' }}>
+                                    <ClockCircleOutlined style={{ fontSize: 24, color: '#faad14' }} />
+                                    <div style={{ marginTop: 8, fontWeight: 500 }}>Attendance</div>
+                                </Card>
+                            </Col>
+                        </Row>
+                    </Card>
+                </Col>
+            </Row>
         </div>
     );
 }
