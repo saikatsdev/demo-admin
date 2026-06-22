@@ -23,6 +23,7 @@ export default function CustomerReport() {
     const [customers, setCustomers] = useState([]);
     const [dateRange, setDateRange] = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+    const [expandedRowKeys, setExpandedRowKeys] = useState([]);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 25, total: 0 });
 
     const getCustomerReport = async () => {
@@ -312,11 +313,22 @@ export default function CustomerReport() {
                         selectedRowKeys,
                         onChange: (keys) => setSelectedRowKeys(keys),
                     }}
-                    rowKey="id"
+                    rowKey={(record) => record.phone_number || record.customer_name}
                     columns={columns}
                     dataSource={getExportData().length === customers.length ? customers : getExportData()}
                     loading={loading}
-                    expandable={{ expandedRowRender }}
+                    expandable={{
+                        expandedRowRender,
+                        expandedRowKeys,
+                        onExpand: (expanded, record) => {
+                            const key = record.phone_number || record.customer_name;
+                            setExpandedRowKeys(
+                                expanded
+                                    ? [key]
+                                    : expandedRowKeys.filter(k => k !== key)
+                            );
+                        },
+                    }}
                     pagination={{
                         current: pagination.current,
                         pageSize: pagination.pageSize,
