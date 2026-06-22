@@ -1,4 +1,5 @@
-import { Breadcrumb } from "antd";
+import { EditOutlined} from "@ant-design/icons";
+import { Breadcrumb, Table, Tag,Button } from "antd";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
@@ -10,7 +11,7 @@ export default function TeamSetting() {
 
     // States
     const [loading, setLoading] = useState(false);
-    const [setting, setSetting] = useState({});
+    const [setting, setSetting] = useState([]);
 
     const getSetting = async () => {
         try {
@@ -19,7 +20,7 @@ export default function TeamSetting() {
             const res = await getDatas('/admin/team-setting');
 
             if(res && res?.success){
-                setSetting(res?.result);
+                setSetting(res?.result ? [res.result] : []);
             }
         } catch (error) {
             console.log(error);
@@ -31,6 +32,47 @@ export default function TeamSetting() {
     useEffect(() => {
         getSetting();
     }, []);
+
+    const handleEdit = (item) => {
+        console.log(item);
+    }
+
+    const columns = 
+    [
+        { 
+            title: 'OTP Required', 
+            dataIndex: 'otp_required', 
+            key: 'otp_required', 
+            render: v => v ? <Tag color="green">Yes</Tag> : <Tag color="red">No</Tag> 
+        },
+        { 
+            title: 'Screening Duration', 
+            dataIndex: 'screening_duration', 
+            key: 'screening_duration', 
+            render: v => `${v} min` 
+        },
+        { 
+            title: 'Assign Rule', 
+            dataIndex: 'assign_rule', 
+            key: 'assign_rule',
+            render: (text) => (
+                <Tag color="blue" style={{textTransform:"capitalize"}}>
+                    {text}
+                </Tag>
+            )
+        },
+        {
+            title: 'Action',
+            key: 'action',
+            width: 100,
+            align: 'center',
+            render: (_, record) => (
+                <Button type="primary" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+                    Edit
+                </Button>
+            )
+        }
+    ];
 
     return (
         <>
@@ -47,6 +89,15 @@ export default function TeamSetting() {
                         ]}
                     />
                 </div>
+            </div>
+            <div style={{ marginTop: 16 }}>
+                <Table
+                    columns={columns}
+                    dataSource={setting}
+                    loading={loading}
+                    rowKey="id"
+                    pagination={false}
+                />
             </div>
         </>
     )
