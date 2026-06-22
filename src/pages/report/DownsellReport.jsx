@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Typography, Divider } from "antd";
+import { Table, Input, Select, Button, DatePicker, Space, Typography, Divider, Tag } from "antd";
 import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, SearchOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
@@ -35,34 +35,60 @@ export default function DownsellReport() {
             align: 'center'
         },
         {
-            title: "Customer Name",
-            dataIndex: "customer_name",
-            key: "customer_name",
-            render: (name) => <Text strong>{name}</Text>
-        },
-        {
-            title: "Phone Number",
-            dataIndex: "phone_number",
-            key: "phone_number",
+            title: "Customer",
+            key: "customer",
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <Text strong>{record.customer_name}</Text>
+                    <Text type="secondary" style={{ fontSize: 12 }}>{record.phone_number}</Text>
+                </div>
+            )
         },
         {
             title: "Invoice",
             dataIndex: "invoice_number",
             key: "invoice_number",
-            render: (invoice) => <Text type="secondary">{invoice}</Text>
+            render: (invoice) => <Text type="secondary" style={{ fontSize: 12 }}>{invoice}</Text>
         },
         {
-            title: "Orders",
-            dataIndex: "order_count",
-            key: "order_count",
-            align: "center",
-        },
-        {
-            title: "Value",
-            dataIndex: "order_value",
-            key: "order_value",
+            title: "Amount",
+            dataIndex: "payable_price",
+            key: "payable_price",
             align: "right",
-            render: (val) => `৳${Number(val || 0).toLocaleString()}`
+            render: (val) => <Text strong>৳{Number(val || 0).toLocaleString()}</Text>
+        },
+        {
+            title: "Paid Status",
+            dataIndex: "paid_status",
+            key: "paid_status",
+            align: "center",
+            render: (status) => (
+                <Tag color={status === "paid" ? "green" : "red"} style={{ textTransform: "capitalize" }}>
+                    {status}
+                </Tag>
+            )
+        },
+        {
+            title: "Order Status",
+            key: "current_status",
+            align: "center",
+            render: (_, record) => (
+                <Tag color="blue">{record.current_status?.name || "—"}</Tag>
+            )
+        },
+        {
+            title: "Order From",
+            key: "order_from",
+            align: "center",
+            render: (_, record) => (
+                <Tag color="purple">{record.order_from?.name || "—"}</Tag>
+            )
+        },
+        {
+            title: "Date",
+            dataIndex: "created_at",
+            key: "created_at",
+            render: (date) => dayjs(date).format("DD MMM YYYY")
         },
     ];
 
@@ -133,14 +159,17 @@ export default function DownsellReport() {
         doc.setFontSize(11);
         doc.text(`Generated on: ${dateStr}`, 14, 30);
         
-        const tableColumn = ["#", "Customer", "Phone", "Invoice", "Orders", "Value"];
+        const tableColumn = ["#", "Customer", "Phone", "Invoice", "Amount", "Paid Status", "Order Status", "Order From", "Date"];
         const tableRows = dataToExport.map((o, i) => [
             i + 1,
             o.customer_name,
             o.phone_number,
             o.invoice_number,
-            o.order_count,
-            o.order_value
+            o.payable_price,
+            o.paid_status,
+            o.current_status?.name || "",
+            o.order_from?.name || "",
+            dayjs(o.created_at).format("DD MMM YYYY")
         ]);
 
         autoTable(doc, {
@@ -156,14 +185,17 @@ export default function DownsellReport() {
 
     const downloadCSV = () => {
         const dataToExport = getExportData();
-        const headers = ["SL", "Customer Name", "Phone Number", "Invoice Number", "Order Count", "Order Value"];
+        const headers = ["SL", "Customer Name", "Phone Number", "Invoice Number", "Amount", "Paid Status", "Order Status", "Order From", "Date"];
         const rows = dataToExport.map((o, i) => [
             i + 1,
             o.customer_name,
             o.phone_number,
             o.invoice_number,
-            o.order_count,
-            o.order_value
+            o.payable_price,
+            o.paid_status,
+            o.current_status?.name || "",
+            o.order_from?.name || "",
+            dayjs(o.created_at).format("DD MMM YYYY")
         ]);
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
         const encodedUri = encodeURI(csvContent);
@@ -177,10 +209,7 @@ export default function DownsellReport() {
         <div className="reportWrapper">
             <div className="topBar no-print">
                 <Title level={4} style={{ margin: 0 }}>Down-sell Sales Report</Title>
-                <Button 
-                    icon={<ArrowLeftOutlined />} 
-                    onClick={() => window.history.back()}
-                >
+                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                     Back
                 </Button>
             </div>

@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import { Table, Input, Select, Button, DatePicker, Space, Typography, Divider } from "antd";
-import { 
-    FilePdfOutlined, 
-    FileExcelOutlined, 
-    ReloadOutlined, 
-    ArrowLeftOutlined, 
-    PrinterOutlined,
-    CalendarOutlined,
-    SearchOutlined
-} from "@ant-design/icons";
+import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined,CalendarOutlined,SearchOutlined} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import jsPDF from "jspdf";
@@ -25,13 +17,13 @@ export default function FollowupReport() {
     useTitle("Followup Report");
 
     // State
-    const [localSearch, setLocalSearch] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [dateFilter, setDateFilter] = useState("today");
-    const [orders, setOrders] = useState([]);
-    const [dateRange, setDateRange] = useState([null, null]);
+    const [localSearch, setLocalSearch]         = useState("");
+    const [loading, setLoading]                 = useState(false);
+    const [dateFilter, setDateFilter]           = useState("all");
+    const [orders, setOrders]                   = useState([]);
+    const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-    const [pagination, setPagination] = useState({current: 1,pageSize: 25,total: 0});
+    const [pagination, setPagination]           = useState({current: 1,pageSize: 25,total: 0});
 
     const columns = [
         {
@@ -82,20 +74,22 @@ export default function FollowupReport() {
         if (dateFilter && dateFilter !== "custom") {
             params.filter = dateFilter;
         } else if (dateFilter === "custom" && dateRange[0] && dateRange[1]) {
-            params.start_date = dateRange[0].format("YYYY-MM-DD");
-            params.end_date = dateRange[1].format("YYYY-MM-DD");
+            params.from_date = dateRange[0].format("YYYY-MM-DD");
+            params.to_date = dateRange[1].format("YYYY-MM-DD");
         }
+
         params.page = pagination.current;
-        params.limit = pagination.pageSize;
+        params.paginate_size = pagination.pageSize;
 
         const query = new URLSearchParams(params).toString();
+
         try {
             setLoading(true);
             const res = await getDatas(`/admin/order/reports/followup?${query}`);
             if(res && res?.success){
-                const data = res?.result || [];
+                const data = res?.result?.data || [];
                 setOrders(data);
-                setPagination(prev => ({ ...prev, total: data.length }));
+                setPagination(prev => ({ ...prev, total: res?.result?.total }));
             }
         } catch (error) {
             console.log(error);
