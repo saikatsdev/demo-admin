@@ -92,7 +92,7 @@ export default function LocationAndProduct() {
             const res = await getDatas("/admin/order/reports/by-customer", params);
 
             if(res && res?.success){
-                setCustomers(res?.result || []);
+                setCustomers(res?.result?.data || []);
             }
         } catch (error) {
             console.log(error);

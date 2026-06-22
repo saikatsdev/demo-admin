@@ -1,16 +1,6 @@
 import { useEffect, useState } from "react";
 import { Table, Input, Select, Button, DatePicker, Space, Tag, Tooltip, Progress, Typography, Divider } from "antd";
-import { 
-    FilePdfOutlined, 
-    FileExcelOutlined, 
-    UserOutlined, 
-    ArrowLeftOutlined, 
-    PrinterOutlined,
-    ReloadOutlined,
-    CalendarOutlined,
-    SearchOutlined,
-    RiseOutlined
-} from "@ant-design/icons";
+import { FilePdfOutlined, FileExcelOutlined, UserOutlined, ArrowLeftOutlined, PrinterOutlined, ReloadOutlined, CalendarOutlined, SearchOutlined} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -23,8 +13,10 @@ const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 export default function CustomerReport() {
+    // Hooks
     useTitle("Customer Engagement Report");
 
+    // States
     const [localSearch, setLocalSearch] = useState("");
     const [loading, setLoading] = useState(false);
     const [dateFilter, setDateFilter] = useState("all");
@@ -248,12 +240,7 @@ export default function CustomerReport() {
         <div className="reportWrapper">
             <div className="topBar no-print">
                 <Title level={4} style={{ margin: 0 }}>Customer Engagement Report</Title>
-                <Button 
-                    icon={<ArrowLeftOutlined />} 
-                    onClick={() => window.history.back()}
-                >
-                    Back
-                </Button>
+                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
             </div>
 
             <Divider className="no-print" style={{ margin: '12px 0' }} />
