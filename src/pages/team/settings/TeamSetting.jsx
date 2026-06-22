@@ -1,4 +1,4 @@
-import { EditOutlined, SaveOutlined} from "@ant-design/icons";
+import { EditOutlined, SaveOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { Breadcrumb, Table, Tag, Button, Modal, Form, Input, Select, InputNumber, message } from "antd";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -124,7 +124,13 @@ export default function TeamSetting() {
                     <h1 className="title">Team Setting</h1>
                     <p className="subtitle">Manage Team Settings</p>
                 </div>
-                <div className="head-actions">
+                <div className="head-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                    <Button 
+                        icon={<ArrowLeftOutlined />} 
+                        onClick={() => window.history.back()}
+                    >
+                        Back
+                    </Button>
                     <Breadcrumb
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
