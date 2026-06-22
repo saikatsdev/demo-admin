@@ -9,6 +9,7 @@ export default function TeamSetting() {
     // Hook
     useTitle("Team Settings");
 
+    // States
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [submitting, setSubmitting]   = useState(false);
     const [setting, setSetting]         = useState([]);
