@@ -1,15 +1,6 @@
 import { useEffect, useState } from "react";
 import { Table, Input, Select, Button, DatePicker, Space, Typography, Divider, Avatar } from "antd";
-import { 
-    FilePdfOutlined, 
-    FileExcelOutlined, 
-    ReloadOutlined, 
-    ArrowLeftOutlined, 
-    PrinterOutlined,
-    CalendarOutlined,
-    SearchOutlined,
-    InboxOutlined
-} from "@ant-design/icons";
+import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined,CalendarOutlined,SearchOutlined,InboxOutlined} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import jsPDF from "jspdf";
@@ -26,15 +17,16 @@ export default function StockReport() {
     useTitle("Stock Report");
 
     // State
-    const [localSearch, setLocalSearch] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [dateFilter, setDateFilter] = useState("today");
-    const [orders, setOrders] = useState([]);
-    const [dateRange, setDateRange] = useState([null, null]);
+    const [localSearch, setLocalSearch]         = useState("");
+    const [loading, setLoading]                 = useState(false);
+    const [dateFilter, setDateFilter]           = useState("all");
+    const [products, setProducts]               = useState([]);
+    const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-    const [pagination, setPagination] = useState({current: 1,pageSize: 25,total: 0});
+    const [pagination, setPagination]           = useState({current: 1,pageSize: 25,total: 0});
 
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key: "sl",
@@ -80,18 +72,19 @@ export default function StockReport() {
         if (dateFilter && dateFilter !== "custom") {
             params.filter = dateFilter;
         } else if (dateFilter === "custom" && dateRange[0] && dateRange[1]) {
-            params.start_date = dateRange[0].format("YYYY-MM-DD");
-            params.end_date = dateRange[1].format("YYYY-MM-DD");
+            params.from_date = dateRange[0].format("YYYY-MM-DD");
+            params.to_date = dateRange[1].format("YYYY-MM-DD");
         }
         params.page = pagination.current;
-        params.limit = pagination.pageSize;
+        params.paginate_size = pagination.pageSize;
 
         const query = new URLSearchParams(params).toString();
+
         try {
             setLoading(true);
             const res = await getDatas(`/admin/lowest/stock/products?${query}`);
             if(res && res?.success){
-                setOrders(res?.result?.data || []);
+                setProducts(res?.result?.data || []);
                 setPagination(prev => ({ ...prev, total: res?.result?.total || 0 }));
             }
         } catch (error) {
@@ -110,10 +103,10 @@ export default function StockReport() {
     };
 
     const getExportData = () => {
-        const filtered = orders.filter((order) => {
+        const filtered = products.filter((product) => {
             if (!localSearch) return true;
             const term = localSearch.toLowerCase();
-            return (order.name?.toLowerCase().includes(term));
+            return (product.name?.toLowerCase().includes(term));
         });
         if (selectedRowKeys.length > 0) {
             return filtered.filter(item => selectedRowKeys.includes(item.id));
@@ -230,9 +223,11 @@ export default function StockReport() {
                     <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
                         CSV
                     </Button>
+
                     <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>
                         PDF
                     </Button>
+
                     <Button icon={<PrinterOutlined />} onClick={handlePrint}>
                         Print
                     </Button>
@@ -247,17 +242,17 @@ export default function StockReport() {
                     }}
                     rowKey="id"
                     columns={columns}
-                    dataSource={getExportData().length === orders.length ? orders : getExportData()}
+                    dataSource={getExportData().length === products.length ? products : getExportData()}
                     loading={loading}
                     pagination={{
-                        current: pagination.current,
-                        pageSize: pagination.pageSize,
-                        total: pagination.total,
-                        onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
+                        current        : pagination.current,
+                        pageSize       : pagination.pageSize,
+                        total          : pagination.total,
+                        onChange       : (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
                         showSizeChanger: true,
-                        size: "small",
-                        className: "custom-pagination no-print",
-                        showTotal: (total) => `Total ${total} entries`,
+                        size           : "small",
+                        className      : "custom-pagination no-print",
+                        showTotal      : (total) => `Total ${total} entries`,
                     }}
                 />
             </div>
