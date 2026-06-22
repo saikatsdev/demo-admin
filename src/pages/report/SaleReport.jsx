@@ -23,9 +23,20 @@ export default function SaleReport() {
     const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [pagination, setPagination]           = useState({current: 1,pageSize: 20,total: 0});
+    const [isPrinting, setIsPrinting]           = useState(false);
     
-    const columns = 
-    [
+    // Filter data for display
+    const filteredOrders = orders?.filter((order) => {
+        if (!localSearch) return true;
+        const term = localSearch.toLowerCase();
+        return (
+            order.name.toLowerCase().includes(term) || 
+            order.brand?.name?.toLowerCase().includes(term) ||
+            order.categories?.some(cat => cat.name.toLowerCase().includes(term))
+        );
+    }) || [];
+
+    const columns = [
         {
             title: "SL",
             key: "sl",
@@ -181,23 +192,18 @@ export default function SaleReport() {
     }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
 
     const handlePrint = () => {
-        window.print();
+        setIsPrinting(true);
+        setTimeout(() => {
+            window.print();
+            setIsPrinting(false);
+        }, 200);
     };
 
     const getExportData = () => {
-        const filtered = orders?.filter((order) => {
-            if (!localSearch) return true;
-            const term = localSearch.toLowerCase();
-            return (
-                order.name.toLowerCase().includes(term) || 
-                order.brand?.name?.toLowerCase().includes(term) ||
-                order.categories?.some(cat => cat.name.toLowerCase().includes(term))
-            );
-        });
         if (selectedRowKeys.length > 0) {
-            return filtered.filter(item => selectedRowKeys.includes(item.id));
+            return filteredOrders.filter(item => selectedRowKeys.includes(item.id));
         }
-        return filtered;
+        return filteredOrders;
     };
 
     const downloadPDF = () => {
@@ -357,7 +363,7 @@ export default function SaleReport() {
                     }}
                     rowKey="id"
                     columns={columns}
-                    dataSource={getExportData().length === orders.length ? orders : getExportData()} // This hack is for display only
+                    dataSource={isPrinting && selectedRowKeys.length > 0 ? getExportData() : filteredOrders}
                     loading={loading}
                     scroll={{ x: 1300 }}
                     pagination={{
