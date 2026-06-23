@@ -59,14 +59,12 @@ export default function Login() {
             const res = await api.post('/admin/login', payload);
             const resData = res?.data;
 
-            // Step 1: Check Success
             if (resData && resData.success) {
                 login(resData.result.user, resData.result.token);
                 navigate('/dashboard', { replace: true });
                 return;
             }
 
-            // Step 2: Check for OTP requirement message if success is false
             if (resData?.success === false && resData?.message === "Please provided your login otp") {
                 setShowOtp(true);
                 setErrors({ ...newErrors, otp: resData.message });
@@ -74,21 +72,18 @@ export default function Login() {
                 return;
             }
 
-            // Other errors
             const msg = resData?.message || resData?.msg || 'Login failed';
             setErrors({ ...newErrors, phone: msg });
 
         } catch (err) {
             const resData = err?.response?.data;
             
-            // Check for OTP requirement in catch block too (some APIs return 4xx/5xx for validation)
             if (resData?.success === false && resData?.message === "Please provided your login otp") {
                 setShowOtp(true);
                 setLoading(false);
                 return;
             }
 
-            // Handle specific OTP invalid error
             if (resData?.message === "Your provided otp is invalid") {
                 setErrors({ ...newErrors, otp: resData.message });
                 setLoading(false);
