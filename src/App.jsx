@@ -176,6 +176,7 @@ import UpdatePassword from "./pages/auth/employee/UpdatePassword";
 import Attendance from "./pages/team/attendance/Attendance";
 import EditAttendance from "./pages/team/attendance/EditAttendance";
 import TeamSetting from "./pages/team/settings/TeamSetting";
+import Team from "./pages/team/Team";
 
 function App() {
     const dispatch         = useDispatch();
@@ -289,6 +290,7 @@ function App() {
                     {/* Meta Module */}
 
                     {/* Team Module */}
+                    <Route path="/teams" element={<Team />} />
                     <Route path="/team/attendance" element={<Attendance />} />
                     <Route path="/team/attendance/edit/:id" element={<EditAttendance />} />
 

@@ -1,0 +1,211 @@
+.teamWrapper {
+    padding: 24px;
+    background: #f8fafc;
+    min-height: calc(100vh - 64px);
+}
+
+.topBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.filter-card {
+    margin-bottom: 16px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.filter-label {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.summary-section {
+    margin-bottom: 16px;
+}
+
+.summary-card {
+    height: 100%;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06) !important;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s ease;
+    background: #fff;
+    padding: 18px;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08) !important;
+}
+
+.summary-icon {
+    position: absolute;
+    right: 18px;
+    bottom: 16px;
+    font-size: 40px;
+    opacity: 0.1;
+}
+
+.summary-sub {
+    font-size: 12px;
+}
+
+.gold-indicator { border-left: 4px solid #f59e0b !important; }
+.green-indicator { border-left: 4px solid #10b981 !important; }
+.indigo-indicator { border-left: 4px solid #6366f1 !important; }
+.cyan-indicator { border-left: 4px solid #06b6d4 !important; }
+
+.tableSection {
+    background: #fff;
+    border-radius: 16px;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.tableSection .ant-table-thead > tr > th {
+    background: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.tableSection .ant-table-tbody > tr > td {
+    vertical-align: top;
+}
+
+.tableSection .ant-table-row:hover > td {
+    background: #f8fafc !important;
+}
+
+.custom-pagination {
+    padding: 8px 12px 12px;
+}
+
+.employee-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.employee-avatar {
+    background: #f1f5f9;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+}
+
+.employee-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.employee-name {
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.employee-phone {
+    font-size: 12px;
+}
+
+.role-tag {
+    font-size: 10px;
+    margin: 0;
+    line-height: 16px;
+}
+
+.prep-cell,
+.attendance-cell,
+.velocity-cell,
+.value-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.prep-head,
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.prep-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.attendance-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.attendance-time,
+.value-sub {
+    font-size: 11px;
+}
+
+.velocity-today {
+    color: #4f46e5;
+    font-size: 14px;
+}
+
+.value-main {
+    color: #059669;
+    font-size: 14px;
+}
+
+.text-success { color: #059669 !important; }
+.text-muted { color: #64748b !important; }
+
+.expanded-panel {
+    padding: 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+}
+
+.metric-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.label-xs {
+    font-size: 11px;
+}
+
+@media (max-width: 768px) {
+    .teamWrapper {
+        padding: 12px;
+    }
+
+    .topBar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .teamWrapper {
+        padding: 0;
+        background: #fff;
+    }
+}
