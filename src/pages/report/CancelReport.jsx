@@ -3,7 +3,7 @@ import { Table, Input, Select, Button, DatePicker, Space, Tag, Typography, Divid
 import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, SearchOutlined, UserOutlined, ShoppingOutlined, StopOutlined, WarningOutlined, DollarOutlined, AreaChartOutlined, GlobalOutlined, CarOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
-import jsPDF from "jsPDF";
+import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import dayjs from "dayjs";
 import "./report.css";
