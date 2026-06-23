@@ -67,8 +67,8 @@ export default function ReturnReport() {
         window.print();
     };
 
-    const getExportData = () => {
-        const filtered = orders.filter((order) => {
+    const getFilteredData = () => {
+        return orders.filter((order) => {
             if (!localSearch) return true;
             const term = localSearch.toLowerCase();
             return (
@@ -76,6 +76,10 @@ export default function ReturnReport() {
                 order.customer_name?.toLowerCase().includes(term)
             );
         });
+    };
+
+    const getExportData = () => {
+        const filtered = getFilteredData();
         if (selectedRowKeys.length > 0) {
             return filtered.filter(item => selectedRowKeys.includes(item.id));
         }
@@ -350,7 +354,7 @@ export default function ReturnReport() {
                     }}
                     rowKey="id"
                     columns={columns}
-                    dataSource={getExportData()}
+                    dataSource={getFilteredData()}
                     loading={loading}
                     expandable={{
                         expandedRowRender,
