@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Tag, Tooltip, Progress, Typography, Divider } from "antd";
-import { FilePdfOutlined, FileExcelOutlined, UserOutlined, ArrowLeftOutlined, PrinterOutlined, ReloadOutlined, CalendarOutlined, SearchOutlined} from "@ant-design/icons";
+import { Table, Input, Select, Button, DatePicker, Space, Tag, Tooltip, Progress, Typography, Divider, Row, Col, Card } from "antd";
+import { FilePdfOutlined, FileExcelOutlined, UserOutlined, ArrowLeftOutlined, PrinterOutlined, ReloadOutlined, CalendarOutlined, SearchOutlined, DollarOutlined, BarChartOutlined, LineChartOutlined, HistoryOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -14,26 +14,23 @@ const { RangePicker } = DatePicker;
 
 export default function CustomerReport() {
     // Hooks
-    useTitle("Customer Engagement Report");
+    useTitle("Customer Intelligence Report");
 
     // States
     const [localSearch, setLocalSearch]         = useState("");
     const [loading, setLoading]                 = useState(false);
     const [dateFilter, setDateFilter]           = useState("all");
     const [customers, setCustomers]             = useState([]);
+    const [summary, setSummary]                 = useState(null);
     const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-    const [expandedRowKeys, setExpandedRowKeys] = useState([]);
     const [pagination, setPagination]           = useState({ current: 1, pageSize: 25, total: 0 });
 
     const getCustomerReport = async () => {
         let params = {};
-        if (dateFilter === "all") {
-            params.filter = "all";
-        } else if (dateFilter !== "custom") {
+        if (dateFilter && dateFilter !== "custom") {
             params.filter = dateFilter;
-        } else {
-            if (!dateRange[0] || !dateRange[1]) return;
+        } else if (dateFilter === "custom" && dateRange[0] && dateRange[1]) {
             params.from_date = dateRange[0].format("YYYY-MM-DD");
             params.to_date = dateRange[1].format("YYYY-MM-DD");
         }
@@ -47,13 +44,13 @@ export default function CustomerReport() {
             const res = await getDatas(`/admin/order/reports/by-customer?${query}`);
 
             if (res && res.success) {
-                const { data, total, current_page, per_page } = res.result;
-                setCustomers(data || []);
+                setCustomers(res.result?.customers?.data || []);
+                setSummary(res.result?.summary || null);
                 setPagination(prev => ({
                     ...prev,
-                    total: total || 0,
-                    current: current_page || 1,
-                    pageSize: per_page || 25
+                    total: res.result?.customers?.total || 0,
+                    current: res.result?.customers?.current_page || 1,
+                    pageSize: res.result?.customers?.per_page || 25
                 }));
             }
         } finally {
@@ -80,7 +77,7 @@ export default function CustomerReport() {
     const getExportData = () => {
         const filtered = getFilteredData();
         if (selectedRowKeys.length > 0) {
-            return filtered.filter(item => selectedRowKeys.includes(item.id));
+            return filtered.filter(item => selectedRowKeys.includes(item.phone_number));
         }
         return filtered;
     };
@@ -98,7 +95,7 @@ export default function CustomerReport() {
             align: 'center'
         },
         {
-            title: "Customer Profile",
+            title: "Client Profile",
             key: "profile",
             render: (_, record) => (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -111,95 +108,150 @@ export default function CustomerReport() {
                     </div>
                 </div>
             ),
+            width: 200
         },
         {
-            title: "Volume",
-            dataIndex: "order_count",
-            key: "order_count",
-            align: "center",
-            render: (count) => <Tag color="blue" style={{ borderRadius: 4 }}>{count} Orders</Tag>,
-        },
-        {
-            title: "Lifetime Value",
-            dataIndex: "order_value",
-            key: "order_value",
-            align: "right",
-            render: (val) => <Text strong style={{ color: '#0f172a' }}>৳ {Number(val).toLocaleString()}</Text>,
-        },
-        {
-            title: "Fulfillment Status",
-            key: "delivery_summary",
+            title: "Frequency",
+            key: "frequency",
             render: (_, record) => (
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <Tooltip title="Delivered Orders">
-                        <Tag color="success" style={{ border: 'none', borderRadius: 4 }}>
-                            ✓ {record.delivered_orders}
-                        </Tag>
-                    </Tooltip>
-                    <Tooltip title="Canceled Orders">
-                        <Tag color="error" style={{ border: 'none', borderRadius: 4 }}>
-                            ✕ {record.canceled_orders}
-                        </Tag>
-                    </Tooltip>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Tag color="geekblue" style={{ borderRadius: 4, margin: 0, width: 'fit-content' }}>{record.order_count} Orders</Tag>
+                    <Text type="secondary" style={{ fontSize: 11 }}>{record.total_quantity} units total</Text>
                 </div>
-            )
+            ),
+            width: 140
         },
         {
-            title: "Success Rate",
-            key: "success_rate",
-            align: "center",
+            title: "Account Health",
+            key: "account_health",
             render: (_, record) => {
-                const delivered = Number(record.delivered_orders);
-                const canceled = Number(record.canceled_orders);
-                const totalFinished = delivered + canceled;
-                const rate = totalFinished > 0 ? Math.round((delivered / totalFinished) * 100) : 0;
-                
-                let color = "#ef4444";
-                if (rate >= 80) color = "#10b981";
-                else if (rate >= 50) color = "#f59e0b";
-
+                const metrics = record.customer_metrics;
                 return (
-                    <div style={{ width: 100, margin: '0 auto' }}>
-                        <Tooltip title={`${delivered} Delivered / ${canceled} Canceled`}>
-                            <Progress percent={rate} size={[100, 4]} showInfo={false} strokeColor={color} trailColor="#f1f5f9" />
-                            <Text strong style={{ fontSize: 11, color: color }}>{rate}%</Text>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <Tooltip title={`Delivered: ${metrics.delivered_count} | Canceled: ${metrics.canceled_count} | Returned: ${metrics.returned_count}`}>
+                            <div style={{ display: 'flex', height: 6, borderRadius: 3, overflow: 'hidden', background: '#f1f5f9', width: 120 }}>
+                                <div style={{ width: `${metrics.success_rate}%`, background: '#10b981' }} />
+                                <div style={{ width: `${metrics.cancel_rate}%`, background: '#ef4444' }} />
+                                <div style={{ width: `${metrics.return_rate}%`, background: '#f59e0b' }} />
+                            </div>
                         </Tooltip>
+                        <div style={{ display: 'flex', gap: 8, fontSize: 10, fontWeight: 600 }}>
+                            <span style={{ color: '#10b981' }}>{metrics.success_rate}% Success</span>
+                            {metrics.cancel_rate > 0 && <span style={{ color: '#ef4444' }}>{metrics.cancel_rate}% Cancel</span>}
+                        </div>
                     </div>
                 );
-            }
+            },
+            width: 160
         },
+        {
+            title: "Financial Matrix",
+            key: "financials",
+            align: 'right',
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    <div style={{ background: '#f0fdf4', padding: '2px 8px', borderRadius: 4, border: '1px solid #dcfce7', marginBottom: 4 }}>
+                        <Text strong style={{ color: '#166534', fontSize: 13 }}>৳{Number(record.total_payable_price).toLocaleString()}</Text>
+                    </div>
+                    <Text type="secondary" style={{ fontSize: 10 }}>AOV: ৳{Number(record.customer_metrics.average_order_value).toLocaleString()}</Text>
+                </div>
+            ),
+            width: 180
+        },
+        {
+            title: "Engagement Timeline",
+            key: "timeline",
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <HistoryOutlined style={{ color: '#94a3b8', fontSize: 11 }} />
+                        <Text style={{ fontSize: 11 }}>First: {dayjs(record.first_order_at).format('DD MMM YY')}</Text>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <CalendarOutlined style={{ color: '#94a3b8', fontSize: 11 }} />
+                        <Text style={{ fontSize: 11 }} strong>Recent: {dayjs(record.last_order_at || record.first_order_at).format('DD MMM YY')}</Text>
+                    </div>
+                </div>
+            ),
+            width: 180
+        }
     ];
 
-    const expandedRowRender = (record) => (
-        <div style={{ padding: '16px 24px', background: '#fafafa', borderRadius: 8 }}>
-            <h5 style={{ marginBottom: 16, fontSize: 13, color: '#64748b', fontWeight: 600 }}>Full Engagement Distribution</h5>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
-                {[
-                    { label: 'Pending', count: record.pending_orders, color: '#94a3b8' },
-                    { label: 'Hold', count: record.on_hold_orders, color: '#f59e0b' },
-                    { label: 'Approved', count: record.approved_orders, color: '#3b82f6' },
-                    { label: 'On Way', count: record.on_way_orders, color: '#8b5cf6' },
-                    { label: 'Delivered', count: record.delivered_orders, color: '#10b981' },
-                    { label: 'Canceled', count: record.canceled_orders, color: '#ef4444' }
-                ].map((item, i) => (
-                    <div key={i} style={{ background: '#fff', padding: '12px', borderRadius: 8, border: '1px solid #f0f0f0' }}>
-                        <span style={{ display: 'block', fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', marginBottom: 4 }}>{item.label}</span>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: item.color }}>{item.count}</span>
-                    </div>
-                ))}
+    const expandedRowRender = (record) => {
+        const m = record.customer_metrics;
+        return (
+            <div style={{ padding: '20px 30px', background: '#f8fafc', borderRadius: 12 }}>
+                <Title level={5} style={{ margin: '0 0 20px 0', fontSize: 14, color: '#64748b' }}>Account Intelligence: {record.customer_name}</Title>
+                <Row gutter={[24, 24]}>
+                    <Col span={8}>
+                        <Card size="small" title="Lifecycle Metrics" variant="borderless">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary">Total Delivered</Text>
+                                    <Tag color="success">{m.delivered_count} Orders</Tag>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary">In Processing</Text>
+                                    <Tag color="processing">{m.processing_count} Orders</Tag>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary">Total Returned</Text>
+                                    <Tag color="warning">{m.returned_count} Orders</Tag>
+                                </div>
+                            </div>
+                        </Card>
+                    </Col>
+                    <Col span={8}>
+                        <Card size="small" title="Wallet Statistics" variant="borderless">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary">Advance Payments</Text>
+                                    <Text strong style={{ color: '#10b981' }}>৳{Number(m.total_advance_payment).toLocaleString()}</Text>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary">Paid Orders</Text>
+                                    <Text strong>{m.paid_order_count}</Text>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary">Unpaid Vol.</Text>
+                                    <Text strong style={{ color: '#ef4444' }}>{m.unpaid_order_count}</Text>
+                                </div>
+                            </div>
+                        </Card>
+                    </Col>
+                    <Col span={8}>
+                        <Card size="small" title="Economic Value" variant="borderless">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary">Net Gross Spend</Text>
+                                    <Text strong>৳{Number(m.total_net_order_price).toLocaleString()}</Text>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary">Delivery Contrib.</Text>
+                                    <Text strong>৳{Number(m.total_delivery_charge).toLocaleString()}</Text>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary">Account Start</Text>
+                                    <Text strong>{dayjs(m.first_order_at).format('MMM YYYY')}</Text>
+                                </div>
+                            </div>
+                        </Card>
+                    </Col>
+                </Row>
             </div>
-        </div>
-    );
+        );
+    };
 
     const downloadCSV = () => {
         const dataToExport = getExportData();
-        const headers = ["SL", "Customer Name", "Phone", "Orders", "Total Value"];
+        const headers = ["SL", "Customer Name", "Phone", "Orders", "Success Rate", "Lifetime Value"];
         const rows = dataToExport.map((c, i) => [
             i + 1,
             c.customer_name,
             c.phone_number,
             c.order_count,
-            c.order_value
+            `${c.customer_metrics.success_rate}%`,
+            c.total_payable_price
         ]);
 
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
@@ -211,22 +263,20 @@ export default function CustomerReport() {
 
     const downloadPDF = () => {
         const dataToExport = getExportData();
-        const doc = new jsPDF();
+        const doc = new jsPDF("landscape");
         doc.setFontSize(18);
-        doc.text("Customer Engagement Report", 14, 22);
+        doc.text("Customer Intelligence Analysis", 14, 22);
         doc.setFontSize(11);
-        doc.setTextColor(100);
+        doc.text(`Generated on: ${dayjs().format("YYYY-MM-DD")}`, 14, 30);
         
-        const dateStr = dayjs().format("YYYY-MM-DD");
-        doc.text(`Generated on: ${dateStr}`, 14, 30);
-        
-        const tableColumn = ["#", "Customer Name", "Phone", "Orders", "Total LTV"];
+        const tableColumn = ["#", "Customer Name", "Phone", "Orders", "Success %", "Lifetime Value"];
         const tableRows = dataToExport.map((c, i) => [
             i + 1,
             c.customer_name,
             c.phone_number,
             c.order_count,
-            `৳${Number(c.order_value).toLocaleString()}`
+            `${c.customer_metrics.success_rate}%`,
+            `৳${Number(c.total_payable_price).toLocaleString()}`
         ]);
 
         autoTable(doc, {
@@ -237,27 +287,80 @@ export default function CustomerReport() {
             headStyles: { fillColor: [28, 85, 139], textColor: 255 },
             styles: { fontSize: 9 }
         });
-
-        doc.save(`Customer_Report_${dateStr}.pdf`);
+        doc.save(`Customer_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
     };
 
     return (
         <div className="reportWrapper">
             <div className="topBar no-print">
-                <Title level={4} style={{ margin: 0 }}>Customer Engagement Report</Title>
+                <Title level={4} style={{ margin: 0 }}>Customer Intelligence</Title>
                 <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
             </div>
 
             <Divider className="no-print" style={{ margin: '12px 0' }} />
 
+            {summary && (
+                <div className="no-print" style={{ marginBottom: 24 }}>
+                    <Row gutter={[16, 16]}>
+                        <Col xs={24} sm={12} md={6}>
+                            <Card bordered={false} className="summary-card main-stats">
+                                <Space direction="vertical" size={0}>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Account Base</Text>
+                                    <Title level={3} style={{ margin: 0 }}>{summary.total_customers?.toLocaleString()}</Title>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>verified unique customers</Text>
+                                </Space>
+                                <UserOutlined className="summary-icon" style={{ color: '#3b82f6' }} />
+                                <div className="card-indicator info"></div>
+                            </Card>
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                            <Card bordered={false} className="summary-card">
+                                <Space direction="vertical" size={0}>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Aggregate Value</Text>
+                                    <Title level={3} style={{ margin: 0 }}>৳{Number(summary.total_payable_price || 0).toLocaleString()}</Title>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>cumulative LTV across platform</Text>
+                                </Space>
+                                <DollarOutlined className="summary-icon" style={{ color: '#10b981' }} />
+                                <div className="card-indicator success"></div>
+                            </Card>
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                            <Card bordered={false} className="summary-card">
+                                <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Loyalty Health</Text>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Title level={3} style={{ margin: 0 }}>{summary.success_rate}%</Title>
+                                        <Progress type="circle" percent={summary.success_rate} size={30} strokeWidth={15} showInfo={false} strokeColor="#8b5cf6" />
+                                    </div>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>Network-wide fulfillment rate</Text>
+                                </Space>
+                                <BarChartOutlined className="summary-icon" style={{ color: '#8b5cf6' }} />
+                                <div className="card-indicator secondary"></div>
+                            </Card>
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                            <Card bordered={false} className="summary-card">
+                                <Space direction="vertical" size={0}>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Mean Spend</Text>
+                                    <Title level={3} style={{ margin: 0 }}>৳{Number(summary.average_order_value || 0).toLocaleString()}</Title>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>average checkout intelligence</Text>
+                                </Space>
+                                <LineChartOutlined className="summary-icon" style={{ color: '#f59e0b' }} />
+                                <div className="card-indicator warning"></div>
+                            </Card>
+                        </Col>
+                    </Row>
+                </div>
+            )}
+
             <div className="topBar no-print">
                 <Space wrap size="middle">
                     <Input 
-                        placeholder="Search customers..." 
+                        placeholder="Search Client Name/Phone..." 
                         allowClear 
                         value={localSearch}
                         onChange={(e) => setLocalSearch(e.target.value)} 
-                        style={{ width: 250 }}
+                        style={{ width: 300 }}
                         prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
                     />
                     
@@ -288,6 +391,7 @@ export default function CustomerReport() {
                         setLocalSearch("");
                         setDateRange([null, null]);
                         setSelectedRowKeys([]);
+                        setPagination(prev => ({ ...prev, current: 1 }));
                     }}>
                         Reset
                     </Button>
@@ -299,15 +403,9 @@ export default function CustomerReport() {
                             {selectedRowKeys.length} selected
                         </Text>
                     )}
-                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
-                        CSV
-                    </Button>
-                    <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>
-                        PDF
-                    </Button>
-                    <Button icon={<PrinterOutlined />} onClick={handlePrint}>
-                        Print
-                    </Button>
+                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>CSV</Button>
+                    <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>PDF</Button>
+                    <Button icon={<PrinterOutlined />} onClick={handlePrint}>Print</Button>
                 </Space>
             </div>
 
@@ -317,21 +415,12 @@ export default function CustomerReport() {
                         selectedRowKeys,
                         onChange: (keys) => setSelectedRowKeys(keys),
                     }}
-                    rowKey={(record) => record.phone_number || record.customer_name}
+                    rowKey="phone_number"
                     columns={columns}
                     dataSource={getFilteredData()}
                     loading={loading}
                     expandable={{
                         expandedRowRender,
-                        expandedRowKeys,
-                        onExpand: (expanded, record) => {
-                            const key = record.phone_number || record.customer_name;
-                            setExpandedRowKeys(
-                                expanded
-                                    ? [key]
-                                    : expandedRowKeys.filter(k => k !== key)
-                            );
-                        },
                     }}
                     pagination={{
                         current: pagination.current,
@@ -345,6 +434,47 @@ export default function CustomerReport() {
                     }}
                 />
             </div>
+
+            <style jsx>{`
+                .summary-card {
+                    height: 100%;
+                    border-radius: 12px;
+                    border: 1px solid #f1f5f9;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                    position: relative;
+                    overflow: hidden;
+                    transition: all 0.3s ease;
+                    background: #fff;
+                    padding: 20px;
+                }
+                .summary-card:hover {
+                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                    transform: translateY(-2px);
+                }
+                .summary-icon {
+                    position: absolute;
+                    right: 16px;
+                    bottom: 16px;
+                    font-size: 32px;
+                    opacity: 0.1;
+                    transition: all 0.3s ease;
+                }
+                .summary-card:hover .summary-icon {
+                    opacity: 0.2;
+                    transform: scale(1.1);
+                }
+                .card-indicator {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    width: 4px;
+                }
+                .card-indicator.info { background: #3b82f6; }
+                .card-indicator.success { background: #10b981; }
+                .card-indicator.secondary { background: #8b5cf6; }
+                .card-indicator.warning { background: #f59e0b; }
+            `}</style>
         </div>
     );
 }
