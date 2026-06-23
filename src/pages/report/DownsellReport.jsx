@@ -134,8 +134,8 @@ export default function DownsellReport() {
         window.print();
     };
 
-    const getExportData = () => {
-        const filtered = orders.filter((order) => {
+    const getFilteredData = () => {
+        return orders.filter((order) => {
             if (!localSearch) return true;
             const term = localSearch.toLowerCase();
             return (
@@ -144,6 +144,10 @@ export default function DownsellReport() {
                 order.invoice_number?.toLowerCase().includes(term)
             );
         });
+    };
+
+    const getExportData = () => {
+        const filtered = getFilteredData();
         if (selectedRowKeys.length > 0) {
             return filtered.filter(item => selectedRowKeys.includes(item.id));
         }
@@ -285,7 +289,7 @@ export default function DownsellReport() {
                     }}
                     rowKey="id"
                     columns={columns}
-                    dataSource={getExportData().length === orders.length ? orders : getExportData()}
+                    dataSource={getFilteredData()}
                     loading={loading}
                     pagination={{
                         current: pagination.current,
