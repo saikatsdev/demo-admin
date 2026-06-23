@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Tag, Typography, Divider, Image } from "antd";
-import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, SearchOutlined, UserOutlined, ShoppingOutlined } from "@ant-design/icons";
+import { Table, Input, Select, Button, DatePicker, Space, Tag, Typography, Divider, Row, Col, Card, Avatar } from "antd";
+import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, SearchOutlined, UserOutlined, ShoppingOutlined, RedoOutlined, WarningOutlined, DollarOutlined, AreaChartOutlined, LineChartOutlined, GlobalOutlined, CarOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import jsPDF from "jspdf";
@@ -14,18 +14,21 @@ const { RangePicker } = DatePicker;
 
 export default function ReturnReport() {
     // Hooks
-    useTitle("Return Order Report");
+    useTitle("Return Order Intelligence");
 
     // States
     const [localSearch, setLocalSearch]         = useState("");
     const [loading, setLoading]                 = useState(false);
     const [dateFilter, setDateFilter]           = useState("all");
     const [orders, setOrders]                   = useState([]);
+    const [summary, setSummary]                 = useState(null);
+    const [statusBreakdown, setStatusBreakdown] = useState([]);
+    const [topProducts, setTopProducts]         = useState([]);
     const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [pagination, setPagination]           = useState({ current: 1, pageSize: 25, total: 0 });
 
-    const getOrderReport = async () => {
+    const getReturnReport = async () => {
         let params = {};
         
         if (dateFilter && dateFilter !== "custom") {
@@ -45,22 +48,23 @@ export default function ReturnReport() {
             const res = await getDatas(`/admin/order/reports/return?${query}`);
             if(res && res?.success){
                 const result = res?.result;
-                setOrders(result?.data || []);
+                setOrders(result?.orders?.data || []);
+                setSummary(result?.summary || null);
+                setStatusBreakdown(result?.return_status_breakdown || []);
+                setTopProducts(result?.top_returned_products || []);
                 setPagination(prev => ({ 
                     ...prev, 
-                    total: result?.total || 0,
-                    current: result?.current_page || 1
+                    total: result?.orders?.total || 0,
+                    current: result?.orders?.current_page || 1
                 }));
             }
-        } catch (error) {
-            console.log(error);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        getOrderReport();
+        getReturnReport();
     }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
 
     const handlePrint = () => {
@@ -73,7 +77,8 @@ export default function ReturnReport() {
             const term = localSearch.toLowerCase();
             return (
                 order.phone_number?.toLowerCase().includes(term) || 
-                order.customer_name?.toLowerCase().includes(term)
+                order.customer_name?.toLowerCase().includes(term) ||
+                order.invoice_number?.toLowerCase().includes(term)
             );
         });
     };
@@ -88,22 +93,21 @@ export default function ReturnReport() {
 
     const downloadPDF = () => {
         const dataToExport = getExportData();
-        const doc = new jsPDF();
+        const doc = new jsPDF("landscape");
         doc.setFontSize(18);
-        doc.text("Return Order Report", 14, 22);
+        doc.text("Return Order Intelligence Report", 14, 22);
         doc.setFontSize(11);
-        doc.setTextColor(100);
-        const dateStr = dayjs().format("YYYY-MM-DD");
-        doc.text(`Generated on: ${dateStr} | Filter: ${dateFilter}`, 14, 30);
+        doc.text(`Generated on: ${dayjs().format("YYYY-MM-DD")} | Filter: ${dateFilter}`, 14, 30);
         
-        const tableColumn = ["#", "Phone", "Customer", "Return Date", "Net Total", "Payable"];
+        const tableColumn = ["#", "Invoice", "Customer", "Items", "Return Value", "Status", "Date"];
         const tableRows = dataToExport.map((o, i) => [
             i + 1,
-            o.phone_number,
+            o.invoice_number,
             o.customer_name,
-            dayjs(o.created_at).format("DD MMM YYYY"),
-            o.net_order_price,
-            o.payable_price
+            o.return_summary.items_count,
+            `৳${Number(o.return_summary.total_value).toLocaleString()}`,
+            o.current_status?.name,
+            dayjs(o.created_at).format("DD MMM YYYY")
         ]);
 
         autoTable(doc, {
@@ -112,27 +116,28 @@ export default function ReturnReport() {
             startY: 40,
             theme: 'grid',
             headStyles: { fillColor: [28, 85, 139], textColor: 255 },
-            styles: { fontSize: 9 }
+            styles: { fontSize: 8 }
         });
-        doc.save(`Return_Report_${dateStr}.pdf`);
+        doc.save(`Return_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
     };
 
     const downloadCSV = () => {
         const dataToExport = getExportData();
-        const headers = ["SL", "Phone Number", "Customer Name", "Return Date", "Net Amount", "Advance", "Payable"];
+        const headers = ["SL", "Invoice", "Customer", "Phone", "Items", "Total Qty", "Return Value", "Status", "Date"];
         const rows = dataToExport.map((o, i) => [
             i + 1,
-            o.phone_number,
+            o.invoice_number,
             o.customer_name,
-            dayjs(o.created_at).format("DD MMM YYYY"),
-            o.net_order_price,
-            o.advance_payment,
-            o.payable_price
+            o.phone_number,
+            o.return_summary.items_count,
+            o.return_summary.total_quantity,
+            o.return_summary.total_value,
+            o.current_status?.name,
+            dayjs(o.created_at).format("YYYY-MM-DD")
         ]);
-        let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-        const encodedUri = encodeURI(csvContent);
+        let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
         const link = document.createElement("a");
-        link.href = encodedUri;
+        link.href = encodeURI(csvContent);
         link.download = `Return_Report_${dayjs().format('YYYY-MM-DD')}.csv`;
         link.click();
     };
@@ -150,66 +155,78 @@ export default function ReturnReport() {
             align: 'center'
         },
         {
-            title: "Customer Profile",
-            key: "profile",
+            title: "Return Identity",
+            key: "identity",
             render: (_, record) => (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <UserOutlined style={{ color: '#64748b' }} />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Text strong style={{ color: '#1e293b' }}>{record.customer_name}</Text>
-                        <Text type="secondary" style={{ fontSize: 12 }}>{record.phone_number}</Text>
-                    </div>
-                </div>
-            ),
-        },
-        {
-            title: "Return Date",
-            dataIndex: "created_at",
-            key: "created_at",
-            render: (value) => (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <Text style={{ fontSize: 13 }}>{dayjs(value).format("DD MMM YYYY")}</Text>
-                    <Text type="secondary" style={{ fontSize: 11 }}>{dayjs(value).format("hh:mm A")}</Text>
+                    <Text strong style={{ color: '#1e293b' }}>{record.invoice_number}</Text>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Tag color="default" style={{ fontSize: 10, margin: 0, borderRadius: 4 }}>{dayjs(record.created_at).format("DD MMM, YYYY")}</Tag>
+                        {record.order_from && (
+                            <Tag color="cyan" style={{ fontSize: 10, margin: 0, borderRadius: 4 }}>{record.order_from.name}</Tag>
+                        )}
+                    </div>
                 </div>
             ),
+            width: 180
         },
         {
-            title: "Returned Items",
-            key: "items_count",
-            align: "center",
+            title: "Customer Intelligence",
+            key: "customer",
             render: (_, record) => (
-                <Tag color="blue" icon={<ShoppingOutlined />} style={{ borderRadius: 4, padding: '0 8px' }}>
-                    {record.details?.length || 0} Items
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Avatar size={32} icon={<UserOutlined />} style={{ backgroundColor: '#f1f5f9', color: '#64748b' }} />
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <Text strong style={{ fontSize: 13, color: '#1e293b' }}>{record.customer_name}</Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>{record.phone_number}</Text>
+                    </div>
+                </div>
+            ),
+            width: 200
+        },
+        {
+            title: "Return Volume",
+            key: "volume",
+            align: 'center',
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <Tag color="blue" icon={<ShoppingOutlined />} style={{ borderRadius: 12, margin: 0 }}>
+                        {record.return_summary.items_count} SKU / {record.return_summary.total_quantity} Pcs
+                    </Tag>
+                </div>
+            ),
+            width: 150
+        },
+        {
+            title: "Financial Liability",
+            key: "liability",
+            align: 'right',
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    <Text strong style={{ color: '#0f172a' }}>৳{Number(record.return_summary.total_value).toLocaleString()}</Text>
+                    <Text type="secondary" style={{ fontSize: 10 }}>MRP: ৳{Number(record.return_summary.total_mrp).toLocaleString()}</Text>
+                </div>
+            ),
+            width: 150
+        },
+        {
+            title: "Status",
+            key: "status",
+            render: (_, record) => (
+                <Tag 
+                    style={{ 
+                        backgroundColor: record.current_status?.bg_color || '#f1f5f9', 
+                        color: record.current_status?.text_color || '#64748b',
+                        border: 'none',
+                        borderRadius: 4,
+                        fontWeight: 600,
+                        fontSize: 11
+                    }}
+                >
+                    {record.current_status?.name?.toUpperCase()}
                 </Tag>
             ),
-        },
-        {
-            title: "Net Amount",
-            dataIndex: "net_order_price",
-            key: "net_order_price",
-            align: 'right',
-            render: (val) => <Text strong style={{ color: '#0f172a' }}>৳{Number(val || 0).toLocaleString()}</Text>
-        },
-        {
-            title: "Advance",
-            dataIndex: "advance_payment",
-            key: "advance_payment",
-            align: 'right',
-            render: (val) => Number(val) > 0 
-                ? <Text style={{ color: '#10b981', fontWeight: 500 }}>৳{Number(val).toLocaleString()}</Text> 
-                : <Text type="secondary">৳0</Text>
-        },
-        {
-            title: "Payable",
-            key: "payable_price",
-            align: 'right',
-            render: (_, record) => (
-                <div style={{ background: '#f8fafc', padding: '4px 10px', borderRadius: 4, border: '1px solid #e2e8f0', display: 'inline-block' }}>
-                    <Text strong style={{ color: '#1e293b' }}>৳{Number(record.payable_price || 0).toLocaleString()}</Text>
-                </div>
-            ),
+            width: 150
         }
     ];
 
@@ -217,81 +234,154 @@ export default function ReturnReport() {
         const detailColumns = [
             {
                 title: "Product Item",
-                key: "product",
+                key: "item",
                 render: (_, item) => (
-                    <Space size="middle">
-                        <Image
-                            src={item.product?.img_path}
-                            alt={item.product_name}
-                            width={40}
-                            height={40}
-                            style={{ borderRadius: 6, objectFit: 'cover' }}
-                            fallback="https://via.placeholder.com/40"
-                        />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <Avatar shape="square" size={40} src={item.img_path} icon={<ShoppingOutlined />} />
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <Text strong style={{ fontSize: 13 }}>{item.product_name}</Text>
-                            <Text type="secondary" style={{ fontSize: 11 }}>SKU: {item.product_id}</Text>
+                            <Text strong style={{ fontSize: 12 }}>{item.product_name}</Text>
+                            <Text type="secondary" style={{ fontSize: 10 }}>SKU: {item.sku}</Text>
                         </div>
-                    </Space>
+                    </div>
                 )
             },
             {
-                title: "Unit Price",
-                dataIndex: "sell_price",
-                key: "sell_price",
+                title: "Pricing Metrics",
+                key: "pricing",
                 align: 'right',
-                render: (val) => <Text>৳{Number(val).toLocaleString()}</Text>
+                render: (_, item) => (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                        <Text style={{ fontSize: 12 }}>৳{Number(item.sell_price).toLocaleString()} × {item.quantity}</Text>
+                        {Number(item.discount) > 0 && <Text type="danger" style={{ fontSize: 10 }}>-৳{Number(item.discount).toLocaleString()} Discount</Text>}
+                    </div>
+                )
             },
             {
-                title: "Qty",
-                dataIndex: "quantity",
-                key: "quantity",
-                align: 'center',
-                render: (qty) => <Tag color="default">{qty}</Tag>
-            },
-            {
-                title: "Total",
+                title: "Line Total",
                 key: "total",
                 align: 'right',
-                render: (_, item) => <Text strong>৳{(Number(item.sell_price) * Number(item.quantity)).toLocaleString()}</Text>
+                render: (_, item) => <Text strong style={{ color: '#166534' }}>৳{Number(item.line_total).toLocaleString()}</Text>
             }
         ];
 
         return (
-            <div style={{ padding: '16px 24px', background: '#f8fafc', borderRadius: 8, border: '1px solid #f1f5f9' }}>
-                <Title level={5} style={{ margin: '0 0 16px 0', fontSize: 14, color: '#64748b' }}>Item Details for Return ID #{record.id}</Title>
-                <Table
-                    columns={detailColumns}
-                    dataSource={record.details || []}
-                    rowKey="id"
-                    pagination={false}
-                    size="small"
-                    bordered={false}
-                    className="nested-table"
-                    style={{ background: '#fff', borderRadius: 8, overflow: 'hidden' }}
-                />
+            <div style={{ padding: '20px', background: '#f8fafc', borderRadius: 12 }}>
+                <Row gutter={[24, 24]}>
+                    <Col span={16}>
+                        <Card size="small" variant="borderless" title="Itemized Return Logic">
+                            <Table
+                                columns={detailColumns}
+                                dataSource={record.return_details || []}
+                                pagination={false}
+                                size="small"
+                                rowKey="id"
+                            />
+                        </Card>
+                    </Col>
+                    <Col span={8}>
+                        <Card size="small" variant="borderless" title="Logistics & Compliance">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary"><GlobalOutlined /> Territory</Text>
+                                    <Text strong>{record.district?.name}</Text>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary"><CarOutlined /> Logistics</Text>
+                                    <Text strong>{record.courier?.name}</Text>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary"><DollarOutlined /> Payment</Text>
+                                    <Tag color={record.paid_status === 'paid' ? 'green' : 'orange'}>{record.paid_status?.toUpperCase()}</Tag>
+                                </div>
+                                <Divider style={{ margin: '8px 0' }} />
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Text type="secondary">Product Value</Text>
+                                    <Text strong>৳{Number(record.net_order_price).toLocaleString()}</Text>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Text type="secondary">Delivery Fee</Text>
+                                    <Text>৳{Number(record.delivery_charge).toLocaleString()}</Text>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #e2e8f0', paddingTop: 8 }}>
+                                    <Text strong>Final Payable</Text>
+                                    <Text strong style={{ color: '#1e293b', fontSize: 16 }}>৳{Number(record.payable_price).toLocaleString()}</Text>
+                                </div>
+                            </div>
+                        </Card>
+                    </Col>
+                </Row>
             </div>
         );
     };
 
-
     return (
         <div className="reportWrapper">
             <div className="topBar no-print">
-                <Title level={4} style={{ margin: 0 }}>Return Order Report</Title>
+                <Title level={4} style={{ margin: 0 }}>Return Order Intelligence</Title>
                 <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
             </div>
 
             <Divider className="no-print" style={{ margin: '12px 0' }} />
 
+            {summary && (
+                <div className="no-print" style={{ marginBottom: 24 }}>
+                    <Row gutter={[16, 16]}>
+                        <Col xs={24} sm={12} md={6}>
+                            <Card bordered={false} className="summary-card main-stats">
+                                <Space direction="vertical" size={0}>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Return Liability</Text>
+                                    <Title level={3} style={{ margin: 0 }}>৳{Number(summary.total_return_value || 0).toLocaleString()}</Title>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>cumulative revenue reversal</Text>
+                                </Space>
+                                <RedoOutlined className="summary-icon" style={{ color: '#ef4444' }} />
+                                <div className="card-indicator secondary"></div>
+                            </Card>
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                            <Card bordered={false} className="summary-card">
+                                <Space direction="vertical" size={0}>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>In-Pipeline</Text>
+                                    <Title level={3} style={{ margin: 0 }}>{summary.pending_return_count}</Title>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>returns awaiting resolution</Text>
+                                </Space>
+                                <WarningOutlined className="summary-icon" style={{ color: '#f59e0b' }} />
+                                <div className="card-indicator warning"></div>
+                            </Card>
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                            <Card bordered={false} className="summary-card">
+                                <Space direction="vertical" size={0}>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Return Density</Text>
+                                    <Title level={3} style={{ margin: 0 }}>{summary.total_return_quantity}</Title>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>total physical units returned</Text>
+                                </Space>
+                                <AreaChartOutlined className="summary-icon" style={{ color: '#3b82f6' }} />
+                                <div className="card-indicator info"></div>
+                            </Card>
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                            <Card bordered={false} className="summary-card">
+                                <Space direction="vertical" size={0}>
+                                    <Text type="secondary" style={{ fontSize: 13 }}>Avg Return Value</Text>
+                                    <Title level={3} style={{ margin: 0 }}>৳{Number(summary.average_return_value || 0).toLocaleString()}</Title>
+                                    <Text type="secondary" style={{ fontSize: 11 }}>mean impact per return order</Text>
+                                </Space>
+                                <LineChartOutlined className="summary-icon" style={{ color: '#10b981' }} />
+                                <div className="card-indicator success"></div>
+                            </Card>
+                        </Col>
+                    </Row>
+                </div>
+            )}
+
             <div className="topBar no-print">
                 <Space wrap size="middle">
                     <Input 
-                        placeholder="Search phone or name..." 
+                        placeholder="Search Invoice, Customer, Phone..." 
                         allowClear 
                         value={localSearch}
                         onChange={(e) => setLocalSearch(e.target.value)} 
-                        style={{ width: 250 }}
+                        style={{ width: 300 }}
                         prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
                     />
                     
@@ -328,21 +418,15 @@ export default function ReturnReport() {
                     </Button>
                 </Space>
 
-                <Space size="middle">
+                <Space size="middle" className="no-print">
                     {selectedRowKeys.length > 0 && (
                         <Text strong style={{ color: '#1677ff' }}>
                             {selectedRowKeys.length} selected
                         </Text>
                     )}
-                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
-                        CSV
-                    </Button>
-                    <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>
-                        PDF
-                    </Button>
-                    <Button icon={<PrinterOutlined />} onClick={handlePrint}>
-                        Print
-                    </Button>
+                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>CSV</Button>
+                    <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>PDF</Button>
+                    <Button icon={<PrinterOutlined />} onClick={handlePrint}>Print</Button>
                 </Space>
             </div>
 
@@ -358,7 +442,7 @@ export default function ReturnReport() {
                     loading={loading}
                     expandable={{
                         expandedRowRender,
-                        rowExpandable: (record) => record.details?.length > 0,
+                        rowExpandable: (record) => record.return_details?.length > 0,
                     }}
                     pagination={{
                         current: pagination.current,
@@ -372,6 +456,47 @@ export default function ReturnReport() {
                     }}
                 />
             </div>
+
+            <style jsx>{`
+                .summary-card {
+                    height: 100%;
+                    border-radius: 12px;
+                    border: 1px solid #f1f5f9;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                    position: relative;
+                    overflow: hidden;
+                    transition: all 0.3s ease;
+                    background: #fff;
+                    padding: 20px;
+                }
+                .summary-card:hover {
+                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                    transform: translateY(-2px);
+                }
+                .summary-icon {
+                    position: absolute;
+                    right: 16px;
+                    bottom: 16px;
+                    font-size: 32px;
+                    opacity: 0.1;
+                    transition: all 0.3s ease;
+                }
+                .summary-card:hover .summary-icon {
+                    opacity: 0.2;
+                    transform: scale(1.1);
+                }
+                .card-indicator {
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    width: 4px;
+                }
+                .card-indicator.info { background: #3b82f6; }
+                .card-indicator.success { background: #10b981; }
+                .card-indicator.secondary { background: #ef4444; }
+                .card-indicator.warning { background: #f59e0b; }
+            `}</style>
         </div>
     );
 }
