@@ -75,20 +75,20 @@ export default function UpsellReport() {
         if (dateFilter && dateFilter !== "custom") {
             params.filter = dateFilter;
         } else if (dateFilter === "custom" && dateRange[0] && dateRange[1]) {
-            params.start_date = dateRange[0].format("YYYY-MM-DD");
-            params.end_date = dateRange[1].format("YYYY-MM-DD");
+            params.from_date = dateRange[0].format("YYYY-MM-DD");
+            params.to_date = dateRange[1].format("YYYY-MM-DD");
         }
         params.page = pagination.current;
-        params.limit = pagination.pageSize;
+        params.paginate_size = pagination.pageSize;
 
         const query = new URLSearchParams(params).toString();
         try {
             setLoading(true);
             const res = await getDatas(`/admin/order/reports/up-sell?${query}`);
             if(res && res?.success){
-                const data = res?.result || [];
+                const data = res?.result?.data || [];
                 setOrders(data);
-                setPagination(prev => ({ ...prev, total: data.length }));
+                setPagination(prev => ({ ...prev, total: res?.result?.total }));
             }
         } catch (error) {
             console.log(error);
