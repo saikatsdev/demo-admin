@@ -25,7 +25,8 @@ export default function FollowupReport() {
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [pagination, setPagination]           = useState({current: 1,pageSize: 25,total: 0});
 
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key: "sl",
@@ -132,8 +133,8 @@ export default function FollowupReport() {
         window.print();
     };
 
-    const getExportData = () => {
-        const filtered = orders.filter((order) => {
+    const getFilteredData = () => {
+        return orders.filter((order) => {
             if (!localSearch) return true;
             const term = localSearch.toLowerCase();
             return (
@@ -142,6 +143,10 @@ export default function FollowupReport() {
                 order.invoice_number?.toLowerCase().includes(term)
             );
         });
+    };
+
+    const getExportData = () => {
+        const filtered = getFilteredData();
         if (selectedRowKeys.length > 0) {
             return filtered.filter(item => selectedRowKeys.includes(item.id));
         }
@@ -286,7 +291,7 @@ export default function FollowupReport() {
                     }}
                     rowKey="id"
                     columns={columns}
-                    dataSource={getExportData().length === orders.length ? orders : getExportData()}
+                    dataSource={getFilteredData()}
                     loading={loading}
                     pagination={{
                         current: pagination.current,
