@@ -1,16 +1,6 @@
 import { useEffect, useState } from "react";
 import { Table, Input, Select, Button, DatePicker, Space, Tag, Progress, Tooltip, Typography, Divider } from "antd";
-import { 
-    FilePdfOutlined, 
-    FileExcelOutlined, 
-    ReloadOutlined, 
-    EyeOutlined, 
-    ArrowLeftOutlined, 
-    PrinterOutlined,
-    CalendarOutlined,
-    SearchOutlined,
-    RiseOutlined
-} from "@ant-design/icons";
+import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, EyeOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, SearchOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import jsPDF from "jspdf";
@@ -27,13 +17,13 @@ export default function ProductReport() {
     useTitle("Product Performance Analytics");
 
     // State
-    const [localSearch, setLocalSearch] = useState("");
-    const [loading, setLoading]         = useState(false);
-    const [dateFilter, setDateFilter]   = useState("all");
-    const [products, setProducts]       = useState([]);
-    const [dateRange, setDateRange]     = useState([null, null]);
+    const [localSearch, setLocalSearch]         = useState("");
+    const [loading, setLoading]                 = useState(false);
+    const [dateFilter, setDateFilter]           = useState("all");
+    const [products, setProducts]               = useState([]);
+    const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-    const [pagination, setPagination]   = useState({ current: 1, pageSize: 25, total: 0 });
+    const [pagination, setPagination]           = useState({ current: 1, pageSize: 25, total: 0 });
 
     const getOrderReport = async () => {
         let params = {};
@@ -90,7 +80,8 @@ export default function ProductReport() {
         return filtered;
     };
 
-    const columns = [
+    const columns = 
+    [
         {
             title: "#",
             key: "sl",
