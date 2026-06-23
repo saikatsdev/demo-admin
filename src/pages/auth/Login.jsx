@@ -60,7 +60,17 @@ export default function Login() {
             const resData = res?.data;
 
             if (resData && resData.success) {
-                login(resData.result.user, resData.result.token);
+                const user = resData.result.user;
+                const teamSetting = user.team_setting;
+                const roles = user.roles || [];
+                
+                const isSpecialRole = roles.some(r => r.id === 1 || r.id === 2);
+
+                if (!isSpecialRole && teamSetting?.team_module_active) {
+                    user.screening_duration = teamSetting.screening_duration;
+                }
+
+                login(user, resData.result.token);
                 navigate('/dashboard', { replace: true });
                 return;
             }

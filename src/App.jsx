@@ -177,6 +177,7 @@ import Attendance from "./pages/team/attendance/Attendance";
 import EditAttendance from "./pages/team/attendance/EditAttendance";
 import TeamSetting from "./pages/team/settings/TeamSetting";
 import Team from "./pages/team/Team";
+import ScreeningManager from "./components/auth/ScreeningManager";
 
 function App() {
     const dispatch         = useDispatch();
@@ -204,7 +205,9 @@ function App() {
     }, [auth]);
 
     return (
-        <Routes>
+        <>
+            <ScreeningManager />
+            <Routes>
             <Route path="/login"
                 element={
                     <RedirectIfAuth>
@@ -457,6 +460,7 @@ function App() {
                 </Route>
             </Route>
         </Routes>
+        </>
     );
 }
 
