@@ -82,7 +82,8 @@ export default function CustomerReport() {
         return filtered;
     };
 
-    const columns = [
+    const columns = 
+    [
         {
             title: "#",
             key: "sl",
