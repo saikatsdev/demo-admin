@@ -50,7 +50,7 @@ export default function OrderAndProduct() {
             const res = await getDatas('/admin/order/reports/by-selling', params);
 
             if(res && res?.success){
-                setProducts(res?.result?.data);
+                setProducts(res?.result?.products?.data || []);
             }
         } catch (error) {
             console.log(error);

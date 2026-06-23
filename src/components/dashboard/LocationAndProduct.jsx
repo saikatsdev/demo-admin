@@ -35,7 +35,7 @@ export default function LocationAndProduct() {
             const res = await getDatas("/admin/order/reports/by-location", params);
 
             if(res && res?.success){
-                setLocationData(res?.result?.data || []);
+                setLocationData(res?.result?.locations?.data || []);
             }
         } catch (error) {
             console.log(error);
@@ -51,10 +51,10 @@ export default function LocationAndProduct() {
                 params.to_date   = range[1].format('YYYY-MM-DD');
             }
 
-            const res = await getDatas("/admin/lowest/stock/products", params);
+            const res = await getDatas("/admin/order/reports/products", params);
 
             if(res && res?.success){
-                setLowStockData(res?.result?.data || []);
+                setLowStockData(res?.result?.products?.data || []);
             }
         } catch (error) {
             console.log(error);
@@ -73,7 +73,7 @@ export default function LocationAndProduct() {
             const res = await getDatas("/admin/order/reports/cancel", params);
 
             if(res && res?.success){
-                setCancelOrders(res?.result?.data || []);
+                setCancelOrders(res?.result?.orders?.data || []);
             }
         } catch (error) {
             console.log(error);
@@ -92,7 +92,7 @@ export default function LocationAndProduct() {
             const res = await getDatas("/admin/order/reports/by-customer", params);
 
             if(res && res?.success){
-                setCustomers(res?.result?.data || []);
+                setCustomers(res?.result?.customers?.data || []);
             }
         } catch (error) {
             console.log(error);
