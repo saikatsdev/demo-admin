@@ -17,14 +17,14 @@ export default function CustomerReport() {
     useTitle("Customer Engagement Report");
 
     // States
-    const [localSearch, setLocalSearch] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [dateFilter, setDateFilter] = useState("all");
-    const [customers, setCustomers] = useState([]);
-    const [dateRange, setDateRange] = useState([null, null]);
+    const [localSearch, setLocalSearch]         = useState("");
+    const [loading, setLoading]                 = useState(false);
+    const [dateFilter, setDateFilter]           = useState("all");
+    const [customers, setCustomers]             = useState([]);
+    const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [expandedRowKeys, setExpandedRowKeys] = useState([]);
-    const [pagination, setPagination] = useState({ current: 1, pageSize: 25, total: 0 });
+    const [pagination, setPagination]           = useState({ current: 1, pageSize: 25, total: 0 });
 
     const getCustomerReport = async () => {
         let params = {};
@@ -69,12 +69,16 @@ export default function CustomerReport() {
         window.print();
     };
 
-    const getExportData = () => {
-        const filtered = customers.filter(c => 
+    const getFilteredData = () => {
+        return customers.filter(c => 
             !localSearch || 
             c.customer_name?.toLowerCase().includes(localSearch.toLowerCase()) || 
             c.phone_number?.toLowerCase().includes(localSearch.toLowerCase())
         );
+    };
+
+    const getExportData = () => {
+        const filtered = getFilteredData();
         if (selectedRowKeys.length > 0) {
             return filtered.filter(item => selectedRowKeys.includes(item.id));
         }
@@ -315,7 +319,7 @@ export default function CustomerReport() {
                     }}
                     rowKey={(record) => record.phone_number || record.customer_name}
                     columns={columns}
-                    dataSource={getExportData().length === customers.length ? customers : getExportData()}
+                    dataSource={getFilteredData()}
                     loading={loading}
                     expandable={{
                         expandedRowRender,
