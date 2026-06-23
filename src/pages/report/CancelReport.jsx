@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Typography, Divider } from "antd";
-import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined,SearchOutlined} from "@ant-design/icons";
+import { Table, Input, Select, Button, DatePicker, Space, Typography, Divider, Tag } from "antd";
+import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, SearchOutlined, UserOutlined, StopOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import jsPDF from "jspdf";
@@ -19,66 +19,11 @@ export default function CancelReport() {
     // State
     const [localSearch, setLocalSearch]         = useState("");
     const [loading, setLoading]                 = useState(false);
-    const [dateFilter, setDateFilter]           = useState("today");
+    const [dateFilter, setDateFilter]           = useState("all");
     const [orders, setOrders]                   = useState([]);
     const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-    const [pagination, setPagination]           = useState({current: 1,pageSize: 25,total: 0});
-
-    const columns = [
-        {
-            title: "SL",
-            key: "sl",
-            render: (text, record, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
-            width: 60,
-            align: 'center'
-        },
-        {
-            title: "Phone Number",
-            dataIndex: "phone_number",
-            key: "phone_number",
-        },
-        {
-            title: "Customer Name",
-            dataIndex: "customer_name",
-            key: "customer_name",
-        },
-        {
-            title: "Cancel Date",
-            dataIndex: "updated_at",
-            key: "updated_at",
-            render: (value) => dayjs(value).format("MMM DD, YYYY hh:mm A"),
-        },
-        {
-            title: "Total Amount",
-            dataIndex: "net_order_price",
-            key: "net_order_price",
-            align: 'right',
-            render: (val) => `৳${Number(val || 0).toLocaleString()}`
-        },
-        {
-            title: "Advanced",
-            dataIndex: "advance_payment",
-            key: "advance_payment",
-            align: 'right',
-            render: (val) => `৳${Number(val || 0).toLocaleString()}`
-        },
-        {
-            title: "Payable",
-            key: "payable_price",
-            align: 'right',
-            render: (_, record) => {
-                const payable = Number(record.payable_price || 0);
-                const advance = Number(record.advance_payment || 0);
-                const finalAmount = advance > 0 ? payable - advance : payable;
-                return <Text strong>৳{finalAmount.toLocaleString()}</Text>;
-            },
-        }
-    ];
-
-    useEffect(() => {
-        setPagination((prev) => ({ ...prev, current: 1 }));
-    }, [dateFilter, dateRange]);
+    const [pagination, setPagination]           = useState({current: 1, pageSize: 25, total: 0});
 
     const getOrderReport = async () => {
         let params = {};
@@ -88,7 +33,6 @@ export default function CancelReport() {
             params.from_date = dateRange[0].format("YYYY-MM-DD");
             params.to_date = dateRange[1].format("YYYY-MM-DD");
         }
-
         params.page = pagination.current;
         params.paginate_size = pagination.pageSize;
 
@@ -99,7 +43,11 @@ export default function CancelReport() {
             const res = await getDatas(`/admin/order/reports/cancel?${query}`);
             if(res && res?.success){
                 setOrders(res?.result?.data || []);
-                setPagination(prev => ({ ...prev, total: res?.result?.total || 0 }));
+                setPagination(prev => ({ 
+                    ...prev, 
+                    total: res?.result?.total || 0,
+                    current: res?.result?.current_page || 1
+                }));
             }
         } catch (error) {
             console.log(error);
@@ -116,12 +64,20 @@ export default function CancelReport() {
         window.print();
     };
 
-    const getExportData = () => {
-        const filtered = orders.filter((order) => {
+    const getFilteredData = () => {
+        return orders.filter((order) => {
             if (!localSearch) return true;
             const term = localSearch.toLowerCase();
-            return (order.phone_number?.toLowerCase().includes(term) || order.customer_name?.toLowerCase().includes(term));
+            return (
+                order.phone_number?.toLowerCase().includes(term) || 
+                order.customer_name?.toLowerCase().includes(term) ||
+                order.invoice_number?.toLowerCase().includes(term)
+            );
         });
+    };
+
+    const getExportData = () => {
+        const filtered = getFilteredData();
         if (selectedRowKeys.length > 0) {
             return filtered.filter(item => selectedRowKeys.includes(item.id));
         }
@@ -138,12 +94,12 @@ export default function CancelReport() {
         const dateStr = dayjs().format("YYYY-MM-DD");
         doc.text(`Generated on: ${dateStr} | Filter: ${dateFilter}`, 14, 30);
         
-        const tableColumn = ["#", "Phone", "Customer", "Cancel Date", "Total", "Payable"];
+        const tableColumn = ["#", "Customer", "Invoice", "Cancel Reason", "Net Total", "Payable"];
         const tableRows = dataToExport.map((o, i) => [
             i + 1,
-            o.phone_number,
             o.customer_name,
-            dayjs(o.updated_at).format("YYYY-MM-DD"),
+            o.invoice_number,
+            o.cancel_reason?.name || "N/A",
             o.net_order_price,
             o.payable_price
         ]);
@@ -161,15 +117,17 @@ export default function CancelReport() {
 
     const downloadCSV = () => {
         const dataToExport = getExportData();
-        const headers = ["SL","Phone Number","Customer Name","Cancel Date","Total Amount","Advanced Payment","Payable Price"];
+        const headers = ["SL","Phone","Customer","Invoice","Reason","Net Total","Advance","Payable","Date"];
         const rows = dataToExport.map((o, i) => [
             i + 1,
             o.phone_number,
             o.customer_name,
-            dayjs(o.updated_at).format("YYYY-MM-DD"),
+            o.invoice_number,
+            o.cancel_reason?.name || "",
             o.net_order_price,
             o.advance_payment,
-            o.payable_price
+            o.payable_price,
+            dayjs(o.created_at).format("YYYY-MM-DD")
         ]);
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
         const encodedUri = encodeURI(csvContent);
@@ -179,13 +137,80 @@ export default function CancelReport() {
         link.click();
     };
 
+    const columns = [
+        {
+            title: "#",
+            key: "sl",
+            render: (_, __, index) => (
+                <span style={{ fontWeight: 600, color: '#94a3b8' }}>
+                    {(pagination.current - 1) * pagination.pageSize + index + 1}
+                </span>
+            ),
+            width: 60,
+            align: 'center'
+        },
+        {
+            title: "Customer Profile",
+            key: "profile",
+            render: (_, record) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <UserOutlined style={{ color: '#ef4444' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <Text strong style={{ color: '#1e293b' }}>{record.customer_name}</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>{record.phone_number}</Text>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            title: "Invoice Info",
+            key: "invoice",
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <Text strong style={{ fontSize: 13 }}>{record.invoice_number}</Text>
+                    <Text type="secondary" style={{ fontSize: 11 }}>{dayjs(record.created_at).format("DD MMM, YYYY")}</Text>
+                </div>
+            )
+        },
+        {
+            title: "Cancel Reason",
+            key: "reason",
+            render: (_, record) => (
+                <Tag ghost color="red" icon={<StopOutlined />} style={{ borderRadius: 4 }}>
+                    {record.cancel_reason?.name || "N/A"}
+                </Tag>
+            )
+        },
+        {
+            title: "Net Order",
+            dataIndex: "net_order_price",
+            key: "net_order_price",
+            align: 'right',
+            render: (val) => <Text style={{ color: '#4b5563' }}>৳{Number(val || 0).toLocaleString()}</Text>
+        },
+        {
+            title: "Advance",
+            dataIndex: "advance_payment",
+            key: "advance_payment",
+            align: 'right',
+            render: (val) => Number(val) > 0 ? <Tag color="green">৳{Number(val).toLocaleString()}</Tag> : <Text type="secondary">৳0</Text>
+        },
+        {
+            title: "Payable",
+            dataIndex: "payable_price",
+            key: "payable_price",
+            align: 'right',
+            render: (val) => <Text strong style={{ color: '#1e293b' }}>৳{Number(val || 0).toLocaleString()}</Text>
+        }
+    ];
+
     return (
         <div className="reportWrapper">
             <div className="topBar no-print">
                 <Title level={4} style={{ margin: 0 }}>Order Cancel Report</Title>
-                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                    Back
-                </Button>
+                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
             </div>
 
             <Divider className="no-print" style={{ margin: '12px 0' }} />
@@ -193,11 +218,11 @@ export default function CancelReport() {
             <div className="topBar no-print">
                 <Space wrap size="middle">
                     <Input 
-                        placeholder="Search phone or name..." 
+                        placeholder="Search phone, name or invoice..." 
                         allowClear 
                         value={localSearch}
                         onChange={(e) => setLocalSearch(e.target.value)} 
-                        style={{ width: 250 }}
+                        style={{ width: 280 }}
                         prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
                     />
                     
@@ -224,10 +249,11 @@ export default function CancelReport() {
                     )}
 
                     <Button icon={<ReloadOutlined />} onClick={() => {
-                        setDateFilter("today");
+                        setDateFilter("all");
                         setLocalSearch("");
                         setDateRange([null, null]);
                         setSelectedRowKeys([]);
+                        setPagination(prev => ({ ...prev, current: 1 }));
                     }}>
                         Reset
                     </Button>
@@ -259,7 +285,7 @@ export default function CancelReport() {
                     }}
                     rowKey="id"
                     columns={columns}
-                    dataSource={getExportData().length === orders.length ? orders : getExportData()}
+                    dataSource={getFilteredData()}
                     loading={loading}
                     pagination={{
                         current: pagination.current,
