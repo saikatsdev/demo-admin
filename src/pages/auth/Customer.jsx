@@ -1,7 +1,7 @@
 import { ArrowLeftOutlined, SearchOutlined, MailOutlined, PhoneOutlined, CalendarOutlined, ShoppingOutlined, WalletOutlined, CheckCircleOutlined, TeamOutlined, UserAddOutlined } from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button, Space, Table, Tag, Typography, Card, Row, Col } from "antd";
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -13,15 +13,12 @@ export default function Customer() {
     useTitle("All Customer");
 
     // State
-    const [query, setQuery]                     = useState("");
-    const [users, setUsers]                     = useState([]);
+    const [users, setUsers]                     = useState(null);
     const [loading, setLoading]                 = useState(false);
-    const [pagination, setPagination]           = useState({current: 1,pageSize: 20,total: 0});
-    const { current, pageSize }                 = pagination;
-    const [debouncedQuery, setDebouncedQuery]   = useState("");
     const [customerSummary, setCustomerSummary] = useState(null);
+    const [currentPage, setCurrentPage]         = useState(1);
+    const [pageSize, setPageSize]               = useState(25);
 
-    // Local Styles for Professional Look
     const styles = {
         container: {
             padding: '24px',
@@ -72,7 +69,8 @@ export default function Customer() {
         }
     };
 
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key: "sl",
@@ -80,7 +78,7 @@ export default function Customer() {
             align: 'center',
             render: (_, __, index) => (
                 <Text type="secondary" style={{ fontWeight: 600 }}>
-                    {(current - 1) * pageSize + index + 1}
+                    {(currentPage - 1) * (users?.per_page || 10) + index + 1}
                 </Text>
             ),
         },
@@ -185,43 +183,16 @@ export default function Customer() {
         },
     ];
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedQuery(query);
-        }, 500);
-
-        return () => clearTimeout(handler);
-    }, [query]);
-
-    useEffect(() => {
-        setPagination((p) => (p.current === 1 ? p : { ...p, current: 1 }));
-    }, [debouncedQuery]);
-
-    const fetchUsers = async () => {
+    const fetchUsers = async (page = 1, limit = pageSize) => {
         try {
             setLoading(true);
 
-            const params = {user_category_id: 1,page: current,paginate_size: pageSize,...(debouncedQuery ? { search_key: debouncedQuery } : {})};
-
-            const res = await getDatas("/admin/customers", params);
+            const res = await getDatas(`/admin/customers?page=${page}&paginate_size=${limit}`);
 
             if (res && res?.success) {
                 setUsers(res?.result?.customers);
-
-                setCustomerSummary(res?.result?.summary || []);
-
-                setPagination((p) => {
-                    const next = {
-                    ...p,
-                        current: res?.result?.customers?.current_page ?? p.current,
-                        pageSize: res?.result?.customers?.per_page ?? p.pageSize,
-                        total: res?.result?.customers?.total ?? p.total,
-                    };
-
-                    const unchanged = p.current === next.current && p.pageSize === next.pageSize && p.total === next.total;
-
-                    return unchanged ? p : next;
-                });
+                setCustomerSummary(res?.result?.summary || null);
+                setCurrentPage(res?.result?.customers?.current_page || 1);
             }
         } catch (error) {
             console.log(error);
@@ -232,15 +203,7 @@ export default function Customer() {
 
     useEffect(() => {
         fetchUsers();
-    }, [current, pageSize, debouncedQuery]);
-
-    const filteredData = useMemo(() => {
-        if (!debouncedQuery) return users;
-        return users.filter(u =>
-            u.customer_name.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
-            u.phone_number.includes(debouncedQuery)
-        );
-    }, [users, debouncedQuery]);
+    }, []);
 
     return (
         <div style={styles.container}>
@@ -315,33 +278,30 @@ export default function Customer() {
             <Card style={styles.tableCard} bodyStyle={{ padding: 0 }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Title level={5} style={{ margin: 0, color: '#334155' }}>Customer Base</Title>
-                    <AntInput 
-                        placeholder="Search by name, email or phone..." 
-                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
-                        value={query} 
-                        onChange={(e) => setQuery(e.target.value)}
-                        style={styles.searchInput}
-                        allowClear
-                    />
+                    <AntInput placeholder="Search by name, email or phone..." prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                        style={styles.searchInput} allowClear/>
                 </div>
                 <Table 
-                    rowKey="id" 
+                    rowKey={(record) => record.phone_number || record.last_order_id} 
                     loading={loading} 
-                    pagination={{
-                        current: pagination.current,
-                        pageSize: pagination.pageSize, 
-                        total: pagination.total, 
-                        showSizeChanger: true,
-                        pageSizeOptions: ['10', '20', '50'],
-                        showTotal: (total) => `Total ${total} customers`,
-                        onChange: (page, pageSize) => {
-                            setPagination((p) => ({ ...p, current: page, pageSize }));
-                        },
-                    }} 
                     columns={columns} 
-                    dataSource={filteredData} 
+                    dataSource={users?.data || []} 
                     scroll={{ x: "max-content" }}
                     style={{ padding: '0 8px' }}
+                    pagination={{
+                        current: currentPage,
+                        pageSize: pageSize,
+                        total: users?.total || 0,
+                        onChange: (page, size) => {
+                            setPageSize(size);
+                            fetchUsers(page, size);
+                        },
+                        showSizeChanger: true,
+                        pageSizeOptions: ['15', '25', '50', '75', '100'],
+                        showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} customers`,
+                        position: ['bottomRight'],
+                        style: { padding: '16px 24px' }
+                    }}
                 />
             </Card>
         </div>
