@@ -1,8 +1,8 @@
-import { ArrowLeftOutlined, PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, MailOutlined, PhoneOutlined, CalendarOutlined, ShoppingOutlined, WalletOutlined, CheckCircleOutlined, TeamOutlined, UserAddOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Popconfirm, Space, Table, Tag, Typography, Card, Row, Col,Tooltip } from "antd";
+import { ArrowLeftOutlined, SearchOutlined, MailOutlined, PhoneOutlined, CalendarOutlined, ShoppingOutlined, WalletOutlined, CheckCircleOutlined, TeamOutlined, UserAddOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Space, Table, Tag, Typography, Card, Row, Col } from "antd";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { deleteData, getDatas } from "../../api/common/common";
+import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import dayjs from "dayjs";
 
@@ -16,13 +16,10 @@ export default function Customer() {
     const [query, setQuery]                     = useState("");
     const [users, setUsers]                     = useState([]);
     const [loading, setLoading]                 = useState(false);
-    const [pagination, setPagination]           = useState({current: 1,pageSize: 10,total: 0});
+    const [pagination, setPagination]           = useState({current: 1,pageSize: 20,total: 0});
     const { current, pageSize }                 = pagination;
     const [debouncedQuery, setDebouncedQuery]   = useState("");
     const [customerSummary, setCustomerSummary] = useState(null);
-
-    // Variable
-    const navigate = useNavigate();
 
     // Local Styles for Professional Look
     const styles = {
@@ -186,40 +183,6 @@ export default function Customer() {
                 );
             }
         },
-        {
-            title: "Action",
-            key: "operation",
-            width: 120,
-            fixed: 'right',
-            align: 'center',
-            render: (_, record) => (
-                <Space>
-                    <Tooltip title="Edit Customer">
-                        <Button 
-                            icon={<EditOutlined />} 
-                            onClick={() => onEdit(record)}
-                            style={{ borderRadius: '8px', color: '#4f46e5', borderColor: '#4f46e5' }}
-                        />
-                    </Tooltip>
-                    <Popconfirm 
-                        title="Delete Customer" 
-                        description="Are you sure you want to remove this customer?"
-                        okText="Yes, Delete" 
-                        cancelText="No" 
-                        onConfirm={() => onDelete(record.id)}
-                        okButtonProps={{ danger: true }}
-                    >
-                        <Tooltip title="Remove Customer">
-                            <Button 
-                                danger 
-                                icon={<DeleteOutlined />} 
-                                style={{ borderRadius: '8px' }}
-                            />
-                        </Tooltip>
-                    </Popconfirm>
-                </Space>
-            ),
-        },
     ];
 
     useEffect(() => {
@@ -234,28 +197,25 @@ export default function Customer() {
         setPagination((p) => (p.current === 1 ? p : { ...p, current: 1 }));
     }, [debouncedQuery]);
 
-    useEffect(() => {
-        let isMounted = true;
-
-        const fetchUsers = async () => {
+    const fetchUsers = async () => {
+        try {
             setLoading(true);
 
-            const params = {user_category_id: 1,page: current,per_page: pageSize,...(debouncedQuery ? { search_key: debouncedQuery } : {})};
+            const params = {user_category_id: 1,page: current,paginate_size: pageSize,...(debouncedQuery ? { search_key: debouncedQuery } : {})};
 
             const res = await getDatas("/admin/customers", params);
 
-            const result = res?.result || {};
-            const list = result?.data || [];
+            if (res && res?.success) {
+                setUsers(res?.result?.customers);
 
-            if (isMounted) {
-                setUsers(list);
+                setCustomerSummary(res?.result?.summary || []);
 
                 setPagination((p) => {
                     const next = {
                     ...p,
-                        current: result.current_page ?? p.current,
-                        pageSize: result.per_page ?? p.pageSize,
-                        total: result.total ?? p.total,
+                        current: res?.result?.customers?.current_page ?? p.current,
+                        pageSize: res?.result?.customers?.per_page ?? p.pageSize,
+                        total: res?.result?.customers?.total ?? p.total,
                     };
 
                     const unchanged = p.current === next.current && p.pageSize === next.pageSize && p.total === next.total;
@@ -263,15 +223,15 @@ export default function Customer() {
                     return unchanged ? p : next;
                 });
             }
-
+        } catch (error) {
+            console.log(error);
+        }finally{
             setLoading(false);
-        };
+        }
+    };
 
+    useEffect(() => {
         fetchUsers();
-
-        return () => {
-            isMounted = false;
-        };
     }, [current, pageSize, debouncedQuery]);
 
     const filteredData = useMemo(() => {
@@ -281,53 +241,6 @@ export default function Customer() {
             u.phone_number.includes(debouncedQuery)
         );
     }, [users, debouncedQuery]);
-
-    const openCreate = () => {
-        navigate("/add/customer")
-    };
-
-    const onEdit = (record) => {
-        navigate(`/edit/customer/${record.id}`);
-    };
-
-    const onDelete = async (id) => {
-        const res = await deleteData(`/admin/users/${id}`);
-        if (res?.success) {
-            const params = {
-                user_category_id: 1,
-                page            : current,
-                per_page        : pageSize,
-                search_key      : debouncedQuery || undefined,
-            };
-            const refreshed = await getDatas("/admin/users", params);
-            setUsers(refreshed?.result?.data || []);
-            const meta = refreshed?.result?.meta;
-            if (meta) setPagination((p) => ({ ...p, total: meta.total || p.total }));
-        }
-    };
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const getCustomerSummary = async () => {
-            setLoading(true);
-            const res = await getDatas("/admin/customers/summary");
-
-            if(res && res.success){
-                if(isMounted){
-                    setCustomerSummary(res?.result || []);
-
-                    setLoading(false);
-                }
-            }
-        };
-
-        getCustomerSummary();
-
-        return () => {
-            isMounted = false;
-        }
-    }, []);
 
     return (
         <div style={styles.container}>
@@ -349,10 +262,6 @@ export default function Customer() {
                     <Space size="middle">
                         <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} style={styles.actionBtn}>
                             Back
-                        </Button>
-                        
-                        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} style={styles.addBtn}>
-                            Add New Customer
                         </Button>
                     </Space>
                 </div>

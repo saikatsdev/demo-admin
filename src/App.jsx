@@ -87,12 +87,10 @@ import MetaAdAccount from "./pages/meta/MetaAdAccount";
 
 import AddDownSell from "./pages/order/downsell/AddDownSell";
 import EditDownSell from "./pages/order/downsell/EditDownSell";
-import AddCustomer from "./pages/auth/AddCustomer";
 import EditAttribute from "./pages/product/attribute/EditAttribute";
 import Review from "./pages/product/review/Review";
 import AddReview from "./pages/product/review/AddReview";
 import EditReview from "./pages/product/review/EditReview";
-import EditCustomer from "./pages/auth/EditCustomer";
 import AddPaymentGateway from "./pages/order/payment_gateway/AddPaymentGateway";
 import EditPaymentGateway from "./pages/order/payment_gateway/EditPaymentGateway";
 import Gallary from "./pages/gallary/Gallary";
@@ -231,8 +229,6 @@ function App() {
                     <Route path="/users" element={<User />} />
                     <Route path="/roles" element={<Role />} />
                     <Route path="/customer" element={<Customer />} />
-                    <Route path="/add/customer" element={<AddCustomer />} />
-                    <Route path="/edit/customer/:id" element={<EditCustomer />} />
                     <Route path="/edit/employee/password/:id" element={<UpdatePassword />} />
 
                     <Route path="/management" element={<Management />} />
