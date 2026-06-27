@@ -18,6 +18,8 @@ export default function Customer() {
     const [customerSummary, setCustomerSummary] = useState(null);
     const [currentPage, setCurrentPage]         = useState(1);
     const [pageSize, setPageSize]               = useState(25);
+    const [searchTerm, setSearchTerm]           = useState("");
+    const [activeFilter, setActiveFilter]       = useState("all");
 
     const styles = {
         container: {
@@ -183,11 +185,15 @@ export default function Customer() {
         },
     ];
 
-    const fetchUsers = async (page = 1, limit = pageSize) => {
+    const fetchUsers = async (page = 1, limit = pageSize, search = searchTerm, type = activeFilter) => {
         try {
             setLoading(true);
 
-            const res = await getDatas(`/admin/customers?page=${page}&paginate_size=${limit}`);
+            let url = `/admin/customers?page=${page}&paginate_size=${limit}`;
+            if (search) url += `&search=${search}`;
+            if (type && type !== "all") url += `&type=${type}`;
+
+            const res = await getDatas(url);
 
             if (res && res?.success) {
                 setUsers(res?.result?.customers);
@@ -202,8 +208,18 @@ export default function Customer() {
     };
 
     useEffect(() => {
-        fetchUsers();
-    }, []);
+        const timer = setTimeout(() => {
+            fetchUsers(1, pageSize, searchTerm, activeFilter);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    useEffect(() => {
+        if (!searchTerm) {
+            fetchUsers(1, pageSize, "", activeFilter);
+        }
+    }, [activeFilter]);
 
     return (
         <div style={styles.container}>
@@ -232,13 +248,21 @@ export default function Customer() {
 
             <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
                 <Col xs={24} md={8}>
-                    <Card style={{ ...styles.statCard, background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' }}>
+                    <Card 
+                        onClick={() => setActiveFilter("all")}
+                        style={{ 
+                            ...styles.statCard, 
+                            background: activeFilter === "all" ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : '#fff',
+                            border: activeFilter === "all" ? 'none' : '1px solid #e2e8f0',
+                            transform: activeFilter === "all" ? 'scale(1.02)' : 'scale(1)'
+                        }}
+                    >
                         <Space direction="vertical" size={0}>
-                            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: 500 }}>Total Registered Customers</Text>
-                            <Title level={2} style={{ color: '#fff', margin: '8px 0', fontWeight: 800 }}>
+                            <Text style={{ color: activeFilter === "all" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>Total Registered Customers</Text>
+                            <Title level={2} style={{ color: activeFilter === "all" ? '#fff' : '#1e293b', margin: '8px 0', fontWeight: 800 }}>
                                 {Number(customerSummary?.total_customers) || 0}
                             </Title>
-                            <Space style={{ color: '#fff', fontSize: '12px', opacity: 0.9 }}>
+                            <Space style={{ color: activeFilter === "all" ? '#fff' : '#6366f1', fontSize: '12px', opacity: activeFilter === "all" ? 0.9 : 1 }}>
                                 <TeamOutlined />
                                 <span>Global Lifetime Base</span>
                             </Space>
@@ -246,13 +270,21 @@ export default function Customer() {
                     </Card>
                 </Col>
                 <Col xs={24} md={8}>
-                    <Card style={styles.statCard}>
+                    <Card 
+                        onClick={() => setActiveFilter("new")}
+                        style={{ 
+                            ...styles.statCard,
+                            background: activeFilter === "new" ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : '#fff',
+                            border: activeFilter === "new" ? 'none' : '1px solid #e2e8f0',
+                            transform: activeFilter === "new" ? 'scale(1.02)' : 'scale(1)'
+                        }}
+                    >
                         <Space direction="vertical" size={0}>
-                            <Text type="secondary" style={{ fontSize: '14px', fontWeight: 500 }}>New This Month</Text>
-                            <Title level={2} style={{ color: '#6366f1', margin: '8px 0', fontWeight: 800 }}>
+                            <Text style={{ color: activeFilter === "new" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>New This Month</Text>
+                            <Title level={2} style={{ color: activeFilter === "new" ? '#fff' : '#6366f1', margin: '8px 0', fontWeight: 800 }}>
                                 {Number(customerSummary?.current_month_customers) || 0}
                             </Title>
-                            <Space style={{ color: '#6366f1', fontSize: '12px' }}>
+                            <Space style={{ color: activeFilter === "new" ? '#fff' : '#6366f1', fontSize: '12px', opacity: activeFilter === "new" ? 0.9 : 1 }}>
                                 <UserAddOutlined />
                                 <span>Recent Acquisitions</span>
                             </Space>
@@ -260,13 +292,21 @@ export default function Customer() {
                     </Card>
                 </Col>
                 <Col xs={24} md={8}>
-                    <Card style={styles.statCard}>
+                    <Card 
+                        onClick={() => setActiveFilter("active")}
+                        style={{ 
+                            ...styles.statCard,
+                            background: activeFilter === "active" ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' : '#fff',
+                            border: activeFilter === "active" ? 'none' : '1px solid #e2e8f0',
+                            transform: activeFilter === "active" ? 'scale(1.02)' : 'scale(1)'
+                        }}
+                    >
                         <Space direction="vertical" size={0}>
-                            <Text type="secondary" style={{ fontSize: '14px', fontWeight: 500 }}>Active Accounts</Text>
-                            <Title level={2} style={{ color: '#16a34a', margin: '8px 0', fontWeight: 800 }}>
+                            <Text style={{ color: activeFilter === "active" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>Active Accounts</Text>
+                            <Title level={2} style={{ color: activeFilter === "active" ? '#fff' : '#16a34a', margin: '8px 0', fontWeight: 800 }}>
                                 {Number(customerSummary?.active_customers) || 0}
                             </Title>
-                            <Space style={{ color: '#16a34a', fontSize: '12px' }}>
+                            <Space style={{ color: activeFilter === "active" ? '#fff' : '#16a34a', fontSize: '12px', opacity: activeFilter === "active" ? 0.9 : 1 }}>
                                 <CheckCircleOutlined />
                                 <span>Verified & Active</span>
                             </Space>
@@ -278,8 +318,14 @@ export default function Customer() {
             <Card style={styles.tableCard} bodyStyle={{ padding: 0 }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Title level={5} style={{ margin: 0, color: '#334155' }}>Customer Base</Title>
-                    <AntInput placeholder="Search by name, email or phone..." prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
-                        style={styles.searchInput} allowClear/>
+                    <AntInput 
+                        placeholder="Search by name, email or phone..." 
+                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                        style={styles.searchInput} 
+                        allowClear
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
                 </div>
                 <Table 
                     rowKey={(record) => record.phone_number || record.last_order_id} 
