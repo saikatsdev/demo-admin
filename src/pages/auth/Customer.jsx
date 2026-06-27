@@ -62,12 +62,12 @@ export default function Customer() {
         },
         actionBtn: {
             borderRadius: '8px',
-            height: '42px',
+            height: '35px',
             fontWeight: 500,
         },
         addBtn: {
             borderRadius: '8px',
-            height: '42px',
+            height: '35px',
             background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
             border: 'none',
             boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
@@ -306,7 +306,6 @@ export default function Customer() {
         }
     };
 
-    // Get Customer Summary
     useEffect(() => {
         let isMounted = true;
 
@@ -348,19 +347,11 @@ export default function Customer() {
                 </div>
                 <div className="head-actions">
                     <Space size="middle">
-                        <Button 
-                            icon={<ArrowLeftOutlined />} 
-                            onClick={() => window.history.back()}
-                            style={styles.actionBtn}
-                        >
+                        <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} style={styles.actionBtn}>
                             Back
                         </Button>
-                        <Button 
-                            type="primary" 
-                            icon={<PlusOutlined />} 
-                            onClick={openCreate}
-                            style={styles.addBtn}
-                        >
+                        
+                        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate} style={styles.addBtn}>
                             Add New Customer
                         </Button>
                     </Space>

@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { getDatas } from "../../api/common/common";
 import { DatePicker } from 'antd';
-import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
 
