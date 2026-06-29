@@ -1,9 +1,9 @@
-import { Breadcrumb, message, Table, Tag, Card, Typography, Space, Button, Tooltip, Row, Col, Statistic, Select, Dropdown, Input } from "antd";
+import { Breadcrumb, message, Table, Tag, Card, Typography, Space, Button, Tooltip, Row, Col, Statistic, Select, Dropdown, Input, DatePicker } from "antd";
 import { useEffect, useState } from "react";
 import useTitle from "../../hooks/useTitle";
 import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
-import { EyeOutlined, ReloadOutlined, UserOutlined, PhoneOutlined, InfoCircleOutlined, ShoppingCartOutlined, DollarCircleOutlined, CopyOutlined, DownloadOutlined, FilePdfOutlined, PrinterOutlined, DownOutlined} from "@ant-design/icons";
+import { EyeOutlined, ReloadOutlined, UserOutlined, PhoneOutlined, InfoCircleOutlined, CalendarOutlined,ShoppingCartOutlined, DollarCircleOutlined, CopyOutlined, DownloadOutlined, FilePdfOutlined, PrinterOutlined, DownOutlined} from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import * as XLSX from "xlsx";
@@ -12,9 +12,9 @@ import autoTable from "jspdf-autotable";
 
 const { Text, Title } = Typography;
 
-export default function UnpreparedOrderList() {
+export default function PrepareOrderList() {
     // Hook
-    useTitle("Unprepared Order List");
+    useTitle("Prepared Order List");
     const navigate = useNavigate();
 
     // States
@@ -27,6 +27,7 @@ export default function UnpreparedOrderList() {
     const [searchKey, setSearchKey]             = useState("");
     const [selectedUserId, setSelectedUserId]   = useState(null);
     const [employees, setEmployees]             = useState([]);
+    const [dateRange, setDateRange]             = useState(null);
 
     const onSelectChange = (newSelectedRowKeys) => {
         setSelectedRowKeys(newSelectedRowKeys);
@@ -53,7 +54,7 @@ export default function UnpreparedOrderList() {
                 if (res && res?.success) {
                     messageApi.success(res?.message || "Orders assigned for preparation");
                     setSelectedRowKeys([])
-                    getUnpreparedOrders(pagination.current, pagination.pageSize);
+                    getPreparedOrders(pagination.current, pagination.pageSize);
                 } else {
                     messageApi.error(res?.message || "Failed to assign orders");
                 }
@@ -73,7 +74,7 @@ export default function UnpreparedOrderList() {
                 if (res && res?.success) {
                     messageApi.success(res?.message || "Orders assigned for preparation");
                     setSelectedRowKeys([])
-                    getUnpreparedOrders(pagination.current, pagination.pageSize);
+                    getPreparedOrders(pagination.current, pagination.pageSize);
                 } else {
                     messageApi.error(res?.message || "Failed to assign orders");
                 }
@@ -231,13 +232,15 @@ export default function UnpreparedOrderList() {
         }
     };
 
-    const getUnpreparedOrders = async (page = 1, pageSize = 25) => {
+    const getPreparedOrders = async (page = 1, pageSize = 25) => {
         try {
             setLoading(true);
             const params = { page, paginate_size: pageSize };
             if (searchKey) params.search_key = searchKey;
             if (selectedUserId) params.user_id = selectedUserId;
-            const res = await getDatas('/admin/team/unprepared/list', params);
+            if (dateRange?.[0]) params.start_date = dayjs(dateRange[0]).format("YYYY-MM-DD");
+            if (dateRange?.[1]) params.end_date = dayjs(dateRange[1]).format("YYYY-MM-DD");
+            const res = await getDatas('/admin/team/prepare/list', params);
 
             if (res && res?.success) {
                 setOrders(res?.result?.data || []);
@@ -266,13 +269,13 @@ export default function UnpreparedOrderList() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            getUnpreparedOrders(1, pagination.pageSize);
+            getPreparedOrders(1, pagination.pageSize);
         }, 500);
         return () => clearTimeout(timer);
-    }, [searchKey, selectedUserId]);
+    }, [searchKey, selectedUserId, dateRange]);
 
     const handleTableChange = (pagination) => {
-        getUnpreparedOrders(pagination.current, pagination.pageSize);
+        getPreparedOrders(pagination.current, pagination.pageSize);
     };
 
     const columns = 
@@ -364,6 +367,25 @@ export default function UnpreparedOrderList() {
             ),
         },
         {
+            title: "Prepared By",
+            key: "prepared_by",
+            width: 180,
+            render: (_, record) => (
+                <div>
+                    <Tag icon={<UserOutlined />} color="default" style={{ textTransform: "capitalize", marginBottom: 4 }}>
+                        {record.prepared_by?.username || "Unprepare"}
+                    </Tag>
+
+                    {record.prepared_at && (
+                        <Typography.Text type="secondary" style={{ display: "block", fontSize: 12 }}>
+                            <CalendarOutlined />{" "}
+                            {dayjs(record.prepared_at).format("DD/MM/YYYY hh:mm A")}
+                        </Typography.Text>
+                    )}
+                </div>
+            ),
+        },
+        {
             title: "Assigned To",
             key: "assignee",
             width: 120,
@@ -398,16 +420,16 @@ export default function UnpreparedOrderList() {
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
                             { title: "Team Management" },
-                            { title: "Unprepared Order List" },
+                            { title: "Prepared Order List" },
                         ]}
                         style={{ marginBottom: 8 }}
                     />
                     <Title level={2} style={{ margin: 0, fontWeight: "700" }}>
-                        Unprepared Orders
+                        Prepared Orders
                     </Title>
                 </div>
                 <div className="head-actions">
-                    <Button icon={<ReloadOutlined />} onClick={() => getUnpreparedOrders(pagination.current, pagination.pageSize)} loading={loading}>
+                    <Button icon={<ReloadOutlined />} onClick={() => getPreparedOrders(pagination.current, pagination.pageSize)} loading={loading}>
                         Refresh List
                     </Button>
                 </div>
@@ -422,6 +444,13 @@ export default function UnpreparedOrderList() {
                     style={{ width: 320 }}
                     allowClear
                     onClear={() => setSearchKey("")}
+                />
+                <DatePicker.RangePicker
+                    value={dateRange}
+                    onChange={(dates) => { setDateRange(dates); setPagination(p => ({...p, current: 1})); }}
+                    style={{ width: 280 }}
+                    allowClear
+                    format="YYYY-MM-DD"
                 />
                 <Select
                     placeholder="All Employees"
@@ -504,5 +533,3 @@ export default function UnpreparedOrderList() {
         </div>
     )
 }
-
-

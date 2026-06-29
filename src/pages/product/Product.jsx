@@ -181,11 +181,11 @@ export default function Product() {
             title: "Product Name",
             dataIndex: "name",
             key: "name",
-            width: 200,
+            width: 250,
             render: (text, record) => (
                 <div className="product-name-column">
                     <div className="name-with-info">
-                        <Text strong className="product-name-text" ellipsis={{ tooltip: text }}>
+                        <Text strong className="product-name-text">
                             {text}
                         </Text>
                         <Tooltip title="View Quick Info" color="#1677ff">
@@ -494,6 +494,7 @@ export default function Product() {
         setMaxStock(undefined);
         setProductTypeId(null);
         setProductStatus("active");
+        setActiveTab("active");
         setSearchQuery("");
         setCurrentPage(1);
     };
@@ -542,7 +543,11 @@ export default function Product() {
         setCurrentPage(parseInt(params.get("page")) || 1);
         setPageSize(parseInt(params.get("paginate_size")) || 10);
         setSearchQuery(params.get("search") || "");
-        setProductStatus(params.get("status") || "");
+        
+        const initialStatus = params.get("status") || "active";
+        setProductStatus(initialStatus);
+        setActiveTab(initialStatus);
+        
         setBrandIds(params.get("brands") ? params.get("brands").split(",").map(Number) : []);
 
         const categoriesFromQuery = params.get("categories") ? params.get("categories").split(",").map(Number) : [];

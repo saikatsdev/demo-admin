@@ -1,9 +1,9 @@
-import { Breadcrumb, message, Table, Tag, Card, Typography, Space, Button, Tooltip, Row, Col, Statistic, Select, Dropdown, Input } from "antd";
+import { Breadcrumb, message, Table, Tag, Card, Typography, Space, Button, Tooltip, Row, Col, Statistic, Select, Dropdown, Modal } from "antd";
+import { EyeOutlined, ReloadOutlined, UserOutlined, PhoneOutlined, InfoCircleOutlined, ShoppingCartOutlined, DollarCircleOutlined, CopyOutlined, DownloadOutlined, FilePdfOutlined, PrinterOutlined, DownOutlined} from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import useTitle from "../../hooks/useTitle";
 import { Link, useNavigate } from "react-router-dom";
 import { getDatas, postData } from "../../api/common/common";
-import { EyeOutlined, ReloadOutlined, UserOutlined, PhoneOutlined, InfoCircleOutlined, ShoppingCartOutlined, DollarCircleOutlined, CopyOutlined, DownloadOutlined, FilePdfOutlined, PrinterOutlined, DownOutlined} from "@ant-design/icons";
 import dayjs from "dayjs";
 
 import * as XLSX from "xlsx";
@@ -12,9 +12,11 @@ import autoTable from "jspdf-autotable";
 
 const { Text, Title } = Typography;
 
-export default function UnpreparedOrderList() {
+export default function UnAssignList() {
     // Hook
-    useTitle("Unprepared Order List");
+    useTitle("Unassign Order List");
+
+    // Variable
     const navigate = useNavigate();
 
     // States
@@ -22,11 +24,11 @@ export default function UnpreparedOrderList() {
     const [orders, setOrders]                   = useState([]);
     const [summary, setSummary]                 = useState({orders_count: 0,duplicate_orders_count: 0,total_amount: "0.00"});
     const [pagination, setPagination]           = useState({current: 1,pageSize: 25,total: 0});
-    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [messageApi, contextHolder]           = message.useMessage();
-    const [searchKey, setSearchKey]             = useState("");
-    const [selectedUserId, setSelectedUserId]   = useState(null);
-    const [employees, setEmployees]             = useState([]);
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
+    const [employees, setEmployees] = useState([]);
 
     const onSelectChange = (newSelectedRowKeys) => {
         setSelectedRowKeys(newSelectedRowKeys);
@@ -37,52 +39,94 @@ export default function UnpreparedOrderList() {
         onChange: onSelectChange,
     };
 
-    const handleBatchAction = async (value) => {
+    const getOrders = async (page = 1, pageSize = 25) => {
+        try {
+            setLoading(true);
+
+            const res = await getDatas("/admin/team/unassign-order-list", {page,paginate_size: pageSize});
+
+            if(res && res?.success){
+                setOrders(res?.result?.data || []);
+
+                setSummary({
+                    orders_count          : res.result.orders_count,
+                    duplicate_orders_count: res.result.duplicate_orders_count,
+                    total_amount          : res.result.total_amount
+                });
+
+                setPagination({
+                    current : res.result.meta.current_page,
+                    pageSize: res.result.meta.per_page,
+                    total   : res.result.meta.total,
+                });
+            }
+            
+        }catch(error){
+            console.log(error);
+            messageApi.error("Failed to fetch unprepared orders");
+        }finally{
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        getOrders();
+    }, []);
+
+    const handleTableChange = (pagination) => {
+        getOrders(pagination.current, pagination.pageSize);
+    };
+
+    const getEmployees = async () => {
+        try {
+            const res = await getDatas("/admin/users/list", { user_category_id: 3 });
+            if (res?.success) {
+                setEmployees(res.result.data || []);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleBatchAction = (value) => {
         if (!selectedRowKeys.length) {
             messageApi.warning("Please select at least one order");
             return;
         }
 
-        if (value === 'assign_prepare') {
-            try {
-                setLoading(true);
-                const res = await postData('/admin/team/assign-prepared-by-me', {
-                    order_ids: selectedRowKeys
-                });
+        if (value === 'assign_order') {
+            getEmployees();
+            setSelectedEmployee(null);
+            setModalOpen(true);
+        }
+    };
 
-                if (res && res?.success) {
-                    messageApi.success(res?.message || "Orders assigned for preparation");
-                    setSelectedRowKeys([])
-                    getUnpreparedOrders(pagination.current, pagination.pageSize);
-                } else {
-                    messageApi.error(res?.message || "Failed to assign orders");
-                }
-            } catch (error) {
-                console.error(error);
-                messageApi.error("An error occurred during assignment");
-            } finally {
-                setLoading(false);
-            }
-        } else if (value === 'remove_assign_prepare') {
-            try {
-                setLoading(true);
-                const res = await postData('/admin/team/removed-prepared-by', {
-                    order_ids: selectedRowKeys
-                });
+    const handleAssignConfirm = async () => {
+        if (!selectedEmployee) {
+            messageApi.warning("Please select an employee");
+            return;
+        }
 
-                if (res && res?.success) {
-                    messageApi.success(res?.message || "Orders assigned for preparation");
-                    setSelectedRowKeys([])
-                    getUnpreparedOrders(pagination.current, pagination.pageSize);
-                } else {
-                    messageApi.error(res?.message || "Failed to assign orders");
-                }
-            } catch (error) {
-                console.error(error);
-                messageApi.error("An error occurred during assignment");
-            } finally {
-                setLoading(false);
+        try {
+            setLoading(true);
+            const res = await postData('/admin/team/assign', {
+                order_ids: selectedRowKeys,
+                user_id: selectedEmployee
+            });
+
+            if (res && res?.success) {
+                messageApi.success(res?.message || "Orders assigned for preparation");
+                setSelectedRowKeys([]);
+                setModalOpen(false);
+                getOrders(pagination.current, pagination.pageSize);
+            } else {
+                messageApi.error(res?.message || "Failed to assign orders");
             }
+        } catch (error) {
+            console.error(error);
+            messageApi.error("An error occurred during assignment");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -220,61 +264,6 @@ export default function UnpreparedOrderList() {
         onClick: handlePrintAction,
     };
 
-    const getEmployees = async () => {
-        try {
-            const res = await getDatas("/admin/users/list", { user_category_id: 3 });
-            if (res?.success) {
-                setEmployees(res.result.data || []);
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const getUnpreparedOrders = async (page = 1, pageSize = 25) => {
-        try {
-            setLoading(true);
-            const params = { page, paginate_size: pageSize };
-            if (searchKey) params.search_key = searchKey;
-            if (selectedUserId) params.user_id = selectedUserId;
-            const res = await getDatas('/admin/team/unprepared/list', params);
-
-            if (res && res?.success) {
-                setOrders(res?.result?.data || []);
-                setSummary({
-                    orders_count          : res.result.orders_count,
-                    duplicate_orders_count: res.result.duplicate_orders_count,
-                    total_amount          : res.result.total_amount
-                });
-                setPagination({
-                    current : res.result.meta.current_page,
-                    pageSize: res.result.meta.per_page,
-                    total   : res.result.meta.total,
-                });
-            }
-        } catch (error) {
-            console.error(error);
-            messageApi.error("Failed to fetch unprepared orders");
-        } finally {
-            setLoading(false);
-        }
-    }
-
-    useEffect(() => {
-        getEmployees();
-    }, []);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            getUnpreparedOrders(1, pagination.pageSize);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchKey, selectedUserId]);
-
-    const handleTableChange = (pagination) => {
-        getUnpreparedOrders(pagination.current, pagination.pageSize);
-    };
-
     const columns = 
     [
         {
@@ -390,54 +379,28 @@ export default function UnpreparedOrderList() {
     ];
 
     return (
-        <div style={{ padding: '0 4px' }}>
+        <>
             {contextHolder}
+
             <div className="pagehead" style={{ marginBottom: 24 }}>
                 <div className="head-left">
                     <Breadcrumb
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
                             { title: "Team Management" },
-                            { title: "Unprepared Order List" },
+                            { title: "Unassigned Order List" },
                         ]}
                         style={{ marginBottom: 8 }}
                     />
                     <Title level={2} style={{ margin: 0, fontWeight: "700" }}>
-                        Unprepared Orders
+                        Unassigned Orders
                     </Title>
                 </div>
                 <div className="head-actions">
-                    <Button icon={<ReloadOutlined />} onClick={() => getUnpreparedOrders(pagination.current, pagination.pageSize)} loading={loading}>
+                    <Button icon={<ReloadOutlined />} onClick={() => getOrders(pagination.current, pagination.pageSize)} loading={loading}>
                         Refresh List
                     </Button>
                 </div>
-            </div>
-
-            <div style={{ marginBottom: 16, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                <Input.Search
-                    placeholder="Search by name, phone or invoice..."
-                    value={searchKey}
-                    onChange={(e) => setSearchKey(e.target.value)}
-                    onSearch={() => setPagination(p => ({...p, current: 1}))}
-                    style={{ width: 320 }}
-                    allowClear
-                    onClear={() => setSearchKey("")}
-                />
-                <Select
-                    placeholder="All Employees"
-                    style={{ width: 250 }}
-                    value={selectedUserId}
-                    onChange={(value) => { setSelectedUserId(value); setPagination(p => ({...p, current: 1})); }}
-                    allowClear
-                    showSearch
-                    optionFilterProp="children"
-                >
-                    {employees.map(emp => (
-                        <Select.Option key={emp.id} value={emp.id}>
-                            {emp.username || emp.name}
-                        </Select.Option>
-                    ))}
-                </Select>
             </div>
 
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
@@ -464,8 +427,7 @@ export default function UnpreparedOrderList() {
                         <Space size="large">
                             <Text strong><InfoCircleOutlined style={{ color: '#1890ff', marginRight: 8 }} />{selectedRowKeys.length} orders selected</Text>
                             <Select placeholder="Bulk Actions" style={{ width: 220 }} onChange={handleBatchAction} size="middle">
-                                <Select.Option value="assign_prepare">Assign Prepare</Select.Option>
-                                <Select.Option value="remove_assign_prepare">Remove Assign Prepare</Select.Option>
+                                <Select.Option value="assign_order">Assign Order</Select.Option>
                             </Select>
                         </Space>
                         <Space>
@@ -480,6 +442,34 @@ export default function UnpreparedOrderList() {
                 )}
             </div>
 
+            <Modal
+                title="Assign Orders to Employee"
+                open={modalOpen}
+                onOk={handleAssignConfirm}
+                onCancel={() => setModalOpen(false)}
+                confirmLoading={loading}
+                okText="Assign"
+            >
+                <Space direction="vertical" style={{ width: '100%' }}>
+                    <Text>Select an employee to assign the selected orders:</Text>
+                    <Select
+                        placeholder="Select Employee"
+                        style={{ width: '100%' }}
+                        value={selectedEmployee}
+                        onChange={setSelectedEmployee}
+                        showSearch
+                        optionFilterProp="children"
+                        allowClear
+                    >
+                        {employees.map(emp => (
+                            <Select.Option key={emp.id} value={emp.id}>
+                                {emp.username || emp.name}
+                            </Select.Option>
+                        ))}
+                    </Select>
+                </Space>
+            </Modal>
+
             <Card bodyStyle={{ padding: 0 }} style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)',border: 'none'}}>
                 <Table 
                     rowSelection={rowSelection}
@@ -488,7 +478,7 @@ export default function UnpreparedOrderList() {
                     rowKey="id" 
                     loading={loading} 
                     pagination={{...pagination,showSizeChanger: true,
-                        pageSizeOptions: ['20', '50', '100', '200'],
+                        pageSizeOptions: ['15','25', '50', '100', '200'],
                         showTotal: (total, range) => (
                             <Text type="secondary">
                                 Showing {range[0]}-{range[1]} of {total} orders
@@ -501,8 +491,6 @@ export default function UnpreparedOrderList() {
                     style={{ borderRadius: 0 }}
                 />
             </Card>
-        </div>
+        </>
     )
 }
-
-

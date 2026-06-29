@@ -19,13 +19,13 @@ const OrderEdit = () => {
 
     // Variable
     const [form]          = Form.useForm();
-    const screens         = Grid.useBreakpoint();
-    const isMobile        = !screens.md
     const navigate        = useNavigate();
     const params          = useParams();
     const orderId         = params.id;
     const { state }       = useLocation();
     const currentStatusId = state?.statusId;
+    const user            = useSelector((state) => state.auth.user);
+    const canEditSource   = user?.roles?.some(r => r.id === 1 || r.id === 2);
 
     // State variables
     const [products, setProducts]                           = useState([]);
@@ -74,8 +74,6 @@ const OrderEdit = () => {
     const [note, setNote]                                   = useState('');
     const [noteId, setNoteId]                               = useState('');
     const [noteLoading, setNoteLoading]                     = useState(false);
-    const [orderFromError, setOrderFromError]               = useState('');
-    const [shippingError, setShippingError]                 = useState('');
     const [errors, setErrors]                               = useState({});
     const [loading, setLoading]                             = useState(false);
     const [isModalVisible, setIsModalVisible]               = useState(false);
@@ -223,7 +221,6 @@ const OrderEdit = () => {
                 message.success('Order source added successfully')
             }, 1000)
         } else {
-            setOrderFromError(res?.errors || '')
             setAddLoading(false)
         }
     }
@@ -237,11 +234,9 @@ const OrderEdit = () => {
                 setDeliveryFee('');
                 setDeliveryName('');
                 setAddLoading(false);
-                setShippingError('');
                 message.success('Delivery gateway added successfully');
             }, 1000)
         } else {
-            setShippingError(res?.errors || '');
             setAddLoading(false);
         }
     }
@@ -366,14 +361,6 @@ const OrderEdit = () => {
         setDeliveryName('')
         setOrderFromId('')
         setFromName('')
-        setShippingError('')
-        setOrderFromError('')
-    }
-
-    // Product functions
-    const clearSearchProducts = () => {
-        setSearchQuery('')
-        setHiddenSearchProducts(true)
     }
 
     const addProduct = (product) => {
@@ -559,6 +546,8 @@ const OrderEdit = () => {
         setShowHistory(true);
     };
 
+    console.log(isRedx);
+
     // Submit order update
     const submit = async () => {
         setSubmitLoading(true);
@@ -580,7 +569,7 @@ const OrderEdit = () => {
         formData.append('phone_number', phoneNumber);
         formData.append('order_from_id', orderFromId);
         formData.append('courier_id', courierId);
-        formData.append('pickup_store_id', pathaoStoreId);
+        formData.append('pickup_store_id', isPathao ? pathaoStoreId : redxPickupStoreId);
         formData.append('courier_area_id',isPathao ? selectedSearchArea : redxAreaId);
         formData.append('item_weight', itemWeight || '');
         formData.append('item_quantity', itemQuantity || '');
@@ -1060,12 +1049,12 @@ const OrderEdit = () => {
                                     <Form.Item label="Order Source">
                                         {orderFromId === 'add' ? (
                                             <Space.Compact style={{ width: '100%' }}>
-                                                <Input placeholder="New source" value={fromName} onChange={(e) => setFromName(e.target.value)}/>
-                                                <Button type="primary" loading={addLoading} onClick={insertOrderFrom} icon={<PlusOutlined />} />
-                                                <Button onClick={removeAddField} icon={<CloseOutlined />} />
+                                                <Input placeholder="New source" value={fromName} onChange={(e) => setFromName(e.target.value)} disabled={!canEditSource}/>
+                                                <Button type="primary" loading={addLoading} onClick={insertOrderFrom} icon={<PlusOutlined />} disabled={!canEditSource}/>
+                                                <Button onClick={removeAddField} icon={<CloseOutlined />} disabled={!canEditSource}/>
                                             </Space.Compact>
                                         ) : (
-                                            <Select value={orderFromId} onChange={(v) => setOrderFromId(v)}>
+                                            <Select value={orderFromId} onChange={(v) => setOrderFromId(v)} disabled={!canEditSource}>
                                                 <Select.Option value="add" style={{ color: '#3b82f6' }}>+ Add New</Select.Option>
                                                 {orderFromList?.map(t => <Select.Option key={t.id} value={t.id}>{t.name}</Select.Option>)}
                                             </Select>

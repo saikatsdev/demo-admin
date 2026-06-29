@@ -151,7 +151,7 @@ export default function Order() {
                 customer_type_id  : "customer_type_id" in overrides ? overrides.customer_type_id    : selectedCustomerTypeId,
                 order_from_id     : "order_from_id" in overrides ? overrides.order_from_id          : orderTagId,
                 current_status_id : "current_status_id" in overrides ? overrides.current_status_id  : statusId,
-                district_id       : "district_id" in overrides ? overrides.district_id              : districtId,
+                district_id       : "district_id" in overrides ? overrides.district_id              : (selectedDistrictId || districtId),
                 cancel_reason_id  : "cancel_reason_id" in overrides ? overrides.cancel_reason_id    : cancelReasonId,
                 start_date        : "start_date" in overrides ? overrides.start_date                : startDate ? dayjs(startDate).format("YYYY-MM-DD"): "",
                 end_date          : "end_date" in overrides ? overrides.end_date                    : endDate ? dayjs(endDate).format("YYYY-MM-DD")    : "",
@@ -160,9 +160,10 @@ export default function Order() {
                 min_invoice       : "min_invoice" in overrides ? overrides.min_invoice              : minInvoice,
                 max_invoice       : "max_invoice" in overrides ? overrides.max_invoice              : maxInvoice,
                 is_duplicate      : "is_duplicate" in overrides ? overrides.is_duplicate            : duplicateOrder,
-                courier_id        : "courier_id" in overrides ? overrides.courier_id                : courierId,
+                courier_id        : "courier_id" in overrides ? overrides.courier_id                : (selectedCourier || courierId),
                 courier_status_id : "courier_status_id" in overrides ? overrides.courier_status_id  : courierStatusId,
                 is_invoice_printed: "is_invoice_printed" in overrides ? overrides.is_invoice_printed: invoiceStatus,
+                assign_user_id    : "assign_user_id" in overrides ? overrides.assign_user_id        : employeeId,
             });
             
         
@@ -172,10 +173,10 @@ export default function Order() {
                 setCurrentPage(res?.result?.orders?.meta?.current_page);
                 setPageSize(res?.result?.orders?.meta?.per_page);
         
-                const keysToCheck = ["paid_status", "order_from_id","start_date", "end_date", "district_id","is_invoice_printed", "customer_type_id", "min_price", "max_price", "min_invoice", "max_invoice"];
+                const keysToCheck = ["paid_status", "order_from_id","start_date", "end_date","courier_id", "district_id","is_invoice_printed", "customer_type_id", "min_price", "max_price", "min_invoice", "max_invoice"];
                 const hasRelevantOverride = keysToCheck.some(key => key in overrides);
 
-                if (hasRelevantOverride && statusId) {
+                if (hasRelevantOverride && statusId && !("current_status_id" in overrides)) {
                     setStatusId(null);
                     setIsAllOrders(true); 
                 }
@@ -435,7 +436,6 @@ export default function Order() {
 
     const getStatusWiseOrder = (id = "") => {
         sessionStorage.setItem("orderStatusId", id);
-        setCourierId(null);
 
         if (id === 3) {
             setDistrictId("");
@@ -454,7 +454,7 @@ export default function Order() {
 
         setStatusId(id);
         setIsAllOrders(false);
-        getOrders(1, {current_status_id: id,district_id: "",cancel_reason_id: "",courier_id: null,});
+        getOrders(1, {current_status_id: id,district_id: "",cancel_reason_id: ""});
     };
 
     const handleSelectionChange = (selectedRowKeys) => {
@@ -2274,19 +2274,19 @@ export default function Order() {
                                 )}
             
                                 {selectedDistrictId && (
-                                    <Tag closable onClose={() => {setSelectedDistrictId(null);getOrders(1);}}>
+                                    <Tag closable onClose={() => {setSelectedDistrictId(null);getOrders(1, { district_id: null });}}>
                                         District:{districtList?.find((d) => d.id === selectedDistrictId)?.name || "N/A"}
                                     </Tag>
                                 )}
             
                                 {employeeId && (
-                                    <Tag closable onClose={() => {setEmployeeId(null);getOrders(1);}}>
+                                    <Tag closable onClose={() => {setEmployeeId(null);getOrders(1, { assign_user_id: null });}}>
                                         Employee:{employeeList?.find((e) => e.id === employeeId)?.name || "N/A"}
                                     </Tag>
                                 )}
 
                                 {selectedCourier && (
-                                    <Tag closable onClose={() => {setSelectedCourier(null);getOrders(1);}}>
+                                    <Tag closable onClose={() => {setSelectedCourier(null);getOrders(1, { courier_id: null });}}>
                                         Courier: {couriers?.find((c) => c.id === selectedCourier) ?.name || "N/A"}
                                     </Tag>
                                 )}
@@ -2370,7 +2370,7 @@ export default function Order() {
                                     <span className={[9, 10, 11, 12].includes(statusId) ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${orderStatus?.filter((s) => [9, 10].includes(Number(s.status_id))).reduce((total, s) => total + Number(s.total_payable || 0), 0)}`} onClick={getReturnAndDamageOrder}>
                                         Return & Damage
                                         <span className={[9, 10, 11, 12].includes(statusId) ? "status-tags-child-child-active" : "status-tags-child-child"}>
-                                            {orderStatus?.filter((s) => [9, 10].includes(Number(s.status_id))).reduce((total, s) => total + s.order_count, 0)}
+                                            {orderStatus?.filter((s) => [9, 10].includes(Number(s.status_id))).reduce((total, s) => Number(total) + Number(s.order_count), 0)}
                                         </span>
                                     </span>
                                 )}

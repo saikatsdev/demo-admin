@@ -108,15 +108,12 @@ export default function Team() {
             render: (_, record) => (
                 <div className="employee-cell">
                     <Badge dot status={record.status === "active" ? "success" : "default"} offset={[-4, 36]}>
-                        <Avatar
-                            size={48}
-                            src={record.img_path || undefined}
-                            icon={<UserOutlined />}
-                            className="employee-avatar"
-                        />
+                        <Avatar size={48} src={record.img_path || undefined} icon={<UserOutlined />} className="employee-avatar"/>
                     </Badge>
                     <div className="employee-info">
-                        <Text strong className="employee-name">{record.username}</Text>
+                        <Text strong className="employee-name" style={{textTransform:"capitalize"}}>
+                            {record.username}
+                        </Text>
                         <div className="employee-roles">
                             {record.roles?.map((role) => (
                                 <Tag key={role.id} color="blue" className="role-tag">
@@ -135,10 +132,7 @@ export default function Team() {
             width: 120,
             align: "center",
             render: (_, record) => (
-                <Statistic
-                    value={record.assigned_metrics?.total_orders || 0}
-                    valueStyle={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}
-                />
+                <Statistic value={record.assigned_metrics?.total_orders || 0} valueStyle={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}/>
             ),
         },
         {
@@ -164,6 +158,7 @@ export default function Team() {
                             <Tooltip title="Unprepared">
                                 <Tag color="volcano">{record.assigned_metrics?.unprepared_orders || 0} Unprepared</Tag>
                             </Tooltip>
+
                             <Tooltip title="Prepared">
                                 <Tag color="green">{record.assigned_metrics?.prepared_orders || 0} Prepared</Tag>
                             </Tooltip>
@@ -186,6 +181,7 @@ export default function Team() {
                                 {att.is_checked_in ? "Checked In" : "Not Checked In"}
                             </Text>
                         </div>
+
                         {att.check_in_at && (
                             <Text type="secondary" className="attendance-time">
                                 <ClockCircleOutlined /> In: {dayjs(att.check_in_at).format("hh:mm A")}
@@ -194,8 +190,13 @@ export default function Team() {
                                     : ""}
                             </Text>
                         )}
+                        
                         <Text type="secondary" className="attendance-time">
-                            Working: {formatMinutes(att.working_minutes)}
+                            Working: {att.is_checked_out
+                                ? formatMinutes(att.working_minutes)
+                                : att.check_in_at
+                                    ? formatMinutes(dayjs().diff(dayjs(att.check_in_at), "minute"))
+                                    : formatMinutes(att.working_minutes)}
                         </Text>
                     </div>
                 );
@@ -245,22 +246,30 @@ export default function Team() {
                 <Col xs={24} md={8}>
                     <Card size="small" bordered={false} title="Order Status (Assigned)">
                         <div className="metric-list">
-                            <div className="metric-row">
-                                <Text type="secondary"><CheckCircleOutlined /> Delivered</Text>
-                                <Tag color="success">{record.assigned_metrics?.delivered_count || 0}</Tag>
-                            </div>
-                            <div className="metric-row">
-                                <Text type="secondary"><SyncOutlined /> Processing</Text>
-                                <Tag color="processing">{record.assigned_metrics?.processing_count || 0}</Tag>
-                            </div>
-                            <div className="metric-row">
-                                <Text type="secondary"><CloseCircleOutlined /> Canceled</Text>
-                                <Tag color="error">{record.assigned_metrics?.canceled_count || 0}</Tag>
-                            </div>
-                            <div className="metric-row">
-                                <Text type="secondary">Returned</Text>
-                                <Tag color="warning">{record.assigned_metrics?.returned_count || 0}</Tag>
-                            </div>
+                            {record.assigned_metrics?.order_statuses?.length ? (
+                                record.assigned_metrics.order_statuses.map((s) => (
+                                    <div className="metric-row" key={s.id}>
+                                        <Text type="secondary">
+                                            <span
+                                                style={{
+                                                    display: "inline-block",
+                                                    width: 10,
+                                                    height: 10,
+                                                    borderRadius: "50%",
+                                                    backgroundColor: s.bg_color,
+                                                    marginRight: 8,
+                                                }}
+                                            />
+                                            {s.name}
+                                        </Text>
+                                        <Tag color={s.bg_color} style={{ color: s.text_color, border: "none" }}>
+                                            {s.orders_count}
+                                        </Tag>
+                                    </div>
+                                ))
+                            ) : (
+                                <Text type="secondary">No status data</Text>
+                            )}
                         </div>
                     </Card>
                 </Col>

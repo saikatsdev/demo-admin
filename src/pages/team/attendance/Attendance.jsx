@@ -135,18 +135,31 @@ function Attendance() {
         },
         {
             title: "Duration",
-            dataIndex: "working_minutes",
-            key: "working_minutes",
-            render: (mins) => {
-                if(!mins) return <Tag bordered={false}>-</Tag>
-                const hours = Math.floor(mins / 60);
-                const minutes = mins % 60;
-                return (
+            key: "duration",
+            render: (_, record) => {
+                const calcDuration = () => {
+                    if (record.check_out_at) {
+                        const mins = record.working_minutes || record.duration;
+                        if (!mins) return null;
+                        const h = Math.floor(mins / 60);
+                        const m = mins % 60;
+                        return `${h}h ${m}m`;
+                    }
+                    if (record.check_in_at) {
+                        const diff = dayjs().diff(dayjs(record.check_in_at), "minute");
+                        const h = Math.floor(diff / 60);
+                        const m = diff % 60;
+                        return `${h}h ${m}m`;
+                    }
+                    return null;
+                };
+                const val = calcDuration();
+                return val ? (
                     <Space>
                         <ClockCircleOutlined style={{ color: '#1890ff' }} />
-                        <Text>{hours}h {minutes}m</Text>
+                        <Text>{val}</Text>
                     </Space>
-                );
+                ) : <Tag bordered={false}>-</Tag>;
             },
         },
         {

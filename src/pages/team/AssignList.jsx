@@ -17,17 +17,32 @@ export default function AssignList() {
     useTitle("Assigned Order List");
 
     // States
-    const [loading, setLoading]       = useState(false);
-    const [orders, setOrders]         = useState([]);
-    const [summary, setSummary]       = useState({orders_count: 0,duplicate_orders_count: 0,total_amount: "0.00"});
-    const [pagination, setPagination] = useState({current: 1,pageSize: 25,total: 0});
-    const [messageApi, contextHolder] = message.useMessage();
+    const [loading, setLoading]                 = useState(false);
+    const [orders, setOrders]                   = useState([]);
+    const [summary, setSummary]                 = useState({orders_count: 0,duplicate_orders_count: 0,total_amount: "0.00"});
+    const [pagination, setPagination]           = useState({current: 1,pageSize: 25,total: 0});
+    const [messageApi, contextHolder]           = message.useMessage();
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+    const [selectedUserId, setSelectedUserId] = useState(null);
+    const [employees, setEmployees] = useState([]);
+
+    const getEmployees = async () => {
+        try {
+            const res = await getDatas("/admin/users/list", { user_category_id: 3 });
+            if (res?.success) {
+                setEmployees(res.result.data || []);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
 
     const getAssignedOrders = async (page = 1) => {
         try {
             setLoading(true);
-            const res = await getDatas('/admin/team/assign-by-list', { page, paginate_size: pagination.pageSize });
+            const params = { page, paginate_size: pagination.pageSize };
+            if (selectedUserId) params.user_id = selectedUserId;
+            const res = await getDatas('/admin/team/assign-by-list', params);
 
             if (res && res?.success) {
                 setOrders(res?.result?.data || []);
@@ -51,8 +66,9 @@ export default function AssignList() {
     }
 
     useEffect(() => {
+        getEmployees();
         getAssignedOrders();
-    }, []);
+    }, [selectedUserId]);
 
     const handleTableChange = (pagination) => {
         getAssignedOrders(pagination.current);
@@ -327,7 +343,7 @@ export default function AssignList() {
                     
                     {record.is_invoice_printed === 1 && (
                         <Tooltip title="Invoice Printed">
-                            <Tag color="blue" icon={<CheckCircleOutlined />}>PRN</Tag>
+                            <Tag color="blue" icon={<CheckCircleOutlined />}>Printed</Tag>
                         </Tooltip>
                     )}
                 </Space>
@@ -352,6 +368,27 @@ export default function AssignList() {
                         ]}
                     />
                 </div>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+                <Space>
+                    <Text strong>Filter by Employee:</Text>
+                    <Select
+                        placeholder="All Employees"
+                        style={{ width: 250 }}
+                        value={selectedUserId}
+                        onChange={(value) => { setSelectedUserId(value); setPagination(p => ({...p, current: 1})); }}
+                        allowClear
+                        showSearch
+                        optionFilterProp="children"
+                    >
+                        {employees.map(emp => (
+                            <Select.Option key={emp.id} value={emp.id}>
+                                {emp.username || emp.name}
+                            </Select.Option>
+                        ))}
+                    </Select>
+                </Space>
             </div>
 
             <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
@@ -418,20 +455,24 @@ export default function AssignList() {
             </div>
 
             <Card style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }} bodyStyle={{ padding: 0 }}>
-                <Table
+                <Table 
                     rowSelection={rowSelection}
-                    columns={columns}
-                    dataSource={orders}
-                    rowKey="id"
-                    loading={loading}
-                    onChange={handleTableChange}
-                    pagination={{
-                        ...pagination,
-                        showSizeChanger: false,
-                        showTotal: (total) => `Total ${total} orders`,
+                    columns={columns} 
+                    dataSource={orders} 
+                    rowKey="id" 
+                    loading={loading} 
+                    pagination={{...pagination,showSizeChanger: true,
+                        pageSizeOptions: ['15','25', '50', '100', '200'],
+                        showTotal: (total, range) => (
+                            <Text type="secondary">
+                                Showing {range[0]}-{range[1]} of {total} orders
+                            </Text>
+                        ),
                         position: ['bottomRight']
                     }}
-                    style={{ borderRadius: '12px' }}
+                    onChange={handleTableChange}
+                    scroll={{ x: 1200 }}
+                    style={{ borderRadius: 0 }}
                 />
             </Card>
         </>
