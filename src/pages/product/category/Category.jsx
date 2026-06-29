@@ -1,11 +1,15 @@
-import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, AppstoreOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, MenuOutlined, PlusOutlined, EditOutlined, DeleteOutlined, AppstoreOutlined } from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button, Card, Modal, Popconfirm, Space, Table, Tag, Typography, message } from "antd";
 
 const { Text } = Typography;
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas, postData } from "../../../api/common/common";
 import useTitle from "../../../hooks/useTitle";
+
+import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 function debounce(fn, delay) {
     let timeout;
@@ -16,6 +20,48 @@ function debounce(fn, delay) {
         }, delay);
     };
 }
+
+const RowContext = createContext({});
+
+const DragHandle = () => {
+    const { setActivatorNodeRef, listeners } = useContext(RowContext);
+
+    return (
+        <MenuOutlined ref={setActivatorNodeRef} style={{ cursor: 'move', color: '#999' }} {...listeners} />
+    );
+};
+
+const Row = (props) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        setActivatorNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
+        id: props['data-row-key'],
+    });
+
+    const style = {
+        ...props.style,
+        transform: CSS.Transform.toString(transform && { ...transform, scaleY: 1 }),
+        transition,
+        ...(isDragging ? { position: 'relative', zIndex: 9999, background: '#fafafa' } : {}),
+    };
+
+    const contextValue = useMemo(
+        () => ({ setActivatorNodeRef, listeners }),
+        [setActivatorNodeRef, listeners],
+    );
+
+    return (
+        <RowContext.Provider value={contextValue}>
+            <tr {...props} ref={setNodeRef} style={style} {...attributes} />
+        </RowContext.Provider>
+    );
+};
 
 export default function Category() {
     // Hook
@@ -37,8 +83,62 @@ export default function Category() {
     const [currentRecord, setCurrentRecord]     = useState(null);
     const [checking, setChecking]               = useState(false);
     const [isAvailable, setIsAvailable]         = useState(true);
+    const [filteredData, setFilteredData]       = useState([]);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 1,
+            },
+        }),
+    );
+
+    const onDragEnd = ({ active, over }) => {
+        if (active.id !== over?.id) {
+            const activeIndex = filteredData.findIndex((i) => i.id === active.id);
+            const overIndex = filteredData.findIndex((i) => i.id === over?.id);
+
+            const newFilteredData = arrayMove(filteredData, activeIndex, overIndex);
+
+            const basePosition = (pagination.current - 1) * pagination.pageSize;
+            const updatedItems = newFilteredData.map((item, index) => ({
+                id: item.id,
+                position: basePosition + index + 1
+            }));
+
+            setFilteredData(newFilteredData);
+            setCategories(prevItems => {
+                const newItems = [...prevItems];
+                updatedItems.forEach(u => {
+                    const idx = newItems.findIndex(i => i.id === u.id);
+                    if (idx !== -1) newItems[idx].position = u.position;
+                });
+                return newItems.sort((a, b) => a.position - b.position);
+            });
+
+            postData('/admin/categories/position', { items: updatedItems }).then(res => {
+                if (res?.success) {
+                    messageApi.open({
+                        type: "success",
+                        content: res.msg || "Category position updated successfully",
+                    });
+                } else {
+                    messageApi.open({
+                        type: "error",
+                        content: res.message || "Failed to update category position",
+                    });
+                }
+            });
+        }
+    };
 
     const columns = [
+        {
+            key: "sort",
+            width: 50,
+            align: 'center',
+            render: () => !query ? <DragHandle /> : null,
+        },
         {
             title: "SL",
             key: "sl",
@@ -74,6 +174,11 @@ export default function Category() {
                     <EditOutlined style={{ color: "#1890ff", cursor: "pointer" }} onClick={() => handleEditClick(record)}/>
                 </div>
             ),
+        },
+        {
+            title : "Position",
+            dataIndex: "position",
+            key : "position"
         },
         {
             title: "Status",
@@ -187,13 +292,20 @@ export default function Category() {
         }
     }, [current, pageSize, debouncedQuery])
 
-    const filteredData = useMemo(() => {
-        if (!query) return categories;
+    useEffect(() => {
+        if (!query) {
+            setFilteredData(categories);
+            return;
+        }
+
         const lowerQuery = query.toLowerCase();
-        return categories.filter(
-          (b) => b.name?.toLowerCase().includes(lowerQuery)
+
+        const filtered = categories?.filter(item =>
+            item.name?.toLowerCase().includes(lowerQuery)
         );
-    }, [categories, query]);
+
+        setFilteredData(filtered);
+    }, [query, categories]);
 
     const onDelete = async (id) => {
         const res = await deleteData(`/admin/categories/${id}`);
@@ -263,21 +375,33 @@ export default function Category() {
                     </Space>
                 </div>
 
-                <Table 
-                    rowKey="id" 
-                    loading={loading} 
-                    pagination={{
-                        current: pagination.current, 
-                        pageSize: pagination.pageSize, 
-                        total: pagination.total, 
-                        showSizeChanger: true, 
-                        onChange: (page, pageSize) => {setPagination((p) => ({ ...p, current: page, pageSize }))},
-                    }} 
-                    columns={columns} 
-                    dataSource={filteredData} 
-                    className="modern-table"
-                    scroll={{ x: 'max-content' }}
-                />
+            <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+                <SortableContext
+                    items={filteredData.map((i) => i.id)}
+                    strategy={verticalListSortingStrategy}
+                >
+                    <Table 
+                        rowKey="id" 
+                        loading={loading} 
+                        pagination={{
+                            current: pagination.current, 
+                            pageSize: pagination.pageSize, 
+                            total: pagination.total, 
+                            showSizeChanger: true, 
+                            onChange: (page, pageSize) => {setPagination((p) => ({ ...p, current: page, pageSize }))},
+                        }} 
+                        columns={columns} 
+                        dataSource={filteredData} 
+                        className="modern-table"
+                        scroll={{ x: 'max-content' }}
+                        components={{
+                            body: {
+                                row: Row,
+                            },
+                        }}
+                    />
+                </SortableContext>
+            </DndContext>
             </Card>
 
             <Modal title="Update Permalink" open={isPermalinkModalOpen} onOk={handleSave} onCancel={() => setIsPermalinkModalOpen(false)} okButtonProps={{disabled: checking || !isAvailable}}>
