@@ -1,5 +1,5 @@
 import {ArrowLeftOutlined,BarcodeOutlined,CopyOutlined,DeleteOutlined,EditOutlined,ShoppingCartOutlined,EyeOutlined,FilterOutlined,FormOutlined,InfoCircleOutlined,PlusOutlined,ReloadOutlined} from "@ant-design/icons";
-import {Input as AntInput,Typography,Breadcrumb,Badge,Tabs,Button,Col,DatePicker,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
+import {Input as AntInput,Typography,Breadcrumb,Badge,Tabs,Button,Col,Card,DatePicker,Descriptions,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -189,13 +189,7 @@ export default function Product() {
                             {text}
                         </Text>
                         <Tooltip title="View Quick Info" color="#1677ff">
-                            <Button 
-                                type="text" 
-                                size="small" 
-                                className="info-trigger-btn"
-                                icon={<InfoCircleOutlined style={{ color: '#1677ff' }} />} 
-                                onClick={() => handleProductInfo(record)}
-                            />
+                            <Button type="text" size="small" className="info-trigger-btn" icon={<InfoCircleOutlined style={{ color: '#1677ff' }} />} onClick={() => handleProductInfo(record)}/>
                         </Tooltip>
                         {record.is_combo === 1 && (
                             <Tag color="purple" style={{ margin: 0, marginLeft: 4, fontSize: '10px', borderRadius: '4px', border: 'none', fontWeight: 600 }}>
@@ -1552,58 +1546,159 @@ export default function Product() {
                 </Select>
             </Modal>
 
-            <Modal title="Product Details" open={isModalOpen} onCancel={() => setIsModalOpen(false)} onOk={() => setIsModalOpen(false)} width={800}>
+            <Modal title={<Space><InfoCircleOutlined style={{ color: '#1677ff' }} />Product Details</Space>} open={isModalOpen} onCancel={() => setIsModalOpen(false)} footer={null} width={900}>
                 {selectedProduct ? (
-                    <div>
-                        <Space align="center" size="middle" wrap>
-                            <Title level={5} style={{ margin: 0 }}>Product ID:</Title>
-                            <Text code>{selectedProduct.id}</Text>
-                            <Button type="default" size="small" icon={<CopyOutlined />} onClick={() => copyToClipboard(selectedProduct.id)}>
-                                Copy
-                            </Button>
-                        </Space>
-        
-                        <Divider />
-        
-                        {normalizedVariations.length === 0 ? (
-                            <Text type="secondary">This product has no variations.</Text>
-                        ) : (
-                            <div>
-                                <Title level={5} style={{ marginBottom: 12 }}>
-                                    Variations & Attribute Values
-                                </Title>
-            
-                                {normalizedVariations.map(({ variationId, attrs }) => (
-                                    <div key={variationId} style={{ padding: 12, border: "1px solid #f0f0f0", borderRadius: 8, marginBottom: 12 }}>
-                                        <Space direction="vertical" size={8} style={{ width: "100%" }}>
-                    
-                                            {attrs.length === 0 ? (
-                                                <Text type="secondary">No attributes on this variation.</Text>
-                                            ) : (
-                                                attrs.map((a) => (
-                                                    <div key={`${variationId}-${a.slot}`} style={{ paddingLeft: 8 }}>
-                                                        <Space direction="vertical" size={4} style={{ width: "100%" }}>
-                                                            <Space wrap>
-                                                                <Tag>Attribute Value</Tag>
+                    <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+                        {/* Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '0 0 20px 0', borderBottom: '1px solid #f0f0f0', marginBottom: 20 }}>
+                            <div style={{ width: 80, height: 80, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: '1px solid #f0f0f0' }}>
+                                <img src={selectedProduct.image || "/free.jpg"} alt={selectedProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <Title level={5} style={{ margin: 0, marginBottom: 4 }}>{selectedProduct.name}</Title>
+                                <Space size={12} wrap>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>ID: <Text code style={{ fontSize: 12 }}>{selectedProduct.id}</Text></Text>
+                                    <Text type="secondary" style={{ fontSize: 12 }}>SKU: <Text strong style={{ fontSize: 12 }}>{selectedProduct.sku || "N/A"}</Text></Text>
+                                    <Tag color={selectedProduct.status === "active" ? "green" : "red"} style={{ margin: 0 }}>{selectedProduct.status === "active" ? "Active" : "Inactive"}</Tag>
+                                </Space>
+                            </div>
+                            <Space direction="vertical" size={4}>
+                                {selectedProduct.slug && (
+                                    <Button size="small" type="primary" icon={<EyeOutlined />} onClick={() => window.open(`${settingsData?.replace(/\/$/, "")}/product/${selectedProduct.slug}`, "_blank")}>
+                                        View
+                                    </Button>
+                                )}
+                                <Button size="small" icon={<CopyOutlined />} onClick={() => copyToClipboard(selectedProduct.id)}>Copy ID</Button>
+                            </Space>
+                        </div>
 
-                                                                <Text code>{a.value} - {a.valueId}</Text>
-                                                                
-                                                                <Button size="small" icon={<CopyOutlined />} onClick={() => copyToClipboard(a.valueId)}>
-                                                                    Copy
-                                                                </Button>
-                                                            </Space>
-                                                        </Space>
-                                                    </div>
-                                                ))
-                                            )}
+                        <Row gutter={[24, 24]}>
+                            {/* Left Column */}
+                            <Col span={12}>
+                                {/* Pricing */}
+                                <Card size="small" title="Pricing" variant="borderless" style={{ borderRadius: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+                                    <Descriptions column={1} size="small">
+                                        <Descriptions.Item label="MRP">৳{selectedProduct.mrp || "0"}</Descriptions.Item>
+                                        <Descriptions.Item label="Sell Price">৳{selectedProduct.sell_price || "0"}</Descriptions.Item>
+                                        <Descriptions.Item label="Offer Price">৳{selectedProduct.offer_price || "0"}</Descriptions.Item>
+                                        <Descriptions.Item label="Discount">৳{selectedProduct.discount || "0"} {selectedProduct.offer_percent ? `(${selectedProduct.offer_percent}%)` : ""}</Descriptions.Item>
+                                        <Descriptions.Item label="Buy Price">৳{selectedProduct.buy_price || "N/A"}</Descriptions.Item>
+                                    </Descriptions>
+                                </Card>
+
+                                {/* Stock */}
+                                <Card size="small" title="Stock & Inventory" variant="borderless" style={{ borderRadius: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+                                    <Descriptions column={1} size="small">
+                                        <Descriptions.Item label="Current Stock">{selectedProduct.current_stock}</Descriptions.Item>
+                                        <Descriptions.Item label="Total Sold">{selectedProduct.total_sell_qty}</Descriptions.Item>
+                                        <Descriptions.Item label="Total Purchased">{selectedProduct.total_purchase_qty}</Descriptions.Item>
+                                        <Descriptions.Item label="Min. Order Qty">{selectedProduct.minimum_qty}</Descriptions.Item>
+                                        <Descriptions.Item label="Alert Qty">{selectedProduct.alert_qty ?? "N/A"}</Descriptions.Item>
+                                    </Descriptions>
+                                </Card>
+
+                                {/* Variations */}
+                                <Card size="small" title="Variations & Attributes" variant="borderless" style={{ borderRadius: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
+                                    {normalizedVariations.length === 0 ? (
+                                        <Text type="secondary" style={{ fontSize: 13 }}>This product has no variations.</Text>
+                                    ) : (
+                                        normalizedVariations.map(({ variationId, attrs }) => (
+                                            <div key={variationId} style={{ padding: 10, border: "1px solid #f5f5f5", borderRadius: 8, marginBottom: 8, background: '#fafafa' }}>
+                                                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 6 }}>Variation #{variationId}</Text>
+                                                {attrs.length === 0 ? (
+                                                    <Text type="secondary" style={{ fontSize: 12 }}>No attributes</Text>
+                                                ) : (
+                                                    <Space wrap size={[6, 6]}>
+                                                        {attrs.map((a) => (
+                                                            <Tag key={`${variationId}-${a.slot}`} color="blue" style={{ margin: 0 }}>
+                                                                {a.value}{" "}
+                                                                <Text style={{ fontSize: 10, opacity: 0.7, cursor: 'pointer' }} onClick={() => copyToClipboard(a.valueId)}>({a.valueId})</Text>
+                                                            </Tag>
+                                                        ))}
+                                                    </Space>
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                </Card>
+                            </Col>
+
+                            <Col span={12}>
+                                <Card size="small" title="Categorization" variant="borderless" style={{ borderRadius: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+                                    <Descriptions column={1} size="small">
+                                        <Descriptions.Item label="Brand">{selectedProduct.brand?.name || "N/A"}</Descriptions.Item>
+                                        <Descriptions.Item label="Categories">
+                                            {selectedProduct.categories?.length ? selectedProduct.categories.map(c => c.name).join(", ") : "N/A"}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Sub Categories">
+                                            {selectedProduct.sub_categories?.length ? selectedProduct.sub_categories.map(c => c.name).join(", ") : "N/A"}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Sub Sub Categories">
+                                            {selectedProduct.sub_sub_categories?.length ? selectedProduct.sub_sub_categories.map(c => c.name).join(", ") : "N/A"}
+                                        </Descriptions.Item>
+                                    </Descriptions>
+                                </Card>
+
+                                <Card size="small" title="Shipping & Type" variant="borderless" style={{ borderRadius: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+                                    <Descriptions column={1} size="small">
+                                        <Descriptions.Item label="Free Shipping">
+                                            <Tag color={selectedProduct.free_shipping ? "green" : "default"}>{selectedProduct.free_shipping ? "Yes" : "No"}</Tag>
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Is Combo">
+                                            <Tag color={selectedProduct.is_combo ? "purple" : "default"}>{selectedProduct.is_combo ? "Yes" : "No"}</Tag>
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Variation Range">
+                                            {selectedProduct.variation_price_range?.min_price > 0
+                                                ? `৳${selectedProduct.variation_price_range.min_price} - ৳${selectedProduct.variation_price_range.max_price}`
+                                                : "N/A"}
+                                        </Descriptions.Item>
+                                    </Descriptions>
+                                </Card>
+
+                                {selectedProduct.is_combo && selectedProduct.combo_items?.length > 0 && (
+                                    <Card size="small" title="Combo Items" variant="borderless" style={{ borderRadius: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.06)', marginBottom: 16 }}>
+                                        <Space direction="vertical" size={6} style={{ width: '100%' }}>
+                                            {selectedProduct.combo_items.map((item) => (
+                                                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 10px', background: '#fafafa', borderRadius: 6 }}>
+                                                    <Text style={{ fontSize: 13 }}>Product #{item.product_id}</Text>
+                                                    <Tag color="blue">Qty: {item.quantity}</Tag>
+                                                </div>
+                                            ))}
                                         </Space>
-                                    </div>
-                                ))}
+                                    </Card>
+                                )}
+
+                                {(selectedProduct.meta_title || selectedProduct.meta_keywords || selectedProduct.meta_description) && (
+                                    <Card size="small" title="SEO Meta" variant="borderless" style={{ borderRadius: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
+                                        <Descriptions column={1} size="small">
+                                            {selectedProduct.meta_title && <Descriptions.Item label="Meta Title">{selectedProduct.meta_title}</Descriptions.Item>}
+                                            {selectedProduct.meta_keywords && <Descriptions.Item label="Meta Keywords">{selectedProduct.meta_keywords}</Descriptions.Item>}
+                                            {selectedProduct.meta_description && <Descriptions.Item label="Meta Description">{selectedProduct.meta_description}</Descriptions.Item>}
+                                        </Descriptions>
+                                    </Card>
+                                )}
+                            </Col>
+                        </Row>
+
+                        {(selectedProduct.short_description || selectedProduct.description) && (
+                            <div style={{ marginTop: 16 }}>
+                                {selectedProduct.short_description && (
+                                    <Card size="small" title="Short Description" variant="borderless" style={{ borderRadius: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.06)', marginBottom: 12 }}>
+                                        <div dangerouslySetInnerHTML={{ __html: selectedProduct.short_description }} style={{ maxHeight: 150, overflowY: 'auto', fontSize: 13 }} />
+                                    </Card>
+                                )}
+                                {selectedProduct.description && (
+                                    <Card size="small" title="Full Description" variant="borderless" style={{ borderRadius: 10, boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }}>
+                                        <div dangerouslySetInnerHTML={{ __html: selectedProduct.description }} style={{ maxHeight: 200, overflowY: 'auto', fontSize: 13 }} />
+                                    </Card>
+                                )}
                             </div>
                         )}
                     </div>
                 ) : (
-                    <Text type="secondary">No product selected.</Text>
+                    <div style={{ textAlign: 'center', padding: 40 }}>
+                        <Text type="secondary">No product selected.</Text>
+                    </div>
                 )}
             </Modal>
 
