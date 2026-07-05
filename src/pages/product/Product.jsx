@@ -181,11 +181,11 @@ export default function Product() {
             title: "Product Name",
             dataIndex: "name",
             key: "name",
-            width: 250,
+            width: 200,
             render: (text, record) => (
                 <div className="product-name-column">
                     <div className="name-with-info">
-                        <Text strong className="product-name-text">
+                        <Text strong className="product-name-text" ellipsis={{ tooltip: text }}>
                             {text}
                         </Text>
                         <Tooltip title="View Quick Info" color="#1677ff">
@@ -197,6 +197,11 @@ export default function Product() {
                                 onClick={() => handleProductInfo(record)}
                             />
                         </Tooltip>
+                        {record.is_combo === 1 && (
+                            <Tag color="purple" style={{ margin: 0, marginLeft: 4, fontSize: '10px', borderRadius: '4px', border: 'none', fontWeight: 600 }}>
+                                COMBO
+                            </Tag>
+                        )}
                     </div>
                     {record.slug && (
                         <Text type="secondary" className="product-slug-text">

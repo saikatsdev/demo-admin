@@ -140,7 +140,7 @@ export default function ProductGalleryPicker({ initialValues = [], gallery = [],
                 </div>
 
                 {images.map((img) => (
-                    <div key={img.uid} className="gallery-preview-item" style={{ position: "relative" }}>
+                    <div key={img.uid} className="gallery-preview-item" style={{ position: "relative", width:"30%", height:"30%" }}>
                         <img src={img.url} alt="product" className="gallary-uploaded-img" />
                         <Button 
                             type="text" 
