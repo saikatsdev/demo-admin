@@ -85,6 +85,10 @@ export default function ProductEdit() {
     const [gallery, setGallery]                                     = useState([]);
     const [gallaryPage, setGallaryPage]                             = useState(1);
     const [hasMore, setHasMore]                                     = useState(true);
+    const [comboSearchQuery, setComboSearchQuery]                   = useState("");
+    const [comboSearchResults, setComboSearchResults]               = useState([]);
+    const [comboSearchLoading, setComboSearchLoading]               = useState(false);
+    const [comboProducts, setComboProducts]                         = useState([]);
 
     const [variationIds, setVariationIds] = useState([]);
 
@@ -119,6 +123,45 @@ export default function ProductEdit() {
     useEffect(() => {
         fetchMedia(gallaryPage);
     }, []);
+
+    const fetchComboProducts = async (query) => {
+        if (!query.trim()) {
+            setComboSearchResults([]);
+            return;
+        }
+        setComboSearchLoading(true);
+        try {
+            const res = await getDatas("/admin/products/search", { search_key: query });
+            if (res?.success) {
+                setComboSearchResults(res?.result || []);
+            }
+        } catch (error) {
+            console.error("Failed to search products:", error);
+        } finally {
+            setComboSearchLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!comboSearchQuery) {
+            setComboSearchResults([]);
+            return;
+        }
+        const timer = setTimeout(() => {
+            fetchComboProducts(comboSearchQuery);
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [comboSearchQuery]);
+
+    useEffect(() => {
+        if (!productTypeId || !productTypes) return;
+        const type = productTypes.find(t => t.id === productTypeId);
+        if (type?.name !== "Combo Product") {
+            setComboProducts([]);
+            setComboSearchQuery("");
+            setComboSearchResults([]);
+        }
+    }, [productTypeId, productTypes]);
 
     useEffect(() => {
         const init = async () => {
@@ -206,6 +249,10 @@ export default function ProductEdit() {
                         type: "old"
                     }))
                 );
+
+                if (p.combo_items && p.combo_items.length > 0) {
+                    setComboProducts(p.combo_items.map(item => item.product));
+                }
 
                 if (p.variations?.length > 0) setProductData(p);
 
@@ -586,6 +633,14 @@ export default function ProductEdit() {
             formData.append("video_url", videoUrl || "");
             formData.append("_method", "put");
 
+            const selectedType = productTypes?.find(t => t.id === productTypeId);
+            const isCombo = selectedType?.name === "Combo Product";
+            formData.append("is_combo", isCombo ? "1" : "0");
+
+            comboProducts.forEach((p) => {
+                formData.append("combo_product_ids[]", p.id);
+            });
+
             if (thumbnail?.file || thumbnail?.path) {
                 if (thumbnail.file) {
                     formData.append("image", thumbnail.file);
@@ -749,6 +804,9 @@ export default function ProductEdit() {
 
     const isInvalidOffer = offerPrice !== "" && regularPrice !== "" && !Number.isNaN(regular) && !Number.isNaN(offer) && offer > regular;
 
+    const selectedProductType = productTypes?.find(t => t.id === productTypeId);
+    const isComboProduct = selectedProductType?.name === "Combo Product";
+
     return (
         <div style={{ background: '#f4f7fe', minHeight: '100vh', paddingBottom: '40px' }}>
             {contextHolder}
@@ -863,15 +921,93 @@ export default function ProductEdit() {
         
                                             <Col span={8}>
                                                 <Form.Item label="Product Type">
-                                                    <Select 
-                                                        size="large"
-                                                        placeholder="Select Type" 
-                                                        value={productTypeId || undefined} 
-                                                        onChange={setProductTypeId} 
-                                                        options={(productTypes || []).map((t) => ({label: t.name,value: t.id,}))}
-                                                    />
+                                                    <Select size="large" placeholder="Select Type" value={productTypeId || undefined} onChange={setProductTypeId} options={(productTypes || []).map((t) => ({label: t.name,value: t.id,}))}/>
                                                 </Form.Item>
                                             </Col>
+
+                                            {isComboProduct && (
+                                                <Col span={24}>
+                                                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: 16 }}>
+                                                        <Text strong style={{ display: 'block', marginBottom: 12, color: '#334155' }}>
+                                                            <AppstoreOutlined style={{ marginRight: 6 }} />Combo Products
+                                                        </Text>
+                                                        <Select
+                                                            showSearch
+                                                            size="large"
+                                                            placeholder="Search and select products for combo..."
+                                                            value={undefined}
+                                                            onSearch={setComboSearchQuery}
+                                                            onChange={(value) => {
+                                                                const product = comboSearchResults.find(p => p.id === value);
+                                                                if (product && !comboProducts.find(p => p.id === product.id)) {
+                                                                    setComboProducts(prev => [...prev, product]);
+                                                                }
+                                                                setComboSearchQuery("");
+                                                            }}
+                                                            filterOption={false}
+                                                            loading={comboSearchLoading}
+                                                            notFoundContent={comboSearchQuery ? "No products found" : "Type to search..."}
+                                                            options={comboSearchResults
+                                                                .filter(p => !comboProducts.find(cp => cp.id === p.id))
+                                                                .map(p => ({
+                                                                    label: p.name,
+                                                                    value: p.id,
+                                                                    product: p,
+                                                                }))}
+                                                            optionRender={(option) => (
+                                                                <Space size={10}>
+                                                                    {option.data.product?.image && (
+                                                                        <img src={option.data.product.image} alt="" style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover' }} />
+                                                                    )}
+                                                                    <span>{option.data.product?.name}</span>
+                                                                </Space>
+                                                            )}
+                                                            style={{ width: '100%', borderRadius: 8 }}
+                                                        />
+                                                        {comboProducts.length > 0 && (
+                                                            <div style={{ marginTop: 12 }}>
+                                                                <Divider orientation="left" style={{ fontSize: 12, margin: '8px 0', color: '#64748b' }}>
+                                                                    Selected Products ({comboProducts.length})
+                                                                </Divider>
+                                                                <Row gutter={[8, 8]}>
+                                                                    {comboProducts.map(product => (
+                                                                        <Col key={product.id} xs={24} sm={12}>
+                                                                            <Card
+                                                                                size="small"
+                                                                                style={{ borderRadius: 8, background: '#fff' }}
+                                                                            >
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                                                                        {product.image && (
+                                                                                            <img
+                                                                                                src={product.image}
+                                                                                                alt=""
+                                                                                                style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
+                                                                                            />
+                                                                                        )}
+                                                                                        <div style={{ minWidth: 0 }}>
+                                                                                            <Text strong style={{ fontSize: 13, display: 'block', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</Text>
+                                                                                            <Text type="secondary" style={{ fontSize: 11 }}>৳{product.sell_price || product.mrp || "N/A"}</Text>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                    <Button
+                                                                                        type="text"
+                                                                                        danger
+                                                                                        size="small"
+                                                                                        icon={<DeleteOutlined />}
+                                                                                        onClick={() => setComboProducts(prev => prev.filter(p => p.id !== product.id))}
+                                                                                        style={{ flexShrink: 0 }}
+                                                                                    />
+                                                                                </div>
+                                                                            </Card>
+                                                                        </Col>
+                                                                    ))}
+                                                                </Row>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </Col>
+                                            )}
                         
                                             <Col span={8}>
                                                 <Form.Item label="Sold Quantity">
