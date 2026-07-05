@@ -1,7 +1,7 @@
-import {ArrowLeftOutlined,BarcodeOutlined,CopyOutlined,DeleteOutlined,EditOutlined,EyeOutlined,FilterOutlined,FormOutlined,InfoCircleOutlined,PlusOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,BarcodeOutlined,CopyOutlined,DeleteOutlined,EditOutlined,ShoppingCartOutlined,EyeOutlined,FilterOutlined,FormOutlined,InfoCircleOutlined,PlusOutlined,ReloadOutlined} from "@ant-design/icons";
 import {Input as AntInput,Typography,Breadcrumb,Badge,Tabs,Button,Col,DatePicker,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
 import dayjs from "dayjs";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {deleteData,getDatas,postData} from "../../api/common/common";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -331,6 +331,18 @@ export default function Product() {
                                     {discount > 0 && <Tag color="error" style={{ fontSize: '10px', margin: 0, marginTop: '4px', borderRadius: '4px', border: 'none', fontWeight: 700 }}>{discount}% OFF</Tag>}
                                 </div>
                             </div>
+
+                            {record.free_shipping && (
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                    background: 'linear-gradient(135deg, #52c41a, #73d13d)',
+                                    padding: '5px 14px', borderRadius: 20, marginTop: 4,
+                                    boxShadow: '0 3px 10px rgba(82, 196, 26, 0.35)',
+                                }}>
+                                    <ShoppingCartOutlined style={{ color: '#fff', fontSize: 14 }} />
+                                    <span style={{ color: '#fff', fontWeight: 700, fontSize: 12, letterSpacing: 0.3 }}>Free Shipping</span>
+                                </div>
+                            )}
                         </Space>
                     </div>
                 );
@@ -746,110 +758,110 @@ export default function Product() {
 
     const hasSelected = selectedRowKeys.length > 0;
 
-    useEffect(() => {
-        const fetchProductsData = async () => {
-            setLoading(true);
-            try {
-                const params = new URLSearchParams();
-        
-                params.append("page", currentPage);
-                params.append("paginate_size", pageSize);
-
-                if (debouncedSearchQuery) {
-                    params.append("search_key", debouncedSearchQuery);
-                }
-
-                params.append("status", productStatus);
-        
-                if (brandIds.length > 0) {
-                    brandIds.forEach((id) => params.append("brand_ids[]", id));
-                }
-
-                if (categoryIds.length > 0) {
-                    categoryIds.forEach((id) => params.append("category_ids[]", id));
-                }
-
-                if (subCategoryIds.length > 0) {
-                    subCategoryIds.forEach((id) =>
-                        params.append("sub_category_ids[]", id)
-                    );
-                }
-
-                if (subSubCategoryIds.length > 0) {
-                    subSubCategoryIds.forEach((id) =>
-                        params.append("sub_sub_category_ids[]", id)
-                    );
-                }
-
-                if (attributeValueIds.length > 0) {
-                    attributeValueIds.forEach((id) =>
-                        params.append("attribute_value_ids[]", id)
-                    );
-                }
-
-                if (tagIds.length > 0) {
-                    tagIds.forEach((id) => params.append("tag_ids[]", id));
-                }
-
-                if (productTypeId) {
-                    params.append("product_type_id", productTypeId);
-                }
-        
-                if (dateRange?.[0] && dateRange?.[1]) {
-                    params.append("start_date", dayjs(dateRange[0]).format("YYYY-MM-DD"));
-                    params.append("end_date", dayjs(dateRange[1]).format("YYYY-MM-DD"));
-                }
-        
-                if (minPrice !== undefined && minPrice !== null && minPrice !== "") {
-                    params.append("min_price", String(minPrice));
-                }
-
-                if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
-                    params.append("max_price", String(maxPrice));
-                }
-
-                if (minStock !== undefined && minStock !== null && minStock !== "") {
-                    params.append("min_stock", String(minStock));
-                }
-
-                if (maxStock !== undefined && maxStock !== null && maxStock !== "") {
-                    params.append("max_stock", String(maxStock));
-                }
-        
-                const paramsObj = {};
-
-                params.forEach((value, key) => {
-                    if (paramsObj[key]) {
-                        if (Array.isArray(paramsObj[key])) {
-                            paramsObj[key].push(value);
-                        } else {
-                            paramsObj[key] = [paramsObj[key], value];
-                        }
-                    } else {
-                        paramsObj[key] = value;
-                    }
-                });
-        
-                const res = await getDatas("/admin/products", paramsObj);
-        
-                if (res?.success) {
-                    setTableData(res?.result?.meta);
-                    const allProducts = res?.result?.data || [];
-            
-                    setActiveCount(res?.result?.totalActiveCount || 0);
-                    setInactiveCount(res?.result?.totalInactiveCount || 0);
-            
-                    setProducts(allProducts);
-                }
-            } catch {
-                message.error("Error fetching products");
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchProductsData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params = new URLSearchParams();
     
-        fetchProductsData();
+            params.append("page", currentPage);
+            params.append("paginate_size", pageSize);
+
+            if (debouncedSearchQuery) {
+                params.append("search_key", debouncedSearchQuery);
+            }
+
+            params.append("status", productStatus);
+    
+            if (brandIds.length > 0) {
+                brandIds.forEach((id) => params.append("brand_ids[]", id));
+            }
+
+            if (categoryIds.length > 0) {
+                categoryIds.forEach((id) => params.append("category_ids[]", id));
+            }
+
+            if (subCategoryIds.length > 0) {
+                subCategoryIds.forEach((id) =>
+                    params.append("sub_category_ids[]", id)
+                );
+            }
+
+            if (subSubCategoryIds.length > 0) {
+                subSubCategoryIds.forEach((id) =>
+                    params.append("sub_sub_category_ids[]", id)
+                );
+            }
+
+            if (attributeValueIds.length > 0) {
+                attributeValueIds.forEach((id) =>
+                    params.append("attribute_value_ids[]", id)
+                );
+            }
+
+            if (tagIds.length > 0) {
+                tagIds.forEach((id) => params.append("tag_ids[]", id));
+            }
+
+            if (productTypeId) {
+                params.append("product_type_id", productTypeId);
+            }
+    
+            if (dateRange?.[0] && dateRange?.[1]) {
+                params.append("start_date", dayjs(dateRange[0]).format("YYYY-MM-DD"));
+                params.append("end_date", dayjs(dateRange[1]).format("YYYY-MM-DD"));
+            }
+    
+            if (minPrice !== undefined && minPrice !== null && minPrice !== "") {
+                params.append("min_price", String(minPrice));
+            }
+
+            if (maxPrice !== undefined && maxPrice !== null && maxPrice !== "") {
+                params.append("max_price", String(maxPrice));
+            }
+
+            if (minStock !== undefined && minStock !== null && minStock !== "") {
+                params.append("min_stock", String(minStock));
+            }
+
+            if (maxStock !== undefined && maxStock !== null && maxStock !== "") {
+                params.append("max_stock", String(maxStock));
+            }
+    
+            const paramsObj = {};
+
+            params.forEach((value, key) => {
+                if (paramsObj[key]) {
+                    if (Array.isArray(paramsObj[key])) {
+                        paramsObj[key].push(value);
+                    } else {
+                        paramsObj[key] = [paramsObj[key], value];
+                    }
+                } else {
+                    paramsObj[key] = value;
+                }
+            });
+    
+            const res = await getDatas("/admin/products", paramsObj);
+    
+            if (res?.success) {
+                setTableData(res?.result?.meta);
+                const allProducts = res?.result?.data || [];
+        
+                setActiveCount(res?.result?.totalActiveCount || 0);
+                setInactiveCount(res?.result?.totalInactiveCount || 0);
+        
+                setProducts(allProducts);
+            }
+        } catch {
+            message.error("Error fetching products");
+        } finally {
+            setLoading(false);
+        }
     }, [currentPage,pageSize,productStatus,debouncedSearchQuery,brandIds,categoryIds,subCategoryIds,subSubCategoryIds,attributeValueIds,tagIds,dateRange,minPrice,maxPrice,minStock,maxStock,productTypeId]);
+
+    useEffect(() => {
+        fetchProductsData();
+    }, [fetchProductsData]);
 
 
     const handleQuickUpdate = async (values) => {
@@ -1047,6 +1059,9 @@ export default function Product() {
                                     </Button>
                                 )}
             
+                                <Button size="small" icon={<ReloadOutlined />} onClick={fetchProductsData} style={{ borderRadius: 6 }}>
+                                    Refresh
+                                </Button>
                                 <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                                     Back
                                 </Button>

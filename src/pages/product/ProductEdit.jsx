@@ -50,8 +50,6 @@ export default function ProductEdit() {
     const [categories, setCategories]                               = useState([]);
     const [brands, setBrands]                                       = useState(null);
     const [productTypes, setProductTypes]                           = useState(null);
-    const [isStockMaintain, setIsStockMaintain]                     = useState(false);
-    const [isStockMaintainWithDirect, setIsStockMaintainWithDirect] = useState(false);
     const [dynamicInputs, setDynamicInputs]                         = useState([]);
     const [allVariations, setAllVariations]                         = useState({ data: [] });
     const [productData, setProductData]                             = useState(null);
@@ -219,16 +217,6 @@ export default function ProductEdit() {
     }, [id]);
 
     useEffect(() => {
-        if (!settings) return;
-
-        const stockMaintain       = settings.is_stock_maintain;
-        const stockMaintainDirect = settings.is_stock_maintain_with_direct_product;
-
-        setIsStockMaintain(stockMaintain === "1");
-        setIsStockMaintainWithDirect(stockMaintainDirect === "1");
-    }, [settings]);
-
-    useEffect(() => {
         if (allVariations?.data?.length > 0 && productData?.variations?.length > 0) {
             const p = productData;
 
@@ -305,6 +293,15 @@ export default function ProductEdit() {
 
     const handleGalleryImageFileChange = ({file,width,height,galleryPath,uid,remove}) => {
         if (remove) {
+            const targetOld = imagePreview.find(img => img.id === uid);
+
+            if (targetOld && targetOld.type === "old" && targetOld.id) {
+                setDeletedGalleryIds(prev =>
+                    prev.includes(targetOld.id) ? prev : [...prev, targetOld.id]
+                );
+                setImagePreview(prev => prev.filter(img => img.id !== uid));
+            }
+
             setImages(prev => prev.filter(img => img.uid !== uid));
             return;
         }
@@ -320,19 +317,6 @@ export default function ProductEdit() {
                 {uid,file: null,path: galleryPath,width,height}
             ]);
         }
-    };
-
-    const deleteImg = (index) => {
-        const target = imagePreview[index];
-
-        if (target?.type === "old" && target?.id) {
-            setDeletedGalleryIds(prev =>
-                prev.includes(target.id) ? prev : [...prev, target.id]
-            );
-        }
-
-        setImagePreview(prev => prev.filter((_, i) => i !== index));
-        setImages(prev => prev.filter((_, i) => i !== index));
     };
 
     const addVariationField = () => {
@@ -706,7 +690,7 @@ export default function ProductEdit() {
             if (res?.success) {
                 messageApi.open({
                     type: "success",
-                    content: res.msg,
+                    content: "Product updated successfully!",
                 });
                 
                 navigate(`/products?page=${page}&pageSize=${pageSize}`);
@@ -714,7 +698,7 @@ export default function ProductEdit() {
                 setErrors(res.errors || {});
                 
                 messageApi.open({
-                    type: "success",
+                    type: "error",
                     content: "Update failed!",
                 });
             }
