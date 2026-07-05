@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getDatas, postData } from '../../api/common/common';
 import useTitle from '../../hooks/useTitle';
-import dayjs from "dayjs";
 import { useSelector } from 'react-redux';
 import './OrderAdd.css';
 
@@ -16,8 +15,6 @@ export default function OrderAdd() {
 
     // Variable
     const [form] = Form.useForm();
-    const screens = Grid.useBreakpoint();
-    const isMobile = !screens.md;
     const navigate = useNavigate();
 
     // State
@@ -32,8 +29,6 @@ export default function OrderAdd() {
     const [district, setDistrict]                           = useState('');
     const [address, setAddress]                             = useState('');
     const [statusId, setStatusId]                           = useState(1);
-    const [followNote, setFollowNote]                       = useState('');
-    const [feedbackNote, setFeedbackNote]                       = useState('');
     const [orderFromId, setOrderFromId]                     = useState(null);
     const [deliveryChargeId, setDeliveryChargeId]           = useState(1);
     const [paymentGatewayId, setPaymentGatewayId]           = useState(1);
@@ -48,7 +43,6 @@ export default function OrderAdd() {
     const [searchQuery, setSearchQuery]                     = useState('');
     const [deliveryFee, setDeliveryFee]                     = useState('');
     const [deliveryName, setDeliveryName]                   = useState('');
-    const [fromName, setFromName]                           = useState('');
     const [hiddenSearchProducts, setHiddenSearchProducts]   = useState(true);
     const [searchError, setSearchError]                     = useState('');
     const [isLoading, setIsLoading]                         = useState(false);
@@ -57,10 +51,6 @@ export default function OrderAdd() {
     const [submitLoading, setSubmitLoading]                 = useState(false);
     const [isPathao, setIsPathao]                           = useState(false);
     const [isRedx, setIsRedx]                               = useState(false);
-    const [approxStartDate, setApproxStartDate]             = useState('');
-    const [approxEndDate, setApproxEndDate]             = useState('');
-    const [feedbackStartDate, setFeedbackStartDate]         = useState('');
-    const [feedbackEndDate, setFeedbackEndDate]             = useState('');
     const [pathaoStores, setPathaoStores]                   = useState([]);
     const [pathaoStoreId, setPathaoStoreId]                 = useState('');
     const [pathaoCityOptions, setPathaoCityOptions]         = useState([]);
@@ -257,15 +247,10 @@ export default function OrderAdd() {
         setDeliveryFee('')
         setDeliveryName('')
         setOrderFromId('')
-        setFromName('')
         setShippingError('')
         setOrderFromError('')
     }
 
-    const clearSearchProducts = () => {
-        setSearchQuery('')
-        setHiddenSearchProducts(true)
-    }
 
     const addProduct = (product) => {
         setSearchQuery(product.name)
@@ -412,12 +397,6 @@ export default function OrderAdd() {
             address_details    : address,
             district_id        : district,
             customer_type_id   : customerTypeId,
-            approx_start_date  : approxStartDate,
-            approx_end_date    : approxEndDate,
-            follow_note        : followNote,
-            feedback_start_date: feedbackStartDate,
-            feedback_end_date  : feedbackEndDate,
-            feedback_note      : feedbackNote,
             customer_name      : customerName,
             phone_number       : phoneNumber,
             order_from_id      : orderFromId,
@@ -799,66 +778,6 @@ export default function OrderAdd() {
                                 <Typography.Text type="danger" style={{ display: 'block', marginTop: 12 }}>{errors.items[0]}</Typography.Text>
                             )}
                         </Card>
-
-                        <Row gutter={[20, 20]}>
-                            <Col xs={24} md={12}>
-                                <Card className="modern-card" 
-                                    title={
-                                    <>
-                                        <div className="section-icon icon-blue">
-                                            <CalendarOutlined />
-                                        </div>
-                                        <span>Follow Up</span>
-                                    </>
-                                    }style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)' }}>
-                                    <Row gutter={[12, 12]}>
-                                        <Col span={12}>
-                                            <Form.Item label="Start Date" required name="approx_start_date">
-                                                <DatePicker style={{ width: '100%' }} value={approxStartDate ? dayjs(approxStartDate) : null} onChange={(_, ds) => setApproxStartDate(ds)} />
-                                            </Form.Item>
-                                        </Col>
-
-                                        <Col span={12}>
-                                            <Form.Item label="End Date" required name="approx_end_date">
-                                                <DatePicker style={{ width: '100%' }} value={approxEndDate ? dayjs(approxEndDate) : null} onChange={(_, ds) => setApproxEndDate(ds)} />
-                                            </Form.Item>
-                                        </Col>
-
-                                        <Col span={24}>
-                                            <Form.Item label="Internal Note" required name="followup_note">
-                                                <Input.TextArea rows={2} value={followNote} onChange={(e) => setFollowNote(e.target.value)} placeholder="Instructions for staff..." />
-                                            </Form.Item>
-                                        </Col>
-                                    </Row>
-                                </Card>
-                            </Col>
-
-                            <Col xs={24} md={12}>
-                                <Card className="modern-card" title={<><div className="section-icon icon-purple"><MessageOutlined /></div><span>Feedback</span></>}
-                                    style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fdf4ff 100%)' }}
-                                >
-                                    <Row gutter={[12, 12]}>
-                                        <Col span={12}>
-                                            <Form.Item label="Start Date" required name="feedback_start_date">
-                                                <DatePicker style={{ width: '100%' }} value={feedbackStartDate ? dayjs(feedbackStartDate) : null} onChange={(_, ds) => setFeedbackStartDate(ds)} />
-                                            </Form.Item>
-                                        </Col>
-
-                                        <Col span={12}>
-                                            <Form.Item label="End Date" required name="feedback_end_date">
-                                                <DatePicker style={{ width: '100%' }} value={feedbackEndDate ? dayjs(feedbackEndDate) : null} onChange={(_, ds) => setFeedbackEndDate(ds)} />
-                                            </Form.Item>
-                                        </Col>
-
-                                        <Col span={24}>
-                                            <Form.Item label="Customer Note" required name="feedback_note">
-                                                <Input.TextArea rows={2} value={feedbackNote} onChange={(e) => setFeedbackNote(e.target.value)} placeholder="What customer said..." />
-                                            </Form.Item>
-                                        </Col>
-                                    </Row>
-                                </Card>
-                            </Col>
-                        </Row>
 
                         <Card className="modern-card" title={<><div className="section-icon icon-green"><GlobalOutlined /></div><span>Source & Payments</span></>}>
                             <Row gutter={[20, 0]}>

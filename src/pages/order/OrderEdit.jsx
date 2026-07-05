@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getDatas, postData } from '../../api/common/common'
 import useTitle from '../../hooks/useTitle'
-import dayjs from "dayjs";
 import CourierDeliveryReport from './followupsell/CourierDeliveryReport'
 import OrderHistoryModal from '../../components/order/OrderHistoryModal'
 import OrderNote from '../../components/order/OrderNote'
@@ -18,7 +17,6 @@ const OrderEdit = () => {
     useTitle("Edit Order");
 
     // Variable
-    const [form]          = Form.useForm();
     const navigate        = useNavigate();
     const params          = useParams();
     const orderId         = params.id;
@@ -127,15 +125,6 @@ const OrderEdit = () => {
             setAdvancePayment(orderInfo?.advance_payment || 0);
             setSpecialDiscount(orderInfo?.special_discount || 0);
             setChangeableChargeValue(orderInfo?.delivery_charge || 0);
-
-            form.setFieldsValue({
-                approx_start_date  : orderInfo?.followUp?.start_date ? dayjs(orderInfo.followUp.start_date): null,
-                approx_end_date    : orderInfo?.followUp?.end_date ? dayjs(orderInfo.followUp.end_date)    : null,
-                followup_note      : orderInfo?.followUp?.note || "",
-                feedback_start_date: orderInfo?.feedback?.start_date ? dayjs(orderInfo.feedback.start_date): null,
-                feedback_end_date  : orderInfo?.feedback?.end_date ? dayjs(orderInfo.feedback.end_date)    : null,
-                feedback_note      : orderInfo?.feedback?.note || "",
-            });
             
             // Load Pathao area if exists
             if (orderInfo?.city_id && orderInfo?.zone_id && orderInfo?.area_id) {
@@ -170,7 +159,7 @@ const OrderEdit = () => {
 
             setCartItems(cartData)
         }
-    }, [orderId, defaultCourierId, form])
+    }, [orderId, defaultCourierId])
 
     // Fetch initial data
     useEffect(() => {
@@ -553,7 +542,6 @@ const OrderEdit = () => {
         setSubmitLoading(true);
 
         const formData = new FormData();
-        const values = form.getFieldsValue();
 
         formData.append('payment_gateway_id', paymentGatewayId);
         formData.append('delivery_gateway_id', deliveryChargeId);
@@ -577,30 +565,6 @@ const OrderEdit = () => {
         formData.append('customer_type_id', customerTypeId);
         formData.append('cancel_reason_id', cancelReasonId);
         formData.append('order_note', orderNote);
-
-        if (values.approx_start_date) {
-            formData.append('approx_start_date',values.approx_start_date.format('YYYY-MM-DD'));
-        }
-
-        if (values.approx_end_date) {
-            formData.append('approx_end_date',values.approx_end_date.format('YYYY-MM-DD'));
-        }
-
-        if (values.followup_note) {
-            formData.append('follow_note', values.followup_note);
-        }
-
-        if (values.feedback_start_date) {
-            formData.append('feedback_start_date',values.feedback_start_date.format('YYYY-MM-DD'));
-        }
-        
-        if (values.feedback_end_date) {
-            formData.append('feedback_end_date',values.feedback_end_date.format('YYYY-MM-DD'));
-        }
-
-        if (values.feedback_note) {
-            formData.append('feedback_note', values.feedback_note);
-        }
 
         formData.append('_method', 'PUT');
 
@@ -637,9 +601,12 @@ const OrderEdit = () => {
                         },
                     });
                 }, 300);
-            } else {
+            } else if(res?.success === false) {
                 setErrors(res?.errors || {})
-                message.error('Failed to update order')
+                messageApi.open({
+                    type: "error",
+                    content: res.message,
+                });
             }
         } catch (error) {
             console.log(error);
@@ -791,7 +758,7 @@ const OrderEdit = () => {
 
             <Row gutter={[24, 24]}>
                 <Col xs={24} lg={17}>
-                    <Form layout="vertical" form={form} className="custom-form">
+                    <Form layout="vertical" className="custom-form">
                         <Card className="modern-card" title={<><div className="section-icon icon-blue"><UserOutlined /></div><span>Customer Information</span></>}>
                             <Row gutter={[20, 0]}>
                                 <Col xs={24} md={8}>
@@ -1021,27 +988,6 @@ const OrderEdit = () => {
                             />
                             {errors?.items && <Typography.Text type="danger" style={{ display: 'block', marginTop: 12 }}>{errors.items[0]}</Typography.Text>}
                         </Card>
-
-                        <Row gutter={[20, 20]}>
-                            <Col xs={24} md={12}>
-                                <Card className="modern-card" title={<><div className="section-icon icon-blue"><CalendarOutlined /></div><span>Follow Up</span></>} style={{ background: 'linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%)' }}>
-                                    <Row gutter={[12, 12]}>
-                                        <Col span={12}><Form.Item label="Start" required name="approx_start_date"><DatePicker style={{ width: '100%' }} /></Form.Item></Col>
-                                        <Col span={12}><Form.Item label="End" required name="approx_end_date"><DatePicker style={{ width: '100%' }} /></Form.Item></Col>
-                                        <Col span={24}><Form.Item label="Staff Note" required name="followup_note"><Input.TextArea rows={2} /></Form.Item></Col>
-                                    </Row>
-                                </Card>
-                            </Col>
-                            <Col xs={24} md={12}>
-                                <Card className="modern-card" title={<><div className="section-icon icon-purple"><MessageOutlined /></div><span>Feedback</span></>} style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fdf4ff 100%)' }}>
-                                    <Row gutter={[12, 12]}>
-                                        <Col span={12}><Form.Item label="Start" required name="feedback_start_date"><DatePicker style={{ width: '100%' }} /></Form.Item></Col>
-                                        <Col span={12}><Form.Item label="End" required name="feedback_end_date"><DatePicker style={{ width: '100%' }} /></Form.Item></Col>
-                                        <Col span={24}><Form.Item label="Client Note" required name="feedback_note"><Input.TextArea rows={2} /></Form.Item></Col>
-                                    </Row>
-                                </Card>
-                            </Col>
-                        </Row>
 
                         <Card className="modern-card" title={<><div className="section-icon icon-green"><GlobalOutlined /></div><span>Source & Payments</span></>} >
                             <Row gutter={[20, 0]}>

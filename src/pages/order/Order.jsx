@@ -1,4 +1,4 @@
-import {CopyOutlined,DeleteFilled,DeleteOutlined,WalletOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined} from "@ant-design/icons";
+import {CopyOutlined,DeleteFilled,DeleteOutlined,WalletOutlined,ReloadOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined} from "@ant-design/icons";
 import {Badge,Button,Col,DatePicker,Dropdown,Form,Input,InputNumber,message,Modal,Popover,Row,Select,Space,Spin,Table,Tag,Tooltip} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
@@ -1701,7 +1701,7 @@ export default function Order() {
                     letterSpacing: "0.4px",
                 };
                 const sectionStyle = { marginBottom: 8 };
-                const tagStyle = { margin: 0, borderRadius: 10, fontWeight: 500 };
+                const tagStyle = { margin: 0, borderRadius: 10, fontWeight: 500, textTransform: "capitalize", fontSize: 11, padding: "0 8px", height: 20, lineHeight: "20px" };
 
                 return (
                     <div
