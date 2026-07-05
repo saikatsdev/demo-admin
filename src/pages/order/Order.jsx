@@ -1,4 +1,4 @@
-import {CopyOutlined,DeleteFilled,DeleteOutlined,TransactionOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined} from "@ant-design/icons";
+import {CopyOutlined,DeleteFilled,DeleteOutlined,WalletOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined} from "@ant-design/icons";
 import {Badge,Button,Col,DatePicker,Dropdown,Form,Input,InputNumber,message,Modal,Popover,Row,Select,Space,Spin,Table,Tag,Tooltip} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
@@ -1356,6 +1356,11 @@ export default function Order() {
         setCourierLogs(data || []);
         setIsCourierModalOpen(true);
     };
+	
+	const getOrderUserLabel = (user) => {
+        if (!user) return { label: "Customer", isCustomer: true };
+        return { label: user.username || `User #${user.id}`, isCustomer: false };
+    };
 
     const columns = 
     [
@@ -1497,10 +1502,38 @@ export default function Order() {
                         )}
 						
 						{isPayment && (
-                            <span style={{ color: "#52c41a", fontWeight: 500 }}>
-                                <TransactionOutlined style={{ marginRight: 6 }} onClick={() => openDigitalProductInfo(record.id)}/>
-                                View Payment
-                            </span>
+                            <div style={{ marginTop: 8 }}>
+                                <Tag
+                                    onClick={() => openDigitalProductInfo(record.id)}
+                                    style={{
+                                        cursor       : "pointer",
+                                        background   : "linear-gradient(135deg, #52c41a, #73d13d)",
+                                        color        : "#fff",
+                                        border       : "none",
+                                        borderRadius : 20,
+                                        padding      : "4px 16px",
+                                        fontSize     : 13,
+                                        fontWeight   : 600,
+                                        boxShadow    : "0 2px 8px rgba(82, 196, 26, 0.35)",
+                                        transition   : "all 0.3s ease",
+                                        display      : "inline-flex",
+                                        alignItems   : "center",
+                                        gap          : 6,
+                                        letterSpacing: 0.3,
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        e.currentTarget.style.boxShadow = "0 4px 14px rgba(82, 196, 26, 0.5)";
+                                        e.currentTarget.style.transform = "translateY(-1px)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(82, 196, 26, 0.35)";
+                                        e.currentTarget.style.transform = "translateY(0)";
+                                    }}
+                                >
+                                    <WalletOutlined style={{ fontSize: 14 }} />
+                                    View Payment
+                                </Tag>
+                            </div>
                         )}
                     </div>
                 );
@@ -1649,11 +1682,78 @@ export default function Order() {
             ),
         },
         {
-            title: "Updated By",
-            dataIndex: ["updated_by", "username"],
-            key: "updated_by",
-            width: 120,
+            title: "Order Handled By",
+            key: "order_handled_by",
+            width: 185,
             align: "center",
+            render: (_, record) => {
+                const created = getOrderUserLabel(record.created_by);
+                const updated = record.updated_by ? getOrderUserLabel(record.updated_by) : null;
+                const prepared = record.prepared_by ? getOrderUserLabel(record.prepared_by) : null;
+                const preparedAt = record.prepared_at ? dayjs(record.prepared_at).format("MMM DD, YYYY · hh:mm A") : null;
+
+                const labelStyle = {
+                    fontSize     : 10,
+                    color        : "#8c8c8c",
+                    fontWeight   : 500,
+                    marginBottom : 4,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.4px",
+                };
+                const sectionStyle = { marginBottom: 8 };
+                const tagStyle = { margin: 0, borderRadius: 10, fontWeight: 500 };
+
+                return (
+                    <div
+                        style={{
+                            fontSize    : 12,
+                            lineHeight  : 1.5,
+                            padding     : "8px 10px",
+                            background  : "#fafafa",
+                            borderRadius: 8,
+                            border      : "1px solid #f0f0f0",
+                        }}
+                    >
+                        <div style={sectionStyle}>
+                            <div style={labelStyle}>Created</div>
+                            <Tag color={created.isCustomer ? "gold" : "blue"} style={tagStyle}>
+                                {created.label}
+                            </Tag>
+                        </div>
+
+                        <div style={{ ...sectionStyle, borderTop: "1px dashed #e8e8e8", paddingTop: 8 }}>
+                            <div style={labelStyle}>Updated</div>
+                            {updated ? (
+                                <Tag color="geekblue" style={tagStyle}>
+                                    {updated.label}
+                                </Tag>
+                            ) : (
+                                <span style={{ color: "#bfbfbf", fontSize: 13 }}>—</span>
+                            )}
+                        </div>
+
+                        <div style={{ borderTop: "1px dashed #e8e8e8", paddingTop: 8 }}>
+                            <div style={labelStyle}>Prepared</div>
+                            {prepared || preparedAt ? (
+                                <>
+                                    {prepared && (
+                                        <Tag color="green" style={{ ...tagStyle, marginBottom: preparedAt ? 5 : 0 }}>
+                                            {prepared.label}
+                                        </Tag>
+                                    )}
+                                    {preparedAt && (
+                                        <div style={{ fontSize: 10, color: "#595959", lineHeight: 1.4, fontWeight: 500 }}>
+                                            {preparedAt}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <span style={{ color: "#bfbfbf", fontSize: 13 }}>—</span>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
         },
         {
             title: "Payment Info",
@@ -1807,12 +1907,7 @@ export default function Order() {
                             
                             {statusId >= 5 && (
                                 <Tooltip title="Return & Damage">
-                                    <Button 
-                                        size="small" 
-                                        type="text" 
-                                        style={{ backgroundColor: "#fff7e6", color: "#faad14" }} 
-                                        icon={<RollbackOutlined />}
-                                        onClick={() => returnAndDamage(record.id)}
+                                    <Button size="small" type="text" style={{ backgroundColor: "#fff7e6", color: "#faad14" }} icon={<RollbackOutlined />} onClick={() => returnAndDamage(record.id)}
                                     />
                                 </Tooltip>
                             )}
@@ -2004,7 +2099,38 @@ export default function Order() {
             <Row>
                 <Col span={24}>
                     <Row style={{ marginBottom: 25 }}>
-                        <Col xs={24} md={16} style={{ display: "flex", justifyContent: "flex-start" }}></Col>
+                        <Col xs={24} md={16} style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                            <div style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 12,
+                                borderLeft: "4px solid #667eea",
+                                paddingLeft: 14,
+                            }}>
+                                <ContainerOutlined style={{ color: "#667eea", fontSize: 20 }} />
+                                <span style={{ color: "#1a1a2e", fontSize: 20, fontWeight: 700, letterSpacing: 0.3 }}>
+                                    All Orders
+                                </span>
+                                <Tag style={{ margin: 0, background: "#f0f5ff", border: "1px solid #d6e4ff", color: "#667eea", borderRadius: 6, fontWeight: 600 }}>
+                                    {totalOrder || 0}
+                                </Tag>
+                            </div>
+                            <Button
+                                icon={<ReloadOutlined />}
+                                onClick={() => getOrders(currentPage)}
+                                style={{
+                                    border: "1px solid #e8e8e8",
+                                    borderRadius: 8,
+                                    color: "#595959",
+                                    fontSize: 13,
+                                    transition: "all 0.2s",
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = "#fafafa"}
+                                onMouseLeave={(e) => e.currentTarget.style.background = ""}
+                            >
+                                Refresh
+                            </Button>
+                        </Col>
                         
                         <Col xs={24} md={8} style={{display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap"}}>
                             <div className="form-actions" style={{ display: "flex", gap: 8,  }}>
@@ -2377,7 +2503,7 @@ export default function Order() {
                             </div>
                         </Col>
             
-                        {statusId === 5 && (
+                        {statusId === 4 && (
                             <Row>
                                 <Col span={24}>
                                     <div className="all-status-tags" style={isMobile ? {marginBottom: 15,padding: "10px 10px",border: "1px solid #cbcbcb"} : {}}>
@@ -2406,7 +2532,7 @@ export default function Order() {
                                             </span>
                                         ))}
                 
-                                        {orderStatus?.filter(status => Number(status.status_id) === 5).map((status, index) => (
+                                        {orderStatus?.filter(status => Number(status.status_id) === 4).map((status, index) => (
                                             <span key={index} onClick={() => getCourierStatusWiseOrder(Number(13))} data-tooltip={`BDT ${status?.courier_pending_amount}`} className="order-status-partial" onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}} onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}>
                                                 <span style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
                                                     <ExclamationCircleOutlined style={{fontSize: 14,color: "#C98209"}}/>
@@ -2420,7 +2546,7 @@ export default function Order() {
                                             </span>
                                         ))}
                 
-                                        {orderStatus?.filter(status => Number(status.status_id) === 5).map((status, index) => (
+                                        {orderStatus?.filter(status => Number(status.status_id) === 4).map((status, index) => (
                                             <Tooltip title={`BDT ${status?.courier_received_amount}`}>
                                                 <span className="order-status-received" key={index} onClick={() => getCourierStatusWiseOrder(Number(14))} 
                                                     onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}} onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}>
@@ -2465,7 +2591,7 @@ export default function Order() {
                         {(statusId === 9 || statusId === 10 || statusId === 11 || statusId === 12) && (
                             <Col span={24} style={{ marginBottom: 16 }}>
                                 {orderStatus?.filter((status) => [9, 10, 11, 12].includes(Number(status.status_id))).map((status) => (
-                                    <span key={Number(status?.status_id)} className={Number(status?.status_id) === statusId ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${status?.total_amount}`}
+                                    <span key={Number(status?.status_id)} className={Number(status?.status_id) === statusId ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${status?.total_payable}`}
                                         onClick={() => getStatusWiseOrder(Number(status?.status_id))} style={{ cursor: "pointer", marginRight: 10 }}>
                                         {status?.status_name}
                                         <span className={Number(status?.status_id) === statusId ? "status-tags-child-child-active" : "status-tags-child-child"}>

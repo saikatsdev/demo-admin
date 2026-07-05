@@ -22,12 +22,13 @@ export default function BlockList() {
     const [query, setQuery]             = useState("");
     const [messageApi, contextHolder]   = message.useMessage();
 
-    const fetchedBlockUsers = useCallback(async (page = 1, size = 20) => {
+    const fetchedBlockUsers = useCallback(async (page = 1, size = 20, search = "") => {
         setLoading(true);
         try {
             const params = {
                 page: page,
                 paginate_size: size,
+                phone_number: search,
             };
             const res = await getDatas("/admin/block-users", params);
 
@@ -47,23 +48,17 @@ export default function BlockList() {
     }, [messageApi]);
 
     useEffect(() => {
-        fetchedBlockUsers(currentPage, pageSize);
-    }, [currentPage, pageSize, fetchedBlockUsers]);
-
-    // Client-side search logic
-    const filteredData = blockData.filter(record => {
-        if (!query) return true;
-        const searchLower = query.toLowerCase();
-        const tokenMatch = record.user_token?.toLowerCase().includes(searchLower);
-        const detailsMatch = record?.details?.some(item => 
-            item.phone_number?.toLowerCase().includes(searchLower) || 
-            item.ip_address?.toLowerCase().includes(searchLower)
-        );
-        return tokenMatch || detailsMatch;
-    });
+        fetchedBlockUsers(currentPage, pageSize, query);
+    }, [currentPage, pageSize, query, fetchedBlockUsers]);
 
     const onSearch = (value) => {
         setQuery(value);
+        setCurrentPage(1);
+    };
+
+    const handleSearchChange = (e) => {
+        setQuery(e.target.value);
+        setCurrentPage(1);
     };
 
     const columns = 
@@ -117,17 +112,17 @@ export default function BlockList() {
         {
             title: "Restrictions",
             key: "restrictions",
+            width: 100,
+            align: "center",
             render: (_, record) => (
-                <Space direction="vertical" size="small">
-                    <Tooltip title={record.is_permanent_block ? "Remove Permanent Block" : "Apply Permanent Block"}>
-                        <Button size="small" type={record.is_permanent_block ? "primary" : "default"} danger={!record.is_permanent_block} icon={<StopOutlined />} className={`action-btn ${record.is_permanent_block ? 'active' : ''}`} onClick={() => handlePermanentBlock(record)}>
-                            {record.is_permanent_block ? "Permanent Blocked" : "Block Permanently"}
-                        </Button>
+                <Space>
+                    <Tooltip title={record.is_permanent_block ? "Remove Permanent Block" : "Block Permanently"}>
+                        <Button size="small" type="text" danger style={{ backgroundColor: record.is_permanent_block ? '#fff1f0' : '#fff', color: '#ff4d4f' }}
+                            icon={<StopOutlined />} onClick={() => handlePermanentBlock(record)}/>
                     </Tooltip>
-                    <Tooltip title="Reset restrictions">
-                        <Button size="small" type={record.is_permanent_unblock ? "primary" : "default"} icon={<UnlockOutlined />} className="action-btn" style={{ color: record.is_permanent_unblock ? '#fff' : '#16a34a', borderColor: '#16a34a' }} onClick={() => handlePermanentUnBlock(record)}>
-                            {record.is_permanent_unblock ? "Fully Unblocked" : "Unblock All"}
-                        </Button>
+                    <Tooltip title={record.is_permanent_unblock ? "Fully Unblocked" : "Unblock All"}>
+                        <Button size="small" type="text" style={{ backgroundColor: record.is_permanent_unblock ? '#f6ffed' : '#fff', color: '#52c41a' }}
+                            icon={<UnlockOutlined />} onClick={() => handlePermanentUnBlock(record)}/>
                     </Tooltip>
                 </Space>
             ),
@@ -142,8 +137,8 @@ export default function BlockList() {
 
     const handlePermanentBlock = (record) => {
         const payload = {
-            is_block: 1,
-            is_permanent_block: 1,
+            is_block            : 1,
+            is_permanent_block  : 1,
             is_permanent_unblock: 0,
         };
         updateUserBlock(record.id, payload);
@@ -151,8 +146,8 @@ export default function BlockList() {
 
     const handlePermanentUnBlock = (record) => {
         const payload = {
-            is_block: 0,
-            is_permanent_block: 0,
+            is_block            : 0,
+            is_permanent_block  : 0,
             is_permanent_unblock: 1,
         };
         updateUserBlock(record.id, payload);
@@ -203,7 +198,7 @@ export default function BlockList() {
                             allowClear 
                             placeholder="Search by token, phone or IP..." 
                             onSearch={onSearch} 
-                            onChange={(e) => setQuery(e.target.value)}
+                            onChange={handleSearchChange}
                             style={{ width: 400 }} 
                             enterButton
                         />
@@ -220,7 +215,7 @@ export default function BlockList() {
                     bordered 
                     loading={loading} 
                     columns={columns} 
-                    dataSource={filteredData}
+                    dataSource={blockData}
                     rowKey="id"
                     pagination={{
                         current: currentPage,
