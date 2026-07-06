@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled } from '@ant-design/icons'
-import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Divider,Tag, Select, Radio, Drawer, Row, Col, Typography, Card, Image, Form} from "antd";
+import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Divider,Tag, Select, Radio, Drawer, Row, Col, Typography, Card, Image, Form, Timeline} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
@@ -22,12 +22,14 @@ export default function Feedback() {
     const [selectedOrder, setSelectedOrder]           = useState(null);
     const [newStatus, setNewStatus]                   = useState("");
     const [statusLoader, setStatusLoader]             = useState(false);
+    const [submitLoading, setSubmitLoading]           = useState(false);
 
     // Filters State
     const [keyword, setKeyword]                       = useState("");
     const [assignedEmp, setAssignedEmp]               = useState(null);
     const [deliveredDate, setDeliveredDate]           = useState(null);
     const [quickFilter, setQuickFilter]               = useState("all");
+    const [employeeList, setEmployeeList]             = useState([]);
 
     // Columns for AntD Table
     const columns = [
@@ -213,7 +215,7 @@ export default function Feedback() {
     const fetchFeedbackOrders = async (page = pagination.current, pageSize = pagination.pageSize) => {
         setLoading(true);
         try {
-            const params = { page, per_page: pageSize };
+            const params = { page, paginate_size: pageSize };
 
             if (keyword) params.search = keyword;
             if (assignedEmp) params.employee_id = assignedEmp;
@@ -242,9 +244,29 @@ export default function Feedback() {
         }
     };
 
+    const fetchEmployeeList = async () => {
+        try {
+            const res = await getDatas("/admin/users/list");
+            if (res && res.success) {
+                setEmployeeList(
+                    (res?.result?.data || []).map((u) => ({
+                        label: u.username,
+                        value: u.id,
+                    }))
+                );
+            }
+        } catch (err) {
+            console.error("Failed to fetch employee list", err);
+        }
+    };
+
     useEffect(() => {
         fetchFeedbackOrders(1, pagination.pageSize);
     }, [keyword, assignedEmp, deliveredDate, quickFilter]);
+
+    useEffect(() => {
+        fetchEmployeeList();
+    }, []);
 
     // Table pagination handler
     const handleTableChange = (pag) => {
@@ -252,6 +274,7 @@ export default function Feedback() {
     };
 
     const handleFeedbackSubmit = async (values) => {
+        setSubmitLoading(true);
         try {
             const formData = new FormData();
             formData.append("_method", "PUT");
@@ -277,6 +300,8 @@ export default function Feedback() {
         } catch (err) {
             console.error(err);
             message.error("Something went wrong while submitting feedback");
+        } finally {
+            setSubmitLoading(false);
         }
     };
 
@@ -311,6 +336,56 @@ export default function Feedback() {
         }
     };
 
+    const expandedRowRender = (record) => {
+        if (!record.interactions || record.interactions.length === 0) return null;
+
+        return (
+            <div style={{ padding: "16px", background: "#f5f5f5", borderRadius: "8px", margin: "8px", border: "1px solid #e8e8e8" }}>
+                <Typography.Title level={5} style={{ marginTop: 0, marginBottom: "20px", color: "#262626" }}>
+                    Follow-up Interactions
+                </Typography.Title>
+                <Timeline>
+                    {record.interactions.map((interaction, index) => (
+                        <Timeline.Item key={interaction.id || index} color={interaction.call_status === 'answered' ? 'green' : 'red'}>
+                            <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
+                                <div style={{ minWidth: "150px" }}>
+                                    <div style={{ fontSize: "13px", color: "#595959", fontWeight: 500 }}>
+                                        {dayjs(interaction.created_at).format("DD MMM, YY hh:mm A")}
+                                    </div>
+                                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#1677ff", marginTop: "4px" }}>
+                                        By: {interaction.employee?.username || "Unknown"}
+                                    </div>
+                                </div>
+                                <div style={{ background: "#fff", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e8e8e8", flex: 1, boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }}>
+                                    <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
+                                        <Tag color={interaction.call_status === 'answered' ? "success" : "volcano"} style={{ textTransform: "capitalize", borderRadius: "12px", border: "none", fontWeight: 500 }}>
+                                            {interaction.call_status?.replace('_', ' ')}
+                                        </Tag>
+                                        {interaction.customer_feedback && (
+                                            <Tag color="cyan" style={{ borderRadius: "12px", border: "none", fontWeight: 500 }}>{interaction.customer_feedback}</Tag>
+                                        )}
+                                        {interaction.rating && (
+                                            <Tag color="gold" style={{ borderRadius: "12px", border: "none", fontWeight: 600 }}>{interaction.rating} ⭐</Tag>
+                                        )}
+                                        {interaction.next_action && (
+                                            <Tag color="purple" style={{ borderRadius: "12px", border: "none", fontWeight: 500 }}>Action: {interaction.next_action}</Tag>
+                                        )}
+                                    </div>
+                                    
+                                    {interaction.remarks && (
+                                        <div style={{ color: "#262626", fontSize: "14px", lineHeight: "1.5", marginTop: "8px", background: "#fafafa", padding: "8px 12px", borderLeft: "3px solid #d9d9d9" }}>
+                                            <span style={{ fontWeight: 600, color: "#8c8c8c", marginRight: "6px" }}>Remarks:</span> {interaction.remarks}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </Timeline.Item>
+                    ))}
+                </Timeline>
+            </div>
+        );
+    };
+
     return (
         <>
             {contextHolder}
@@ -331,28 +406,20 @@ export default function Feedback() {
             <div style={{ padding: "16px", background: "#fff", borderRadius: "8px", marginBottom: "16px", border: "1px solid #f0f0f0", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
                 <Space wrap size="middle" style={{ width: "100%", justifyContent: "space-between" }}>
                     <Space wrap size="middle">
-                        <AntInput.Search allowClear 
-                            placeholder="Search Invoice / Phone / Name..." 
-                            onSearch={(val) => setKeyword(val)}
-                            style={{ width: 280 }}
-                        />
+                        <AntInput.Search allowClear placeholder="Search Invoice / Phone / Name..." onSearch={(val) => setKeyword(val)} style={{ width: 280 }}/>
+
                         <Select
                             placeholder="Assigned Employee"
                             allowClear
+                            showSearch
+                            optionFilterProp="label"
                             style={{ width: 200 }}
                             value={assignedEmp}
                             onChange={(val) => setAssignedEmp(val)}
-                            options={[
-                                { label: "Admin", value: 1 },
-                                { label: "Support User 1", value: 2 },
-                                { label: "Support User 2", value: 3 },
-                            ]}
+                            options={employeeList}
                         />
-                        <DatePicker.RangePicker 
-                            format="YYYY-MM-DD"
-                            value={deliveredDate}
-                            onChange={(val) => setDeliveredDate(val)}
-                        />
+
+                        <DatePicker.RangePicker format="YYYY-MM-DD" value={deliveredDate} onChange={(val) => setDeliveredDate(val)}/>
                     </Space>
                     
                     <Space wrap size="middle">
@@ -374,6 +441,10 @@ export default function Feedback() {
             </div>
 
             <Table rowKey="id" columns={columns} dataSource={feedbackOrders} loading={loading}
+                expandable={{
+                    expandedRowRender,
+                    rowExpandable: (record) => record.interactions && record.interactions.length > 0,
+                }}
                 pagination={{ 
                     current: pagination.current, 
                     pageSize: pagination.pageSize, 
@@ -518,9 +589,9 @@ export default function Feedback() {
                                         getFieldValue('call_status') === 'answered' ? (
                                             <Form.Item name="next_action" label={<span style={{fontWeight: 500}}>Next Action</span>}>
                                                 <Select placeholder="Select Next Action" size="large" options={[
-                                                    { value: "Move to Follow-up", label: "Move to Follow-up" },
-                                                    { value: "Converted", label: "Converted" },
-                                                    { value: "Close", label: "Close" },
+                                                    { value: "followup", label: "Move to Follow-up" },
+                                                    { value: "converted", label: "Converted" },
+                                                    { value: "close", label: "Close" },
                                                 ]} />
                                             </Form.Item>
                                         ) : null
@@ -529,7 +600,7 @@ export default function Feedback() {
 
                                 <Form.Item noStyle shouldUpdate={(prev, curr) => prev.next_action !== curr.next_action || prev.call_status !== curr.call_status}>
                                     {({ getFieldValue }) => 
-                                        getFieldValue('call_status') === 'answered' && getFieldValue('next_action') === 'Move to Follow-up' ? (
+                                        getFieldValue('call_status') === 'answered' && getFieldValue('next_action') === 'followup' ? (
                                             <Form.Item name="next_followup_date" label={<span style={{fontWeight: 500}}>Next Follow-up Date</span>} rules={[{ required: true, message: 'Required' }]}>
                                                 <DatePicker size="large" style={{ width: "100%" }} />
                                             </Form.Item>
@@ -538,7 +609,7 @@ export default function Feedback() {
                                 </Form.Item>
 
                                 <div style={{ marginTop: "32px", paddingBottom: "24px" }}>
-                                    <Button type="primary" htmlType="submit" size="large" block style={{ height: "45px", fontWeight: 600, fontSize: "16px" }}>
+                                    <Button type="primary" htmlType="submit" size="large" block loading={submitLoading} style={{ height: "45px", fontWeight: 600, fontSize: "16px" }}>
                                         Submit Feedback
                                     </Button>
                                 </div>
