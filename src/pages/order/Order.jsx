@@ -113,9 +113,6 @@ export default function Order() {
     const [previewOpen, setPreviewOpen]                                                                = useState(false);
     const [previewOrder, setPreviewOrder]                                                              = useState(null);
     const [previewItems, setPreviewItems]                                                              = useState([]);
-    const [approxStartDate, setApproxStartDate]                                                        = useState("");
-    const [approxEndDate, setApproxEndDate]                                                            = useState("");
-    const [followNote, setFollowNote]                                                                  = useState("");
     const [totalOrder, setTotalOrder]                                                                  = useState(0);
     const [currentPage, setCurrentPage]                                                                = useState(1);
     const [historyModalOpen, setHistoryModalOpen]                                                      = useState(false);
@@ -511,12 +508,6 @@ export default function Order() {
                 current_status_id: orderCurrentStatus,
                 cancel_reason_id : cancelReasonId || null,
             };
-
-            if (orderCurrentStatus == 3) {
-                payload.approx_start_date = approxStartDate;
-                payload.approx_end_date   = approxEndDate;
-                payload.follow_note       = followNote;
-            }
 
             const res = await postData("/admin/orders/update-status", payload);
 
@@ -3072,16 +3063,6 @@ export default function Order() {
                         </Option>
                     ))}
                 </Select>
-        
-                {orderCurrentStatus == 5 && (
-                    <Select value={courierId} onChange={(value) => setCourierId(value)} style={{ width: "100%" }} placeholder="Select Courier">
-                        {couriers?.map((item, index) => (
-                            <Option key={index} value={item.id}>
-                                {item.name}
-                            </Option>
-                        ))}
-                    </Select>
-                )}
 
                 {orderCurrentStatus == 8 && (
                     <Select value={cancelReasonId} onChange={(value) => setCancelReasonId(value)} style={{ width: "100%" }}>
@@ -3091,16 +3072,6 @@ export default function Order() {
                             </Option>
                         ))}
                     </Select>
-                )}
-        
-                {orderCurrentStatus == 3 && (
-                    <>
-                        <Input type="date" placeholder="Approx Start Date" value={approxStartDate} onChange={(e) => setApproxStartDate(e.target.value)} style={{ marginBottom: 12 }}/>
-            
-                        <Input type="date" placeholder="Approx End Date" value={approxEndDate} onChange={(e) => setApproxEndDate(e.target.value)} style={{ marginBottom: 12 }}/>
-            
-                        <Input.TextArea placeholder="Follow-up Note" value={followNote} onChange={(e) => setFollowNote(e.target.value)} rows={3}/>
-                    </>
                 )}
             </Modal>
 

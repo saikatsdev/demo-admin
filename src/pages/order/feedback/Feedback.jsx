@@ -1,18 +1,15 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {InfoCircleOutlined, EditOutlined,WhatsAppOutlined,PhoneOutlined,CopyOutlined,DeleteOutlined,ArrowLeftOutlined } from '@ant-design/icons'
 import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Tag, Select} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
-import { deleteData, getDatas, postData } from "../../../api/common/common";
+import { getDatas, postData } from "../../../api/common/common";
 import OrderInfoModal from "./OrderInfoModal";
 
 export default function Feedback() {
     // Hook
     useTitle("All Feedback Order");
-
-    // Variable
-    const navigate = useNavigate();
 
     // State
     const [feedbackOrders, setFeedbackOrders]         = useState([]);
@@ -25,12 +22,9 @@ export default function Feedback() {
     const [selectedNoteRecord, setSelectedNoteRecord] = useState(null);
     const [isModalOpen, setIsModalOpen]               = useState(false);
     const [messageApi, contextHolder]                 = message.useMessage();
-    const [searchText, setSearchText]                 = useState("");
     const [isStatusModalOpen, setIsStatusModalOpen]   = useState(false);
     const [selectedOrder, setSelectedOrder]           = useState(null);
     const [newStatus, setNewStatus]                   = useState("");
-    const [activeStatus, setActiveStatus]             = useState(null);
-    const [orderSummary, setOrderSummary]             = useState({});
     const [statusLoader, setStatusLoader]             = useState(false);
 
     // Columns for AntD Table
@@ -131,12 +125,6 @@ export default function Feedback() {
                     <Button type="primary" size="small" onClick={() => handleCall(record.order.phone_number)}>
                         <PhoneOutlined />
                     </Button>
-                    <Button type="default" size="small" onClick={() => handleConvert(record)}>
-                        Convert
-                    </Button>
-                    <Button size="small" danger="danger" className="incomplete-delete" onClick={() => handleDelete(record.id)}>
-                        {<DeleteOutlined />}
-                    </Button>
                 </Space>
             ),
         },
@@ -209,14 +197,12 @@ export default function Feedback() {
             const res = await getDatas("/admin/feedback", params);
 
             if (res && res.success) {
-                setFeedbackOrders(res?.result?.data?.data || []);
-
-                setOrderSummary(res?.result?.summary || {});
+                setFeedbackOrders(res?.result?.data || []);
 
                 setPagination({
-                    current: res?.result?.data?.meta?.current_page,
-                    pageSize: res?.result?.data?.meta?.per_page,
-                    total: res?.result?.data?.meta?.total,
+                    current: res?.result?.meta?.current_page,
+                    pageSize: res?.result?.meta?.per_page,
+                    total: res?.result?.meta?.total,
                 });
             }
         } catch (err) {
@@ -227,32 +213,10 @@ export default function Feedback() {
         }
     };
 
-    const filteredOrders = feedbackOrders.filter((item) => {
-        if (!searchText) return true;
-
-        const key = searchText.toLowerCase();
-        const order = item.order;
-
-        return (
-            order?.invoice_number?.toLowerCase().includes(key) || order?.phone_number?.toLowerCase().includes(key) || order?.customer_name?.toLowerCase().includes(key) || item?.note?.toLowerCase().includes(key) || String(item.order_id).includes(key)
-        );
-    });
-
     const handleCall = (phone) => {
         message.info(`Call ${phone} ...`);
     };
 
-    const handleConvert = (record) => {
-        const order = record.order || {};
-
-        const name         = order.customer_name;
-        const address      = order.address_details;
-        const phone_number = order.phone_number;
-
-        navigate("/order-add", {state: {name: name,address: address,phone_number: phone_number, is_feedback_order:1}});
-    };
-
-    // On component mount
     useEffect(() => {
         fetchFeedbackOrders(pagination.current, pagination.pageSize);
     }, []);
@@ -285,31 +249,6 @@ export default function Feedback() {
             console.error(err);
         }
     };
-
-    const handleDelete = async (id) => {
-        const confirmDelete = window.confirm(
-            `Are you sure you want to delete orders?`
-        );
-
-        if (!confirmDelete) return;
-
-        try {
-            const res = await deleteData(`/admin/feedback/${id}`);
-
-            if(res && res?.success){
-                fetchFeedbackOrders();
-
-                messageApi.open({
-                    type: "success",
-                    content: res.msg,
-                });
-            }
-        } catch (error) {
-            console.log(error);
-        }finally{
-            setLoading(false);
-        }
-    }
 
     const submitStatus = async () => {
         if (!newStatus || !selectedOrder) return;
@@ -360,7 +299,7 @@ export default function Feedback() {
             </div>
 
             <div className="incomplete-order-head">
-                <AntInput.Search allowClear placeholder="Search by Invoice / Phone / Name" style={{ width: 300 }} onChange={(e) => setSearchText(e.target.value)}/>
+                <AntInput.Search allowClear placeholder="Search by Invoice / Phone / Name" style={{ width: 300 }}/>
                 <Space>
                     <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                         Back
@@ -368,28 +307,13 @@ export default function Feedback() {
                 </Space>
             </div>
 
-            <div className="page-item-data-wrapper" style={{marginBottom:10}}>
-                <Space wrap size="middle">
-                    <Button type={activeStatus === null ? "primary" : "default"} onClick={() => { setActiveStatus(null); fetchFeedbackOrders(1, 25, null); }}>
-                        Total <span className="count-badge">{orderSummary.total}</span>
-                    </Button>
-
-                    <Button type={activeStatus === "pending" ? "primary" : "default"} onClick={() => { setActiveStatus("pending"); fetchFeedbackOrders(1, 25, "pending"); }}>
-                        Pending <span className="count-badge">{orderSummary.pending}</span>
-                    </Button>
-
-                    <Button type={activeStatus === "approved" ? "primary" : "default"} onClick={() => { setActiveStatus("approved"); fetchFeedbackOrders(1, 25, "approved"); }}>
-                        Approved <span className="count-badge">{orderSummary.approved}</span>
-                    </Button>
-
-                    <Button danger type={activeStatus === "canceled" ? "primary" : "default"} onClick={() => { setActiveStatus("cancelled"); fetchFeedbackOrders(1, 25, "cancelled"); }}>
-                        Cancelled <span className="count-badge">{orderSummary.cancelled}</span>
-                    </Button>
-                </Space>
-            </div>
-
-            <Table rowKey="id" columns={columns} dataSource={filteredOrders} loading={loading}
-                pagination={{ current: pagination.current, pageSize: pagination.pageSize, total: pagination.total, showSizeChanger: true, pageSizeOptions: ["10", "25", "50", "100"]}}
+            <Table rowKey="id" columns={columns} dataSource={feedbackOrders} loading={loading}
+                pagination={{ 
+                    current: pagination.current, 
+                    pageSize: pagination.pageSize, 
+                    total: pagination.total, 
+                    showSizeChanger: true, 
+                    pageSizeOptions: ["10", "25", "50", "100"]}}
                 onChange={handleTableChange}
             />
 
