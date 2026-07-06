@@ -1,221 +1,487 @@
 import { Link, useNavigate } from "react-router-dom";
-import {InfoCircleOutlined, EditOutlined,WhatsAppOutlined,PhoneOutlined,CopyOutlined,DeleteOutlined,ArrowLeftOutlined } from '@ant-design/icons'
-import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Tag, Select} from "antd";
+import {
+    WhatsAppOutlined, CopyOutlined, ArrowLeftOutlined, UserOutlined,
+    PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,
+    TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,
+    CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,
+    MessageOutlined, PhoneFilled, HistoryOutlined,
+} from '@ant-design/icons';
+import {
+    Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,
+    DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider,
+} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import { useEffect, useState } from "react";
-import { deleteData, getDatas, postData } from "../../../api/common/common";
-import OrderInfoModal from "./OrderInfoModal";
+import { getDatas, postData } from "../../../api/common/common";
+
+dayjs.extend(relativeTime);
+
+// ─── inline styles injected once ──────────────────────────────────────────────
+const pulseStyle = `
+@keyframes lc-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%        { opacity: .5; transform: scale(1.4); }
+}
+.lc-pulse { animation: lc-pulse 1.8s ease-in-out infinite; }
+`;
+if (!document.getElementById("lc-pulse-style")) {
+    const el = document.createElement("style");
+    el.id = "lc-pulse-style";
+    el.textContent = pulseStyle;
+    document.head.appendChild(el);
+}
+
+// ─── helpers ──────────────────────────────────────────────────────────────────
+
+const getStepConfig = (step) => {
+    const cfg = {
+        1: { color: "blue",   bg: "#e6f4ff", text: "#1677ff", label: "Step 1" },
+        2: { color: "orange", bg: "#fff7e6", text: "#fa8c16", label: "Step 2" },
+        3: { color: "red",    bg: "#fff2f0", text: "#ff4d4f", label: "Step 3" },
+    };
+    return cfg[step] || { color: "default", bg: "#f5f5f5", text: "#8c8c8c", label: `Step ${step}` };
+};
+
+const getFollowupLabel = (dateStr) => {
+    if (!dateStr) return { label: "Not Set", color: "#bfbfbf", bg: "#fafafa", dot: "#d9d9d9" };
+    const now   = dayjs();
+    const date  = dayjs(dateStr);
+    const diff  = date.startOf("day").diff(now.startOf("day"), "day");
+
+    if (diff < 0)  return { label: `Overdue ${Math.abs(diff)}d`, color: "#ff4d4f", bg: "#fff2f0", dot: "#ff4d4f" };
+    if (diff === 0) return { label: "Today",    color: "#52c41a", bg: "#f6ffed", dot: "#52c41a" };
+    if (diff === 1) return { label: "Tomorrow",  color: "#fa8c16", bg: "#fff7e6", dot: "#fa8c16" };
+    return { label: `${diff} Days Left`, color: "#1677ff", bg: "#e6f4ff", dot: "#1677ff" };
+};
+
+const getPriority = (dateStr) => {
+    if (!dateStr) return { label: "Upcoming", color: "blue" };
+    const diff = dayjs(dateStr).startOf("day").diff(dayjs().startOf("day"), "day");
+    if (diff < 0)  return { label: "Overdue",  color: "red"    };
+    if (diff === 0) return { label: "Today",   color: "orange" };
+    return { label: "Upcoming", color: "blue" };
+};
+
+const callStatusLabel = (status) => {
+    const map = {
+        answered:     { label: "Connected",  color: "#52c41a" },
+        no_answer:    { label: "No Answer",  color: "#fa8c16" },
+        busy:         { label: "Busy",       color: "#faad14" },
+        switched_off: { label: "Switched Off", color: "#ff4d4f" },
+        wrong_number: { label: "Wrong No",   color: "#722ed1" },
+        call_rejected:{ label: "Rejected",   color: "#c41d7f" },
+    };
+    return map[status] || { label: status || "—", color: "#8c8c8c" };
+};
+
+// ─── LastInteractionPanel ─────────────────────────────────────────────────────
+
+function RatingStars({ rating, max = 5 }) {
+    return (
+        <span style={{ display: "inline-flex", gap: 2 }}>
+            {Array.from({ length: max }).map((_, i) =>
+                i < rating
+                    ? <StarFilled  key={i} style={{ color: "#faad14", fontSize: 13 }} />
+                    : <StarOutlined key={i} style={{ color: "#d9d9d9", fontSize: 13 }} />
+            )}
+        </span>
+    );
+}
+
+function LastInteractionPanel({ record }) {
+    const it = record.last_interaction;
+    if (!it) return null;
+
+    const cfg  = callStatusLabel(it.call_status);
+    const when = it.created_at ? dayjs(it.created_at).format("DD MMM YYYY, hh:mm A") : "—";
+    const ago  = it.created_at ? dayjs(it.created_at).fromNow() : "";
+
+    return (
+        <div style={{
+            margin: "0 48px 4px", padding: "14px 20px",
+            background: "linear-gradient(135deg, #f8fbff 0%, #fff7f0 100%)",
+            borderRadius: 10, border: "1px solid #e8edf5",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        }}>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{
+                        width: 32, height: 32, borderRadius: 8, background: cfg.color + "18",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                        <PhoneFilled style={{ color: cfg.color, fontSize: 14 }} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: "#262626" }}>Last Interaction</div>
+                        <div style={{ fontSize: 11, color: "#8c8c8c" }}>{when} · <span style={{ color: "#1677ff" }}>{ago}</span></div>
+                    </div>
+                </div>
+                <Tag style={{
+                    borderRadius: 20, padding: "2px 12px", fontWeight: 600, fontSize: 12,
+                    border: "none", background: cfg.color + "18", color: cfg.color,
+                }}>
+                    {cfg.label}
+                </Tag>
+            </div>
+
+            <Divider style={{ margin: "8px 0" }} />
+
+            {/* Body grid */}
+            <Row gutter={[16, 8]} style={{ marginTop: 4 }}>
+                {/* Rating */}
+                <Col xs={24} sm={8}>
+                    <div style={{
+                        padding: "10px 14px", borderRadius: 8, background: "#fff",
+                        border: "1px solid #f0f0f0",
+                    }}>
+                        <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 4, fontWeight: 500 }}>Rating</div>
+                        {it.rating != null
+                            ? <><RatingStars rating={it.rating} /> <span style={{ fontSize: 11, color: "#8c8c8c", marginLeft: 4 }}>({it.rating}/5)</span></>
+                            : <span style={{ fontSize: 12, color: "#bfbfbf", fontStyle: "italic" }}>Not rated</span>
+                        }
+                    </div>
+                </Col>
+
+                {/* Remarks */}
+                <Col xs={24} sm={8}>
+                    <div style={{
+                        padding: "10px 14px", borderRadius: 8, background: "#fff",
+                        border: "1px solid #f0f0f0", height: "100%",
+                    }}>
+                        <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 4, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
+                            <MessageOutlined /> Remarks
+                        </div>
+                        {it.remarks
+                            ? <span style={{ fontSize: 12, color: "#262626" }}>{it.remarks}</span>
+                            : <span style={{ fontSize: 12, color: "#bfbfbf", fontStyle: "italic" }}>No remarks</span>
+                        }
+                    </div>
+                </Col>
+
+                {/* Customer Feedback */}
+                <Col xs={24} sm={8}>
+                    <div style={{
+                        padding: "10px 14px", borderRadius: 8, background: "#fff",
+                        border: "1px solid #f0f0f0", height: "100%",
+                    }}>
+                        <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 4, fontWeight: 500 }}>Customer Feedback</div>
+                        {it.customer_feedback
+                            ? <span style={{ fontSize: 12, color: "#262626" }}>{it.customer_feedback}</span>
+                            : <span style={{ fontSize: 12, color: "#bfbfbf", fontStyle: "italic" }}>No feedback</span>
+                        }
+                    </div>
+                </Col>
+            </Row>
+        </div>
+    );
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FollowupSell() {
-    // Hook
-    useTitle("All Follow Up Order");
-
-    // Variable
+    useTitle("Follow Up Orders");
     const navigate = useNavigate();
 
-    // State
-    const [followUpOrders, setFollowUpOrders]         = useState([]);
-    const [loading, setLoading]                       = useState(false);
-    const [pagination, setPagination]                 = useState({current: 1,pageSize: 25,total: 0});
-    const [editModalOpen, setEditModalOpen]           = useState(false);
-    const [noteValue, setNoteValue]                   = useState("");
-    const [followupDate, setFollowupDate]             = useState("");
-    const [selectedRecord, setSelectedRecord]         = useState(null);
-    const [selectedNoteRecord, setSelectedNoteRecord] = useState(null);
-    const [isModalOpen, setIsModalOpen]               = useState(false);
-    const [messageApi, contextHolder]                 = message.useMessage();
-    const [searchText, setSearchText]                 = useState("");
-    const [isStatusModalOpen, setIsStatusModalOpen]   = useState(false);
-    const [selectedOrder, setSelectedOrder]           = useState(null);
-    const [newStatus, setNewStatus]                   = useState("");
-    const [activeStatus, setActiveStatus]             = useState(null);
-    const [orderSummary, setOrderSummary]             = useState({});
-    const [statusLoader, setStatusLoader]             = useState(false);
+    // core state
+    const [followUpOrders, setFollowUpOrders] = useState([]);
+    const [loading, setLoading]               = useState(false);
+    const [pagination, setPagination]         = useState({ current: 1, pageSize: 10, total: 0 });
+    const [summary, setSummary]               = useState({});
+    const [messageApi, contextHolder]         = message.useMessage();
 
-    const columns = 
-    [
+    // filter state
+    const [search, setSearch]               = useState("");
+    const [filterStep, setFilterStep]       = useState(null);
+    const [filterStatus, setFilterStatus]   = useState(null);
+    const [filterEmployee, setFilterEmployee] = useState(null);
+    const [filterPriority, setFilterPriority] = useState(null);
+    const [dateRange, setDateRange]         = useState(null);
+    const [summaryKey, setSummaryKey]       = useState("all");
+
+    // modal state
+    const [editRecord, setEditRecord]       = useState(null);
+    const [followupDate, setFollowupDate]   = useState(null);
+    const [noteValue, setNoteValue]         = useState("");
+    const [saveLoading, setSaveLoading]     = useState(false);
+
+    // ── columns ──────────────────────────────────────────────────────────────
+
+    const columns = [
         {
             title: "SL",
             key: "sl",
-            render: (_, __, index) =>
-                (pagination.current - 1) * pagination.pageSize + index + 1,
-            width: 60,
-        },
-        {
-            title: "Invoice",
-            dataIndex: ["order", "invoice_number"],
-            key: "invoice_number",
-            render: (text, record) => {
-                const orderExists = record?.order;
-
-                return (
-                    <Space>
-                        {orderExists ? (
-                            <>
-                                {text}
-                                <InfoCircleOutlined style={{ color: "#1890ff", cursor: "pointer" }} onClick={() => handleInfoClick(record)}/>
-                            </>
-                        ) : (
-                            <span style={{ color: "red" }}>Order not found</span>
-                        )}
-                    </Space>
-                );
-            },
+            width: 52,
+            align: "center",
+            render: (_, __, i) => (
+                <span style={{ color: "#8c8c8c", fontSize: 13 }}>
+                    {(pagination.current - 1) * pagination.pageSize + i + 1}
+                </span>
+            ),
         },
         {
             title: "Customer",
-            dataIndex: ["order", "customer_name"],
-            key: "customer_name",
-            render: (text, record) => record?.order?.customer_name || "N/A",
-        },
-        {
-            title: "Phone",
-            dataIndex: ["order", "phone_number"],
-            key: "phone_number",
-            render: (text, record) => {
-                const phone = record?.order?.phone_number || "N/A";
-
+            key: "customer",
+            render: (_, record) => {
+                const name  = record.customer_name || record.order?.customer_name || "N/A";
+                const phone = record.phone_number  || record.order?.phone_number  || "N/A";
                 return (
-                    <Space size="middle">
-                        <span>{phone}</span>
-
-                        <Tooltip title="Copy phone number">
-                            <CopyOutlined style={{ fontSize: 18, color: "#1890ff", cursor: phone !== "N/A" ? "pointer" : "not-allowed" }} onClick={() => phone !== "N/A" && copyPhoneNo(phone)}/>
-                        </Tooltip>
-
-                        <Tooltip title="Open WhatsApp">
-                            <WhatsAppOutlined style={{ fontSize: 18, color: "#25D366", cursor: phone !== "N/A" ? "pointer" : "not-allowed" }} onClick={() => phone !== "N/A" && openWhatsApp(phone)}/>
-                        </Tooltip>
-                    </Space>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Avatar size={36} icon={<UserOutlined />}
+                            style={{ background: "#e6f4ff", color: "#1677ff", flexShrink: 0 }} />
+                        <div>
+                            <div style={{ fontWeight: 600, fontSize: 13, color: "#262626" }}>{name}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                                <span style={{ fontSize: 12, color: "#595959" }}>{phone}</span>
+                                {phone !== "N/A" && (
+                                    <>
+                                        <Tooltip title="Copy"><CopyOutlined style={{ fontSize: 12, color: "#1677ff", cursor: "pointer" }} onClick={() => copyPhone(phone)} /></Tooltip>
+                                        <Tooltip title="WhatsApp"><WhatsAppOutlined style={{ fontSize: 12, color: "#25D366", cursor: "pointer" }} onClick={() => openWhatsApp(phone)} /></Tooltip>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 );
             },
         },
         {
-            title: "Start Date",
-            dataIndex: "start_date",
-            key: "start_date",
+            title: "Order",
+            key: "order",
+            render: (_, record) => {
+                const inv       = record.order?.invoice_number || "—";
+                const delivered = record.order?.delivered_at;
+                return (
+                    <div>
+                        <div style={{ fontWeight: 600, fontSize: 13, color: "#1677ff" }}>{inv}</div>
+                        <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>
+                            Delivered: {delivered ? dayjs(delivered).format("DD MMM YYYY") : "—"}
+                        </div>
+                    </div>
+                );
+            },
         },
         {
-            title: "End Date",
-            dataIndex: "end_date",
-            key: "end_date",
-        },
-        {
-            title: "Note",
-            dataIndex: "note",
-            key: "note",
-            render: (text, record) => (
-                <div style={{ display: "flex", alignItems: "center" }}>
-                <span style={{ marginRight: 8 }}>{text || "-"}</span>
-                    <EditOutlined style={{ color: "#1677ff", cursor: "pointer" }} onClick={() => {handleNote(record)}}/>
-                </div>
-            ),
-        },
-        {
-            title: "Status",
-            dataIndex: "status",
-            key: "status",
-            render: (status, record) => (
-                <Tag style={{textTransform:"capitalize", cursor:"pointer"}} color={status === "approved" ? "green" : "red"} onClick={() => handleStatus(record)}>
-                    {status}
-                </Tag>
-            ),
-        },
-        {
-            title: "Actions",
-            key: "actions",
-            render: (_, record) => (
-                <Space>
-                    <Button type="primary" size="small" onClick={() => handleCall(record.order.phone_number)}>
-                        <PhoneOutlined />
-                    </Button>
+            title: "Products",
+            key: "products",
+            render: (_, record) => {
+                const products = record.order?.products || [];
+                if (!products.length) return <span style={{ color: "#bfbfbf", fontStyle: "italic", fontSize: 12 }}>No products</span>;
 
-                    <Button type="default" size="small" onClick={() => handleConvert(record)}>
-                        Convert
-                    </Button>
-                    
-                    <Button size="small" danger="danger" className="incomplete-delete" onClick={() => handleDelete(record.id)}>
-                        {<DeleteOutlined />}
-                    </Button>
+                const display   = products.slice(0, 2);
+                const remaining = products.length - 2;
+
+                const tooltipContent = (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 280, overflowY: "auto", padding: 4 }}>
+                        {products.map((p, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, borderBottom: i < products.length - 1 ? "1px solid #3a3a3a" : "none", paddingBottom: i < products.length - 1 ? 6 : 0 }}>
+                                {p.image && <img src={p.image} alt="" style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} />}
+                                <div>
+                                    <div style={{ fontSize: 12, color: "#fff" }}>{p.name || "—"}</div>
+                                    <div style={{ fontSize: 11, color: "#fa8c16" }}>×{p.quantity}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+
+                return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                        {display.map((p, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                {p.image
+                                    ? <img src={p.image} alt="" style={{ width: 22, height: 22, borderRadius: 3, objectFit: "cover" }} />
+                                    : <ShoppingOutlined style={{ color: "#8c8c8c", fontSize: 14 }} />
+                                }
+                                <span style={{ fontSize: 12, color: "#262626", maxWidth: 150, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {p.name || "—"}
+                                </span>
+                                <span style={{ fontSize: 11, color: "#1677ff", fontWeight: 600 }}>×{p.quantity}</span>
+                            </div>
+                        ))}
+                        {products.length > 0 && (
+                            <Tooltip title={tooltipContent} color="#1d1d1d">
+                                <span style={{ fontSize: 11, color: remaining > 0 ? "#fa8c16" : "#8c8c8c", cursor: "pointer", fontWeight: 500 }}>
+                                    {remaining > 0 ? `+${remaining} more` : "View all"}
+                                </span>
+                            </Tooltip>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            title: "Step",
+            key: "step",
+            width: 90,
+            align: "center",
+            render: (_, record) => {
+                const cfg = getStepConfig(record.current_step);
+                return (
+                    <Tag style={{ borderRadius: 20, padding: "2px 12px", fontWeight: 600, fontSize: 12, border: "none", background: cfg.bg, color: cfg.text }}>
+                        {cfg.label}
+                    </Tag>
+                );
+            },
+        },
+        {
+            title: "Next Follow-up",
+            key: "next_followup",
+            render: (_, record) => {
+                const followup = record.next_followup_at;
+                const info     = getFollowupLabel(followup);
+                return (
+                    <div>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: 5, background: info.bg, padding: "3px 10px", borderRadius: 20 }}>
+                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: info.dot, display: "inline-block" }} />
+                            <span style={{ fontSize: 12, fontWeight: 600, color: info.color }}>{info.label}</span>
+                        </div>
+                        {followup && (
+                            <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 3 }}>
+                                {dayjs(followup).format("DD MMM YYYY")}
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            title: "Last Call",
+            key: "last_call",
+            render: (_, record) => {
+                const interaction = record.last_interaction;
+                if (!interaction) return <span style={{ color: "#bfbfbf", fontStyle: "italic", fontSize: 12 }}>No call yet</span>;
+
+                const cfg  = callStatusLabel(interaction.call_status);
+                const when = record.last_contact_at ? dayjs(record.last_contact_at).fromNow() : "—";
+                return (
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+                        <span
+                            className="lc-pulse"
+                            style={{
+                                marginTop: 4, width: 7, height: 7, borderRadius: "50%",
+                                background: cfg.color, flexShrink: 0, display: "inline-block",
+                            }}
+                        />
+                        <div>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: cfg.color }}>{cfg.label}</div>
+                            <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 1 }}>{when}</div>
+                            <span style={{
+                                fontSize: 10, color: "#1677ff", marginTop: 2, display: "inline-flex",
+                                alignItems: "center", gap: 3, cursor: "pointer",
+                            }}>
+                                <HistoryOutlined /> details ▾
+                            </span>
+                        </div>
+                    </div>
+                );
+            },
+        },
+        {
+            title: "Assigned",
+            key: "assigned",
+            render: (_, record) => {
+                const emp = record.employee;
+                if (!emp) return <span style={{ color: "#bfbfbf", fontStyle: "italic", fontSize: 12 }}>Unassigned</span>;
+                return (
+                    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                        <Avatar size={28} icon={<TeamOutlined />}
+                            style={{ background: "#f9f0ff", color: "#722ed1", fontSize: 13, flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, fontWeight: 500, color: "#262626", textTransform: "capitalize" }}>
+                            {emp.username}
+                        </span>
+                    </div>
+                );
+            },
+        },
+        {
+            title: "Priority",
+            key: "priority",
+            width: 100,
+            align: "center",
+            render: (_, record) => {
+                const p = getPriority(record.next_followup_at);
+                return <Tag color={p.color} style={{ borderRadius: 20, padding: "2px 10px", fontWeight: 600, fontSize: 11, border: "none" }}>{p.label}</Tag>;
+            },
+        },
+        {
+            title: "Action",
+            key: "action",
+            align: "center",
+            render: (_, record) => (
+                <Space size={4}>
+                    <Tooltip title="View Order">
+                        <Button type="text" size="small" icon={<EyeOutlined />} style={{ color: "#1677ff" }} onClick={() => handleView(record)} />
+                    </Tooltip>
+                    <Tooltip title="Call">
+                        <Button type="text" size="small" icon={<PhoneOutlined />} style={{ color: "#52c41a" }} onClick={() => copyPhone(record.phone_number || record.order?.phone_number)} />
+                    </Tooltip>
+                    <Tooltip title="Update Follow-up">
+                        <Button type="primary" ghost size="small" icon={<EditOutlined />} style={{ fontSize: 12 }} onClick={() => handleEdit(record)} />
+                    </Tooltip>
                 </Space>
             ),
         },
     ];
 
-    const copyPhoneNo = (phone) => {
-        navigator.clipboard.writeText(phone);
-        
-        messageApi.open({
-            type: "success",
-            content: "Phone number copied.",
-        });
+    // ── handlers ─────────────────────────────────────────────────────────────
 
+    const copyPhone = (phone) => {
+        if (!phone) return;
+        navigator.clipboard.writeText(phone);
+        messageApi.success("Phone number copied.");
     };
 
     const openWhatsApp = (phone) => {
         if (!phone) return;
-
-        const cleaned = phone.replace(/\D/g, "");
-
-        const finalNumber = cleaned.startsWith("880") ? cleaned : `880${cleaned}`;
-
-        window.open(`https://wa.me/${finalNumber}`, "_blank");
+        const clean = phone.replace(/\D/g, "");
+        const num   = clean.startsWith("880") ? clean : `880${clean}`;
+        window.open(`https://wa.me/${num}`, "_blank");
     };
 
-    const handleInfoClick = (record) => {
-        if (!record?.order) {
-            
-            messageApi.open({
-                type: "success",
-                content: "Order details not available yet.",
-            });
-
-            return;
-        }
-
-        setSelectedRecord(record);
-        setIsModalOpen(true);
-        setSelectedNoteRecord(record);
+    const handleView = (record) => {
+        const order = record.order;
+        if (!order) { messageApi.warning("Order details not available."); return; }
+        messageApi.info(`Viewing: ${order.invoice_number}`);
     };
 
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setSelectedRecord(null);
+    const handleEdit = (record) => {
+        setEditRecord(record);
+        setFollowupDate(record.next_followup_at ? dayjs(record.next_followup_at) : null);
+        setNoteValue("");
     };
 
-    const handleNote = (record) => {
-        setEditModalOpen(true);
-        setNoteValue(record.note);
-        setFollowupDate(record.end_date);
-        setSelectedNoteRecord(record);
-    }
+    // ── fetch ─────────────────────────────────────────────────────────────────
 
-    const handleStatus = (record) => {
-        setSelectedOrder(record);
-        setNewStatus(record?.status);
-        setIsStatusModalOpen(true);
-    };
-
-    // Fetch data with pagination
-    const fetchFollowUpOrders = async (page = 1, pageSize = 25, status = null) => {
+    const fetchOrders = async (page = 1, pageSize = 10) => {
         setLoading(true);
         try {
-            const params = { page, per_page: pageSize };
-
-            if (status !== null) {
-                params.status = status;
+            const params = { page, paginate_size: pageSize };
+            if (search)         params.search_key    = search;
+            if (filterStep)     params.current_step  = filterStep;
+            if (filterStatus)   params.status        = filterStatus;
+            if (filterEmployee) params.employee_id   = filterEmployee;
+            if (filterPriority === "overdue") {
+                params.to_date = dayjs().subtract(1, "day").format("YYYY-MM-DD 23:59:59");
+            } else if (filterPriority === "today") {
+                params.from_date = dayjs().format("YYYY-MM-DD 00:00:00");
+                params.to_date   = dayjs().format("YYYY-MM-DD 23:59:59");
+            }
+            if (dateRange?.[0] && dateRange?.[1]) {
+                params.from_date = dateRange[0].format("YYYY-MM-DD 00:00:00");
+                params.to_date   = dateRange[1].format("YYYY-MM-DD 23:59:59");
             }
 
             const res = await getDatas("/admin/followup", params);
-
-            if (res && res.success) {
-                setFollowUpOrders(res?.result?.data?.data || []);
-                setOrderSummary(res?.result?.summary || {});
+            if (res?.success) {
+                setFollowUpOrders(res.result?.data?.data || []);
+                setSummary(res.result?.summary || {});
                 setPagination({
-                    current: res?.result?.data?.meta?.current_page,
-                    pageSize: res?.result?.data?.meta?.per_page,
-                    total: res?.result?.data?.meta?.total,
+                    current:  res.result?.data?.meta?.current_page,
+                    pageSize: res.result?.data?.meta?.per_page,
+                    total:    res.result?.data?.meta?.total,
                 });
             }
         } catch (err) {
@@ -226,189 +492,167 @@ export default function FollowupSell() {
         }
     };
 
-    const filteredOrders = followUpOrders.filter((item) => {
-        if (!searchText) return true;
+    useEffect(() => { fetchOrders(1, pagination.pageSize); },
+        [search, filterStep, filterStatus, filterEmployee, filterPriority, dateRange]);
 
-        const key = searchText.toLowerCase();
-        const order = item.order;
+    const handleTableChange = (pag) => fetchOrders(pag.current, pag.pageSize);
 
-        return (
-            order?.invoice_number?.toLowerCase().includes(key) || order?.phone_number?.toLowerCase().includes(key) || order?.customer_name?.toLowerCase().includes(key) || item?.note?.toLowerCase().includes(key) || String(item.order_id).includes(key)
-        );
-    });
-
-
-    const handleCall = (phone) => {
-        message.info(`Call ${phone} ...`);
-    };
-
-    const handleConvert = (record) => {
-        const order = record.order || {};
-
-        const name         = order.customer_name;
-        const address      = order.address_details;
-        const phone_number = order.phone_number;
-
-        navigate("/order-add", {state: {name: name,address: address,phone_number: phone_number, is_follow_order:1}});
-    };
-
-    // On component mount
-    useEffect(() => {
-        fetchFollowUpOrders(pagination.current, pagination.pageSize);
-    }, []);
-
-    // Table pagination handler
-    const handleTableChange = (pag) => {
-        fetchFollowUpOrders(pag.current, pag.pageSize);
-    };
-
-    const handleUpdateNote = async () => {
+    const handleSave = async () => {
+        if (!editRecord) return;
+        setSaveLoading(true);
         try {
             const formData = new FormData();
-            formData.append("end_date", followupDate);
-            formData.append("note", noteValue);
             formData.append("_method", "PUT");
+            if (followupDate) formData.append("next_followup_at", followupDate.format("YYYY-MM-DD"));
+            if (noteValue)    formData.append("remarks", noteValue);
 
-            const res = await postData(`/admin/followup/${selectedNoteRecord.id}`, formData);
-
-            if(res && res?.success){
-                fetchFollowUpOrders();
-                
-                messageApi.open({
-                    type: "success",
-                    content: res.msg,
-                });
-            }
-
-            setEditModalOpen(false);
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleDelete = async (id) => {
-        const confirmDelete = window.confirm(
-            `Are you sure you want to delete orders?`
-        );
-
-        if (!confirmDelete) return;
-
-        try {
-            const res = await deleteData(`/admin/followup/${id}`);
-
-            if(res && res?.success){
-                fetchFollowUpOrders();
-
-                messageApi.open({
-                    type: "success",
-                    content: res.msg,
-                });
-            }
-        } catch (error) {
-            console.log(error);
-        }finally{
-            setLoading(false);
-        }
-    }
-
-    const submitStatus = async () => {
-        if (!newStatus || !selectedOrder) return;
-
-        try {
-            setStatusLoader(true);
-
-            const res = await postData(`/admin/followup/${selectedOrder.id}/update-status`, {
-                status: newStatus,
-            });
-
-            if (res.success) {
-                
-                messageApi.open({
-                    type: "success",
-                    content: "Status updated successfully",
-                });
-
-                setIsStatusModalOpen(false);
-
-                fetchFollowUpOrders();
-            } else {
-                message.error(res.msg || "Failed to update status");
+            const res = await postData(`/admin/followup/${editRecord.id}`, formData);
+            if (res?.success) {
+                messageApi.success(res.msg || "Updated successfully");
+                setEditRecord(null);
+                fetchOrders(pagination.current, pagination.pageSize);
             }
         } catch (err) {
             console.error(err);
-            message.error("Something went wrong!");
-        }finally{
-            setStatusLoader(false);
+            message.error("Update failed");
+        } finally {
+            setSaveLoading(false);
         }
     };
+
+    // ── summary cards config ──────────────────────────────────────────────────
+
+    const summaryCards = [
+        { key: "all",     label: "All Follow-ups", value: summary.all_followups,   icon: <ShoppingOutlined />,        color: "#1677ff", bg: "#e6f4ff" },
+        { key: "today",   label: "Today",          value: summary.today_followups,  icon: <ClockCircleOutlined />,     color: "#52c41a", bg: "#f6ffed" },
+        { key: "overdue", label: "Overdue",         value: summary.overdue_followups,icon: <ExclamationCircleOutlined />, color: "#ff4d4f", bg: "#fff2f0" },
+        { key: "step1",   label: "Step 1",          value: summary.step_1,           icon: <FireOutlined />,            color: "#1677ff", bg: "#e6f4ff" },
+        { key: "step2",   label: "Step 2",          value: summary.step_2,           icon: <CalendarOutlined />,        color: "#fa8c16", bg: "#fff7e6" },
+        { key: "step3",   label: "Step 3",          value: summary.step_3,           icon: <CheckCircleOutlined />,     color: "#ff4d4f", bg: "#fff2f0" },
+    ];
+
+    // ── render ────────────────────────────────────────────────────────────────
 
     return (
         <>
             {contextHolder}
+
+            {/* Page head */}
             <div className="pagehead">
                 <div className="head-left">
-                    <h1 className="title">Follow Up Order List</h1>
+                    <h1 className="title">Follow-Up Orders</h1>
                 </div>
                 <div className="head-actions">
-                    <Breadcrumb
-                        items={[
-                            { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Follow Up Order List" },
-                        ]}
-                    />
+                    <Breadcrumb items={[
+                        { title: <Link to="/dashboard">Dashboard</Link> },
+                        { title: "Follow-Up Orders" },
+                    ]} />
                 </div>
             </div>
 
-            <div className="incomplete-order-head">
-                <AntInput.Search allowClear placeholder="Search by Invoice / Phone / Name" style={{ width: 300 }} onChange={(e) => setSearchText(e.target.value)}/>
-                <Space>
-                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                        Back
-                    </Button>
+            {/* Summary Cards */}
+            <Row gutter={12} style={{ marginBottom: 16 }}>
+                {summaryCards.map((c) => (
+                    <Col key={c.key} flex="1">
+                        <Card
+                            hoverable
+                            onClick={() => setSummaryKey(c.key)}
+                            styles={{ body: { padding: "14px 18px" } }}
+                            style={{
+                                borderRadius: 10, cursor: "pointer", transition: "all 0.2s",
+                                border:     summaryKey === c.key ? `2px solid ${c.color}` : "1px solid #f0f0f0",
+                                background: summaryKey === c.key ? c.bg : "#fff",
+                            }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <div>
+                                    <div style={{ fontSize: 11, color: "#8c8c8c", fontWeight: 500 }}>{c.label}</div>
+                                    <div style={{ fontSize: 22, fontWeight: 700, color: "#262626", marginTop: 2 }}>{c.value ?? 0}</div>
+                                </div>
+                                <div style={{
+                                    width: 40, height: 40, borderRadius: 10, fontSize: 18, display: "flex",
+                                    alignItems: "center", justifyContent: "center", transition: "all 0.2s",
+                                    background: summaryKey === c.key ? c.color : "#f5f5f5",
+                                    color:      summaryKey === c.key ? "#fff"   : c.color,
+                                }}>
+                                    {c.icon}
+                                </div>
+                            </div>
+                        </Card>
+                    </Col>
+                ))}
+            </Row>
+
+            {/* Filters */}
+            <div style={{ padding: "14px 16px", background: "#fff", borderRadius: 8, marginBottom: 16, border: "1px solid #f0f0f0", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
+                <Space wrap size="middle" style={{ width: "100%", justifyContent: "space-between" }}>
+                    <Space wrap size="middle">
+                        <AntInput.Search
+                            allowClear placeholder="Search Invoice / Phone / Name..."
+                            onSearch={(v) => setSearch(v)}
+                            style={{ width: 260 }}
+                        />
+                        <Select placeholder="Step" allowClear style={{ width: 110 }} value={filterStep} onChange={setFilterStep}
+                            options={[{ value: 1, label: "Step 1" }, { value: 2, label: "Step 2" }, { value: 3, label: "Step 3" }]}
+                        />
+                        <Select placeholder="Status" allowClear style={{ width: 120 }} value={filterStatus} onChange={setFilterStatus}
+                            options={[{ value: "active", label: "Active" }, { value: "converted", label: "Converted" }, { value: "closed", label: "Closed" }]}
+                        />
+                        <Select placeholder="Priority" allowClear style={{ width: 120 }} value={filterPriority} onChange={setFilterPriority}
+                            options={[{ value: "overdue", label: "🔴 Overdue" }, { value: "today", label: "🟠 Today" }, { value: "upcoming", label: "🔵 Upcoming" }]}
+                        />
+                        <DatePicker.RangePicker format="YYYY-MM-DD" value={dateRange} onChange={setDateRange} />
+                    </Space>
+                    <Space>
+                        <Button icon={<ReloadOutlined />} onClick={() => fetchOrders(1, pagination.pageSize)}>Refresh</Button>
+                        <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+                    </Space>
                 </Space>
             </div>
 
-            <div className="page-item-data-wrapper" style={{marginBottom:10}}>
-                <Space wrap size="middle">
-                    <Button type={activeStatus === null ? "primary" : "default"} onClick={() => { setActiveStatus(null); fetchFollowUpOrders(1, 25, null); }}>
-                        Total <span className="count-badge">{orderSummary.total}</span>
-                    </Button>
-
-                    <Button type={activeStatus === "pending" ? "primary" : "default"} onClick={() => { setActiveStatus("pending"); fetchFollowUpOrders(1, 25, "pending"); }}>
-                        Pending <span className="count-badge">{orderSummary.pending}</span>
-                    </Button>
-
-                    <Button type={activeStatus === "approved" ? "primary" : "default"} onClick={() => { setActiveStatus("approved"); fetchFollowUpOrders(1, 25, "approved"); }}>
-                        Approved <span className="count-badge">{orderSummary.approved}</span>
-                    </Button>
-
-                    <Button danger type={activeStatus === "canceled" ? "primary" : "default"} onClick={() => { setActiveStatus("cancelled"); fetchFollowUpOrders(1, 25, "cancelled"); }}>
-                        Cancelled <span className="count-badge">{orderSummary.cancelled}</span>
-                    </Button>
-                </Space>
-            </div>
-
-            <Table rowKey="id" columns={columns} dataSource={filteredOrders} loading={loading}
-                pagination={{ current: pagination.current, pageSize: pagination.pageSize, total: pagination.total, showSizeChanger: true, pageSizeOptions: ["10", "25", "50", "100"]}}
+            {/* Table */}
+            <Table
+                rowKey="id"
+                columns={columns}
+                dataSource={followUpOrders}
+                loading={loading}
+                pagination={{
+                    current: pagination.current,
+                    pageSize: pagination.pageSize,
+                    total: pagination.total,
+                    showSizeChanger: true,
+                    pageSizeOptions: ["10", "25", "50", "100"],
+                    showTotal: (total) => <span style={{ color: "#8c8c8c" }}>Total {total} records</span>,
+                }}
                 onChange={handleTableChange}
+                rowClassName={(_, idx) => idx % 2 === 0 ? "" : "ant-table-row-striped"}
+                expandable={{
+                    rowExpandable: (record) => !!record.last_interaction,
+                    expandedRowRender: (record) => <LastInteractionPanel record={record} />,
+                    expandRowByClick: false,
+                }}
             />
 
-            <OrderInfoModal isOpen={isModalOpen} onClose={closeModal} data={selectedRecord}/>
-
-            <Modal title="Edit Note" open={editModalOpen} onCancel={() => setEditModalOpen(false)} onOk={handleUpdateNote}>
-                <label><b>Followup Date:</b></label>
-                <DatePicker style={{ width: "100%", marginBottom: "10px" }} value={followupDate ? dayjs(followupDate) : null} onChange={(date) => setFollowupDate(date ? date.format("YYYY-MM-DD") : "")}/>
-                
-                <label><b>Note:</b></label>
-                <AntInput.TextArea rows={4} value={noteValue} onChange={(e) => setNoteValue(e.target.value)} placeholder="Write note..."/>
-            </Modal>
-
-            <Modal title={`Update Status for Order #${selectedOrder?.order_id || selectedOrder?.id}`} open={isStatusModalOpen} onCancel={() => setIsStatusModalOpen(false)} onOk={submitStatus} loading={statusLoader}>
-                <Select  value={newStatus} onChange={(value) => setNewStatus(value)} style={{ width: 200 }}>
-                    <Select.Option value="pending">Pending</Select.Option>
-                    <Select.Option value="approved">Approved</Select.Option>
-                    <Select.Option value="cancelled">Cancelled</Select.Option>
-                </Select>
+            {/* Edit Follow-up Modal */}
+            <Modal
+                title={<span style={{ fontWeight: 600 }}>Update Follow-up — <span style={{ color: "#1677ff" }}>{editRecord?.order?.invoice_number}</span></span>}
+                open={!!editRecord}
+                onCancel={() => setEditRecord(null)}
+                onOk={handleSave}
+                okText="Save"
+                confirmLoading={saveLoading}
+                width={420}
+            >
+                <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 12 }}>
+                    <div>
+                        <Typography.Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 6 }}>Next Follow-up Date</Typography.Text>
+                        <DatePicker style={{ width: "100%" }} value={followupDate} onChange={setFollowupDate} />
+                    </div>
+                    <div>
+                        <Typography.Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 6 }}>Remarks</Typography.Text>
+                        <AntInput.TextArea rows={4} value={noteValue} onChange={(e) => setNoteValue(e.target.value)} placeholder="Write your remarks..." style={{ resize: "none" }} />
+                    </div>
+                </div>
             </Modal>
         </>
     );
