@@ -426,8 +426,6 @@ export default function FollowupSell() {
         },
     ];
 
-    // ── handlers ─────────────────────────────────────────────────────────────
-
     const copyPhone = (phone) => {
         if (!phone) return;
         navigator.clipboard.writeText(phone);
@@ -452,8 +450,6 @@ export default function FollowupSell() {
         setFollowupDate(record.next_followup_at ? dayjs(record.next_followup_at) : null);
         setNoteValue("");
     };
-
-    // ── fetch ─────────────────────────────────────────────────────────────────
 
     const fetchOrders = async (page = 1, pageSize = 10) => {
         setLoading(true);
@@ -520,15 +516,49 @@ export default function FollowupSell() {
         }
     };
 
-    // ── summary cards config ──────────────────────────────────────────────────
-
     const summaryCards = [
-        { key: "all",     label: "All Follow-ups", value: summary.all_followups,   icon: <ShoppingOutlined />,        color: "#1677ff", bg: "#e6f4ff" },
-        { key: "today",   label: "Today",          value: summary.today_followups,  icon: <ClockCircleOutlined />,     color: "#52c41a", bg: "#f6ffed" },
-        { key: "overdue", label: "Overdue",         value: summary.overdue_followups,icon: <ExclamationCircleOutlined />, color: "#ff4d4f", bg: "#fff2f0" },
-        { key: "step1",   label: "Step 1",          value: summary.step_1,           icon: <FireOutlined />,            color: "#1677ff", bg: "#e6f4ff" },
-        { key: "step2",   label: "Step 2",          value: summary.step_2,           icon: <CalendarOutlined />,        color: "#fa8c16", bg: "#fff7e6" },
-        { key: "step3",   label: "Step 3",          value: summary.step_3,           icon: <CheckCircleOutlined />,     color: "#ff4d4f", bg: "#fff2f0" },
+        { 
+            key: "all", 
+            label: "All Follow-ups", 
+            value: summary.all_followups,   
+            icon: <ShoppingOutlined />,        
+            color: "#1677ff", bg: "#e6f4ff" 
+        },
+        { 
+            key: "today",   
+            label: "Today",          
+            value: summary.today_followups,  
+            icon: <ClockCircleOutlined />,     
+            color: "#52c41a", bg: "#f6ffed" 
+        },
+        { 
+            key: "overdue", 
+            label: "Overdue",         
+            value: summary.overdue_followups,
+            icon: <ExclamationCircleOutlined />, 
+            color: "#ff4d4f", bg: "#fff2f0" 
+        },
+        { 
+            key: "step1",   
+            label: "Step 1",          
+            value: summary.step_1,           
+            icon: <FireOutlined />,            
+            color: "#1677ff", bg: "#e6f4ff" 
+        },
+        { 
+            key: "step2",   
+            label: "Step 2",          
+            value: summary.step_2,           
+            icon: <CalendarOutlined />,        
+            color: "#fa8c16", bg: "#fff7e6" 
+        },
+        { 
+            key: "step3",   
+            label: "Step 3",          
+            value: summary.step_3,           
+            icon: <CheckCircleOutlined />,     
+            color: "#ff4d4f", bg: "#fff2f0" 
+        },
     ];
 
     // ── render ────────────────────────────────────────────────────────────────
