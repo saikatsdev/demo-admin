@@ -1,11 +1,10 @@
 import { Link } from "react-router-dom";
-import {InfoCircleOutlined, EditOutlined,WhatsAppOutlined,PhoneOutlined,CopyOutlined,DeleteOutlined,ArrowLeftOutlined } from '@ant-design/icons'
-import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Tag, Select} from "antd";
+import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled } from '@ant-design/icons'
+import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Divider,Tag, Select, Radio, Drawer, Row, Col, Typography, Card, Image, Form} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { getDatas, postData } from "../../../api/common/common";
-import OrderInfoModal from "./OrderInfoModal";
 
 export default function Feedback() {
     // Hook
@@ -15,118 +14,166 @@ export default function Feedback() {
     const [feedbackOrders, setFeedbackOrders]         = useState([]);
     const [loading, setLoading]                       = useState(false);
     const [pagination, setPagination]                 = useState({current: 1,pageSize: 25,total: 0});
-    const [editModalOpen, setEditModalOpen]           = useState(false);
-    const [noteValue, setNoteValue]                   = useState("");
-    const [feedbackDate, setFeedbackDate]             = useState("");
-    const [selectedRecord, setSelectedRecord]         = useState(null);
+    const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
+    const [form] = Form.useForm();
     const [selectedNoteRecord, setSelectedNoteRecord] = useState(null);
-    const [isModalOpen, setIsModalOpen]               = useState(false);
     const [messageApi, contextHolder]                 = message.useMessage();
     const [isStatusModalOpen, setIsStatusModalOpen]   = useState(false);
     const [selectedOrder, setSelectedOrder]           = useState(null);
     const [newStatus, setNewStatus]                   = useState("");
     const [statusLoader, setStatusLoader]             = useState(false);
 
+    // Filters State
+    const [keyword, setKeyword]                       = useState("");
+    const [assignedEmp, setAssignedEmp]               = useState(null);
+    const [deliveredDate, setDeliveredDate]           = useState(null);
+    const [quickFilter, setQuickFilter]               = useState("all");
+
     // Columns for AntD Table
-    const columns = 
-    [
+    const columns = [
         {
             title: "SL",
             key: "sl",
-            render: (_, __, index) =>
-                (pagination.current - 1) * pagination.pageSize + index + 1,
+            render: (_, __, index) => (pagination.current - 1) * pagination.pageSize + index + 1,
             width: 60,
+            align: "center",
         },
         {
             title: "Invoice",
-            dataIndex: ["order", "invoice_number"],
+            dataIndex: "invoice_number",
             key: "invoice_number",
-            render: (text, record) => {
-                const orderExists = record?.order;
-
-                return (
-                    <Space>
-                        {orderExists ? (
-                            <>
-                                {text}
-                                <InfoCircleOutlined style={{ color: "#1890ff", cursor: "pointer" }} onClick={() => handleInfoClick(record)}/>
-                            </>
-                        ) : (
-                            <span style={{ color: "red" }}>Order not found</span>
-                        )}
-                    </Space>
-                );
-            },
+            render: (text) => <span style={{ fontWeight: 600, color: "#1677ff", fontSize: "14px" }}>{text || "N/A"}</span>,
         },
         {
             title: "Customer",
-            dataIndex: ["order", "customer_name"],
-            key: "customer_name",
-            render: (text, record) => record?.order?.customer_name || "N/A",
-        },
-        {
-            title: "Phone",
-            dataIndex: ["order", "phone_number"],
-            key: "phone_number",
-            render: (text, record) => {
-                const phone = record?.order?.phone_number || "N/A";
-
+            key: "customer",
+            render: (_, record) => {
+                const name = record.customer_name || "N/A";
+                const phone = record.phone_number || "N/A";
                 return (
-                    <Space size="middle">
-                        <span>{phone}</span>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <span style={{ fontWeight: 600, color: "#262626", fontSize: "14px" }}>{name}</span>
+                        <Space size="small">
+                            <span style={{ fontSize: "13px", color: "#595959" }}>{phone}</span>
+                            {phone !== "N/A" && (
+                                <>
+                                    <Tooltip title="Copy Phone">
+                                        <CopyOutlined style={{ fontSize: 13, color: "#1677ff", cursor: "pointer" }} onClick={() => copyPhoneNo(phone)}/>
+                                    </Tooltip>
 
-                        <Tooltip title="Copy phone number">
-                            <CopyOutlined style={{ fontSize: 18, color: "#1890ff", cursor: phone !== "N/A" ? "pointer" : "not-allowed" }} onClick={() => phone !== "N/A" && copyPhoneNo(phone)}/>
-                        </Tooltip>
-
-                        <Tooltip title="Open WhatsApp">
-                            <WhatsAppOutlined style={{ fontSize: 18, color: "#25D366", cursor: phone !== "N/A" ? "pointer" : "not-allowed" }} onClick={() => phone !== "N/A" && openWhatsApp(phone)}/>
-                        </Tooltip>
-                    </Space>
+                                    <Tooltip title="WhatsApp">
+                                        <WhatsAppOutlined style={{ fontSize: 13, color: "#25D366", cursor: "pointer" }} onClick={() => openWhatsApp(phone)}/>
+                                    </Tooltip>
+                                </>
+                            )}
+                        </Space>
+                    </div>
                 );
             },
         },
         {
-            title: "Start Date",
-            dataIndex: "start_date",
-            key: "start_date",
+            title: "Products",
+            key: "products",
+            render: (_, record) => {
+                const products = record.products || [];
+                if (products.length === 0) return <span style={{ color: "#bfbfbf", fontStyle: "italic", fontSize: "13px" }}>No products</span>;
+                
+                const displayProducts = products.slice(0, 2);
+                const remaining = products.length - 2;
+
+                const tooltipContent = (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "300px", overflowY: "auto", padding: "4px" }}>
+                        {products.map((p, i) => (
+                            <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", borderBottom: i !== products.length - 1 ? "1px solid #434343" : "none", paddingBottom: i !== products.length - 1 ? "8px" : "0" }}>
+                                {p.image && <img src={p.image} alt={p.name} style={{ width: 32, height: 32, objectFit: "cover", borderRadius: "4px", backgroundColor: "#fff" }} />}
+                                <div>
+                                    <div style={{ fontSize: "13px", color: "#fff", lineHeight: "1.2" }}>{p.name}</div>
+                                    <div style={{ fontSize: "12px", color: "#fa8c16", marginTop: "2px" }}>Qty: {p.quantity}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+
+                return (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        {displayProducts.map((p, i) => (
+                            <div key={i} style={{ fontSize: "13px", color: "#262626", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "220px" }}>
+                                <span style={{ color: "#8c8c8c", marginRight: "4px" }}>•</span>
+                                {p.name} <span style={{ color: "#1677ff", fontWeight: 500, marginLeft: "4px" }}>x{p.quantity}</span>
+                            </div>
+                        ))}
+                        
+                        {products.length > 0 && (
+                           <Tooltip title={tooltipContent} color="#262626">
+                                <span style={{ color: remaining > 0 ? "#fa8c16" : "#8c8c8c", fontSize: "12px", cursor: "pointer", fontWeight: 500, display: "inline-block", marginTop: "2px" }}>
+                                    {remaining > 0 ? `+ ${remaining} more...` : "View details..."}
+                                </span>
+                            </Tooltip>
+                        )}
+                    </div>
+                );
+            },
         },
         {
-            title: "End Date",
-            dataIndex: "end_date",
-            key: "end_date",
+            title: "Order Amount",
+            dataIndex: "payable_price",
+            key: "payable_price",
+            render: (text) => <span style={{ fontWeight: 600, color: "#262626" }}>৳{Number(text || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>,
         },
         {
-            title: "Note",
-            dataIndex: "note",
-            key: "note",
-            render: (text, record) => (
-                <div style={{ display: "flex", alignItems: "center" }}>
-                <span style={{ marginRight: 8 }}>{text || "-"}</span>
-                    <EditOutlined style={{ color: "#1677ff", cursor: "pointer" }} onClick={() => {handleNote(record)}}/>
-                </div>
+            title: "Delivered At",
+            dataIndex: "delivered_at",
+            key: "delivered_at",
+            render: (text) => (
+                <span style={{ color: "#595959", fontSize: "13px" }}>
+                    {text ? dayjs(text).format("DD MMM, YYYY hh:mm A") : "N/A"}
+                </span>
+            ),
+        },
+        {
+            title: "Assigned To",
+            render: (_,record) => (
+                record.employee != null ? (
+                    <Tag color="purple" style={{ borderRadius: "10px", padding: "2px 10px",textTransform: "capitalize" }}>
+                        {record?.employee?.username}
+                    </Tag>
+                ) : (
+                    <span style={{ color: "#bfbfbf", fontStyle: "italic", fontSize: "13px" }}>Unassigned</span>
+                )
             ),
         },
         {
             title: "Status",
             dataIndex: "status",
             key: "status",
-            render: (status, record) => (
-                <Tag style={{textTransform:"capitalize", cursor:"pointer"}} color={status === "approved" ? "green" : "red"} onClick={() => handleStatus(record)}>
-                    {status}
-                </Tag>
-            ),
+            render: (status, record) => {
+                const currentStatus = status || "pending";
+                const colors = {
+                    active     : "green",
+                    converted  : "orange",
+                    lost       : "red",
+                    auto_closed: "blue",
+                };
+                return (
+                    <Tag style={{ textTransform: "capitalize", cursor: "pointer", borderRadius: "10px", padding: "2px 12px", fontWeight: 500, fontSize: "13px" }} color={colors[currentStatus] || "default"} onClick={() => handleStatus(record)}>
+                        {currentStatus}
+                    </Tag>
+                );
+            },
+            align: "center",
         },
         {
-            title: "Actions",
+            title: "Action",
             key: "actions",
             render: (_, record) => (
                 <Space>
-                    <Button type="primary" size="small" onClick={() => handleCall(record.order.phone_number)}>
-                        <PhoneOutlined />
+                    <Button type="primary" ghost shape="round" icon={<EditOutlined />} onClick={() => handleNote(record)} size="small" style={{ fontSize: "13px", padding: "0 10px", height: "30px", display: "flex", alignItems: "center" }}>
+                        Start Feedback
                     </Button>
                 </Space>
             ),
+            align: "center",
         },
     ];
 
@@ -150,32 +197,10 @@ export default function Feedback() {
         window.open(`https://wa.me/${finalNumber}`, "_blank");
     };
 
-    const handleInfoClick = (record) => {
-        if (!record?.order) {
-            
-            messageApi.open({
-                type: "success",
-                content: "Order details not available yet.",
-            });
-
-            return;
-        }
-
-        setSelectedRecord(record);
-        setIsModalOpen(true);
-        setSelectedNoteRecord(record);
-    };
-
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setSelectedRecord(null);
-    };
-
     const handleNote = (record) => {
-        setEditModalOpen(true);
-        setNoteValue(record.note);
-        setFeedbackDate(record.end_date);
         setSelectedNoteRecord(record);
+        form.resetFields();
+        setFeedbackDrawerOpen(true);
     }
 
     const handleStatus = (record) => {
@@ -185,14 +210,18 @@ export default function Feedback() {
     };
 
     // Fetch data with pagination
-    const fetchFeedbackOrders = async (page = 1, pageSize = 25, status = null) => {
+    const fetchFeedbackOrders = async (page = pagination.current, pageSize = pagination.pageSize) => {
         setLoading(true);
         try {
             const params = { page, per_page: pageSize };
 
-            if (status !== null) {
-                params.status = status;
+            if (keyword) params.search = keyword;
+            if (assignedEmp) params.employee_id = assignedEmp;
+            if (deliveredDate && deliveredDate[0] && deliveredDate[1]) {
+                params.delivered_from = deliveredDate[0].format("YYYY-MM-DD");
+                params.delivered_to = deliveredDate[1].format("YYYY-MM-DD");
             }
+            if (quickFilter !== "all") params.quick_filter = quickFilter;
 
             const res = await getDatas("/admin/feedback", params);
 
@@ -213,40 +242,41 @@ export default function Feedback() {
         }
     };
 
-    const handleCall = (phone) => {
-        message.info(`Call ${phone} ...`);
-    };
-
     useEffect(() => {
-        fetchFeedbackOrders(pagination.current, pagination.pageSize);
-    }, []);
+        fetchFeedbackOrders(1, pagination.pageSize);
+    }, [keyword, assignedEmp, deliveredDate, quickFilter]);
 
     // Table pagination handler
     const handleTableChange = (pag) => {
         fetchFeedbackOrders(pag.current, pag.pageSize);
     };
 
-    const handleUpdateNote = async () => {
+    const handleFeedbackSubmit = async (values) => {
         try {
             const formData = new FormData();
-            formData.append("end_date", feedbackDate);
-            formData.append("note", noteValue);
             formData.append("_method", "PUT");
+            
+            if (values.call_status) formData.append("call_status", values.call_status);
+            if (values.customer_feedback) formData.append("customer_feedback", values.customer_feedback);
+            if (values.rating) formData.append("rating", values.rating);
+            if (values.remarks) formData.append("remarks", values.remarks);
+            if (values.next_action) formData.append("next_action", values.next_action);
+            if (values.next_followup_date) formData.append("next_followup_date", values.next_followup_date.format("YYYY-MM-DD"));
 
             const res = await postData(`/admin/feedback/${selectedNoteRecord.id}`, formData);
 
             if(res && res?.success){
-                fetchFeedbackOrders();
+                fetchFeedbackOrders(pagination.current, pagination.pageSize);
                 
                 messageApi.open({
                     type: "success",
-                    content: res.msg,
+                    content: res.msg || "Feedback submitted successfully",
                 });
+                setFeedbackDrawerOpen(false);
             }
-
-            setEditModalOpen(false);
         } catch (err) {
             console.error(err);
+            message.error("Something went wrong while submitting feedback");
         }
     };
 
@@ -269,7 +299,7 @@ export default function Feedback() {
 
                 setIsStatusModalOpen(false);
 
-                fetchFeedbackOrders();
+                fetchFeedbackOrders(pagination.current, pagination.pageSize);
             } else {
                 message.error(res.msg || "Failed to update status");
             }
@@ -298,12 +328,48 @@ export default function Feedback() {
                 </div>
             </div>
 
-            <div className="incomplete-order-head">
-                <AntInput.Search allowClear placeholder="Search by Invoice / Phone / Name" style={{ width: 300 }}/>
-                <Space>
-                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                        Back
-                    </Button>
+            <div style={{ padding: "16px", background: "#fff", borderRadius: "8px", marginBottom: "16px", border: "1px solid #f0f0f0", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
+                <Space wrap size="middle" style={{ width: "100%", justifyContent: "space-between" }}>
+                    <Space wrap size="middle">
+                        <AntInput.Search allowClear 
+                            placeholder="Search Invoice / Phone / Name..." 
+                            onSearch={(val) => setKeyword(val)}
+                            style={{ width: 280 }}
+                        />
+                        <Select
+                            placeholder="Assigned Employee"
+                            allowClear
+                            style={{ width: 200 }}
+                            value={assignedEmp}
+                            onChange={(val) => setAssignedEmp(val)}
+                            options={[
+                                { label: "Admin", value: 1 },
+                                { label: "Support User 1", value: 2 },
+                                { label: "Support User 2", value: 3 },
+                            ]}
+                        />
+                        <DatePicker.RangePicker 
+                            format="YYYY-MM-DD"
+                            value={deliveredDate}
+                            onChange={(val) => setDeliveredDate(val)}
+                        />
+                    </Space>
+                    
+                    <Space wrap size="middle">
+                        <Radio.Group 
+                            value={quickFilter} 
+                            onChange={(e) => setQuickFilter(e.target.value)}
+                            buttonStyle="solid"
+                        >
+                            <Radio.Button value="all">All</Radio.Button>
+                            <Radio.Button value="today">Today's Feedback</Radio.Button>
+                            <Radio.Button value="this_week">This Week</Radio.Button>
+                        </Radio.Group>
+                        
+                        <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                            Back
+                        </Button>
+                    </Space>
                 </Space>
             </div>
 
@@ -317,15 +383,170 @@ export default function Feedback() {
                 onChange={handleTableChange}
             />
 
-            <OrderInfoModal isOpen={isModalOpen} onClose={closeModal} data={selectedRecord}/>
+            <Drawer
+                title={<span style={{ fontSize: "16px", fontWeight: 600 }}>Feedback for #{selectedNoteRecord?.invoice_number}</span>}
+                width={1100}
+                onClose={() => setFeedbackDrawerOpen(false)}
+                open={feedbackDrawerOpen}
+                styles={{ body: { padding: 0, overflow: "hidden" } }}
+            >
+                <Row style={{ height: "100%", margin: 0 }}>
+                    {/* Left: Customer Info */}
+                    <Col span={7} style={{ borderRight: "1px solid #f0f0f0", padding: "24px", background: "#fcfcfc", height: "100%", overflowY: "auto" }}>
+                        <Typography.Title level={5} style={{ marginTop: 0, color: "#1f1f1f" }}>Customer Details</Typography.Title>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "24px" }}>
+                            <div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Invoice</div>
+                                <div style={{ fontWeight: 600, color: "#1677ff", fontSize: "15px" }}>{selectedNoteRecord?.invoice_number || "N/A"}</div>
+                            </div>
+                            <div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Customer Name</div>
+                                <div style={{ fontWeight: 500, fontSize: "15px" }}>{selectedNoteRecord?.customer_name || "N/A"}</div>
+                            </div>
+                            <div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Phone Number</div>
+                                <div style={{ fontWeight: 500, display: "flex", alignItems: "center", gap: "8px" }}>
+                                    {selectedNoteRecord?.phone_number || "N/A"}
+                                    {selectedNoteRecord?.phone_number && (
+                                        <>
+                                            <CopyOutlined style={{ color: "#1677ff", cursor: "pointer" }} onClick={() => copyPhoneNo(selectedNoteRecord.phone_number)}/>
+                                            <WhatsAppOutlined style={{ color: "#25D366", cursor: "pointer", fontSize: "16px" }} onClick={() => openWhatsApp(selectedNoteRecord.phone_number)}/>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
 
-            <Modal title="Edit Note" open={editModalOpen} onCancel={() => setEditModalOpen(false)} onOk={handleUpdateNote}>
-                <label><b>Feedback Date:</b></label>
-                <DatePicker style={{ width: "100%", marginBottom: "10px" }} value={feedbackDate ? dayjs(feedbackDate) : null} onChange={(date) => setFeedbackDate(date ? date.format("YYYY-MM-DD") : "")}/>
-                
-                <label><b>Note:</b></label>
-                <AntInput.TextArea rows={4} value={noteValue} onChange={(e) => setNoteValue(e.target.value)} placeholder="Write note..."/>
-            </Modal>
+                            <div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Address</div>
+                                <div style={{ fontWeight: 500, whiteSpace: "pre-wrap" }}>{selectedNoteRecord?.customer_address || selectedNoteRecord?.order?.customer_address || "N/A"}</div>
+                            </div>
+
+                            <div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Delivered At</div>
+                                <div style={{ fontWeight: 500, whiteSpace: "pre-wrap" }}>{dayjs(selectedNoteRecord?.delivered_at).format("DD MMM, YYYY hh:mm A") || "N/A"}</div>
+                            </div>
+
+                            <Divider style={{ margin: "12px 0" }} />
+
+                            <div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Order Amount</div>
+                                <div style={{ fontWeight: 600, color: "#fa541c", fontSize: "16px" }}>৳{Number(selectedNoteRecord?.payable_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                            </div>
+                            <div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Delivery Charge</div>
+                                <div style={{ fontWeight: 500 }}>৳{Number(selectedNoteRecord?.delivery_charge || selectedNoteRecord?.order?.delivery_charge || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                            </div>
+                        </div>
+                    </Col>
+
+                    <Col span={9} style={{ borderRight: "1px solid #f0f0f0", padding: "24px", height: "100%", overflowY: "auto", background: "#fff" }}>
+                        <Typography.Title level={5} style={{ marginTop: 0, color: "#1f1f1f" }}>Ordered Products</Typography.Title>
+                        <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "24px" }}>
+                            {selectedNoteRecord?.products?.map((p, i) => (
+                                <Card key={i} size="small" bordered style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.02)", borderRadius: "8px" }}>
+                                    <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                                        {p.image ? (
+                                            <Image width={56} height={56} src={p.image} style={{ objectFit: "cover", borderRadius: "6px" }} />
+                                        ) : (
+                                            <div style={{ width: 56, height: 56, background: "#f0f0f0", borderRadius: "6px" }}></div>
+                                        )}
+                                        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+                                            <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: "1.2", color: "#262626" }}>{p.name}</div>
+                                            <div style={{ fontSize: "12px", color: "#8c8c8c", fontWeight: 500 }}>Price: ৳{Number(p.sell_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                                        </div>
+                                        <div style={{ fontWeight: 700, color: "#fa8c16", fontSize: "15px", padding: "0 8px" }}>
+                                            x{p.quantity}
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))}
+                            {(!selectedNoteRecord?.products || selectedNoteRecord.products.length === 0) && (
+                                <div style={{ color: "#bfbfbf", textAlign: "center", marginTop: "40px", fontSize: "14px" }}>No products found</div>
+                            )}
+                        </div>
+                    </Col>
+
+                    <Col span={8} style={{ padding: "24px", height: "100%", overflowY: "auto", background: "#fff", display: "flex", flexDirection: "column" }}>
+                        <Typography.Title level={5} style={{ marginTop: 0, color: "#1f1f1f" }}>Feedback Form</Typography.Title>
+                        <div style={{ marginTop: "24px", flex: 1 }}>
+                            <Form form={form} layout="vertical" onFinish={handleFeedbackSubmit} requiredMark="optional">
+                                <Form.Item name="call_status" label={<span style={{fontWeight: 500}}>Call Status</span>} rules={[{ required: true, message: 'Required' }]}>
+                                    <Select placeholder="Select Status" size="large" options={[
+                                        { value: "answered", label: "Answered" },
+                                        { value: "no_answer", label: "No Answer" },
+                                        { value: "busy", label: "Busy" },
+                                        { value: "switched_off", label: "Switched Off" },
+                                        { value: "wrong_number", label: "Wrong Number" },
+                                        { value: "call_rejected", label: "Call Rejected" },
+                                    ]} />
+                                </Form.Item>
+
+                                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.call_status !== curr.call_status}>
+                                    {({ getFieldValue }) => 
+                                        getFieldValue('call_status') === 'answered' ? (
+                                            <>
+                                                <Form.Item name="customer_feedback" label={<span style={{fontWeight: 500}}>Customer Feedback</span>} rules={[{ required: true, message: 'Required' }]}>
+                                                    <Select placeholder="Select Customer Feedback" size="large" options={[
+                                                        { value: "Interested", label: "Interested" },
+                                                        { value: "Need More Time", label: "Need More Time" },
+                                                        { value: "Not Interested", label: "Not Interested" },
+                                                        { value: "Already Purchased Elsewhere", label: "Already Purchased Elsewhere" },
+                                                    ]} />
+                                                </Form.Item>
+
+                                                <Form.Item name="rating" label={<span style={{fontWeight: 500}}>Product Rating</span>}>
+                                                    <Select placeholder="Select Rating" size="large" allowClear options={[1, 2, 3, 4, 5].map(num => ({
+                                                        value: num,
+                                                        label: (
+                                                            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#fffbe6", color: "#faad14", padding: "2px 10px", borderRadius: "6px", border: "1px solid #ffe58f", fontWeight: 600 }}>
+                                                                {num} <StarFilled style={{ fontSize: "14px" }} />
+                                                            </span>
+                                                        )
+                                                    }))} />
+                                                </Form.Item>
+                                            </>
+                                        ) : null
+                                    }
+                                </Form.Item>
+
+                                <Form.Item name="remarks" label={<span style={{fontWeight: 500}}>Remarks</span>} rules={[{ required: true, message: 'Required' }]}>
+                                    <AntInput.TextArea rows={4} placeholder="e.g. Customer is satisfied..." style={{ resize: "none" }} />
+                                </Form.Item>
+
+                                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.call_status !== curr.call_status}>
+                                    {({ getFieldValue }) => 
+                                        getFieldValue('call_status') === 'answered' ? (
+                                            <Form.Item name="next_action" label={<span style={{fontWeight: 500}}>Next Action</span>}>
+                                                <Select placeholder="Select Next Action" size="large" options={[
+                                                    { value: "Move to Follow-up", label: "Move to Follow-up" },
+                                                    { value: "Converted", label: "Converted" },
+                                                    { value: "Close", label: "Close" },
+                                                ]} />
+                                            </Form.Item>
+                                        ) : null
+                                    }
+                                </Form.Item>
+
+                                <Form.Item noStyle shouldUpdate={(prev, curr) => prev.next_action !== curr.next_action || prev.call_status !== curr.call_status}>
+                                    {({ getFieldValue }) => 
+                                        getFieldValue('call_status') === 'answered' && getFieldValue('next_action') === 'Move to Follow-up' ? (
+                                            <Form.Item name="next_followup_date" label={<span style={{fontWeight: 500}}>Next Follow-up Date</span>} rules={[{ required: true, message: 'Required' }]}>
+                                                <DatePicker size="large" style={{ width: "100%" }} />
+                                            </Form.Item>
+                                        ) : null
+                                    }
+                                </Form.Item>
+
+                                <div style={{ marginTop: "32px", paddingBottom: "24px" }}>
+                                    <Button type="primary" htmlType="submit" size="large" block style={{ height: "45px", fontWeight: 600, fontSize: "16px" }}>
+                                        Submit Feedback
+                                    </Button>
+                                </div>
+                            </Form>
+                        </div>
+                    </Col>
+                </Row>
+            </Drawer>
 
             <Modal title={`Update Status for Order #${selectedOrder?.order_id || selectedOrder?.id}`} open={isStatusModalOpen} onCancel={() => setIsStatusModalOpen(false)} onOk={submitStatus} loading={statusLoader}>
                 <Select  value={newStatus} onChange={(value) => setNewStatus(value)} style={{ width: 200 }}>
