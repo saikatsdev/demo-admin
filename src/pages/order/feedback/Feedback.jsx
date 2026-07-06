@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled } from '@ant-design/icons'
+import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled, ShoppingCartOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Divider,Tag, Select, Radio, Drawer, Row, Col, Typography, Card, Image, Form, Timeline} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -25,11 +25,13 @@ export default function Feedback() {
     const [submitLoading, setSubmitLoading]           = useState(false);
 
     // Filters State
-    const [keyword, setKeyword]                       = useState("");
-    const [assignedEmp, setAssignedEmp]               = useState(null);
-    const [deliveredDate, setDeliveredDate]           = useState(null);
-    const [quickFilter, setQuickFilter]               = useState("all");
-    const [employeeList, setEmployeeList]             = useState([]);
+    const [keyword, setKeyword]             = useState("");
+    const [assignedEmp, setAssignedEmp]     = useState(null);
+    const [deliveredDate, setDeliveredDate] = useState(null);
+    const [quickFilter, setQuickFilter]     = useState("all");
+    const [employeeList, setEmployeeList]   = useState([]);
+    const [summary, setSummary]             = useState({});
+    const [summaryFilter, setSummaryFilter] = useState("total_orders");
 
     // Columns for AntD Table
     const columns = [
@@ -124,15 +126,27 @@ export default function Feedback() {
             render: (text) => <span style={{ fontWeight: 600, color: "#262626" }}>৳{Number(text || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>,
         },
         {
-            title: "Delivered At",
-            dataIndex: "delivered_at",
-            key: "delivered_at",
-            render: (text) => (
-                <span style={{ color: "#595959", fontSize: "13px" }}>
-                    {text ? dayjs(text).format("DD MMM, YYYY hh:mm A") : "N/A"}
-                </span>
+            title: "Dates",
+            key: "dates",
+            render: (_, record) => (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {[
+                        { label: "Delivered", value: record.delivered_at, dot: "#1677ff" },
+                        { label: "Feedback",  value: record.created_at,   dot: "#52c41a" },
+                        { label: "Updated",   value: record.updated_at,   dot: "#fa8c16" },
+                    ].map(({ label, value, dot }) => (
+                        <div key={label} style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: dot, flexShrink: 0, display: "inline-block" }} />
+                            <span style={{ fontSize: 11, color: "#8c8c8c", fontWeight: 600, minWidth: 58, letterSpacing: "0.2px" }}>{label}:</span>
+                            <span style={{ color: "#3d3d3d", fontSize: 12, fontWeight: 400, whiteSpace: "nowrap" }}>
+                                {value ? dayjs(value).format("DD MMM YY, hh:mm A") : <span style={{ color: "#bfbfbf", fontStyle: "italic" }}>N/A</span>}
+                            </span>
+                        </div>
+                    ))}
+                </div>
             ),
         },
+
         {
             title: "Assigned To",
             render: (_,record) => (
@@ -150,11 +164,11 @@ export default function Feedback() {
             dataIndex: "status",
             key: "status",
             render: (status, record) => {
-                const currentStatus = status || "pending";
+                const currentStatus = status || "active";
                 const colors = {
                     active     : "green",
                     converted  : "orange",
-                    lost       : "red",
+                    cancelled  : "red",
                     auto_closed: "blue",
                 };
                 return (
@@ -211,29 +225,46 @@ export default function Feedback() {
         setIsStatusModalOpen(true);
     };
 
-    // Fetch data with pagination
     const fetchFeedbackOrders = async (page = pagination.current, pageSize = pagination.pageSize) => {
         setLoading(true);
         try {
             const params = { page, paginate_size: pageSize };
 
-            if (keyword) params.search = keyword;
+            if (keyword) params.search_key = keyword;
             if (assignedEmp) params.employee_id = assignedEmp;
             if (deliveredDate && deliveredDate[0] && deliveredDate[1]) {
-                params.delivered_from = deliveredDate[0].format("YYYY-MM-DD");
-                params.delivered_to = deliveredDate[1].format("YYYY-MM-DD");
+                params.from_date = deliveredDate[0].format("YYYY-MM-DD 00:00:00");
+                params.to_date = deliveredDate[1].format("YYYY-MM-DD 23:59:59");
             }
-            if (quickFilter !== "all") params.quick_filter = quickFilter;
+            
+            if (quickFilter === "today") {
+                params.from_date = dayjs().format("YYYY-MM-DD 00:00:00");
+                params.to_date = dayjs().format("YYYY-MM-DD 23:59:59");
+            } else if (quickFilter === "this_week") {
+                params.from_date = dayjs().startOf("week").format("YYYY-MM-DD 00:00:00");
+                params.to_date = dayjs().endOf("week").format("YYYY-MM-DD 23:59:59");
+            }
+
+            if (summaryFilter === "today_orders") {
+                params.from_date = dayjs().format("YYYY-MM-DD 00:00:00");
+                params.to_date = dayjs().format("YYYY-MM-DD 23:59:59");
+            } else if (summaryFilter === "active_orders") {
+                params.status = "active";
+            } else if (summaryFilter === "cancelled_orders") {
+                params.status = "cancelled";
+            }
 
             const res = await getDatas("/admin/feedback", params);
 
             if (res && res.success) {
-                setFeedbackOrders(res?.result?.data || []);
+                setFeedbackOrders(res?.result?.data?.data || []);
+
+                setSummary(res?.result?.summary || {});
 
                 setPagination({
-                    current: res?.result?.meta?.current_page,
-                    pageSize: res?.result?.meta?.per_page,
-                    total: res?.result?.meta?.total,
+                    current: res?.result?.data?.meta?.current_page,
+                    pageSize: res?.result?.data?.meta?.per_page,
+                    total: res?.result?.data?.meta?.total,
                 });
             }
         } catch (err) {
@@ -262,13 +293,12 @@ export default function Feedback() {
 
     useEffect(() => {
         fetchFeedbackOrders(1, pagination.pageSize);
-    }, [keyword, assignedEmp, deliveredDate, quickFilter]);
+    }, [keyword, assignedEmp, deliveredDate, quickFilter, summaryFilter]);
 
     useEffect(() => {
         fetchEmployeeList();
     }, []);
 
-    // Table pagination handler
     const handleTableChange = (pag) => {
         fetchFeedbackOrders(pag.current, pag.pageSize);
     };
@@ -423,11 +453,13 @@ export default function Feedback() {
                     </Space>
                     
                     <Space wrap size="middle">
-                        <Radio.Group 
-                            value={quickFilter} 
-                            onChange={(e) => setQuickFilter(e.target.value)}
-                            buttonStyle="solid"
-                        >
+                        <Radio.Group value={quickFilter} onChange={(e) => {
+                                const val = e.target.value;
+                                setQuickFilter(val);
+                                if (val === "all") setSummaryFilter("total_orders");
+                                else if (val === "today") setSummaryFilter("today_orders");
+                                else setSummaryFilter("total_orders");
+                            }} buttonStyle="solid">
                             <Radio.Button value="all">All</Radio.Button>
                             <Radio.Button value="today">Today's Feedback</Radio.Button>
                             <Radio.Button value="this_week">This Week</Radio.Button>
@@ -439,6 +471,77 @@ export default function Feedback() {
                     </Space>
                 </Space>
             </div>
+
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+                {[
+                    { 
+                        key  : "total_orders",
+                        label: "Total Orders",
+                        value: summary?.all_orders,
+                        icon : <ShoppingCartOutlined />,
+                        color: "#1677ff",                bg: "#e6f4ff"
+                    },
+                    { 
+                        key  : "today_orders",
+                        label: "Today Orders",
+                        value: summary?.today_orders,
+                        icon : <ClockCircleOutlined />,
+                        color: "#52c41a",               bg: "#f6ffed"
+                    },
+                    { 
+                        key  : "active_orders",
+                        label: "Total Active",
+                        value: summary?.active_orders,
+                        icon : <CheckCircleOutlined />,
+                        color: "#fa8c16",
+                        bg   : "#fff7e6"
+                    },
+                    { 
+                        key  : "cancelled_orders",
+                        label: "Total Cancelled",
+                        value: summary?.cancelled_orders,
+                        icon : <CloseCircleOutlined />,
+                        color: "#ff4d4f",
+                        bg   : "#fff2f0"
+                    },
+                ].map((item) => (
+                    <Col span={6} key={item.key}>
+                        <Card
+                            hoverable
+                            style={{
+                                borderRadius: 10,
+                                cursor: "pointer",
+                                border: summaryFilter === item.key ? `2px solid ${item.color}` : "1px solid #f0f0f0",
+                                background: summaryFilter === item.key ? item.bg : "#fff",
+                                transition: "all 0.2s",
+                            }}
+                            styles={{ body: { padding: "20px 24px" } }}
+                            onClick={() => {
+                                setSummaryFilter(item.key);
+                                if (item.key === "total_orders") setQuickFilter("all");
+                                else if (item.key === "today_orders") setQuickFilter("today");
+                                else setQuickFilter("all");
+                            }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                    <span style={{ fontSize: 13, color: "#8c8c8c", fontWeight: 500 }}>{item.label}</span>
+                                    <span style={{ fontSize: 24, fontWeight: 700, color: "#262626" }}>{item.value ?? 0}</span>
+                                </div>
+                                <div style={{
+                                    width: 48, height: 48, borderRadius: 12,
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    background: summaryFilter === item.key ? item.color : "#f5f5f5",
+                                    fontSize: 22, color: summaryFilter === item.key ? "#fff" : item.color,
+                                    transition: "all 0.2s",
+                                }}>
+                                    {item.icon}
+                                </div>
+                            </div>
+                        </Card>
+                    </Col>
+                ))}
+            </Row>
 
             <Table rowKey="id" columns={columns} dataSource={feedbackOrders} loading={loading}
                 expandable={{
@@ -462,20 +565,32 @@ export default function Feedback() {
                 styles={{ body: { padding: 0, overflow: "hidden" } }}
             >
                 <Row style={{ height: "100%", margin: 0 }}>
-                    {/* Left: Customer Info */}
                     <Col span={7} style={{ borderRight: "1px solid #f0f0f0", padding: "24px", background: "#fcfcfc", height: "100%", overflowY: "auto" }}>
                         <Typography.Title level={5} style={{ marginTop: 0, color: "#1f1f1f" }}>Customer Details</Typography.Title>
                         <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "24px" }}>
                             <div>
-                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Invoice</div>
-                                <div style={{ fontWeight: 600, color: "#1677ff", fontSize: "15px" }}>{selectedNoteRecord?.invoice_number || "N/A"}</div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>
+                                    Invoice
+                                </div>
+                                <div style={{ fontWeight: 600, color: "#1677ff", fontSize: "15px" }}>
+                                    {selectedNoteRecord?.invoice_number || "N/A"}
+                                </div>
                             </div>
+
                             <div>
-                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Customer Name</div>
-                                <div style={{ fontWeight: 500, fontSize: "15px" }}>{selectedNoteRecord?.customer_name || "N/A"}</div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>
+                                    Customer Name
+                                </div>
+
+                                <div style={{ fontWeight: 500, fontSize: "15px" }}>
+                                    {selectedNoteRecord?.customer_name || "N/A"}
+                                </div>
                             </div>
+
                             <div>
-                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Phone Number</div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>
+                                    Phone Number
+                                </div>
                                 <div style={{ fontWeight: 500, display: "flex", alignItems: "center", gap: "8px" }}>
                                     {selectedNoteRecord?.phone_number || "N/A"}
                                     {selectedNoteRecord?.phone_number && (
@@ -488,24 +603,44 @@ export default function Feedback() {
                             </div>
 
                             <div>
-                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Address</div>
-                                <div style={{ fontWeight: 500, whiteSpace: "pre-wrap" }}>{selectedNoteRecord?.customer_address || selectedNoteRecord?.order?.customer_address || "N/A"}</div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>
+                                    Address
+                                </div>
+                                <div style={{ fontWeight: 500, whiteSpace: "pre-wrap" }}>
+                                    {selectedNoteRecord?.customer_address || selectedNoteRecord?.order?.customer_address || "N/A"}
+                                </div>
                             </div>
 
                             <div>
-                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Delivered At</div>
-                                <div style={{ fontWeight: 500, whiteSpace: "pre-wrap" }}>{dayjs(selectedNoteRecord?.delivered_at).format("DD MMM, YYYY hh:mm A") || "N/A"}</div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>
+                                    Delivered At
+                                </div>
+
+                                <div style={{ fontWeight: 500, whiteSpace: "pre-wrap" }}>
+                                    {dayjs(selectedNoteRecord?.delivered_at).format("DD MMM, YYYY hh:mm A") || "N/A"}
+                                </div>
                             </div>
 
                             <Divider style={{ margin: "12px 0" }} />
 
                             <div>
-                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Order Amount</div>
-                                <div style={{ fontWeight: 600, color: "#fa541c", fontSize: "16px" }}>৳{Number(selectedNoteRecord?.payable_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>
+                                    Order Amount
+                                </div>
+
+                                <div style={{ fontWeight: 600, color: "#fa541c", fontSize: "16px" }}>
+                                    ৳{Number(selectedNoteRecord?.payable_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                                </div>
                             </div>
+
                             <div>
-                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>Delivery Charge</div>
-                                <div style={{ fontWeight: 500 }}>৳{Number(selectedNoteRecord?.delivery_charge || selectedNoteRecord?.order?.delivery_charge || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                                <div style={{ color: "#8c8c8c", fontSize: "13px", marginBottom: "2px" }}>
+                                    Delivery Charge
+                                </div>
+
+                                <div style={{ fontWeight: 500 }}>
+                                    ৳{Number(selectedNoteRecord?.delivery_charge || selectedNoteRecord?.order?.delivery_charge || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                                </div>
                             </div>
                         </div>
                     </Col>
@@ -522,8 +657,12 @@ export default function Feedback() {
                                             <div style={{ width: 56, height: 56, background: "#f0f0f0", borderRadius: "6px" }}></div>
                                         )}
                                         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-                                            <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: "1.2", color: "#262626" }}>{p.name}</div>
-                                            <div style={{ fontSize: "12px", color: "#8c8c8c", fontWeight: 500 }}>Price: ৳{Number(p.sell_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                                            <div style={{ fontWeight: 600, fontSize: "13px", lineHeight: "1.2", color: "#262626" }}>
+                                                {p.name}
+                                            </div>
+                                            <div style={{ fontSize: "12px", color: "#8c8c8c", fontWeight: 500 }}>
+                                                Price: ৳{Number(p.sell_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}
+                                            </div>
                                         </div>
                                         <div style={{ fontWeight: 700, color: "#fa8c16", fontSize: "15px", padding: "0 8px" }}>
                                             x{p.quantity}
@@ -621,8 +760,7 @@ export default function Feedback() {
 
             <Modal title={`Update Status for Order #${selectedOrder?.order_id || selectedOrder?.id}`} open={isStatusModalOpen} onCancel={() => setIsStatusModalOpen(false)} onOk={submitStatus} loading={statusLoader}>
                 <Select  value={newStatus} onChange={(value) => setNewStatus(value)} style={{ width: 200 }}>
-                    <Select.Option value="pending">Pending</Select.Option>
-                    <Select.Option value="approved">Approved</Select.Option>
+                    <Select.Option value="active">Active</Select.Option>
                     <Select.Option value="cancelled">Cancelled</Select.Option>
                 </Select>
             </Modal>
