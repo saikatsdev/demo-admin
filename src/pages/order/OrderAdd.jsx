@@ -118,7 +118,6 @@ export default function OrderAdd() {
             }
         }
     }, [orderFromList]);
-    
 
     const insertDeliveryGateway = async () => {
         setAddLoading(true)
