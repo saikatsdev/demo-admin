@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import {WhatsAppOutlined, CopyOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,MessageOutlined, PhoneFilled, HistoryOutlined} from '@ant-design/icons';
+import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,MessageOutlined, PhoneFilled, HistoryOutlined} from '@ant-design/icons';
 import {
     Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,
     DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider,
@@ -175,7 +175,7 @@ export default function FollowupSell() {
     // filter state
     const [search, setSearch]               = useState("");
     const [filterStep, setFilterStep]       = useState(null);
-    const [filterStatus, setFilterStatus]   = useState(null);
+    const [filterStatus, setFilterStatus]   = useState('active');
     const [filterPriority, setFilterPriority] = useState(null);
     const [dateRange, setDateRange]         = useState(null);
     const [summaryKey, setSummaryKey]       = useState("all");
@@ -185,6 +185,8 @@ export default function FollowupSell() {
     const [followupDate, setFollowupDate]   = useState(null);
     const [stepValue, setStepValue]         = useState(null);
     const [statusValue, setStatusValue]     = useState(null);
+    const [callStatusValue, setCallStatusValue] = useState(null);
+    const [closeReasonValue, setCloseReasonValue] = useState("");
     const [noteValue, setNoteValue]         = useState("");
     const [saveLoading, setSaveLoading]     = useState(false);
 
@@ -388,6 +390,48 @@ export default function FollowupSell() {
             },
         },
         {
+            title: "Status",
+            key: "status",
+            align: "center",
+            render: (_, record) => {
+                const status = record.status;
+                let color = "default";
+                let label = status;
+
+                switch (status) {
+                    case "active":
+                        color = "success";
+                        label = "Active";
+                        break;
+                    case "converted":
+                        color = "processing";
+                        label = "Converted";
+                        break;
+                    case "cancelled":
+                        color = "error";
+                        label = "Cancelled";
+                        break;
+                    case "closed":
+                        color = "warning";
+                        label = "Closed";
+                        break;
+                    case "auto_closed":
+                        color = "warning";
+                        label = "Auto Closed";
+                        break;
+                    case "lost":
+                        color = "default";
+                        label = "Lost";
+                        break;
+                    default:
+                        color = "default";
+                        label = status;
+                }
+
+                return <Tag color={color} style={{ borderRadius: 20, padding: "2px 10px", fontWeight: 600, fontSize: 11, border: "none" }}>{label}</Tag>;
+            }
+        },
+        {
             title: "Action",
             key: "action",
             align: "center",
@@ -397,8 +441,8 @@ export default function FollowupSell() {
                         <Button type="text" size="small" icon={<EyeOutlined />} style={{ color: "#1677ff" }} onClick={() => handleView(record.order_id)} />
                     </Tooltip>
 
-                    <Tooltip title="Call">
-                        <Button type="text" size="small" icon={<PhoneOutlined />} style={{ color: "#52c41a" }} onClick={() => copyPhone(record.phone_number || record.order?.phone_number)} />
+                    <Tooltip title="Convert to Order">
+                        <Button type="text" size="small" icon={<SwapOutlined />} style={{ color: "#faad14", backgroundColor: "#fff7e6" }} onClick={() => handleConvert(record)} />
                     </Tooltip>
                     
                     <Tooltip title="Update Follow-up">
@@ -426,11 +470,36 @@ export default function FollowupSell() {
         navigate(`/order-edit/${orderid}`);
     };
 
+    const handleConvert = async (record) => {
+        try {
+            const formData = new FormData();
+            formData.append("_method", "PUT");
+            formData.append("status", "converted");
+
+            const res = await postData(`/admin/followup/${record.id}`, formData);
+            if (res?.success) {
+                messageApi.success("Converted to order successfully");
+                navigate("/order-add", {
+                    state: {
+                        name:         record.customer_name || record.order?.customer_name,
+                        phone_number: record.phone_number  || record.order?.phone_number,
+                        address:      record.address       || record.order?.address,
+                    }
+                });
+            }
+        } catch (err) {
+            console.error(err);
+            message.error("Conversion failed");
+        }
+    };
+
     const handleEdit = (record) => {
         setEditRecord(record);
         setFollowupDate(record.next_followup_at ? dayjs(record.next_followup_at) : null);
         setStatusValue(record.status ?? null);
+        setCallStatusValue(record.last_interaction?.call_status ?? null);
         setStepValue(record.current_step ?? null);
+        setCloseReasonValue("");
         setNoteValue("");
     };
 
@@ -458,19 +527,19 @@ export default function FollowupSell() {
                 if (summaryKey === "today") {
                     params.from_date = dayjs().format("YYYY-MM-DD 00:00:00");
                     params.to_date   = dayjs().format("YYYY-MM-DD 23:59:59");
-                    params.status    = "active";
+                    params.status    = filterStatus || "active";
                 } else if (summaryKey === "overdue") {
                     params.to_date = dayjs().subtract(1, "day").format("YYYY-MM-DD 23:59:59");
-                    params.status  = "active";
+                    params.status  = filterStatus || "active";
                 } else if (summaryKey === "step1") {
                     params.step = 1;
-                    params.status       = "active";
+                    params.status       = filterStatus || "active";
                 } else if (summaryKey === "step2") {
                     params.step = 2;
-                    params.status       = "active";
+                    params.status       = filterStatus || "active";
                 } else if (summaryKey === "step3") {
                     params.step = 3;
-                    params.status       = "active";
+                    params.status       = filterStatus || "active";
                 }
             }
 
@@ -505,9 +574,12 @@ export default function FollowupSell() {
         try {
             const formData = new FormData();
             formData.append("_method", "PUT");
-            if (followupDate) formData.append("next_followup_at", followupDate.format("YYYY-MM-DD"));
-            if (stepValue)    formData.append("current_step", stepValue);
-            if (noteValue)    formData.append("remarks", noteValue);
+            if (followupDate)  formData.append("next_followup_at", followupDate.format("YYYY-MM-DD"));
+            if (stepValue)     formData.append("current_step", stepValue);
+            if (statusValue)   formData.append("status", statusValue);
+            if (statusValue === "closed" && closeReasonValue) formData.append("close_reason", closeReasonValue);
+            if (callStatusValue) formData.append("call_status", callStatusValue);
+            if (noteValue)     formData.append("remarks", noteValue);
 
             const res = await postData(`/admin/followup/${editRecord.id}`, formData);
 
@@ -621,16 +693,37 @@ export default function FollowupSell() {
             <div style={{ padding: "14px 16px", background: "#fff", borderRadius: 8, marginBottom: 16, border: "1px solid #f0f0f0", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
                 <Space wrap size="middle" style={{ width: "100%", justifyContent: "space-between" }}>
                     <Space wrap size="middle">
-                        <AntInput.Search
-                            allowClear placeholder="Search Invoice / Phone / Name..."
-                            onSearch={(v) => setSearch(v)}
-                            style={{ width: 260 }}
-                        />
-                        <Select placeholder="Step" allowClear style={{ width: 110 }} value={filterStep} onChange={setFilterStep}
-                            options={[{ value: 1, label: "Step 1" }, { value: 2, label: "Step 2" }, { value: 3, label: "Step 3" }]}
-                        />
+                        <AntInput.Search allowClear placeholder="Search Invoice / Phone / Name..." onSearch={(v) => setSearch(v)} style={{ width: 260 }}/>
+
+                        <Select placeholder="Step" allowClear style={{ width: 110 }} value={filterStep} onChange={setFilterStep} options={[{ value: 1, label: "Step 1" }, { value: 2, label: "Step 2" }, { value: 3, label: "Step 3" }]}/>
+
                         <Select placeholder="Status" allowClear style={{ width: 120 }} value={filterStatus} onChange={setFilterStatus}
-                            options={[{ value: "active", label: "Active" }, { value: "converted", label: "Converted" }, { value: "closed", label: "Closed" }]}
+                            options={[
+                                { 
+                                    value: "active", 
+                                    label: "Active" 
+                                }, 
+                                {
+                                    value: "cancelled",
+                                    label: "Cancelled"
+                                },
+                                { 
+                                    value: "converted", 
+                                    label: "Converted" 
+                                }, 
+                                { 
+                                    value: "closed", 
+                                    label: "Closed" 
+                                },
+                                {
+                                    value : "auto_closed",
+                                    label : "Auto Closed"
+                                },
+                                {
+                                    value : "lost",
+                                    label : "Lost"
+                                }
+                            ]}
                         />
                         <Select placeholder="Priority" allowClear style={{ width: 120 }} value={filterPriority} onChange={setFilterPriority}
                             options={[{ value: "overdue", label: "🔴 Overdue" }, { value: "today", label: "🟠 Today" }, { value: "upcoming", label: "🔵 Upcoming" }]}
@@ -700,6 +793,24 @@ export default function FollowupSell() {
                     </div>
 
                     <div>
+                        <Typography.Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 6 }}>Call Status</Typography.Text>
+                        <Select
+                            placeholder="Select call status"
+                            style={{ width: "100%" }}
+                            value={callStatusValue}
+                            onChange={setCallStatusValue}
+                            options={[
+                                { value: 'answered',      label: 'Answered' },
+                                { value: 'busy',           label: 'Busy' },
+                                { value: 'no_answer',      label: 'No Answer' },
+                                { value: 'switched_off',   label: 'Switched Off' },
+                                { value: 'wrong_number',   label: 'Wrong Number' },
+                                { value: 'call_rejected',  label: 'Call Rejected' },
+                            ]}
+                        />
+                    </div>
+
+                    <div>
                         <Typography.Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 6 }}>Remarks</Typography.Text>
                         <AntInput.TextArea rows={4} value={noteValue} onChange={(e) => setNoteValue(e.target.value)} placeholder="Write your remarks..." />
                     </div>
@@ -735,6 +846,13 @@ export default function FollowupSell() {
                             ]}
                         />
                     </div>
+
+                    {statusValue === "closed" && (
+                        <div>
+                            <Typography.Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 6 }}>Close Reason</Typography.Text>
+                            <AntInput.TextArea rows={3} value={closeReasonValue} onChange={(e) => setCloseReasonValue(e.target.value)} placeholder="Enter reason for closing..." />
+                        </div>
+                    )}
                 </div>
             </Modal>
         </>
