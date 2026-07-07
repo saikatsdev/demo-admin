@@ -183,6 +183,8 @@ export default function FollowupSell() {
     // modal state
     const [editRecord, setEditRecord]       = useState(null);
     const [followupDate, setFollowupDate]   = useState(null);
+    const [stepValue, setStepValue]         = useState(null);
+    const [statusValue, setStatusValue]     = useState(null);
     const [noteValue, setNoteValue]         = useState("");
     const [saveLoading, setSaveLoading]     = useState(false);
 
@@ -427,6 +429,8 @@ export default function FollowupSell() {
     const handleEdit = (record) => {
         setEditRecord(record);
         setFollowupDate(record.next_followup_at ? dayjs(record.next_followup_at) : null);
+        setStatusValue(record.status ?? null);
+        setStepValue(record.current_step ?? null);
         setNoteValue("");
     };
 
@@ -502,9 +506,11 @@ export default function FollowupSell() {
             const formData = new FormData();
             formData.append("_method", "PUT");
             if (followupDate) formData.append("next_followup_at", followupDate.format("YYYY-MM-DD"));
+            if (stepValue)    formData.append("current_step", stepValue);
             if (noteValue)    formData.append("remarks", noteValue);
 
             const res = await postData(`/admin/followup/${editRecord.id}`, formData);
+
             if (res?.success) {
                 messageApi.success(res.msg || "Updated successfully");
                 setEditRecord(null);
@@ -661,24 +667,73 @@ export default function FollowupSell() {
                 }}
             />
 
-            {/* Edit Follow-up Modal */}
-            <Modal
-                title={<span style={{ fontWeight: 600 }}>Update Follow-up — <span style={{ color: "#1677ff" }}>{editRecord?.order?.invoice_number}</span></span>}
-                open={!!editRecord}
-                onCancel={() => setEditRecord(null)}
-                onOk={handleSave}
-                okText="Save"
-                confirmLoading={saveLoading}
-                width={420}
-            >
+            <Modal title={<span style={{ fontWeight: 600 }}>Update Follow-up — <span style={{ color: "#1677ff" }}>{editRecord?.order?.invoice_number}</span></span>}
+                open={!!editRecord} onCancel={() => setEditRecord(null)} onOk={handleSave} okText="Save" confirmLoading={saveLoading} width={420}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 12 }}>
                     <div>
                         <Typography.Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 6 }}>Next Follow-up Date</Typography.Text>
                         <DatePicker style={{ width: "100%" }} value={followupDate} onChange={setFollowupDate} />
                     </div>
+
+                    <div>
+                        <Typography.Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 6 }}>Current Step</Typography.Text>
+                        <Select
+                            placeholder="Select step"
+                            style={{ width: "100%" }}
+                            value={stepValue}
+                            onChange={setStepValue}
+                            options={[
+                                { 
+                                    value: 1, 
+                                    label: "Step 1" 
+                                },
+                                { 
+                                    value: 2, 
+                                    label: "Step 2" 
+                                },
+                                { 
+                                    value: 3, 
+                                    label: "Step 3" 
+                                },
+                            ]}
+                        />
+                    </div>
+
                     <div>
                         <Typography.Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 6 }}>Remarks</Typography.Text>
-                        <AntInput.TextArea rows={4} value={noteValue} onChange={(e) => setNoteValue(e.target.value)} placeholder="Write your remarks..." style={{ resize: "none" }} />
+                        <AntInput.TextArea rows={4} value={noteValue} onChange={(e) => setNoteValue(e.target.value)} placeholder="Write your remarks..." />
+                    </div>
+
+                    <div>
+                        <Typography.Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 6 }}>Status</Typography.Text>
+                        <Select
+                            placeholder="Select status"
+                            style={{ width: "100%" }}
+                            value={statusValue}
+                            onChange={setStatusValue}
+                            options={[
+                                { 
+                                    value: 'active', 
+                                    label: "Active" 
+                                },
+                                { 
+                                    value: 'converted', 
+                                    label: "Converted" 
+                                },
+                                { 
+                                    value: 'closed', 
+                                    label: "Closed" 
+                                },
+                                { 
+                                    value: 'lost', 
+                                    label: "Lost" 
+                                },
+                                { 
+                                    value: 'cancelled', 
+                                    label: "Cancelled" 
+                                },
+                            ]}
+                        />
                     </div>
                 </div>
             </Modal>
