@@ -750,7 +750,7 @@ const OrderEdit = () => {
                         History
                     </Button>
 
-                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')} style={{ borderRadius: '10px', fontWeight: 600 }}>
+                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} style={{ borderRadius: '10px', fontWeight: 600 }}>
                         Back
                     </Button>
                 </Space>

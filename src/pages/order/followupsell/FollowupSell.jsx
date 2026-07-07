@@ -1,11 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import {
-    WhatsAppOutlined, CopyOutlined, ArrowLeftOutlined, UserOutlined,
-    PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,
-    TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,
-    CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,
-    MessageOutlined, PhoneFilled, HistoryOutlined,
-} from '@ant-design/icons';
+import {WhatsAppOutlined, CopyOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,MessageOutlined, PhoneFilled, HistoryOutlined} from '@ant-design/icons';
 import {
     Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,
     DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider,
@@ -99,13 +93,8 @@ function LastInteractionPanel({ record }) {
     const ago  = it.created_at ? dayjs(it.created_at).fromNow() : "";
 
     return (
-        <div style={{
-            margin: "0 48px 4px", padding: "14px 20px",
-            background: "linear-gradient(135deg, #f8fbff 0%, #fff7f0 100%)",
-            borderRadius: 10, border: "1px solid #e8edf5",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-        }}>
-            {/* Header */}
+        <div style={{margin: "0 48px 4px", padding: "14px 20px",background: "linear-gradient(135deg, #f8fbff 0%, #fff7f0 100%)",borderRadius: 10, border: "1px solid #e8edf5",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.05)"}}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{
@@ -129,9 +118,7 @@ function LastInteractionPanel({ record }) {
 
             <Divider style={{ margin: "8px 0" }} />
 
-            {/* Body grid */}
             <Row gutter={[16, 8]} style={{ marginTop: 4 }}>
-                {/* Rating */}
                 <Col xs={24} sm={8}>
                     <div style={{
                         padding: "10px 14px", borderRadius: 8, background: "#fff",
@@ -145,23 +132,16 @@ function LastInteractionPanel({ record }) {
                     </div>
                 </Col>
 
-                {/* Remarks */}
                 <Col xs={24} sm={8}>
-                    <div style={{
-                        padding: "10px 14px", borderRadius: 8, background: "#fff",
-                        border: "1px solid #f0f0f0", height: "100%",
-                    }}>
+                    <div style={{padding: "10px 14px", borderRadius: 8, background: "#fff", border: "1px solid #f0f0f0", height: "100%"}}>
                         <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 4, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
                             <MessageOutlined /> Remarks
                         </div>
-                        {it.remarks
-                            ? <span style={{ fontSize: 12, color: "#262626" }}>{it.remarks}</span>
-                            : <span style={{ fontSize: 12, color: "#bfbfbf", fontStyle: "italic" }}>No remarks</span>
+                        {it.remarks ? <span style={{ fontSize: 12, color: "#262626" }}>{it.remarks}</span> : <span style={{ fontSize: 12, color: "#bfbfbf", fontStyle: "italic" }}>No remarks</span>
                         }
                     </div>
                 </Col>
 
-                {/* Customer Feedback */}
                 <Col xs={24} sm={8}>
                     <div style={{
                         padding: "10px 14px", borderRadius: 8, background: "#fff",
@@ -179,10 +159,10 @@ function LastInteractionPanel({ record }) {
     );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export default function FollowupSell() {
+    // Hook
     useTitle("Follow Up Orders");
+
     const navigate = useNavigate();
 
     // core state
@@ -196,7 +176,6 @@ export default function FollowupSell() {
     const [search, setSearch]               = useState("");
     const [filterStep, setFilterStep]       = useState(null);
     const [filterStatus, setFilterStatus]   = useState(null);
-    const [filterEmployee, setFilterEmployee] = useState(null);
     const [filterPriority, setFilterPriority] = useState(null);
     const [dateRange, setDateRange]         = useState(null);
     const [summaryKey, setSummaryKey]       = useState("all");
@@ -413,7 +392,7 @@ export default function FollowupSell() {
             render: (_, record) => (
                 <Space size={4}>
                     <Tooltip title="View Order">
-                        <Button type="text" size="small" icon={<EyeOutlined />} style={{ color: "#1677ff" }} onClick={() => handleView(record)} />
+                        <Button type="text" size="small" icon={<EyeOutlined />} style={{ color: "#1677ff" }} onClick={() => handleView(record.order_id)} />
                     </Tooltip>
                     <Tooltip title="Call">
                         <Button type="text" size="small" icon={<PhoneOutlined />} style={{ color: "#52c41a" }} onClick={() => copyPhone(record.phone_number || record.order?.phone_number)} />
@@ -439,10 +418,8 @@ export default function FollowupSell() {
         window.open(`https://wa.me/${num}`, "_blank");
     };
 
-    const handleView = (record) => {
-        const order = record.order;
-        if (!order) { messageApi.warning("Order details not available."); return; }
-        messageApi.info(`Viewing: ${order.invoice_number}`);
+    const handleView = (orderid) => {
+        navigate(`/order-edit/${orderid}`);
     };
 
     const handleEdit = (record) => {
@@ -458,7 +435,6 @@ export default function FollowupSell() {
             if (search)         params.search_key    = search;
             if (filterStep)     params.current_step  = filterStep;
             if (filterStatus)   params.status        = filterStatus;
-            if (filterEmployee) params.employee_id   = filterEmployee;
             if (filterPriority === "overdue") {
                 params.to_date = dayjs().subtract(1, "day").format("YYYY-MM-DD 23:59:59");
             } else if (filterPriority === "today") {
@@ -488,8 +464,9 @@ export default function FollowupSell() {
         }
     };
 
-    useEffect(() => { fetchOrders(1, pagination.pageSize); },
-        [search, filterStep, filterStatus, filterEmployee, filterPriority, dateRange]);
+    useEffect(() => { 
+        fetchOrders(1, pagination.pageSize); 
+    },[search, filterStep, filterStatus, filterPriority, dateRange]);
 
     const handleTableChange = (pag) => fetchOrders(pag.current, pag.pageSize);
 
@@ -561,13 +538,10 @@ export default function FollowupSell() {
         },
     ];
 
-    // ── render ────────────────────────────────────────────────────────────────
-
     return (
         <>
             {contextHolder}
 
-            {/* Page head */}
             <div className="pagehead">
                 <div className="head-left">
                     <h1 className="title">Follow-Up Orders</h1>
@@ -580,7 +554,6 @@ export default function FollowupSell() {
                 </div>
             </div>
 
-            {/* Summary Cards */}
             <Row gutter={12} style={{ marginBottom: 16 }}>
                 {summaryCards.map((c) => (
                     <Col key={c.key} flex="1">
