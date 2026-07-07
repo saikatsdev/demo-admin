@@ -394,9 +394,11 @@ export default function FollowupSell() {
                     <Tooltip title="View Order">
                         <Button type="text" size="small" icon={<EyeOutlined />} style={{ color: "#1677ff" }} onClick={() => handleView(record.order_id)} />
                     </Tooltip>
+
                     <Tooltip title="Call">
                         <Button type="text" size="small" icon={<PhoneOutlined />} style={{ color: "#52c41a" }} onClick={() => copyPhone(record.phone_number || record.order?.phone_number)} />
                     </Tooltip>
+                    
                     <Tooltip title="Update Follow-up">
                         <Button type="primary" ghost size="small" icon={<EditOutlined />} style={{ fontSize: 12 }} onClick={() => handleEdit(record)} />
                     </Tooltip>
@@ -432,21 +434,44 @@ export default function FollowupSell() {
         setLoading(true);
         try {
             const params = { page, paginate_size: pageSize };
-            if (search)         params.search_key    = search;
-            if (filterStep)     params.current_step  = filterStep;
-            if (filterStatus)   params.status        = filterStatus;
+            if (search)         params.search_key = search;
+            if (filterStep)     params.step       = filterStep;
+            if (filterStatus)   params.status     = filterStatus;
+
             if (filterPriority === "overdue") {
                 params.to_date = dayjs().subtract(1, "day").format("YYYY-MM-DD 23:59:59");
             } else if (filterPriority === "today") {
                 params.from_date = dayjs().format("YYYY-MM-DD 00:00:00");
                 params.to_date   = dayjs().format("YYYY-MM-DD 23:59:59");
             }
+
             if (dateRange?.[0] && dateRange?.[1]) {
                 params.from_date = dateRange[0].format("YYYY-MM-DD 00:00:00");
                 params.to_date   = dateRange[1].format("YYYY-MM-DD 23:59:59");
             }
 
+            if (summaryKey !== "all") {
+                if (summaryKey === "today") {
+                    params.from_date = dayjs().format("YYYY-MM-DD 00:00:00");
+                    params.to_date   = dayjs().format("YYYY-MM-DD 23:59:59");
+                    params.status    = "active";
+                } else if (summaryKey === "overdue") {
+                    params.to_date = dayjs().subtract(1, "day").format("YYYY-MM-DD 23:59:59");
+                    params.status  = "active";
+                } else if (summaryKey === "step1") {
+                    params.step = 1;
+                    params.status       = "active";
+                } else if (summaryKey === "step2") {
+                    params.step = 2;
+                    params.status       = "active";
+                } else if (summaryKey === "step3") {
+                    params.step = 3;
+                    params.status       = "active";
+                }
+            }
+
             const res = await getDatas("/admin/followup", params);
+
             if (res?.success) {
                 setFollowUpOrders(res.result?.data?.data || []);
                 setSummary(res.result?.summary || {});
@@ -466,7 +491,7 @@ export default function FollowupSell() {
 
     useEffect(() => { 
         fetchOrders(1, pagination.pageSize); 
-    },[search, filterStep, filterStatus, filterPriority, dateRange]);
+    },[search, filterStep, filterStatus, filterPriority, dateRange, summaryKey]);
 
     const handleTableChange = (pag) => fetchOrders(pag.current, pag.pageSize);
 
