@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,MessageOutlined, PhoneFilled, HistoryOutlined} from '@ant-design/icons';
 import {
     Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,
-    DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider,
+    DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider, Spin,
 } from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -189,6 +189,8 @@ export default function FollowupSell() {
     const [closeReasonValue, setCloseReasonValue] = useState("");
     const [noteValue, setNoteValue]         = useState("");
     const [saveLoading, setSaveLoading]     = useState(false);
+    const [detailRecord, setDetailRecord]   = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
 
     // ── columns ──────────────────────────────────────────────────────────────
 
@@ -351,11 +353,11 @@ export default function FollowupSell() {
                         <div>
                             <div style={{ fontSize: 11, fontWeight: 600, color: cfg.color }}>{cfg.label}</div>
                             <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 1 }}>{when}</div>
-                            <span style={{
+                            <span onClick={() => handleShowDetails(record)} style={{
                                 fontSize: 10, color: "#1677ff", marginTop: 2, display: "inline-flex",
                                 alignItems: "center", gap: 3, cursor: "pointer",
                             }}>
-                                <HistoryOutlined /> details ▾
+                                <HistoryOutlined /> Details ▾
                             </span>
                         </div>
                     </div>
@@ -470,13 +472,34 @@ export default function FollowupSell() {
         navigate(`/order-edit/${orderid}`);
     };
 
+    const handleShowDetails = async (record) => {
+        setDetailRecord({});
+        try {
+            setDetailLoading(true);
+            const res = await getDatas(`/admin/followup/${record.id}`);
+            if (res?.success) {
+                setDetailRecord(res.result);
+            } else {
+                setDetailRecord(null);
+            }
+        } catch (err) {
+            console.error(err);
+            message.error("Failed to load details");
+            setDetailRecord(null);
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
     const handleConvert = async (record) => {
         try {
             const formData = new FormData();
             formData.append("_method", "PUT");
+
             formData.append("status", "converted");
 
-            const res = await postData(`/admin/followup/${record.id}`, formData);
+            const res = await postData(`/admin/followup/status/update/${record.id}`, formData);
+
             if (res?.success) {
                 messageApi.success("Converted to order successfully");
                 navigate("/order-add", {
@@ -854,6 +877,57 @@ export default function FollowupSell() {
                         </div>
                     )}
                 </div>
+            </Modal>
+
+            <Modal title={<span style={{ fontWeight: 600 }}>Interaction History — <span style={{ color: "#1677ff" }}>{detailRecord?.invoice_number}</span></span>}
+                open={!!detailRecord} onCancel={() => setDetailRecord(null)} footer={null} width={600}>
+                {detailLoading ? (
+                    <div style={{ textAlign: "center", padding: 40 }}><Spin /></div>
+                ) : (
+                    <div style={{ maxHeight: 480, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+                        {detailRecord?.interactions?.length ? (
+                            detailRecord.interactions.map((it) => {
+                                const cfg = callStatusLabel(it.call_status);
+                                return (
+                                    <div key={it.id} style={{
+                                        display: "flex", gap: 12,
+                                        borderLeft: `3px solid ${cfg.color}`,
+                                        padding: "14px 16px", borderRadius: 10, background: "#fafafa",
+                                    }}>
+                                        <div style={{ width: 36, height: 36, borderRadius: 10, background: cfg.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                                            <PhoneFilled style={{ color: cfg.color, fontSize: 16 }} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                                    <Tag style={{ borderRadius: 12, padding: "0 10px", fontWeight: 600, fontSize: 11, border: "none", background: cfg.color + "18", color: cfg.color, margin: 0 }}>{cfg.label}</Tag>
+                                                    {it.type === "feedback" && <Tag color="purple" style={{ borderRadius: 12, fontSize: 11, margin: 0 }}>Feedback</Tag>}
+                                                    {it.step > 0 && <Tag color="blue" style={{ borderRadius: 12, fontSize: 11, margin: 0 }}>Step {it.step}</Tag>}
+                                                </div>
+                                                <span style={{ fontSize: 11, color: "#8c8c8c", whiteSpace: "nowrap" }}>{dayjs(it.created_at).format("DD MMM hh:mm A")}</span>
+                                            </div>
+                                            {it.remarks && (
+                                                <div style={{ fontSize: 12, color: "#262626", marginTop: 4, padding: "8px 10px", background: "#fff", borderRadius: 6, border: "1px solid #f0f0f0" }}>
+                                                    “{it.remarks}”
+                                                </div>
+                                            )}
+                                            <div style={{ display: "flex", gap: 16, marginTop: 6, fontSize: 11, color: "#8c8c8c" }}>
+                                                {it.rating != null && <span>Rating: <span style={{ color: "#faad14", fontWeight: 600 }}>{it.rating}/5</span></span>}
+                                                {it.next_followup_at && <span>Next: {dayjs(it.next_followup_at).format("DD MMM YYYY")}</span>}
+                                                {it.employee && <span>By: <span style={{ color: "#262526", fontWeight: 500, textTransform: "capitalize" }}>{it.employee.username}</span></span>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        ) : (
+                            <div style={{ textAlign: "center", padding: 40, color: "#bfbfbf" }}>
+                                <HistoryOutlined style={{ fontSize: 32, display: "block", marginBottom: 8 }} />
+                                No interactions recorded yet.
+                            </div>
+                        )}
+                    </div>
+                )}
             </Modal>
         </>
     );
