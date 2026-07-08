@@ -1,3 +1,9 @@
+const formatNumber = (value) => {
+    return Number(value || 0).toLocaleString("en-US", {
+        maximumFractionDigits: 0,
+    });
+};
+
 export default function SaleBreakdown({dashboardSummary}) {
     return (
         <>
@@ -13,22 +19,22 @@ export default function SaleBreakdown({dashboardSummary}) {
 
                     <div className="wh-grid">
                         <div className="wh-cell">
-                            <div className="wh-val" style={{ color: "#5B21B6" }}>৳{dashboardSummary?.crosssell_today || 0}</div>
+                            <div className="wh-val" style={{ color: "#5B21B6" }}>৳{formatNumber(dashboardSummary?.crosssell_today || 0)}</div>
                             <div className="wh-lbl">Today</div>
                         </div>
 
                         <div className="wh-cell wh-br">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.crosssell_this_month || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.crosssell_this_month || 0)}</div>
                             <div className="wh-lbl">This month</div>
                         </div>
 
                         <div className="wh-cell wh-bt">
-                            <div className="wh-val" style={{ color: "#8B5CF6" }}>৳{dashboardSummary?.crosssell_this_year || 0}</div>
+                            <div className="wh-val" style={{ color: "#8B5CF6" }}>৳{formatNumber(dashboardSummary?.crosssell_this_year || 0)}</div>
                             <div className="wh-lbl">This year</div>
                         </div>
 
                         <div className="wh-cell wh-br wh-bt">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.crosssell_all_time || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.crosssell_all_time || 0)}</div>
                             <div className="wh-lbl">All time</div>
                         </div>
                     </div>
@@ -41,22 +47,22 @@ export default function SaleBreakdown({dashboardSummary}) {
 
                     <div className="wh-grid">
                         <div className="wh-cell">
-                            <div className="wh-val" style={{ color: "#0D7377" }}>৳{dashboardSummary?.downsell_today || 0}</div>
+                            <div className="wh-val" style={{ color: "#0D7377" }}>৳{formatNumber(dashboardSummary?.downsell_today || 0)}</div>
                             <div className="wh-lbl">Today</div>
                         </div>
 
                         <div className="wh-cell wh-br">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.downsell_this_month || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.downsell_this_month || 0)}</div>
                             <div className="wh-lbl">This month</div>
                         </div>
 
                         <div className="wh-cell wh-bt">
-                            <div className="wh-val" style={{ color: "#14B8A6" }}>৳{dashboardSummary?.downsell_this_year || 0}</div>
+                            <div className="wh-val" style={{ color: "#14B8A6" }}>৳{formatNumber(dashboardSummary?.downsell_this_year || 0)}</div>
                             <div className="wh-lbl">This year</div>
                         </div>
 
                         <div className="wh-cell wh-br wh-bt">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.downsell_all_time || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.downsell_all_time || 0)}</div>
                             <div className="wh-lbl">All time</div>
                         </div>
                     </div>
@@ -99,22 +105,22 @@ export default function SaleBreakdown({dashboardSummary}) {
 
                     <div className="wh-grid">
                         <div className="wh-cell">
-                            <div className="wh-val" style={{ color: "#EA580C" }}>৳{dashboardSummary?.followup_today || 0}</div>
+                            <div className="wh-val" style={{ color: "#EA580C" }}>৳{formatNumber(dashboardSummary?.followup_today || 0)}</div>
                             <div className="wh-lbl">Today</div>
                         </div>
 
                         <div className="wh-cell wh-br">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.followup_this_month || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.followup_this_month || 0)}</div>
                             <div className="wh-lbl">This month</div>
                         </div>
 
                         <div className="wh-cell wh-bt">
-                            <div className="wh-val" style={{ color: "#FB923C" }}>৳{dashboardSummary?.followup_this_year || 0}</div>
+                            <div className="wh-val" style={{ color: "#FB923C" }}>৳{formatNumber(dashboardSummary?.followup_this_year || 0)}</div>
                             <div className="wh-lbl">This year</div>
                         </div>
 
                         <div className="wh-cell wh-br wh-bt">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.followup_all_time || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.followup_all_time || 0)}</div>
                             <div className="wh-lbl">All time</div>
                         </div>
                     </div>
@@ -127,22 +133,22 @@ export default function SaleBreakdown({dashboardSummary}) {
 
                     <div className="wh-grid">
                         <div className="wh-cell">
-                            <div className="wh-val" style={{ color: "#92400E" }}>৳{dashboardSummary?.today_returned || 0}</div>
+                            <div className="wh-val" style={{ color: "#92400E" }}>৳{formatNumber(dashboardSummary?.today_returned || 0)}</div>
                             <div className="wh-lbl">Today</div>
                         </div>
 
                         <div className="wh-cell wh-br">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.this_month_returned || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.this_month_returned || 0)}</div>
                             <div className="wh-lbl">This month</div>
                         </div>
 
                         <div className="wh-cell wh-bt">
-                            <div className="wh-val" style={{ color: "#D97706" }}>৳{dashboardSummary?.this_year_returned || 0}</div>
+                            <div className="wh-val" style={{ color: "#D97706" }}>৳{formatNumber(dashboardSummary?.this_year_returned || 0)}</div>
                             <div className="wh-lbl">This year</div>
                         </div>
 
                         <div className="wh-cell wh-br wh-bt">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.all_time_returned || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.all_time_returned || 0)}</div>
                             <div className="wh-lbl">All time</div>
                         </div>
                     </div>
@@ -155,22 +161,22 @@ export default function SaleBreakdown({dashboardSummary}) {
 
                     <div className="wh-grid">
                         <div className="wh-cell">
-                            <div className="wh-val" style={{ color: "#B91C1C" }}>৳{dashboardSummary?.today_cancel || 0}</div>
+                            <div className="wh-val" style={{ color: "#B91C1C" }}>৳{formatNumber(dashboardSummary?.today_cancel || 0)}</div>
                             <div className="wh-lbl">Today</div>
                         </div>
 
                         <div className="wh-cell wh-br">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.this_month_cancel || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.this_month_cancel || 0)}</div>
                             <div className="wh-lbl">This month</div>
                         </div>
 
                         <div className="wh-cell wh-bt">
-                            <div className="wh-val" style={{ color: "#E05A5A" }}>৳{dashboardSummary?.this_year_cancel || 0}</div>
+                            <div className="wh-val" style={{ color: "#E05A5A" }}>৳{formatNumber(dashboardSummary?.this_year_cancel || 0)}</div>
                             <div className="wh-lbl">This year</div>
                         </div>
 
                         <div className="wh-cell wh-br wh-bt">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.all_time_cancel || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.all_time_cancel || 0)}</div>
                             <div className="wh-lbl">All time</div>
                         </div>
                     </div>

@@ -1,6 +1,10 @@
+const formatNumber = (value) => {
+    return Number(value || 0).toLocaleString("en-US", {
+        maximumFractionDigits: 0,
+    });
+};
+
 export default function SummaryCard({dashboardSummary}) {
-
-
     return (
         <>
             <div className="sec-label">Key metrics</div>
@@ -13,23 +17,23 @@ export default function SummaryCard({dashboardSummary}) {
                     <div className="wh-grid">
                         <div className="wh-cell">
                             <div className="wh-val" style={{ color: "#1E50A2" }}>
-                                {dashboardSummary?.today_orders || 0}
+                                {formatNumber(dashboardSummary?.today_orders || 0)}
                             </div>
                             <div className="wh-lbl">Today</div>
                         </div>
 
                         <div className="wh-cell wh-br">
-                            <div className="wh-val wh-dark">{dashboardSummary?.this_month_orders || 0}</div>
+                            <div className="wh-val wh-dark">{formatNumber(dashboardSummary?.this_month_orders || 0)}</div>
                             <div className="wh-lbl">This month</div>
                         </div>
 
                         <div className="wh-cell wh-bt">
-                            <div className="wh-val" style={{ color: "#5B8DD9" }}>{dashboardSummary?.this_year_orders || 0}</div>
+                            <div className="wh-val" style={{ color: "#5B8DD9" }}>{formatNumber(dashboardSummary?.this_year_orders || 0)}</div>
                             <div className="wh-lbl">This year</div>
                         </div>
 
                         <div className="wh-cell wh-br wh-bt">
-                            <div className="wh-val wh-dark">{dashboardSummary?.all_time_orders || 0}</div>
+                            <div className="wh-val wh-dark">{formatNumber(dashboardSummary?.all_time_orders || 0)}</div>
                             <div className="wh-lbl">All time</div>
                         </div>
                     </div>
@@ -42,22 +46,22 @@ export default function SummaryCard({dashboardSummary}) {
 
                     <div className="wh-grid">
                         <div className="wh-cell">
-                            <div className="wh-val" style={{ color: "#1E7A4A" }}>৳{dashboardSummary?.today_sales || 0}</div>
+                            <div className="wh-val" style={{ color: "#1E7A4A" }}>৳{formatNumber(dashboardSummary?.today_sales || 0)}</div>
                             <div className="wh-lbl">Today</div>
                         </div>
 
                         <div className="wh-cell wh-br">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.this_month_sales || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.this_month_sales || 0)}</div>
                             <div className="wh-lbl">This month</div>
                         </div>
 
                         <div className="wh-cell wh-bt">
-                            <div className="wh-val" style={{ color: "#4CAF82" }}>৳{dashboardSummary?.this_year_sales || 0}</div>
+                            <div className="wh-val" style={{ color: "#4CAF82" }}>৳{formatNumber(dashboardSummary?.this_year_sales || 0)}</div>
                             <div className="wh-lbl">This year</div>
                         </div>
 
                         <div className="wh-cell wh-br wh-bt">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.all_time_sales || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.all_time_sales || 0)}</div>
                             <div className="wh-lbl">All time</div>
                         </div>
                     </div>
@@ -69,22 +73,22 @@ export default function SummaryCard({dashboardSummary}) {
                     </div>
                     <div className="wh-grid">
                         <div className="wh-cell">
-                            <div className="wh-val" style={{ color: "#B91C1C" }}>৳{dashboardSummary?.incomplete_today || 0}</div>
+                            <div className="wh-val" style={{ color: "#B91C1C" }}>৳{formatNumber(dashboardSummary?.incomplete_today || 0)}</div>
                             <div className="wh-lbl">Today</div>
                         </div>
 
                         <div className="wh-cell wh-br">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.incomplete_this_month || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.incomplete_this_month || 0)}</div>
                             <div className="wh-lbl">This month</div>
                         </div>
 
                         <div className="wh-cell wh-bt">
-                            <div className="wh-val" style={{ color: "#E05A5A" }}>৳{dashboardSummary?.incomplete_this_year || 0}</div>
+                            <div className="wh-val" style={{ color: "#E05A5A" }}>৳{formatNumber(dashboardSummary?.incomplete_this_year || 0)}</div>
                             <div className="wh-lbl">This year</div>
                         </div>
 
                         <div className="wh-cell wh-br wh-bt">
-                            <div className="wh-val wh-dark">৳{dashboardSummary?.incomplete_all_time || 0}</div>
+                            <div className="wh-val wh-dark">৳{formatNumber(dashboardSummary?.incomplete_all_time || 0)}</div>
                             <div className="wh-lbl">All time</div>
                         </div>
                     </div>
