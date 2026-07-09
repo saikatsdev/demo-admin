@@ -25,6 +25,16 @@ export default function ProductEdit() {
 
     const { id }   = useParams();
     const navigate = useNavigate();
+    const productReturnUrl = useMemo(() => {
+        const params = new URLSearchParams(searchParams);
+
+        params.set("page", page);
+        params.set("paginate_size", pageSize);
+        params.set("highlight_product_id", id);
+        params.delete("pageSize");
+
+        return `/products?${params.toString()}`;
+    }, [id, page, pageSize, searchParams]);
 
     const [loading, setLoading]                                     = useState(false);
     const [errors, setErrors]                                       = useState({});
@@ -749,7 +759,7 @@ export default function ProductEdit() {
                     content: "Product updated successfully!",
                 });
                 
-                navigate(`/products?page=${page}&paginate_size=${pageSize}`);
+                navigate(productReturnUrl);
             } else {
                 setErrors(res.errors || {});
                 
@@ -824,7 +834,7 @@ export default function ProductEdit() {
                     <Space size="middle">
                         <Button 
                             icon={<ArrowLeftOutlined />} 
-                            onClick={() => window.history.back()} 
+                            onClick={() => navigate(productReturnUrl)} 
                             style={{ border: 'none', background: '#f1f5f9', borderRadius: '8px' }}
                         />
                         <div>
@@ -838,7 +848,7 @@ export default function ProductEdit() {
                     <Space>
                         <Button 
                             icon={<CloseOutlined />} 
-                            onClick={() => window.history.back()}
+                            onClick={() => navigate(productReturnUrl)}
                             style={{ borderRadius: '8px' }}
                         >
                             Cancel

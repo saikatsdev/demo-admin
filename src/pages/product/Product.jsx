@@ -2,7 +2,7 @@ import {ArrowLeftOutlined,BarcodeOutlined,CopyOutlined,DeleteOutlined,EditOutlin
 import {Input as AntInput,Typography,Breadcrumb,Badge,Tabs,Button,Col,Card,DatePicker,Descriptions,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {deleteData,getDatas,postData} from "../../api/common/common";
 import { useDebounce } from "../../hooks/useDebounce";
 import useTitle from "../../hooks/useTitle";
@@ -17,6 +17,7 @@ const { Option } = Select;
 
 const { Text, Title } = Typography;
 const DEFAULT_PRODUCT_PAGE_SIZE = 50;
+const PRODUCT_RETURN_FOCUS_KEY = "product_return_focus_id";
 
 export default function Product() {
     // Hook
@@ -32,6 +33,7 @@ export default function Product() {
 
     // Variable
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [searchQuery, setSearchQuery]               = useState("");
     const [selectedRowKeys, setSelectedRowKeys]       = useState([]);
@@ -83,9 +85,11 @@ export default function Product() {
     const [editingProduct, setEditingProduct]         = useState(null);
     const [quickEditLoading, setQuickEditLoading]     = useState(false);
     const [slugLoading, setSlugLoading]               = useState(false);
+    const [highlightedProductId, setHighlightedProductId] = useState(null);
     const [form]                                      = Form.useForm();
 
     const slugTimer = useRef(null);
+    const returnFocusConsumedRef = useRef(null);
 
     // Debounced search query
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -532,6 +536,8 @@ export default function Product() {
         const params = new URLSearchParams();
         params.append("page", currentPage);
         params.append("paginate_size", pageSize);
+        params.append("highlight_product_id", record.id);
+        sessionStorage.setItem(PRODUCT_RETURN_FOCUS_KEY, String(record.id));
         if (searchQuery) params.append("search", searchQuery);
         if (productStatus) params.append("status", productStatus);
         if (brandIds.length) params.append("brands", brandIds.join(","));
@@ -857,6 +863,37 @@ export default function Product() {
     useEffect(() => {
         fetchProductsData();
     }, [fetchProductsData]);
+
+    useEffect(() => {
+        if (!products.length) return;
+
+        const params = new URLSearchParams(location.search);
+        const focusProductId = params.get("highlight_product_id") || sessionStorage.getItem(PRODUCT_RETURN_FOCUS_KEY);
+
+        if (!focusProductId || !products.some((product) => String(product.id) === String(focusProductId))) return;
+        if (String(returnFocusConsumedRef.current) === String(focusProductId)) return;
+
+        returnFocusConsumedRef.current = focusProductId;
+        setHighlightedProductId(focusProductId);
+        sessionStorage.removeItem(PRODUCT_RETURN_FOCUS_KEY);
+
+        const scrollTimer = setTimeout(() => {
+            const tableRow = document.querySelector(`.product-table-desktop tr[data-row-key="${focusProductId}"]`);
+            const mobileRow = document.querySelector(`[data-product-id="${focusProductId}"]`);
+            const targetRow = tableRow || mobileRow;
+
+            targetRow?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 150);
+
+        const highlightTimer = setTimeout(() => {
+            setHighlightedProductId(null);
+        }, 3500);
+
+        return () => {
+            clearTimeout(scrollTimer);
+            clearTimeout(highlightTimer);
+        };
+    }, [products, location.search]);
 
 
     const handleQuickUpdate = async (values) => {
@@ -1256,6 +1293,7 @@ export default function Product() {
         
                     <div className="product-table-desktop">
                         <Table rowSelection={rowSelection} columns={columns} dataSource={products} loading={loading} tableLayout="fixed" size="small" bordered scroll={{ x: "max-content" }} rowKey="id"
+                            rowClassName={(record) => String(record.id) === String(highlightedProductId) ? "product-return-highlight-row" : ""}
                             pagination={{
                                 current: currentPage,
                                 pageSize: pageSize,
@@ -1281,7 +1319,7 @@ export default function Product() {
                                 const maxPrice = item?.variation_price_range?.max_price || 0;
             
                                 return (
-                                    <div key={item.id} className="mobile-card">
+                                    <div key={item.id} data-product-id={item.id} className={`mobile-card ${String(item.id) === String(highlightedProductId) ? "product-return-highlight-card" : ""}`}>
                                         <div className="mobile-top">
                                             <img
                                             src={item.image}

@@ -12,6 +12,21 @@
   text-overflow: ellipsis;
 }
 
+.product-table-desktop .ant-table-tbody > tr.product-return-highlight-row > td {
+  background: #fff7d6 !important;
+  transition: background-color 0.4s ease;
+}
+
+.product-table-desktop .ant-table-tbody > tr.product-return-highlight-row:hover > td {
+  background: #fff1b8 !important;
+}
+
+.product-return-highlight-card {
+  background: #fff7d6 !important;
+  border-color: #f7c948 !important;
+  transition: background-color 0.4s ease, border-color 0.4s ease;
+}
+
 /* Desktop visible, Mobile hidden */
 .product-table-desktop {
   display: block;
