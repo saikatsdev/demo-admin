@@ -472,7 +472,7 @@ export default function PrepareOrderList() {
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
                 <Col xs={24} sm={8}>
                     <Card bordered={false} className="summary-card" style={{ borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                        <Statistic title="Total Unprepared" value={summary.orders_count} prefix={<ShoppingCartOutlined style={{ color: '#1890ff' }} />}/>
+                        <Statistic title="Total Prepared" value={summary.orders_count} prefix={<ShoppingCartOutlined style={{ color: '#1890ff' }} />}/>
                     </Card>
                 </Col>
                 <Col xs={24} sm={8}>

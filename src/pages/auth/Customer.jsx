@@ -248,8 +248,7 @@ export default function Customer() {
 
             <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
                 <Col xs={24} md={8}>
-                    <Card 
-                        onClick={() => setActiveFilter("all")}
+                    <Card onClick={() => setActiveFilter("all")}
                         style={{ 
                             ...styles.statCard, 
                             background: activeFilter === "all" ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : '#fff',
@@ -258,13 +257,13 @@ export default function Customer() {
                         }}
                     >
                         <Space direction="vertical" size={0}>
-                            <Text style={{ color: activeFilter === "all" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>Total Registered Customers</Text>
+                            <Text style={{ color: activeFilter === "all" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>Total Customers</Text>
                             <Title level={2} style={{ color: activeFilter === "all" ? '#fff' : '#1e293b', margin: '8px 0', fontWeight: 800 }}>
                                 {Number(customerSummary?.total_customers) || 0}
                             </Title>
                             <Space style={{ color: activeFilter === "all" ? '#fff' : '#6366f1', fontSize: '12px', opacity: activeFilter === "all" ? 0.9 : 1 }}>
                                 <TeamOutlined />
-                                <span>Global Lifetime Base</span>
+                                <span>Lifetime Base</span>
                             </Space>
                         </Space>
                     </Card>
@@ -280,13 +279,13 @@ export default function Customer() {
                         }}
                     >
                         <Space direction="vertical" size={0}>
-                            <Text style={{ color: activeFilter === "new" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>New This Month</Text>
+                            <Text style={{ color: activeFilter === "new" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>New Customers</Text>
                             <Title level={2} style={{ color: activeFilter === "new" ? '#fff' : '#6366f1', margin: '8px 0', fontWeight: 800 }}>
                                 {Number(customerSummary?.current_month_customers) || 0}
                             </Title>
                             <Space style={{ color: activeFilter === "new" ? '#fff' : '#6366f1', fontSize: '12px', opacity: activeFilter === "new" ? 0.9 : 1 }}>
                                 <UserAddOutlined />
-                                <span>Recent Acquisitions</span>
+                                <span>Recent Orders</span>
                             </Space>
                         </Space>
                     </Card>
@@ -302,13 +301,13 @@ export default function Customer() {
                         }}
                     >
                         <Space direction="vertical" size={0}>
-                            <Text style={{ color: activeFilter === "active" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>Active Accounts</Text>
+                            <Text style={{ color: activeFilter === "active" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>Active Customers</Text>
                             <Title level={2} style={{ color: activeFilter === "active" ? '#fff' : '#16a34a', margin: '8px 0', fontWeight: 800 }}>
                                 {Number(customerSummary?.active_customers) || 0}
                             </Title>
                             <Space style={{ color: activeFilter === "active" ? '#fff' : '#16a34a', fontSize: '12px', opacity: activeFilter === "active" ? 0.9 : 1 }}>
                                 <CheckCircleOutlined />
-                                <span>Verified & Active</span>
+                                <span>Active</span>
                             </Space>
                         </Space>
                     </Card>
