@@ -12,6 +12,7 @@ import ProductImagePicker from "../../components/image/ProductImagePicker";
 import ProductGalleryPicker from "../../components/image/ProductGalleryPicker";
 
 const { Title, Text } = Typography;
+const DEFAULT_PRODUCT_PAGE_SIZE = 50;
 
 export default function ProductEdit() {
     // Hook
@@ -20,7 +21,7 @@ export default function ProductEdit() {
 	
 	const [searchParams] = useSearchParams();
     const page = searchParams.get("page") || 1;
-    const pageSize = searchParams.get("pageSize") || 10;
+    const pageSize = searchParams.get("paginate_size") || searchParams.get("pageSize") || DEFAULT_PRODUCT_PAGE_SIZE;
 
     const { id }   = useParams();
     const navigate = useNavigate();
@@ -748,7 +749,7 @@ export default function ProductEdit() {
                     content: "Product updated successfully!",
                 });
                 
-                navigate(`/products?page=${page}&pageSize=${pageSize}`);
+                navigate(`/products?page=${page}&paginate_size=${pageSize}`);
             } else {
                 setErrors(res.errors || {});
                 

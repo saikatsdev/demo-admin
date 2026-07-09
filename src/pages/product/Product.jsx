@@ -16,6 +16,7 @@ import { useAppSettings } from "../../contexts/useAppSettings";
 const { Option } = Select;
 
 const { Text, Title } = Typography;
+const DEFAULT_PRODUCT_PAGE_SIZE = 50;
 
 export default function Product() {
     // Hook
@@ -38,7 +39,7 @@ export default function Product() {
     const [products, setProducts]                     = useState([]);
     const [tableData, setTableData]                   = useState(null);
     const [currentPage, setCurrentPage]               = useState(1);
-    const [pageSize, setPageSize]                     = useState(10);
+    const [pageSize, setPageSize]                     = useState(DEFAULT_PRODUCT_PAGE_SIZE);
     const [productStatus, setProductStatus]           = useState("active");
     const [selectedAction, setSelectedAction]         = useState("");
     const [isActionShow, setIsActionShow]             = useState(false);
@@ -552,7 +553,7 @@ export default function Product() {
         const params = new URLSearchParams(location.search);
 
         setCurrentPage(parseInt(params.get("page")) || 1);
-        setPageSize(parseInt(params.get("paginate_size")) || 10);
+        setPageSize(parseInt(params.get("paginate_size")) || DEFAULT_PRODUCT_PAGE_SIZE);
         setSearchQuery(params.get("search") || "");
         
         const initialStatus = params.get("status") || "active";
