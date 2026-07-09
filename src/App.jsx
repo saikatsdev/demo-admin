@@ -176,6 +176,8 @@ import EditAttendance from "./pages/team/attendance/EditAttendance";
 import TeamSetting from "./pages/team/settings/TeamSetting";
 import Team from "./pages/team/Team";
 import ScreeningManager from "./components/auth/ScreeningManager";
+import PrepareOrderList from "./pages/team/PrepareOrderList";
+import UnAssignList from "./pages/team/UnAssignList";
 
 function App() {
     const dispatch         = useDispatch();
@@ -295,8 +297,10 @@ function App() {
 
                     <Route path="/team-settings" element={<TeamSetting/>}/>
 
-                    <Route path="/unprepared/list" element={<UnpreparedOrderList />} />
-                    <Route path="/assign-by-list" element={<AssignList />} />
+                    <Route path="/prepared/list" element={<PrepareOrderList/>} />
+                    <Route path="/unprepared/list" element={<UnpreparedOrderList/>} />
+                    <Route path="/unassign/list" element={<UnAssignList/>} />
+                    <Route path="/assign-by-list" element={<AssignList/>} />
                     {/* Team Module */}
 
                     <Route path="/product/catalogs" element={<ProductCatelog />} />
