@@ -134,7 +134,8 @@ const MetaAdsReport = () => {
                         },
                         { 
                             key: 'performance', 
-                            label: 'Ad Performance', 
+                            label: 'Ad Performance',
+                            forceRender: true,
                             children: (
                                 <PerformanceTabs selectedAccount={selectedAccount}/>
                             )

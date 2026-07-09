@@ -478,6 +478,51 @@
     display: none;
 }
 
+.al-stat-card {
+    border-radius: 10px !important;
+    border: 1px solid #f0f0f0 !important;
+    transition: box-shadow 0.2s ease;
+}
+
+.al-stat-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.al-stat-card .al-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 4px;
+    line-height: 1.2;
+}
+
+.al-stat-active .al-stat-value {
+    color: #389e0d;
+}
+
+.al-stat-warning .al-stat-value {
+    color: #d48806;
+}
+
+.account-limit-table-premium .ant-table-thead > tr > th {
+    background: #fafafa !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em;
+    color: #6b7280 !important;
+    white-space: nowrap;
+}
+
+.account-limit-table-premium .ant-table-tbody > tr > td {
+    vertical-align: middle;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+
+.account-limit-table-premium .ant-table-tbody > tr:hover > td {
+    background: #f9fafb !important;
+}
+
 .form-footer .create-btn:hover {
     background-color: #219186 !important;
     border-color: #219186 !important;

@@ -79,30 +79,30 @@ export default function CourierDeliveryReport({ data, onRecheck }) {
 
     return (
         <Card>
-        <div style={{display: "flex",justifyContent: "space-between",alignItems: "center",gap: 12,marginBottom: 8,}}> 
-            <div style={{ minWidth: 160, fontWeight: 600, color: "#7a7a7a" }}>
-                Delivery Success Rate
+            <div style={{display: "flex",justifyContent: "space-between",alignItems: "center",gap: 12,marginBottom: 8,}}> 
+                <div style={{ minWidth: 160, fontWeight: 600, color: "#7a7a7a" }}>
+                    Delivery Success Rate
+                </div>
+
+                <Space>
+                    <Button size="small" style={{backgroundColor: "#1C558B",color: "#fff",border: "none",}}onClick={() => onRecheck?.()} disabled={!onRecheck}> Re-Check </Button>
+
+                    <Button size="small" style={{ color: "#1C558B" }} onClick={() => setShowDetails((p) => !p)}>
+                        Details
+                    </Button>
+                </Space>
             </div>
 
-            <Space>
-                <Button size="small" style={{backgroundColor: "#1C558B",color: "#fff",border: "none",}}onClick={() => onRecheck?.()} disabled={!onRecheck}> Re-Check </Button>
 
-                <Button size="small" style={{ color: "#1C558B" }} onClick={() => setShowDetails((p) => !p)}>
-                    Details
-                </Button>
-            </Space>
-        </div>
+            <Progress percent={overallSuccess} strokeColor="#1C558B" strokeWidth={10} format={(p) => `${Math.round(p)}%`}/>
 
-
-        <Progress percent={overallSuccess} strokeColor="#1C558B" strokeWidth={10} format={(p) => `${Math.round(p)}%`}/>
-
-        {showDetails && (
-            <div style={{ marginTop: 12 }}>
-            <Table rowKey="courier_name" columns={columns} dataSource={courier_delivery_report} pagination={false} size="middle" scroll={{ x: 720 }}
-                locale={{ emptyText: <Empty description="No courier data" /> }}
-            />
-            </div>
-        )}
+            {showDetails && (
+                <div style={{ marginTop: 12 }}>
+                <Table rowKey="courier_name" columns={columns} dataSource={courier_delivery_report} pagination={false} size="middle" scroll={{ x: 720 }}
+                    locale={{ emptyText: <Empty description="No courier data" /> }}
+                />
+                </div>
+            )}
         </Card>
     );
 }

@@ -19,6 +19,7 @@ const MetaAdAccount = () => {
     const [loading, setLoading]       = useState(true);
     const [error, setError]           = useState(null);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
+    const [updatingId, setUpdatingId] = useState(null);
 
     // API
     const getAccounts = async () => {
@@ -35,8 +36,6 @@ const MetaAdAccount = () => {
             setLoading(false);
         }
     }
-
-    const [updatingId, setUpdatingId] = useState(null);
 
     const toggleStatus = async (id, currentStatus) => {
         try {
