@@ -1,0 +1,526 @@
+/* =========================================================
+   UnAssign Order List — Admin Design
+   Brand: #1C558B
+   ========================================================= */
+
+.ual-page {
+  --ual-brand: #1c558b;
+  --ual-brand-dark: #14426c;
+  --ual-brand-soft: #e8f1f8;
+  --ual-brand-mid: #d0e4f2;
+  --ual-ink: #0f172a;
+  --ual-ink-2: #334155;
+  --ual-muted: #64748b;
+  --ual-line: #e2e8f0;
+  --ual-line-strong: #cbd5e1;
+  --ual-surface: #ffffff;
+  --ual-success: #059669;
+  --ual-success-bg: #ecfdf5;
+  --ual-danger: #dc2626;
+  --ual-danger-bg: #fef2f2;
+  --ual-warning: #d97706;
+  --ual-warning-bg: #fffbeb;
+  --ual-radius: 10px;
+  --ual-shadow: 0 1px 2px rgba(15, 23, 42, 0.04),
+    0 4px 12px rgba(15, 23, 42, 0.04);
+
+  color: var(--ual-ink);
+}
+
+.ual-page .pagehead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
+  border: 1px solid var(--ual-line);
+  border-radius: var(--ual-radius);
+  box-shadow: var(--ual-shadow);
+}
+
+.ual-page .pagehead .title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ual-ink);
+}
+
+.ual-page .pagehead .subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ual-muted);
+  font-weight: 500;
+}
+
+.ual-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  background: var(--ual-surface);
+  border: 1px solid var(--ual-line);
+  border-radius: var(--ual-radius);
+  box-shadow: var(--ual-shadow);
+}
+
+.ual-toolbar .ant-input-affix-wrapper,
+.ual-toolbar .ant-picker,
+.ual-toolbar .ant-btn {
+  border-radius: 8px;
+  height: 38px;
+}
+
+.ual-toolbar .ant-btn-primary {
+  background: var(--ual-brand);
+  border-color: var(--ual-brand);
+}
+
+.ual-toolbar .ant-btn-primary:hover {
+  background: var(--ual-brand-dark) !important;
+  border-color: var(--ual-brand-dark) !important;
+}
+
+.ual-selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  background: var(--ual-surface);
+  border: 1px solid var(--ual-line);
+  border-left: 4px solid var(--ual-brand);
+  border-radius: var(--ual-radius);
+  box-shadow: var(--ual-shadow);
+}
+
+.ual-selection__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ual-selection__count {
+  background: var(--ual-brand-soft);
+  color: var(--ual-brand);
+  border: 1px solid var(--ual-brand-mid);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ual-selection__text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ual-ink);
+}
+
+.ual-table-card {
+  background: var(--ual-surface);
+  border: 1px solid var(--ual-line);
+  border-radius: var(--ual-radius);
+  box-shadow: var(--ual-shadow);
+  overflow: hidden;
+}
+
+.ual-table-card .ant-table-thead > tr > th {
+  background: #f1f5f9 !important;
+  color: var(--ual-ink-2) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--ual-line) !important;
+  padding: 12px 14px !important;
+  white-space: nowrap;
+}
+
+.ual-table-card .ant-table-tbody > tr > td {
+  border-color: #f1f5f9 !important;
+  padding: 14px !important;
+  vertical-align: top;
+}
+
+.ual-table-card .ant-table-tbody > tr:hover > td {
+  background: #f8fbff !important;
+}
+
+.ual-table-card .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: var(--ual-brand-soft) !important;
+}
+
+.ual-table-card .ant-pagination {
+  padding: 12px 16px;
+  margin: 0 !important;
+  background: #fafbfc;
+  border-top: 1px solid var(--ual-line);
+}
+
+/* ---- Cell blocks ---- */
+.ual-invoice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ual-invoice__no {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ual-brand);
+  letter-spacing: 0.01em;
+}
+
+.ual-invoice__date {
+  font-size: 12px;
+  color: var(--ual-muted);
+  font-weight: 500;
+}
+
+.ual-customer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ual-customer__name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ual-ink);
+}
+
+.ual-customer__phone {
+  font-size: 12px;
+  color: var(--ual-ink-2);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ual-customer__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 11px;
+  color: var(--ual-muted);
+  line-height: 1.4;
+}
+
+.ual-customer__district {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--ual-brand);
+  background: var(--ual-brand-soft);
+  border: 1px solid var(--ual-brand-mid);
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.ual-customer__address {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ual-finance {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 150px;
+}
+
+.ual-finance__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.ual-finance__label {
+  color: var(--ual-muted);
+  font-weight: 500;
+}
+
+.ual-finance__value {
+  font-weight: 600;
+  color: var(--ual-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.ual-finance__value--main {
+  color: var(--ual-ink);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.ual-finance__value--muted {
+  color: var(--ual-muted);
+  text-decoration: line-through;
+  font-weight: 500;
+}
+
+.ual-finance__value--discount {
+  color: var(--ual-warning);
+}
+
+.ual-finance__divider {
+  height: 1px;
+  background: var(--ual-line);
+  margin: 2px 0;
+}
+
+.ual-paid {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ual-paid--paid {
+  background: var(--ual-success-bg);
+  color: var(--ual-success);
+  border: 1px solid #a7f3d0;
+}
+
+.ual-paid--unpaid {
+  background: var(--ual-danger-bg);
+  color: var(--ual-danger);
+  border: 1px solid #fecaca;
+}
+
+.ual-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ual-logistics {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ual-logistics__courier {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ual-ink);
+}
+
+.ual-logistics__gateway {
+  font-size: 12px;
+  color: var(--ual-muted);
+  font-weight: 500;
+}
+
+.ual-logistics__track {
+  font-size: 11px;
+  color: var(--ual-ink-2);
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.ual-logistics__empty {
+  color: var(--ual-muted);
+  font-size: 12px;
+}
+
+.ual-upsell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #eef2ff;
+  color: #4338ca;
+  border: 1px solid #c7d2fe;
+}
+
+.ual-upsell--empty {
+  background: #f8fafc;
+  color: var(--ual-muted);
+  border-color: var(--ual-line);
+}
+
+.ual-money {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--ual-ink);
+}
+
+.ual-due {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ual-due--owed {
+  background: var(--ual-danger-bg);
+  color: var(--ual-danger);
+}
+
+.ual-due--clear {
+  background: var(--ual-success-bg);
+  color: var(--ual-success);
+}
+
+.ual-assign-modal .ant-modal-header {
+  border-bottom: 1px solid var(--ual-line);
+  margin-bottom: 12px;
+}
+
+.ual-assign-hint {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--ual-brand-soft);
+  border: 1px solid var(--ual-brand-mid);
+  border-radius: 8px;
+  color: var(--ual-brand);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ual-view-btn.ant-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: var(--ual-brand);
+  background: var(--ual-brand-soft);
+  border: 1px solid var(--ual-brand-mid);
+}
+
+.ual-view-btn.ant-btn:hover {
+  color: #fff !important;
+  background: var(--ual-brand) !important;
+  border-color: var(--ual-brand) !important;
+}
+
+.ual-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ual-preview-invoice {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ual-brand);
+  background: var(--ual-brand-soft);
+  border: 1px solid var(--ual-brand-mid);
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.ual-preview {
+  margin-top: 4px;
+}
+
+.ual-preview-card {
+  background: #fff;
+  border: 1px solid var(--ual-line);
+  border-radius: 10px;
+  padding: 14px 16px;
+  height: 100%;
+}
+
+.ual-preview-card__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ual-muted);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--ual-line);
+}
+
+.ual-preview-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+
+.ual-preview-field__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ual-muted);
+}
+
+.ual-preview-field__value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ual-ink);
+  word-break: break-word;
+}
+
+.ual-preview-field__value--strong {
+  color: var(--ual-brand);
+  font-size: 14px;
+}
+
+.ual-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+
+.ual-preview-upsell-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ual-preview-upsell-item {
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid var(--ual-line);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ual-ink-2);
+}
+
+@media (max-width: 768px) {
+  .ual-page .pagehead {
+    padding: 14px;
+  }
+
+  .ual-toolbar {
+    padding: 12px;
+  }
+
+  .ual-preview-grid {
+    grid-template-columns: 1fr;
+  }
+}
