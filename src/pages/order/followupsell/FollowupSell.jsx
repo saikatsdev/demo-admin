@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,MessageOutlined, PhoneFilled, HistoryOutlined} from '@ant-design/icons';
+import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,MessageOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined} from '@ant-design/icons';
 import {
     Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,
     DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider, Spin,
@@ -664,6 +664,10 @@ export default function FollowupSell() {
         },
     ];
 
+    const assignOrder = () => {
+        navigate('/assign/orders');
+    }
+
     return (
         <>
             {contextHolder}
@@ -754,6 +758,7 @@ export default function FollowupSell() {
                         <DatePicker.RangePicker format="YYYY-MM-DD" value={dateRange} onChange={setDateRange} />
                     </Space>
                     <Space>
+                        <Button icon={<UserSwitchOutlined />} onClick={() => assignOrder()}>Assign Orders</Button>
                         <Button icon={<ReloadOutlined />} onClick={() => fetchOrders(1, pagination.pageSize)}>Refresh</Button>
                         <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
                     </Space>

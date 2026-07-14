@@ -178,6 +178,7 @@ import Team from "./pages/team/Team";
 import ScreeningManager from "./components/auth/ScreeningManager";
 import PrepareOrderList from "./pages/team/PrepareOrderList";
 import UnAssignList from "./pages/team/UnAssignList";
+import OrderList from "./pages/order/followupsell/order/OrderList";
 
 function App() {
     const dispatch         = useDispatch();
@@ -283,6 +284,8 @@ function App() {
                     <Route path="/edit/review/:id" element={<EditReview />} />
 
                     <Route path="/section-banner" element={<SectionBanner />} />
+
+                    <Route path="/assign/orders" element={<OrderList />} />
 
                     {/* Meta Module */}
                     <Route path="/meta-ads-report" element={<MetaAdsReport />} />

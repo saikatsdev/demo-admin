@@ -59,7 +59,18 @@
   font-weight: 500;
 }
 
-@media(max-width: 768px) {
+@media (min-width: 992px) {
+  .tutorial-row .col-lg-3 {
+    flex: 0 0 auto;
+    width: 26%;
+  }
+  .tutorial-row .col-lg-9 {
+    flex: 0 0 auto;
+    width: 73%;
+  }
+}
+
+@media (max-width: 768px) {
   .video-grid {
     grid-template-columns: 1fr;
   }
