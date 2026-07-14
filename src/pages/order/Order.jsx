@@ -2087,615 +2087,561 @@ export default function Order() {
         <>
             {contextHolder}
 
-            <Row>
-                <Col span={24}>
-                    <Row style={{ marginBottom: 25 }}>
-                        <Col xs={24} md={16} style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                            <div style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 12,
-                                borderLeft: "4px solid #667eea",
-                                paddingLeft: 14,
-                            }}>
-                                <ContainerOutlined style={{ color: "#667eea", fontSize: 20 }} />
-                                <span style={{ color: "#1a1a2e", fontSize: 20, fontWeight: 700, letterSpacing: 0.3 }}>
-                                    All Orders
-                                </span>
-                                <Tag style={{ margin: 0, background: "#f0f5ff", border: "1px solid #d6e4ff", color: "#667eea", borderRadius: 6, fontWeight: 600 }}>
-                                    {totalOrder || 0}
-                                </Tag>
+            <div className="orders-page">
+                <div className="orders-page-header">
+                    <div className="orders-page-header__left">
+                        <div className="orders-page-title-block">
+                            <span className="orders-page-title-icon">
+                                <ContainerOutlined />
+                            </span>
+                            <div className="orders-page-title-text">
+                                <h1>All Orders</h1>
+                                <p>Manage, filter and fulfill customer orders</p>
                             </div>
-                            <Button
-                                icon={<ReloadOutlined />}
-                                onClick={() => getOrders(currentPage)}
-                                style={{
-                                    border: "1px solid #e8e8e8",
-                                    borderRadius: 8,
-                                    color: "#595959",
-                                    fontSize: 13,
-                                    transition: "all 0.2s",
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = "#fafafa"}
-                                onMouseLeave={(e) => e.currentTarget.style.background = ""}
-                            >
-                                Refresh
-                            </Button>
-                        </Col>
-                        
-                        <Col xs={24} md={8} style={{display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap"}}>
-                            <div className="form-actions" style={{ display: "flex", gap: 8,  }}>
-                                <div>
-                                    {isActionShow && (
-                                        <Spin spinning={csvLoading}>
-                                            <Select value={selectedAction} onChange={handleOrderAction} placeholder="Action" style={{ width: 160, height: 40 }}>
-                                                <Option value="">Select Action</Option>
-                                                <Option value="change-status">Payment Status</Option>
-                                                <Option value="print-invoice">Print Invoice</Option>
-                                                <Option value="change-current-order-status">Order Status</Option>
-                                                <Option value="order-assign">Order Assign</Option>
-                                                <Option value="csv">Download CSV</Option>
-                                            </Select>
-                                        </Spin>
-                                    )}
-                                </div>
+                        </div>
+                    </div>
 
-                                {can("orders-create") && (
-                                    <Button type="primary" onClick={addOrder} icon={<PlusOutlined/>}>
-                                        Add
-                                    </Button>
-                                )}
-                
-                                <Col>
-                                    <Button danger icon={<DeleteOutlined />} onClick={handleTrashClick}>Trash</Button>
-                                </Col>
-                
-                                <Button onClick={isTrash ? backOrders : backPage} icon={<ArrowLeftOutlined />}>
-                                    Back
-                                </Button>
-                            </div>
-                        </Col>
-                    </Row>
-					
-					{selectedOrderIds.length > 0 && (
-                        <div style={{
-                            background: "#fff",
-                            padding: "16px",
-                            borderRadius: "12px",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-                            marginBottom: "20px",
-                            border: "1px solid #e1e8f0",
-                            borderLeft: "4px solid #1890ff"
-                        }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                    <div style={{ 
-                                        backgroundColor: "#e6f7ff", 
-                                        color: "#1890ff", 
-                                        padding: "4px 12px", 
-                                        borderRadius: "6px", 
-                                        fontWeight: "bold",
-                                        fontSize: "14px"
-                                    }}>
-                                        {selectedOrderIds.length} Selected
-                                    </div>
-                                    <span style={{ fontWeight: 700, fontSize: "16px", color: "#262626" }}>Selected Phone Numbers</span>
+                    <div className="orders-page-header__actions form-actions">
+                        {isActionShow && (
+                            <Spin spinning={csvLoading}>
+                                <Select value={selectedAction} onChange={handleOrderAction} placeholder="Action" style={{ width: 160, height: 38 }}>
+                                    <Option value="">Select Action</Option>
+                                    <Option value="change-status">Payment Status</Option>
+                                    <Option value="print-invoice">Print Invoice</Option>
+                                    <Option value="change-current-order-status">Order Status</Option>
+                                    <Option value="order-assign">Order Assign</Option>
+                                    <Option value="csv">Download CSV</Option>
+                                </Select>
+                            </Spin>
+                        )}
+
+                        {can("orders-create") && (
+                            <Button type="primary" onClick={addOrder} icon={<PlusOutlined/>}>
+                                Add Order
+                            </Button>
+                        )}
+
+                        <Button danger icon={<DeleteOutlined />} onClick={handleTrashClick}>Trash</Button>
+
+                        <Button
+                            className="orders-refresh-btn"
+                            icon={<ReloadOutlined />}
+                            onClick={() => getOrders(currentPage)}
+                        >
+                            Refresh
+                        </Button>
+
+                        <Button onClick={isTrash ? backOrders : backPage} icon={<ArrowLeftOutlined />}>
+                            Back
+                        </Button>
+                    </div>
+                </div>
+
+                {selectedOrderIds.length > 0 && (
+                    <div className="orders-selection-bar">
+                        <div className="orders-selection-bar__top">
+                            <div className="orders-selection-bar__meta">
+                                <div className="orders-selection-count">
+                                    {selectedOrderIds.length} Selected
                                 </div>
-                                <Space>
-                                    <Button 
-                                        type="primary" 
-                                        icon={<CopyOutlined />}
-                                        size="middle"
-                                        style={{ borderRadius: "6px" }}
-                                        onClick={() => {
-                                            const phones = orders?.data
-                                                ?.filter(o => selectedOrderIds.includes(o.id))
-                                                ?.map(o => o.phone_number)
-                                                .join(", ");
-                                            if (phones) {
-                                                navigator.clipboard.writeText(phones);
-                                                message.success("Selected phone numbers copied to clipboard!");
-                                            } else {
-                                                message.warning("No phone numbers available in current view to copy.");
-                                            }
-                                        }}
-                                    >
-                                        Copy Current Page
-                                    </Button>
-                                    <Button 
-                                        onClick={() => {
-                                            setSelectedOrderIds([]);
-                                            setIsActionShow(false);
-                                        }}
-                                        style={{ borderRadius: "6px" }}
-                                    >
-                                        Clear Selection
-                                    </Button>
-                                </Space>
+                                <span className="orders-selection-title">Selected Phone Numbers</span>
                             </div>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", maxHeight: "150px", overflowY: "auto", padding: "4px" }}>
-                                {orders?.data
-                                    ?.filter(o => selectedOrderIds.includes(o.id))
-                                    ?.map(order => (
-                                        <Tag 
-                                            key={order.id} 
-                                            color="processing" 
-                                            closable 
-                                            onClose={() => {
-                                                const newSelected = selectedOrderIds.filter(id => id !== order.id);
-                                                setSelectedOrderIds(newSelected);
-                                                if (newSelected.length === 0) setIsActionShow(false);
-                                            }}
-                                            style={{ 
-                                                margin: 0, 
-                                                borderRadius: "4px", 
-                                                padding: "4px 10px",
-                                                fontSize: "13px",
-                                                fontWeight: "500",
-                                                border: "1px solid #91d5ff"
-                                            }}
-                                        >
-                                            {order.phone_number}
-                                        </Tag>
-                                    ))
-                                }
-                                {selectedOrderIds.length > (orders?.data?.filter(o => selectedOrderIds.includes(o.id)).length || 0) && (
-                                    <Tag color="warning" style={{ margin: 0, borderRadius: "4px", padding: "4px 10px" }}>
-                                        + {selectedOrderIds.length - (orders?.data?.filter(o => selectedOrderIds.includes(o.id)).length || 0)} more on other pages
+                            <Space>
+                                <Button
+                                    type="primary"
+                                    icon={<CopyOutlined />}
+                                    size="middle"
+                                    onClick={() => {
+                                        const phones = orders?.data
+                                            ?.filter(o => selectedOrderIds.includes(o.id))
+                                            ?.map(o => o.phone_number)
+                                            .join(", ");
+                                        if (phones) {
+                                            navigator.clipboard.writeText(phones);
+                                            message.success("Selected phone numbers copied to clipboard!");
+                                        } else {
+                                            message.warning("No phone numbers available in current view to copy.");
+                                        }
+                                    }}
+                                >
+                                    Copy Current Page
+                                </Button>
+                                <Button
+                                    onClick={() => {
+                                        setSelectedOrderIds([]);
+                                        setIsActionShow(false);
+                                    }}
+                                >
+                                    Clear Selection
+                                </Button>
+                            </Space>
+                        </div>
+                        <div className="orders-selection-phones">
+                            {orders?.data
+                                ?.filter(o => selectedOrderIds.includes(o.id))
+                                ?.map(order => (
+                                    <Tag
+                                        key={order.id}
+                                        color="processing"
+                                        closable
+                                        onClose={() => {
+                                            const newSelected = selectedOrderIds.filter(id => id !== order.id);
+                                            setSelectedOrderIds(newSelected);
+                                            if (newSelected.length === 0) setIsActionShow(false);
+                                        }}
+                                    >
+                                        {order.phone_number}
                                     </Tag>
-                                )}
-                            </div>
+                                ))
+                            }
+                            {selectedOrderIds.length > (orders?.data?.filter(o => selectedOrderIds.includes(o.id)).length || 0) && (
+                                <Tag color="warning">
+                                    + {selectedOrderIds.length - (orders?.data?.filter(o => selectedOrderIds.includes(o.id)).length || 0)} more on other pages
+                                </Tag>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <div className="orders-filter-panel">
+                    <div className="orders-filter-panel__head">
+                        <h3>Filters</h3>
+                    </div>
+                    <div className="filter-actions">
+                        <div className="filter-item">
+                            <label className="filter-label">Payment Status</label>
+                            <Select value={isPaid} onChange={(value) => {setIsPaid(value);getOrders(1, { paid_status: value });}} placeholder="Is Paid" style={{ width: 170, height: 40 }}allowClear>
+                                <Option value="Paid">Paid</Option>
+                                <Option value="Unpaid">Unpaid</Option>
+                            </Select>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">Order Tag</label>
+                            <Select value={orderTagId} onChange={(value) => {setOrderTagId(value);getOrders(1, { order_from_id: value });}} placeholder="Order Tag" style={{ width: 170, height: 40 }} allowClear>
+                                {orderTagList?.map((item) => (
+                                    <Option key={item.id} value={item.id}>
+                                        {item.name}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">Customer Type</label>
+                            <Select value={selectedCustomerTypeId} onChange={(value) => {setSelectedCustomerTypeId(value);getOrders(1, { customer_type_id: value });}} placeholder="Customer Type" style={{ width: 170, height: 40 }} allowClear>
+                                {customerTypeList?.map((item) => (
+                                    <Option key={item.id} value={item.id}>
+                                        {item.name}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">Employee</label>
+                            <Select value={employeeId} onChange={(value) => {setEmployeeId(value);getOrders(1, { assign_user_id: value });}}placeholder="Employee" style={{ width: 170, height: 40 }} allowClear>
+                                {employeeList?.map((item) => (
+                                    <Option key={item.id} value={item.id}>
+                                        {item.username}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">Courier</label>
+                            <Select value={selectedCourier} onChange={(value) => {setSelectedCourier(value);getOrders(1, { courier_id: value });}} placeholder="Courier" style={{ width: 170, height: 40 }}
+                            allowClear>
+                                {couriers?.map((item) => (
+                                    <Option key={item.id} value={item.id}>
+                                        {item.name}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">District</label>
+                            <Select value={selectedDistrictId} onChange={(value) => {setSelectedDistrictId(value); getOrders(1, { district_id: value });}} placeholder="District"
+                            style={{ width: 170, height: 40 }} allowClear>
+                                {districtList?.map((item) => (
+                                    <Option key={item.id} value={item.id}>
+                                        {item.name}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">Min Price</label>
+                            <Input value={minPrice} onChange={(e) => {setMinPrice(e.target.value);getOrders(1, { min_price: e.target.value });}} placeholder="Min Price"style={{ width: 170, height: 40 }}/>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">Max Price</label>
+                            <Input value={maxPrice} onChange={(e) => {setMaxPrice(e.target.value);getOrders(1, { max_price: e.target.value });}} placeholder="Max Price" style={{ width: 170, height: 40 }}/>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">Start Invoice</label>
+                            <Input value={minInvoice} onChange={(e) => {setMinInvoice(e.target.value); getOrders(1, { min_invoice: e.target.value });}} placeholder="Start Invoice"style={{ width: 170, height: 40 }}/>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">End Invoice</label>
+                            <Input value={maxInvoice} onChange={(e) => {setMaxInvoice(e.target.value); getOrders(1, { max_invoice: e.target.value });}} placeholder="End Invoice" style={{ width: 170, height: 40 }}
+                            />
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">Start Date</label>
+                            <DatePicker value={startDate ? dayjs(startDate) : null} onChange={(date) => {setStartDate(date); getOrders(1, {start_date: date ? dayjs(date).format("YYYY-MM-DD"): "",
+                                });}} style={{ width: 170, height: 40 }}/>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">End Date</label>
+                            <DatePicker value={endDate ? dayjs(endDate) : null} onChange={(date) => {setEndDate(date);getOrders(1, {end_date: date? dayjs(date).format("YYYY-MM-DD"): "",
+                                });}} style={{ width: 170, height: 40 }}/>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">Invoice Status</label>
+                            <Select value={invoiceStatus} onChange={(value) => {setInvoiceStatus(value);getOrders(1, { is_invoice_printed: value });}} placeholder="Invoice Status"style={{ width: 170, height: 40 }}allowClear>
+                                <Option value={1}>Printed</Option>
+                                <Option value={0}>Not Printed</Option>
+                            </Select>
+                        </div>
+
+                        <div className="filter-item">
+                            <label className="filter-label">Search</label>
+                            <Input
+                                className="orders-search-input"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onPressEnter={filterData}
+                                placeholder="Search Key..."
+                                prefix={<SearchOutlined />}
+                                style={{ width: 250, height: 40 }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="orders-active-filters">
+                        {statusId && (
+                            <Tag closable onClose={() => {allOrderStatus();}}>
+                                Status: {orderStatus?.find((o) => Number(o.status_id) === statusId)?.status_name || "N/A"}
+                            </Tag>
+                        )}
+
+                        {isPaid && (
+                            <Tag closable onClose={() => {setIsPaid(null);getOrders(1);}}>
+                                Paid: {isPaid}
+                            </Tag>
+                        )}
+
+                        {selectedCustomerTypeId && (
+                            <Tag closable onClose={() => {setSelectedCustomerTypeId(null);getOrders(1, { customer_type_id: null });}}>
+                                Customer Type: {customerTypeList?.find((c) => c.id === selectedCustomerTypeId)?.name || "N/A"}
+                            </Tag>
+                        )}
+
+                        {orderTagId && (
+                            <Tag closable onClose={() => {setOrderTagId(null); getOrders(1);}}>
+                                Order Tag: {orderTagList?.find((t) => t.id === orderTagId)?.name || "N/A"}
+                            </Tag>
+                        )}
+
+                        {selectedDistrictId && (
+                            <Tag closable onClose={() => {setSelectedDistrictId(null);getOrders(1, { district_id: null });}}>
+                                District:{districtList?.find((d) => d.id === selectedDistrictId)?.name || "N/A"}
+                            </Tag>
+                        )}
+
+                        {employeeId && (
+                            <Tag closable onClose={() => {setEmployeeId(null);getOrders(1, { assign_user_id: null });}}>
+                                Employee:{employeeList?.find((e) => e.id === employeeId)?.name || "N/A"}
+                            </Tag>
+                        )}
+
+                        {selectedCourier && (
+                            <Tag closable onClose={() => {setSelectedCourier(null);getOrders(1, { courier_id: null });}}>
+                                Courier: {couriers?.find((c) => c.id === selectedCourier) ?.name || "N/A"}
+                            </Tag>
+                        )}
+
+                        {minPrice && (
+                            <Tag closable onClose={() => {setMinPrice(""); getOrders(1);}}>
+                                Min Price: ৳{minPrice}
+                            </Tag>
+                        )}
+
+                        {maxPrice && (
+                            <Tag closable onClose={() => {setMaxPrice(""); getOrders(1);}}>
+                                Max Price: ৳{maxPrice}
+                            </Tag>
+                        )}
+
+                        {minInvoice && (
+                            <Tag closable onClose={() => {setMinInvoice("");getOrders(1);}}>
+                                Invoice Start: {minInvoice}
+                            </Tag>
+                        )}
+
+                        {maxInvoice && (
+                            <Tag closable onClose={() => {setMaxInvoice(""); getOrders(1);}}>
+                                Invoice End: {maxInvoice}
+                            </Tag>
+                        )}
+
+                        {startDate && (
+                            <Tag closable onClose={() => {setStartDate(null);getOrders(1);}}>
+                                Start: {dayjs(startDate).format("YYYY-MM-DD")}
+                            </Tag>
+                        )}
+
+                        {endDate && (
+                            <Tag closable onClose={() => {setEndDate(null);getOrders(1);}}>
+                                End: {dayjs(endDate).format("YYYY-MM-DD")}
+                            </Tag>
+                        )}
+
+                        {invoiceStatus !== null && invoiceStatus !== undefined && (
+                            <Tag closable onClose={() => {setInvoiceStatus(null);getOrders(1);}}>
+                                Invoice: {invoiceStatus === 1 ? "Printed" : "Not Printed"}
+                            </Tag>
+                        )}
+
+                        {searchQuery && (
+                            <Tag closable onClose={() => {setSearchQuery("");getOrders(1);}}>
+                                Search: {searchQuery}
+                            </Tag>
+                        )}
+                    </div>
+                </div>
+
+                <div className="orders-status-toolbar">
+                    <div className="all-status-tags">
+                        {hasAnyRole(['admin', 'superadmin']) && (
+                            <span className={isAllOrders ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${orders?.total_amount}`} onClick={allOrderStatus}>
+                                All Orders
+                                <span className={isAllOrders ? "status-tags-child-child-active" : "status-tags-child-child"}>
+                                    {totalOrder}
+                                </span>
+                            </span>
+                        )}
+
+                        {orderStatus?.slice(0, 8).map((status) => (
+                            <span key={status.status_id} className={Number(status.status_id) === statusId ? "status-tags-child-active" : "status-tags-child"}
+                                data-tooltip={`BDT ${status.total_payable}`} onClick={() => getStatusWiseOrder(Number(status.status_id))}>
+                                {status.status_name}
+
+                                <span className={Number(status.status_id) === statusId ? "status-tags-child-child-active" : "status-tags-child-child"}>
+                                    {status.order_count}
+                                </span>
+                            </span>
+                        ))}
+
+                        {orderStatus?.some((s) => [9, 10].includes(Number(s.status_id))) && (
+                            <span className={[9, 10, 11, 12].includes(statusId) ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${orderStatus?.filter((s) => [9, 10].includes(Number(s.status_id))).reduce((total, s) => total + Number(s.total_payable || 0), 0)}`} onClick={getReturnAndDamageOrder}>
+                                Return & Damage
+                                <span className={[9, 10, 11, 12].includes(statusId) ? "status-tags-child-child-active" : "status-tags-child-child"}>
+                                    {orderStatus?.filter((s) => [9, 10].includes(Number(s.status_id))).reduce((total, s) => Number(total) + Number(s.order_count), 0)}
+                                </span>
+                            </span>
+                        )}
+                    </div>
+
+                    {statusId === 4 && (
+                        <div className="orders-substatus-row all-status-tags" style={isMobile ? {padding: "10px", border: "1px solid #cbcbcb", borderRadius: 8} : {}}>
+                            {courierList?.map((courier, index) => (
+                                <span className="order-status-courier" key={index} onClick={() => getCourierWiseOrder(courier?.id)} data-tooltip={`BDT ${courier?.total_amount}`}
+                                    style={{ border: courier?.id === courierId ? "1px solid #1c558b" : "1px solid #7eb8d4", backgroundColor: courier?.id === courierId ? "#1c558b" : "#3d8fb5",
+                                        color: "#fff",
+                                    }}
+                                    onMouseEnter={e => {
+                                        if (courier?.id !== courierId) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";
+                                    }}
+                                    onMouseLeave={e => {
+                                        if (courier?.id !== courierId) e.currentTarget.style.boxShadow = "none";
+                                    }}
+                                    >
+
+                                    <span style={{ marginRight: 4, display: "flex", alignItems: "center" }}>
+                                        <ContainerOutlined style={{fontSize: 12,color: "#fff"}}/>
+                                    </span>
+
+                                    {courier?.name}
+
+                                    <span style={{ marginLeft: 6, fontWeight: "bold" }}>
+                                        {courier?.orders_count}
+                                    </span>
+                                </span>
+                            ))}
+
+                            {orderStatus?.filter(status => Number(status.status_id) === 4).map((status, index) => (
+                                <span key={index} onClick={() => getCourierStatusWiseOrder(Number(13))} data-tooltip={`BDT ${status?.courier_pending_amount}`} className="order-status-partial" onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";}} onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "none";}}>
+                                    <span style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
+                                        <ExclamationCircleOutlined style={{fontSize: 14,color: "#C98209"}}/>
+                                    </span>
+
+                                    Courier Pending:
+
+                                    <span style={{ marginLeft: 6, fontWeight: "bold" }}>
+                                        {status?.courier_pending_count}
+                                    </span>
+                                </span>
+                            ))}
+
+                            {orderStatus?.filter(status => Number(status.status_id) === 4).map((status, index) => (
+                                <Tooltip title={`BDT ${status?.courier_received_amount}`}>
+                                    <span className="order-status-received" key={index} onClick={() => getCourierStatusWiseOrder(Number(14))}
+                                        onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";}} onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "none";}}>
+                                        <span style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
+                                            <InboxOutlined style={{fontSize: 14,color: "#2E7D32"}}/>
+                                        </span>
+
+                                        Courier Received:
+
+                                        <span style={{ marginLeft: 6, fontWeight: "bold" }}>
+                                            {status?.courier_received_count}
+                                        </span>
+                                    </span>
+                                </Tooltip>
+                            ))}
+
+                            {districtWiseList?.map((district, index) => (
+                                <span className="order-status-district" key={index} onClick={() => getDistrictWiseOrder(district?.id)} data-tooltip={`BDT ${district?.total_amount}`}
+                                    style={{
+                                        border: "1px solid #7eb8d4",
+                                        backgroundColor: district?.id === districtId ? "#1c558b" : "#e8f4fa",
+                                        color: district?.id === districtId ? "#fff" : "#1c558b",
+                                    }}
+                                    onMouseEnter={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";}}
+                                    onMouseLeave={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "none";}}
+                                >
+                                    <span style={{marginRight: 4, display: "flex", alignItems: "center"}}>
+                                        <EnvironmentOutlined style={{fontSize: 12,color: district?.id === districtId ? "#fff" : "#1c558b"}}/>
+                                    </span>
+
+                                    {district?.name}
+                                    <span style={{marginLeft: 6, fontWeight: "bold"}}>
+                                        {district?.orders_count}
+                                    </span>
+                                </span>
+                            ))}
                         </div>
                     )}
 
-                    <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
-                        <Col xs={24} md={24}>
-                            <div className="filter-actions" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-                                <div className="filter-item">
-                                    <label className="filter-label">Payment Status</label>
-                                    <Select value={isPaid} onChange={(value) => {setIsPaid(value);getOrders(1, { paid_status: value });}} placeholder="Is Paid" style={{ width: 170, height: 40 }}allowClear>
-                                        <Option value="Paid">Paid</Option>
-                                        <Option value="Unpaid">Unpaid</Option>
-                                    </Select>
-                                </div>
-        
-                                <div className="filter-item">
-                                    <label className="filter-label">Order Tag</label>
-                                    <Select value={orderTagId} onChange={(value) => {setOrderTagId(value);getOrders(1, { order_from_id: value });}} placeholder="Order Tag" style={{ width: 170, height: 40 }} allowClear>
-                                        {orderTagList?.map((item) => (
-                                            <Option key={item.id} value={item.id}>
-                                                {item.name}
-                                            </Option>
-                                        ))}
-                                    </Select>
-                                </div>
-
-                                <div className="filter-item">
-                                    <label className="filter-label">Customer Type</label>
-                                    <Select value={selectedCustomerTypeId} onChange={(value) => {setSelectedCustomerTypeId(value);getOrders(1, { customer_type_id: value });}} placeholder="Customer Type" style={{ width: 170, height: 40 }} allowClear>
-                                        {customerTypeList?.map((item) => (
-                                            <Option key={item.id} value={item.id}>
-                                                {item.name}
-                                            </Option>
-                                        ))}
-                                    </Select>
-                                </div>
-
-                                <div className="filter-item">
-                                    <label className="filter-label">Employee</label>
-                                    <Select value={employeeId} onChange={(value) => {setEmployeeId(value);getOrders(1, { assign_user_id: value });}}placeholder="Employee" style={{ width: 170, height: 40 }} allowClear>
-                                        {employeeList?.map((item) => (
-                                            <Option key={item.id} value={item.id}>
-                                                {item.username}
-                                            </Option>
-                                        ))}
-                                    </Select>
-                                </div>
-
-                                <div className="filter-item">
-                                    <label className="filter-label">Courier</label>
-                                    <Select value={selectedCourier} onChange={(value) => {setSelectedCourier(value);getOrders(1, { courier_id: value });}} placeholder="Courier" style={{ width: 170, height: 40 }}
-                                    allowClear>
-                                        {couriers?.map((item) => (
-                                            <Option key={item.id} value={item.id}>
-                                                {item.name}
-                                            </Option>
-                                        ))}
-                                    </Select>
-                                </div>
-
-                                <div className="filter-item">
-                                    <label className="filter-label">District</label>
-                                    <Select value={selectedDistrictId} onChange={(value) => {setSelectedDistrictId(value); getOrders(1, { district_id: value });}} placeholder="District"
-                                    style={{ width: 170, height: 40 }} allowClear>
-                                        {districtList?.map((item) => (
-                                            <Option key={item.id} value={item.id}>
-                                                {item.name}
-                                            </Option>
-                                        ))}
-                                    </Select>
-                                </div>
-
-                                <div className="filter-item">
-                                    <label className="filter-label">Min Price</label>
-                                    <Input value={minPrice} onChange={(e) => {setMinPrice(e.target.value);getOrders(1, { min_price: e.target.value });}} placeholder="Min Price"style={{ width: 170, height: 40 }}/>
-                                </div>
-
-                                <div className="filter-item">
-                                    <label className="filter-label">Max Price</label>
-                                    <Input value={maxPrice} onChange={(e) => {setMaxPrice(e.target.value);getOrders(1, { max_price: e.target.value });}} placeholder="Max Price" style={{ width: 170, height: 40 }}/>
-                                </div>
-
-                                <div className="filter-item">
-                                    <label className="filter-label">Start Invoice</label>
-                                    <Input value={minInvoice} onChange={(e) => {setMinInvoice(e.target.value); getOrders(1, { min_invoice: e.target.value });}} placeholder="Start Invoice"style={{ width: 170, height: 40 }}/>
-                                </div>
-
-                                <div className="filter-item">
-                                    <label className="filter-label">End Invoice</label>
-                                    <Input value={maxInvoice} onChange={(e) => {setMaxInvoice(e.target.value); getOrders(1, { max_invoice: e.target.value });}} placeholder="End Invoice" style={{ width: 170, height: 40 }}
-                                    />
-                                </div>
-        
-                                <div className="filter-item">
-                                    <label className="filter-label">Start Date</label>
-                                    <DatePicker value={startDate ? dayjs(startDate) : null} onChange={(date) => {setStartDate(date); getOrders(1, {start_date: date ? dayjs(date).format("YYYY-MM-DD"): "",
-                                        });}} style={{ width: 170, height: 40 }}/>
-                                </div>
-        
-                                <div className="filter-item">
-                                    <label className="filter-label">End Date</label>
-                                    <DatePicker value={endDate ? dayjs(endDate) : null} onChange={(date) => {setEndDate(date);getOrders(1, {end_date: date? dayjs(date).format("YYYY-MM-DD"): "",
-                                        });}} style={{ width: 170, height: 40 }}/>
-                                </div>
-        
-                                <div className="filter-item">
-                                    <label className="filter-label">Invoice Status</label>
-                                    <Select value={invoiceStatus} onChange={(value) => {setInvoiceStatus(value);getOrders(1, { is_invoice_printed: value });}} placeholder="Invoice Status"style={{ width: 170, height: 40 }}allowClear>
-                                        <Option value={1}>Printed</Option>
-                                        <Option value={0}>Not Printed</Option>
-                                    </Select>
-                                </div>
-        
-                                <div className="filter-item">
-                                    <label className="filter-label">Search</label>
-                                    <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} onPressEnter={filterData} placeholder="Search Key..." prefix={<SearchOutlined />}
-                                        style={{width: 250,height: 40,borderRadius: 6,boxShadow: "0 2px 6px rgba(64, 169, 255, 0.2)"}}
-                                    />
-                                </div>
-                            </div>
-            
-                            <div style={{marginTop: 10, display: "flex",flexWrap: "wrap",gap: 8}}>
-                                {statusId && (
-                                    <Tag closable onClose={() => {allOrderStatus();}}>
-                                        Status: {orderStatus?.find((o) => Number(o.status_id) === statusId)?.status_name || "N/A"}
-                                    </Tag>
-                                )}
-            
-                                {isPaid && (
-                                    <Tag closable onClose={() => {setIsPaid(null);getOrders(1);}}>
-                                        Paid: {isPaid}
-                                    </Tag>
-                                )}
-            
-                                {selectedCustomerTypeId && (
-                                    <Tag closable onClose={() => {setSelectedCustomerTypeId(null);getOrders(1, { customer_type_id: null });}}>
-                                        Customer Type: {customerTypeList?.find((c) => c.id === selectedCustomerTypeId)?.name || "N/A"}
-                                    </Tag>
-                                )}
-            
-                                {orderTagId && (
-                                    <Tag closable onClose={() => {setOrderTagId(null); getOrders(1);}}>
-                                        Order Tag: {orderTagList?.find((t) => t.id === orderTagId)?.name || "N/A"}
-                                    </Tag>
-                                )}
-            
-                                {selectedDistrictId && (
-                                    <Tag closable onClose={() => {setSelectedDistrictId(null);getOrders(1, { district_id: null });}}>
-                                        District:{districtList?.find((d) => d.id === selectedDistrictId)?.name || "N/A"}
-                                    </Tag>
-                                )}
-            
-                                {employeeId && (
-                                    <Tag closable onClose={() => {setEmployeeId(null);getOrders(1, { assign_user_id: null });}}>
-                                        Employee:{employeeList?.find((e) => e.id === employeeId)?.name || "N/A"}
-                                    </Tag>
-                                )}
-
-                                {selectedCourier && (
-                                    <Tag closable onClose={() => {setSelectedCourier(null);getOrders(1, { courier_id: null });}}>
-                                        Courier: {couriers?.find((c) => c.id === selectedCourier) ?.name || "N/A"}
-                                    </Tag>
-                                )}
-
-                                {minPrice && (
-                                    <Tag closable onClose={() => {setMinPrice(""); getOrders(1);}}>
-                                        Min Price: ৳{minPrice}
-                                    </Tag>
-                                )}
-
-                                {maxPrice && (
-                                    <Tag closable onClose={() => {setMaxPrice(""); getOrders(1);}}>
-                                        Max Price: ৳{maxPrice}
-                                    </Tag>
-                                )}
-
-                                {minInvoice && (
-                                    <Tag closable onClose={() => {setMinInvoice("");getOrders(1);}}>
-                                        Invoice Start: {minInvoice}
-                                    </Tag>
-                                )}
-
-                                {/* Max Invoice */}
-                                {maxInvoice && (
-                                    <Tag closable onClose={() => {setMaxInvoice(""); getOrders(1);}}>
-                                        Invoice End: {maxInvoice}
-                                    </Tag>
-                                )}
-            
-                                {startDate && (
-                                    <Tag closable onClose={() => {setStartDate(null);getOrders(1);}}>
-                                        Start: {dayjs(startDate).format("YYYY-MM-DD")}
-                                    </Tag>
-                                )}
-            
-                                {endDate && (
-                                    <Tag closable onClose={() => {setEndDate(null);getOrders(1);}}>
-                                        End: {dayjs(endDate).format("YYYY-MM-DD")}
-                                    </Tag>
-                                )}
-            
-                                {invoiceStatus !== null && invoiceStatus !== undefined && (
-                                    <Tag closable onClose={() => {setInvoiceStatus(null);getOrders(1);}}>
-                                        Invoice: {invoiceStatus === 1 ? "Printed" : "Not Printed"}
-                                    </Tag>
-                                )}
-            
-                                {searchQuery && (
-                                    <Tag closable onClose={() => {setSearchQuery("");getOrders(1);}}>
-                                        Search: {searchQuery}
-                                    </Tag>
-                                )}
-                            </div>
-                        </Col>
-                    </Row>
-        
-                    <Row>
-                        <Col span={24}>
-                            <div className="all-status-tags">
-                                {hasAnyRole(['admin', 'superadmin']) && (
-                                    <span className={isAllOrders ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${orders?.total_amount}`} onClick={allOrderStatus}>
-                                        All Orders
-                                        <span className={isAllOrders ? "status-tags-child-child-active" : "status-tags-child-child"}>
-                                            {totalOrder}
-                                        </span>
+                    {(statusId === 9 || statusId === 10 || statusId === 11 || statusId === 12) && (
+                        <div className="orders-substatus-row all-status-tags">
+                            {orderStatus?.filter((status) => [9, 10, 11, 12].includes(Number(status.status_id))).map((status) => (
+                                <span key={Number(status?.status_id)} className={Number(status?.status_id) === statusId ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${status?.total_payable}`}
+                                    onClick={() => getStatusWiseOrder(Number(status?.status_id))}>
+                                    {status?.status_name}
+                                    <span className={Number(status?.status_id) === statusId ? "status-tags-child-child-active" : "status-tags-child-child"}>
+                                        {status.order_count}
                                     </span>
-                                )}
+                                </span>
+                            ))}
+                        </div>
+                    )}
 
-                                {orderStatus?.slice(0, 8).map((status) => (
-                                    <span key={status.status_id} className={Number(status.status_id) === statusId ? "status-tags-child-active" : "status-tags-child"}
-                                        data-tooltip={`BDT ${status.total_payable}`} onClick={() => getStatusWiseOrder(Number(status.status_id))}>
-                                        {status.status_name}
+                    {(statusId === 3 || statusId === 7) && (
+                        <div className="orders-substatus-row all-location-tags">
+                            {statusId === 3 && (
+                                <span className="picking-list-for-order" onClick={handlePickingList}>
+                                    Picking
+                                </span>
+                            )}
 
-                                        <span className={Number(status.status_id) === statusId ? "status-tags-child-child-active" : "status-tags-child-child"}>
-                                            {status.order_count}
-                                        </span>
+                            {statusId === 7 && (
+                            orderStatus?.filter(status => Number(status.status_id) === 13).map((status, index) => (
+                                <span className="order-status-partial" key={index} onClick={() => getCourierWiseOrder(Number(status?.status_id))} data-tooltip={`BDT ${status?.total_payable}`}
+                                    onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";}}
+                                    onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "none";}}>
+                                    <span style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
+                                        <InboxOutlined style={{ fontSize: 14, color: "#CC5500" }} />
                                     </span>
-                                ))}
 
-                                {orderStatus?.some((s) => [9, 10].includes(Number(s.status_id))) && (
-                                    <span className={[9, 10, 11, 12].includes(statusId) ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${orderStatus?.filter((s) => [9, 10].includes(Number(s.status_id))).reduce((total, s) => total + Number(s.total_payable || 0), 0)}`} onClick={getReturnAndDamageOrder}>
-                                        Return & Damage
-                                        <span className={[9, 10, 11, 12].includes(statusId) ? "status-tags-child-child-active" : "status-tags-child-child"}>
-                                            {orderStatus?.filter((s) => [9, 10].includes(Number(s.status_id))).reduce((total, s) => Number(total) + Number(s.order_count), 0)}
-                                        </span>
+                                    Partial Delivered:
+
+                                    <span style={{ marginLeft: 6, fontWeight: "bold" }}>
+                                        {status?.courier_pending_count}
                                     </span>
-                                )}
-                            </div>
-                        </Col>
-            
-                        {statusId === 4 && (
-                            <Row>
-                                <Col span={24}>
-                                    <div className="all-status-tags" style={isMobile ? {marginBottom: 15,padding: "10px 10px",border: "1px solid #cbcbcb"} : {}}>
-                                        {courierList?.map((courier, index) => (
-                                            <span className="order-status-courier" key={index} onClick={() => getCourierWiseOrder(courier?.id)} data-tooltip={`BDT ${courier?.total_amount}`}
-                                                style={{ border: courier?.id === courierId ? "1px solid #5f6841ff" : "1px solid #4ba9ceff",backgroundColor: courier?.id === courierId ? "#4ba9ceff" : "#8a71c5ff",
-                                                    color: courier?.id === courierId ? "#fff" : "#fff",
-                                                }}
-                                                onMouseEnter={e => {
-                                                    if (courier?.id !== courierId) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";
-                                                }}
-                                                onMouseLeave={e => {
-                                                    if (courier?.id !== courierId) e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
-                                                }}
-                                                >
+                                </span>
+                                ))
+                            )}
 
-                                                <span style={{ marginRight: 4, display: "flex", alignItems: "center" }}>
-                                                    <ContainerOutlined style={{fontSize: 12,color: courier?.id === courierId ? "#fff" : "#fff"}}/>
-                                                </span>
-                        
-                                                {courier?.name}
-                        
-                                                <span style={{ marginLeft: 6, fontWeight: "bold" }}>
-                                                    {courier?.orders_count}
-                                                </span>
-                                            </span>
-                                        ))}
-                
-                                        {orderStatus?.filter(status => Number(status.status_id) === 4).map((status, index) => (
-                                            <span key={index} onClick={() => getCourierStatusWiseOrder(Number(13))} data-tooltip={`BDT ${status?.courier_pending_amount}`} className="order-status-partial" onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}} onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}>
-                                                <span style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
-                                                    <ExclamationCircleOutlined style={{fontSize: 14,color: "#C98209"}}/>
-                                                </span>
-
-                                                Courier Pending:
-
-                                                <span style={{ marginLeft: 6, fontWeight: "bold" }}>
-                                                    {status?.courier_pending_count}
-                                                </span>
-                                            </span>
-                                        ))}
-                
-                                        {orderStatus?.filter(status => Number(status.status_id) === 4).map((status, index) => (
-                                            <Tooltip title={`BDT ${status?.courier_received_amount}`}>
-                                                <span className="order-status-received" key={index} onClick={() => getCourierStatusWiseOrder(Number(14))} 
-                                                    onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}} onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}>
-                                                    <span style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
-                                                        <InboxOutlined style={{fontSize: 14,color: "#2E7D32"}}/>
-                                                    </span>
-                        
-                                                    Courier Received:
-                        
-                                                    <span style={{ marginLeft: 6, fontWeight: "bold" }}>
-                                                        {status?.courier_received_count}
-                                                    </span>
-                                                </span>
-                                            </Tooltip>
-                                        ))}
-                
-                                        {districtWiseList?.map((district, index) => (
-                                            <span className="order-status-district" key={index} onClick={() => getDistrictWiseOrder(district?.id)} data-tooltip={`BDT ${district?.total_amount}`}
-                                                style={{
-                                                    border: district?.id === districtId ? "1px solid #4ba9ceff" : "1px solid #4ba9ceff",
-                                                    backgroundColor: district?.id === districtId ? "#4ba9ceff" : "#e4f5fcff",
-                                                    color: district?.id === districtId ? "#fff" : "#333",
-                                                }}
-                                                onMouseEnter={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}}
-                                                onMouseLeave={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}
-                                            >
-                                                <span style={{marginRight: 4, display: "flex", alignItems: "center"}}>
-                                                    <EnvironmentOutlined style={{fontSize: 12,color: district?.id === districtId ? "#fff" : "#555"}}/>
-                                                </span>
-                        
-                                                {district?.name}
-                                                <span style={{marginLeft: 6, fontWeight: "bold"}}>
-                                                    {district?.orders_count}
-                                                </span>
-                                            </span>
-                                        ))}
-                                    </div>
-                                </Col>
-                            </Row>
-                        )}
-            
-                        {(statusId === 9 || statusId === 10 || statusId === 11 || statusId === 12) && (
-                            <Col span={24} style={{ marginBottom: 16 }}>
-                                {orderStatus?.filter((status) => [9, 10, 11, 12].includes(Number(status.status_id))).map((status) => (
-                                    <span key={Number(status?.status_id)} className={Number(status?.status_id) === statusId ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${status?.total_payable}`}
-                                        onClick={() => getStatusWiseOrder(Number(status?.status_id))} style={{ cursor: "pointer", marginRight: 10 }}>
-                                        {status?.status_name}
-                                        <span className={Number(status?.status_id) === statusId ? "status-tags-child-child-active" : "status-tags-child-child"}>
-                                            {status.order_count}
-                                        </span>
+                            {districtWiseList?.map((district, index) => (
+                                <span className="order-status-district" key={index} onClick={() => getDistrictWiseOrder(district?.id)} data-tooltip={`BDT ${district?.total_amount}`}
+                                    style={{
+                                        border: "1px solid #7eb8d4",
+                                        backgroundColor: district?.id === districtId ? "#1c558b" : "#e8f4fa",
+                                        color: district?.id === districtId ? "#fff" : "#1c558b",
+                                    }}
+                                    onMouseEnter={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";}}
+                                    onMouseLeave={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "none";}}
+                                >
+                                    <span style={{marginRight: 4, display: "flex", alignItems: "center"}}>
+                                        <EnvironmentOutlined style={{fontSize: 12,color: district?.id === districtId ? "#fff" : "#1c558b"}}/>
                                     </span>
-                                ))}
-                            </Col>
-                        )}
-            
-                        {(statusId === 3 || statusId === 7) && (
-                            <Col span={24}>
-                                <div className="all-location-tags" style={{ marginBottom: 15 }}>
-                                    {statusId === 3 && (
-                                        <span className="picking-list-for-order" onClick={handlePickingList} style={{padding: 7,marginRight: 10,borderRadius: 2,cursor: "pointer",backgroundColor: "#1C558B",color: "white",fontWeight: 600}}>
-                                            Picking
-                                        </span>
-                                    )}
-            
-                                    {statusId === 7 && (
-                                    orderStatus?.filter(status => Number(status.status_id) === 13).map((status, index) => (
-                                        <span className="order-status-partial" key={index} onClick={() => getCourierWiseOrder(Number(status?.status_id))} data-tooltip={`BDT ${status?.total_payable}`}
-                                            onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}}
-                                            onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}>
-                                            <span style={{ marginRight: 6, display: "flex", alignItems: "center" }}>
-                                                <InboxOutlined style={{ fontSize: 14, color: "#CC5500" }} />
-                                            </span>
-                
-                                            Partial Delivered:
-                
-                                            <span style={{ marginLeft: 6, fontWeight: "bold" }}>
-                                                {status?.courier_pending_count}
-                                            </span>
-                                        </span>
-                                        ))
-                                    )}
-            
-                                    {districtWiseList?.map((district, index) => (
-                                        <span className="order-status-district" key={index} onClick={() => getDistrictWiseOrder(district?.id)} data-tooltip={`BDT ${district?.total_amount}`}
-                                            style={{
-                                                border: district?.id === districtId ? "1px solid #4ba9ceff" : "1px solid #4ba9ceff",
-                                                backgroundColor: district?.id === districtId ? "#4ba9ceff" : "#e4f5fcff",
-                                                color: district?.id === districtId ? "#fff" : "#333",
-                                            }}
-                                            onMouseEnter={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)";}}
-                                            onMouseLeave={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";}}
-                                        >
-                                            <span style={{marginRight: 4, display: "flex", alignItems: "center"}}>
-                                                <EnvironmentOutlined style={{fontSize: 12,color: district?.id === districtId ? "#fff" : "#555"}}/>
-                                            </span>
-                    
-                                            {district?.name}
 
-                                            <span style={{marginLeft: 6, fontWeight: "bold"}}>
-                                                {district?.orders_count}
-                                            </span>
-                                        </span>
-                                    ))}
-                                </div>
-                            </Col>
-                        )}
-            
-                        {statusId === 8 && (
-                            <Col span={24}>
-                                <div className="all-location-tags" style={{ marginBottom: 15 }}>
-                                    {cancelReasons?.map((cancelReason, index) => (
-                                        <span key={index} className={cancelReason.id === cancelReasonId ? "location-tags-child-active" : "location-tags-child"}
-                                            data-tooltip={`BDT ${cancelReason.total_amount}`} onClick={() => getCancelReasonOrder(cancelReason.id)} style={{ cursor: "pointer", marginRight: 10 }}>
-                                            {cancelReason.name}
-                                            <span className={cancelReason.id === cancelReasonId ? "location-tags-child-child-active" : "location-tags-child-child"}>
-                                                {cancelReason.orders_count}
-                                            </span>
-                                        </span>
-                                    ))}
-                                </div>
-                            </Col>
-                        )}
-            
-                        {statusId === 1 && (
-                            <Col span={24}>
-                                <div style={{ marginBottom: 15 }}>
-                                    <Badge count={orders?.duplicate_orders_count} onClick={handleDuplicateOrder}>
-                                        <Button>Duplicate Orders</Button>
-                                    </Badge>
-                                </div>
-                            </Col>
-                        )}
-                    </Row>
-        
-                    <Row>
-                        <Col span={24}>
-                            <Table columns={columns} loading={loading} dataSource={orders?.data} rowKey="id" rowSelection={rowSelection} bordered scroll={{ x: 1600, y: "84vh" }}
-                                pagination={{
-                                    current: currentPage,
-                                    pageSize: pageSize,
-                                    total: orders?.meta?.total || 0,
-                                    showSizeChanger: true,
-                                    pageSizeOptions: [10, 20, 50, 100,150,200,250,300,400,500],
-                                    showQuickJumper: true,
-                                    showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
-                
-                                    onChange: (page, size) => {
-                                        const targetPage = size !== pageSize ? 1 : page;
-                                        setCurrentPage(targetPage);
-                                        setPageSize(size);
-                                        getOrders(targetPage, { paginate_size: size });
-                                    },
-                                }}
-                            />
-                        </Col>
-                    </Row>
-                </Col>
-            </Row>
+                                    {district?.name}
+
+                                    <span style={{marginLeft: 6, fontWeight: "bold"}}>
+                                        {district?.orders_count}
+                                    </span>
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {statusId === 8 && (
+                        <div className="orders-substatus-row all-location-tags">
+                            {cancelReasons?.map((cancelReason, index) => (
+                                <span key={index} className={cancelReason.id === cancelReasonId ? "location-tags-child-active" : "location-tags-child"}
+                                    data-tooltip={`BDT ${cancelReason.total_amount}`} onClick={() => getCancelReasonOrder(cancelReason.id)}>
+                                    {cancelReason.name}
+                                    <span className={cancelReason.id === cancelReasonId ? "location-tags-child-child-active" : "location-tags-child-child"}>
+                                        {cancelReason.orders_count}
+                                    </span>
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {statusId === 1 && (
+                        <div className="orders-duplicate-wrap">
+                            <Badge count={orders?.duplicate_orders_count} onClick={handleDuplicateOrder}>
+                                <Button>Duplicate Orders</Button>
+                            </Badge>
+                        </div>
+                    )}
+                </div>
+
+                <div className="orders-table-card">
+                    <Table columns={columns} loading={loading} dataSource={orders?.data} rowKey="id" rowSelection={rowSelection} bordered scroll={{ x: 1600, y: "84vh" }}
+                        pagination={{
+                            current: currentPage,
+                            pageSize: pageSize,
+                            total: orders?.meta?.total || 0,
+                            showSizeChanger: true,
+                            pageSizeOptions: [10, 20, 50, 100,150,200,250,300,400,500],
+                            showQuickJumper: true,
+                            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
+
+                            onChange: (page, size) => {
+                                const targetPage = size !== pageSize ? 1 : page;
+                                setCurrentPage(targetPage);
+                                setPageSize(size);
+                                getOrders(targetPage, { paginate_size: size });
+                            },
+                        }}
+                    />
+                </div>
+            </div>
 
             <Modal
                 title={
@@ -2711,45 +2657,26 @@ export default function Order() {
                         <Row gutter={[12, 12]}>
                             <Col xs={24} md={12}>
                                 <div className="opm-card">
-                                    <div style={{ fontWeight: 600, marginBottom: 12, fontSize: 15 }}>
-                                        Customer Information
+                                    <div className="opm-card__title">Customer Information</div>
+
+                                    <div className="opm-field">
+                                        <div className="opm-field__label">Phone Number</div>
+                                        <div className="opm-field__value">{previewOrder.phone_number || "—"}</div>
                                     </div>
 
-                                    <div style={{ marginBottom: 10 }}>
-                                        <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4,}}>
-                                            Phone Number
-                                        </div>
-
-                                        <div style={{fontSize: 14,fontWeight: 600,color: "#1f2937"}}>
-                                            {previewOrder.phone_number || "—"}
-                                        </div>
+                                    <div className="opm-field">
+                                        <div className="opm-field__label">Name</div>
+                                        <div className="opm-field__value">{previewOrder.customer_name || "—"}</div>
                                     </div>
 
-                                    <div style={{ marginBottom: 10 }}>
-                                        <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4}}>
-                                            Name
-                                        </div>
-                                        <div style={{fontSize: 14,fontWeight: 600,color: "#1f2937"}}>
-                                            {previewOrder.customer_name || "—"}
-                                        </div>
+                                    <div className="opm-field">
+                                        <div className="opm-field__label">District</div>
+                                        <div className="opm-field__value">—</div>
                                     </div>
 
-                                    <div style={{ marginBottom: 10 }}>
-                                        <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4,}}>
-                                            District
-                                        </div>
-
-                                        <div style={{fontSize: 14,fontWeight: 600,color: "#1f2937"}}>
-                                            —
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4}}>
-                                            Address
-                                        </div>
-
-                                        <div style={{fontSize: 14,fontWeight: 500,color: "#1f2937",lineHeight: "1.5"}}>
+                                    <div className="opm-field" style={{ marginBottom: 0 }}>
+                                        <div className="opm-field__label">Address</div>
+                                        <div className="opm-field__value" style={{ fontWeight: 500, lineHeight: 1.5 }}>
                                             {previewOrder.address_details || "—"}
                                         </div>
                                     </div>
@@ -2758,17 +2685,12 @@ export default function Order() {
 
                             <Col xs={24} md={12}>
                                 <div className="opm-card">
-
-                                    <div style={{ fontWeight: 600, marginBottom: 12, fontSize: 15 }}>
-                                        Order Information
-                                    </div>
+                                    <div className="opm-card__title">Order Information</div>
 
                                     <Row gutter={[8, 8]}>
                                         <Col span={12}>
-                                            <div style={{ marginBottom: 8 }}>
-                                                <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4}}>
-                                                    Order Status
-                                                </div>
+                                            <div className="opm-field">
+                                                <div className="opm-field__label">Order Status</div>
                                                 <Tag
                                                     style={{backgroundColor: `rgba(${parseInt(previewOrder?.current_status?.bg_color?.slice(1,3),16)}, ${parseInt(previewOrder?.current_status?.bg_color?.slice(3,5),16
                                                     )}, ${parseInt(previewOrder?.current_status?.bg_color?.slice(5,7),16)}, .9)`, color: previewOrder?.current_status?.text_color || "#fff", border: "none", padding: "4px 12px", fontSize: 13, fontWeight: 600}}
@@ -2779,81 +2701,59 @@ export default function Order() {
                                         </Col>
 
                                         <Col span={12}>
-                                            <div style={{ marginBottom: 8 }}>
-                                                <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4,}}>
-                                                    Order Form
-                                                </div>
-                                                <div style={{fontSize: 14,fontWeight: 600,color: "#1f2937"}}>
-                                                    {previewOrder?.order_from?.name || "—"}
-                                                </div>
+                                            <div className="opm-field">
+                                                <div className="opm-field__label">Order Form</div>
+                                                <div className="opm-field__value">{previewOrder?.order_from?.name || "—"}</div>
                                             </div>
                                         </Col>
 
                                         <Col span={12}>
-                                            <div style={{ marginBottom: 8 }}>
-                                                <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4,}}>
-                                                    Delivery Gateway
-                                                </div>
-
-                                                <div style={{fontSize: 14,fontWeight: 600,color: "#1f2937",}}>
-                                                    {previewOrder?.payment_gateway?.name || "—"}
-                                                </div>
+                                            <div className="opm-field">
+                                                <div className="opm-field__label">Delivery Gateway</div>
+                                                <div className="opm-field__value">{previewOrder?.payment_gateway?.name || "—"}</div>
                                             </div>
                                         </Col>
 
                                         <Col span={12}>
-                                            <div style={{ marginBottom: 8 }}>
-                                                <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4}}>
-                                                    Paid Status
-                                                </div>
-
-                                                <div style={{fontSize: 14,fontWeight: 600,color: "#1f2937",textTransform: "capitalize"}}>
+                                            <div className="opm-field">
+                                                <div className="opm-field__label">Paid Status</div>
+                                                <div className="opm-field__value" style={{ textTransform: "capitalize" }}>
                                                     {previewOrder?.paid_status || "—"}
                                                 </div>
                                             </div>
                                         </Col>
 
                                         <Col span={12}>
-                                            <div style={{ marginBottom: 8 }}>
-                                                <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4,}}>
-                                                    Created By
-                                                </div>
-                                                <div style={{fontSize: 14,fontWeight: 600,color: "#1f2937"}}>
+                                            <div className="opm-field">
+                                                <div className="opm-field__label">Created By</div>
+                                                <div className="opm-field__value">
                                                     {previewOrder?.created_by?.username || previewOrder?.created_by?.id || "—"}
                                                 </div>
                                             </div>
                                         </Col>
 
                                         <Col span={12}>
-                                            <div style={{ marginBottom: 8 }}>
-                                                <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4,}}>
-                                                    Updated By
-                                                </div>
-
-                                                <div style={{fontSize: 14,fontWeight: 600,color: "#1f2937"}}>
+                                            <div className="opm-field">
+                                                <div className="opm-field__label">Updated By</div>
+                                                <div className="opm-field__value">
                                                     {previewOrder?.updated_by?.username || previewOrder?.updated_by?.id || "—"}
                                                 </div>
                                             </div>
                                         </Col>
 
                                         <Col span={12}>
-                                            <div style={{ marginBottom: 8 }}>
-                                                <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4}}>
-                                                    Prepared By
-                                                </div>
-                                                <div style={{fontSize: 14,fontWeight: 600,color: "#1f2937"}}>
+                                            <div className="opm-field">
+                                                <div className="opm-field__label">Prepared By</div>
+                                                <div className="opm-field__value">
                                                     {previewOrder?.prepared_by?.username || previewOrder?.prepared_by?.id || "—"}
                                                 </div>
                                             </div>
                                         </Col>
 
                                         <Col span={12}>
-                                            <div style={{ marginBottom: 8 }}>
-                                                <div style={{fontSize: 12,color: "#6b7280",marginBottom: 4}}>
-                                                    Created At
-                                                </div>
-
-                                                <div style={{fontSize: 13,fontWeight: 600,color: "#1f2937"}}>
+                                            <div className="opm-field">
+                                                <div className="opm-field__label">Created At</div>
+                                                <div className="opm-field__value" style={{ fontSize: 13 }}>
                                                     {formatDate(previewOrder?.created_at)}
                                                 </div>
                                             </div>
@@ -2864,9 +2764,7 @@ export default function Order() {
                         </Row>
             
                         <div className="opm-card" style={{ marginTop: 16 }}>
-                            <div style={{ fontWeight: 600, marginBottom: 12, fontSize: 15 }}>
-                                Product Information
-                            </div>
+                            <div className="opm-card__title">Product Information</div>
                             {Array.isArray(previewItems) && previewItems.length > 0 ? (
                                 <Table size="small" bordered pagination={false} rowKey={(r, i) => r.id ?? i} dataSource={previewItems} className="preview-product-table"
                                     columns={
