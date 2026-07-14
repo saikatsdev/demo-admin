@@ -1,4 +1,4 @@
-import {ArrowLeftOutlined,BarcodeOutlined,CopyOutlined,DeleteOutlined,EditOutlined,ShoppingCartOutlined,EyeOutlined,FilterOutlined,FormOutlined,InfoCircleOutlined,PlusOutlined,ReloadOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,BarcodeOutlined,CopyOutlined,DeleteOutlined,DownloadOutlined,EditOutlined,ShoppingCartOutlined,EyeOutlined,FilterOutlined,FormOutlined,InfoCircleOutlined,PlusOutlined,ReloadOutlined} from "@ant-design/icons";
 import {Input as AntInput,Typography,Breadcrumb,Badge,Tabs,Button,Col,Card,DatePicker,Descriptions,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -12,6 +12,7 @@ import { usePermission } from "../../hooks/usePermission";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import { useAppSettings } from "../../contexts/useAppSettings";
+import { exportData } from "../../api/common/common";
 
 const { Option } = Select;
 
@@ -1019,6 +1020,34 @@ export default function Product() {
         },
     }), []);
 
+    const handleExportCSV = async () => {
+        try {
+            const response = await exportData(
+                "/admin/products/export-csv",
+                {},
+                {
+                    responseType: "blob",
+                }
+            );
+
+            const blob = new Blob([response.data], {
+                type: "text/csv;charset=utf-8;",
+            });
+
+            const url = window.URL.createObjectURL(blob);
+
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "products.csv";
+            link.click();
+
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     return (
         <>
             {modalContextHolder}
@@ -1084,6 +1113,12 @@ export default function Product() {
                                         Add
                                     </Button>
                                 )}
+
+                                {productCreate && (
+                                    <Button size="small" type="primary" icon={<DownloadOutlined />} onClick={handleExportCSV}>
+                                        Export CSV
+                                    </Button>
+                                )}
             
                                 {productDelete && (
                                     <Button size="small" danger icon={<DeleteOutlined />} onClick={handleToggleTrash}>
@@ -1094,6 +1129,7 @@ export default function Product() {
                                 <Button size="small" icon={<ReloadOutlined />} onClick={fetchProductsData} style={{ borderRadius: 6 }}>
                                     Refresh
                                 </Button>
+
                                 <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                                     Back
                                 </Button>
