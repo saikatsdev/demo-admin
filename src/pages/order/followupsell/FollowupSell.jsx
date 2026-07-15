@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,MessageOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined} from '@ant-design/icons';
-import {Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider, Spin} from "antd";
+import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,MessageOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined, CloseCircleOutlined} from '@ant-design/icons';
+import {Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider, Spin, Badge} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -184,9 +184,17 @@ export default function FollowupSell() {
     const [filterStep, setFilterStep]       = useState(null);
     const [filterStatus, setFilterStatus]   = useState('active');
     const [filterPriority, setFilterPriority] = useState(null);
-    const [filterAssign, setFilterAssign]     = useState(null);
+    const [filterAssign, setFilterAssign]     = useState("assigned");
     const [dateRange, setDateRange]         = useState(null);
     const [summaryKey, setSummaryKey]       = useState("all");
+
+    // assign selection (Non Assign mode)
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+    const [assignModalOpen, setAssignModalOpen] = useState(false);
+    const [employees, setEmployees]             = useState([]);
+    const [employeeLoading, setEmployeeLoading] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
+    const [assignLoading, setAssignLoading]     = useState(false);
 
     // modal state
     const [editRecord, setEditRecord]       = useState(null);
@@ -199,8 +207,6 @@ export default function FollowupSell() {
     const [saveLoading, setSaveLoading]     = useState(false);
     const [detailRecord, setDetailRecord]   = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
-
-    // ── columns ──────────────────────────────────────────────────────────────
 
     const columns = [
         {
@@ -540,9 +546,9 @@ export default function FollowupSell() {
             const params = { page, paginate_size: pageSize };
             if (search)         params.search_key = search;
             if (filterStep)     params.step       = filterStep;
-            if (filterStatus)   params.status     = filterStatus;
-            if (filterAssign === "assigned")   params.is_assign = 1;
-            if (filterAssign === "unassigned") params.is_assign = 0;
+            if (filterStatus) params.status = filterStatus;
+            if (filterAssign === "assigned") params.is_assign = 1;
+            else if (filterAssign === "unassigned") params.is_assign = 0;
 
             if (filterPriority === "overdue") {
                 params.to_date = dayjs().subtract(1, "day").format("YYYY-MM-DD 23:59:59");
@@ -596,10 +602,78 @@ export default function FollowupSell() {
     };
 
     useEffect(() => { 
+        setSelectedRowKeys([]);
         fetchOrders(1, pagination.pageSize); 
     },[search, filterStep, filterStatus, filterPriority, filterAssign, dateRange, summaryKey]);
 
-    const handleTableChange = (pag) => fetchOrders(pag.current, pag.pageSize);
+    const handleTableChange = (pag) => {
+        setSelectedRowKeys([]);
+        fetchOrders(pag.current, pag.pageSize);
+    };
+
+    const fetchEmployees = async () => {
+        try {
+            setEmployeeLoading(true);
+            const res = await getDatas("/admin/users/list");
+            if (res?.success) {
+                setEmployees(res?.result?.data || []);
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setEmployeeLoading(false);
+        }
+    };
+
+    const handleAssignOpen = () => {
+        if (selectedRowKeys.length === 0) {
+            message.warning("Please select at least one order");
+            return;
+        }
+        setSelectedEmployee(null);
+        setAssignModalOpen(true);
+        fetchEmployees();
+    };
+
+    const handleAssignSubmit = async () => {
+        if (!selectedEmployee) {
+            message.warning("Please select an employee");
+            return;
+        }
+
+        const orderIds = followUpOrders
+            .filter((row) => selectedRowKeys.includes(row.id))
+            .map((row) => row.order_id || row.order?.id)
+            .filter(Boolean);
+
+        if (orderIds.length === 0) {
+            message.warning("No valid order IDs found for assignment");
+            return;
+        }
+
+        try {
+            setAssignLoading(true);
+
+            const res = await postData("/admin/followup/assign", {
+                ids: orderIds,
+                user_id: selectedEmployee,
+            });
+
+            if (res?.success) {
+                messageApi.success(res?.msg || "Orders assigned successfully");
+                setSelectedRowKeys([]);
+                setAssignModalOpen(false);
+                fetchOrders(pagination.current, pagination.pageSize);
+            } else {
+                message.error(res?.msg || "Failed to assign orders");
+            }
+        } catch (error) {
+            console.log(error);
+            message.error("Failed to assign orders");
+        } finally {
+            setAssignLoading(false);
+        }
+    };
 
     const handleSave = async () => {
         if (!editRecord) return;
@@ -675,8 +749,12 @@ export default function FollowupSell() {
     ];
 
     const assignOrder = () => {
+        if (filterAssign === "unassigned") {
+            handleAssignOpen();
+            return;
+        }
         navigate('/assign/orders');
-    }
+    };
 
     return (
         <>
@@ -765,18 +843,68 @@ export default function FollowupSell() {
                         <Select placeholder="Priority" allowClear style={{ width: 120 }} value={filterPriority} onChange={setFilterPriority}
                             options={[{ value: "overdue", label: "🔴 Overdue" }, { value: "today", label: "🟠 Today" }, { value: "upcoming", label: "🔵 Upcoming" }]}
                         />
-                        <Select placeholder="Assign" allowClear style={{ width: 130 }} value={filterAssign} onChange={setFilterAssign}
-                            options={[{ value: "assigned", label: "Assigned" },{ value: "unassigned", label: "Non Assign" },]}
+                        <Select
+                            placeholder="Assign"
+                            style={{ width: 130 }}
+                            value={filterAssign}
+                            onChange={(value) => setFilterAssign(value)}
+                            options={[
+                                { value: "assigned", label: "Assigned" },
+                                { value: "unassigned", label: "Non Assign" },
+                            ]}
                         />
                         <DatePicker.RangePicker format="YYYY-MM-DD" value={dateRange} onChange={setDateRange} />
                     </Space>
                     <Space>
-                        <Button icon={<UserSwitchOutlined />} onClick={() => assignOrder()}>Assign Orders</Button>
+                        <Button
+                            type={filterAssign === "unassigned" && selectedRowKeys.length > 0 ? "primary" : "default"}
+                            icon={<UserSwitchOutlined />}
+                            onClick={() => assignOrder()}
+                        >
+                            Assign Orders
+                            {filterAssign === "unassigned" && selectedRowKeys.length > 0
+                                ? ` (${selectedRowKeys.length})`
+                                : ""}
+                        </Button>
                         <Button icon={<ReloadOutlined />} onClick={() => fetchOrders(1, pagination.pageSize)}>Refresh</Button>
                         <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
                     </Space>
                 </Space>
             </div>
+
+            {filterAssign === "unassigned" && selectedRowKeys.length > 0 && (
+                <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    flexWrap: "wrap",
+                    padding: "12px 16px",
+                    marginBottom: 16,
+                    background: "#fff",
+                    border: "1px solid #e8edf5",
+                    borderLeft: "4px solid #1c558b",
+                    borderRadius: 8,
+                }}>
+                    <Space wrap>
+                        <Badge count={selectedRowKeys.length} style={{ backgroundColor: "#1c558b" }} />
+                        <span style={{ fontWeight: 600, color: "#262626" }}>
+                            {selectedRowKeys.length} order(s) selected
+                        </span>
+                        <Button type="primary" icon={<UserSwitchOutlined />} onClick={handleAssignOpen}>
+                            Assign to Employee
+                        </Button>
+                    </Space>
+                    <Button
+                        type="link"
+                        icon={<CloseCircleOutlined />}
+                        onClick={() => setSelectedRowKeys([])}
+                        style={{ padding: 0 }}
+                    >
+                        Clear selection
+                    </Button>
+                </div>
+            )}
 
             {/* Table */}
             <Table
@@ -784,6 +912,15 @@ export default function FollowupSell() {
                 columns={columns}
                 dataSource={followUpOrders}
                 loading={loading}
+                rowSelection={
+                    filterAssign === "unassigned"
+                        ? {
+                              selectedRowKeys,
+                              onChange: setSelectedRowKeys,
+                              columnWidth: 48,
+                          }
+                        : undefined
+                }
                 pagination={{
                     current: pagination.current,
                     pageSize: pagination.pageSize,
@@ -800,6 +937,42 @@ export default function FollowupSell() {
                     expandRowByClick: false,
                 }}
             />
+
+            <Modal
+                title="Assign Orders to Employee"
+                open={assignModalOpen}
+                onOk={handleAssignSubmit}
+                onCancel={() => setAssignModalOpen(false)}
+                confirmLoading={assignLoading}
+                okText="Assign"
+                destroyOnClose
+            >
+                <div style={{
+                    marginBottom: 12,
+                    padding: "10px 12px",
+                    background: "#e8f1f8",
+                    border: "1px solid #d0e4f2",
+                    borderRadius: 8,
+                    color: "#1c558b",
+                    fontWeight: 600,
+                    fontSize: 13,
+                }}>
+                    {selectedRowKeys.length} order(s) will be assigned
+                </div>
+                <Select
+                    showSearch
+                    placeholder="Search and select an employee"
+                    style={{ width: "100%" }}
+                    loading={employeeLoading}
+                    value={selectedEmployee}
+                    onChange={setSelectedEmployee}
+                    optionFilterProp="label"
+                    options={employees.map((emp) => ({
+                        value: emp.id,
+                        label: `${emp.username} (${emp.phone_number})`,
+                    }))}
+                />
+            </Modal>
 
             <Modal title={<span style={{ fontWeight: 600 }}>Update Follow-up — <span style={{ color: "#1677ff" }}>{editRecord?.order?.invoice_number}</span></span>}
                 open={!!editRecord} onCancel={() => setEditRecord(null)} onOk={handleSave} okText="Save" confirmLoading={saveLoading} width={420}>

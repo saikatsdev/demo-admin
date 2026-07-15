@@ -27,7 +27,7 @@ export default function OrderList() {
     const [messageApi, contextHolder] = message.useMessage();
     const [pagination, setPagination] = useState({
         current: 1,
-        pageSize: 25,
+        pageSize: 50,
         total: 0,
     });
     const [selectedRowKeys, setSelectedRowKeys]   = useState([]);
@@ -335,18 +335,25 @@ export default function OrderList() {
 
         try {
             setAssignLoading(true);
-            const res = await postData("/admin/followup/assign", {
+
+            const res = await postData("/admin/followup", {
                 order_ids: selectedRowKeys,
                 user_id: selectedEmployee,
             });
 
             if (res?.success) {
-                message.success(res?.msg || "Orders assigned successfully");
+                messageApi.open({
+                    type: "success",
+                    content: "Orders assigned successfully",
+                });
                 setSelectedRowKeys([]);
                 setAssignModalOpen(false);
                 getOrders(pagination.current, pagination.pageSize);
             } else {
-                message.error(res?.msg || "Failed to assign orders");
+                messageApi.open({
+                    type: "error",
+                    content: "Failed to assign orders",
+                });
             }
         } catch (error) {
             console.log(error);
@@ -454,7 +461,7 @@ export default function OrderList() {
                         ...pagination,
                         showSizeChanger: true,
                         showQuickJumper: true,
-                        pageSizeOptions: [10, 25, 50, 100],
+                        pageSizeOptions: [25, 50, 100,150,200,250,300,350,400,450,500],
                         showTotal: (total, range) => `${range[0]}–${range[1]} of ${total} orders`,
                     }}
                     onChange={handleTableChange}
