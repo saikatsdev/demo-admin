@@ -56,10 +56,33 @@
   font-weight: 500;
 }
 
+.ual-page .head-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ual-page .head-actions .ant-btn {
+  height: 38px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  border-color: var(--ual-line-strong);
+  color: var(--ual-ink-2);
+}
+
+.ual-page .head-actions .ant-btn:hover {
+  border-color: var(--ual-brand) !important;
+  color: var(--ual-brand) !important;
+  background: var(--ual-brand-soft) !important;
+}
+
 .ual-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
   margin-bottom: 14px;
@@ -67,6 +90,17 @@
   border: 1px solid var(--ual-line);
   border-radius: var(--ual-radius);
   box-shadow: var(--ual-shadow);
+}
+
+.ual-toolbar__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.ual-toolbar__back {
+  margin-left: auto;
 }
 
 .ual-toolbar .ant-input-affix-wrapper,
@@ -142,6 +176,9 @@
   border-bottom: 1px solid var(--ual-line) !important;
   padding: 12px 14px !important;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 3;
 }
 
 .ual-table-card .ant-table-tbody > tr > td {

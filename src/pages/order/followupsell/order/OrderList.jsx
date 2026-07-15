@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getDatas, postData } from "../../../../api/common/common";
 import useTitle from "../../../../hooks/useTitle";
 import { Breadcrumb, Button, Col, DatePicker, Input, message, Modal, Row, Select, Table, Tooltip } from "antd";
-import {CloseCircleOutlined,EnvironmentOutlined,EyeOutlined,SearchOutlined,UserSwitchOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,CloseCircleOutlined,EnvironmentOutlined,EyeOutlined,SearchOutlined,UserSwitchOutlined} from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import "./OrderList.css";
@@ -378,25 +378,35 @@ export default function OrderList() {
             </div>
 
             <div className="ual-toolbar">
-                <Input
-                    placeholder="Search name, phone, invoice..."
-                    prefix={<SearchOutlined style={{ color: "#94a3b8" }} />}
-                    value={searchKey}
-                    onChange={(e) => setSearchKey(e.target.value)}
-                    onPressEnter={handleSearch}
-                    allowClear
-                    style={{ width: 280 }}
-                />
-                <DatePicker.RangePicker
-                    value={dateRange}
-                    onChange={setDateRange}
-                    format="DD MMM YYYY"
-                    style={{ width: 280 }}
-                />
-                <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-                    Search
+                <div className="ual-toolbar__filters">
+                    <Input
+                        placeholder="Search name, phone, invoice..."
+                        prefix={<SearchOutlined style={{ color: "#94a3b8" }} />}
+                        value={searchKey}
+                        onChange={(e) => setSearchKey(e.target.value)}
+                        onPressEnter={handleSearch}
+                        allowClear
+                        style={{ width: 280 }}
+                    />
+                    <DatePicker.RangePicker
+                        value={dateRange}
+                        onChange={setDateRange}
+                        format="DD MMM YYYY"
+                        style={{ width: 280 }}
+                    />
+                    <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+                        Search
+                    </Button>
+                    <Button onClick={handleReset}>Reset</Button>
+                </div>
+
+                <Button
+                    className="ual-toolbar__back"
+                    icon={<ArrowLeftOutlined />}
+                    onClick={() => window.history.back()}
+                >
+                    Back
                 </Button>
-                <Button onClick={handleReset}>Reset</Button>
             </div>
 
             {selectedRowKeys.length > 0 && (
@@ -448,7 +458,7 @@ export default function OrderList() {
                         showTotal: (total, range) => `${range[0]}–${range[1]} of ${total} orders`,
                     }}
                     onChange={handleTableChange}
-                    scroll={{ x: 1280 }}
+                    scroll={{ x: 1280, y: "calc(100vh - 300px)" }}
                     size="middle"
                 />
             </div>
