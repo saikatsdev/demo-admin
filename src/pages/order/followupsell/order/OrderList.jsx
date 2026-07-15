@@ -37,6 +37,7 @@ export default function OrderList() {
     const [employees, setEmployees]               = useState([]);
     const [employeeLoading, setEmployeeLoading]   = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
+    const [followupDate, setFollowupDate]         = useState(null);
     const [assignLoading, setAssignLoading]       = useState(false);
     const [previewOpen, setPreviewOpen]           = useState(false);
     const [previewOrder, setPreviewOrder]         = useState(null);
@@ -323,6 +324,7 @@ export default function OrderList() {
 
     const handleAssignOpen = () => {
         setSelectedEmployee(null);
+        setFollowupDate(null);
         setAssignModalOpen(true);
         fetchEmployees();
     };
@@ -333,12 +335,18 @@ export default function OrderList() {
             return;
         }
 
+        if (!followupDate) {
+            message.warning("Please select a follow-up date");
+            return;
+        }
+
         try {
             setAssignLoading(true);
 
             const res = await postData("/admin/followup", {
                 order_ids: selectedRowKeys,
                 user_id: selectedEmployee,
+                followup_date: followupDate.format("YYYY-MM-DD"),
             });
 
             if (res?.success) {
@@ -496,6 +504,18 @@ export default function OrderList() {
                         label: `${emp.username} (${emp.phone_number})`,
                     }))}
                 />
+                <div style={{ marginTop: 16 }}>
+                    <label style={{ fontWeight: 500, marginBottom: 6, display: "block" }}>
+                        Follow-up Date <span style={{ color: "#ff4d4f" }}>*</span>
+                    </label>
+                    <DatePicker
+                        style={{ width: "100%" }}
+                        placeholder="Select follow-up date"
+                        value={followupDate}
+                        onChange={setFollowupDate}
+                        format="DD MMM YYYY"
+                    />
+                </div>
             </Modal>
 
             <Modal
