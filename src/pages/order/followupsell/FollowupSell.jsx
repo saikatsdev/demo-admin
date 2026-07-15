@@ -1,9 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,MessageOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined} from '@ant-design/icons';
-import {
-    Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,
-    DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider, Spin,
-} from "antd";
+import {Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider, Spin} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -12,7 +9,6 @@ import { getDatas, postData } from "../../../api/common/common";
 
 dayjs.extend(relativeTime);
 
-// ─── inline styles injected once ──────────────────────────────────────────────
 const pulseStyle = `
 @keyframes lc-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
@@ -27,13 +23,27 @@ if (!document.getElementById("lc-pulse-style")) {
     document.head.appendChild(el);
 }
 
-// ─── helpers ──────────────────────────────────────────────────────────────────
 
 const getStepConfig = (step) => {
     const cfg = {
-        1: { color: "blue",   bg: "#e6f4ff", text: "#1677ff", label: "Step 1" },
-        2: { color: "orange", bg: "#fff7e6", text: "#fa8c16", label: "Step 2" },
-        3: { color: "red",    bg: "#fff2f0", text: "#ff4d4f", label: "Step 3" },
+        1: { 
+            color: "blue",   
+            bg: "#e6f4ff", 
+            text: "#1677ff", 
+            label: "Step 1" 
+        },
+        2: { 
+            color: "orange", 
+            bg: "#fff7e6", 
+            text: "#fa8c16", 
+            label: "Step 2" 
+        },
+        3: { 
+            color: "red",    
+            bg: "#fff2f0", 
+            text: "#ff4d4f", 
+            label: "Step 3" 
+        },
     };
     return cfg[step] || { color: "default", bg: "#f5f5f5", text: "#8c8c8c", label: `Step ${step}` };
 };
@@ -70,15 +80,12 @@ const callStatusLabel = (status) => {
     return map[status] || { label: status || "—", color: "#8c8c8c" };
 };
 
-// ─── LastInteractionPanel ─────────────────────────────────────────────────────
 
 function RatingStars({ rating, max = 5 }) {
     return (
         <span style={{ display: "inline-flex", gap: 2 }}>
             {Array.from({ length: max }).map((_, i) =>
-                i < rating
-                    ? <StarFilled  key={i} style={{ color: "#faad14", fontSize: 13 }} />
-                    : <StarOutlined key={i} style={{ color: "#d9d9d9", fontSize: 13 }} />
+                i < rating ? <StarFilled  key={i} style={{ color: "#faad14", fontSize: 13 }} /> : <StarOutlined key={i} style={{ color: "#d9d9d9", fontSize: 13 }} />
             )}
         </span>
     );
@@ -177,6 +184,7 @@ export default function FollowupSell() {
     const [filterStep, setFilterStep]       = useState(null);
     const [filterStatus, setFilterStatus]   = useState('active');
     const [filterPriority, setFilterPriority] = useState(null);
+    const [filterAssign, setFilterAssign]     = useState(null);
     const [dateRange, setDateRange]         = useState(null);
     const [summaryKey, setSummaryKey]       = useState("all");
 
@@ -533,6 +541,8 @@ export default function FollowupSell() {
             if (search)         params.search_key = search;
             if (filterStep)     params.step       = filterStep;
             if (filterStatus)   params.status     = filterStatus;
+            if (filterAssign === "assigned")   params.is_assign = 1;
+            if (filterAssign === "unassigned") params.is_assign = 0;
 
             if (filterPriority === "overdue") {
                 params.to_date = dayjs().subtract(1, "day").format("YYYY-MM-DD 23:59:59");
@@ -587,7 +597,7 @@ export default function FollowupSell() {
 
     useEffect(() => { 
         fetchOrders(1, pagination.pageSize); 
-    },[search, filterStep, filterStatus, filterPriority, dateRange, summaryKey]);
+    },[search, filterStep, filterStatus, filterPriority, filterAssign, dateRange, summaryKey]);
 
     const handleTableChange = (pag) => fetchOrders(pag.current, pag.pageSize);
 
@@ -754,6 +764,9 @@ export default function FollowupSell() {
                         />
                         <Select placeholder="Priority" allowClear style={{ width: 120 }} value={filterPriority} onChange={setFilterPriority}
                             options={[{ value: "overdue", label: "🔴 Overdue" }, { value: "today", label: "🟠 Today" }, { value: "upcoming", label: "🔵 Upcoming" }]}
+                        />
+                        <Select placeholder="Assign" allowClear style={{ width: 130 }} value={filterAssign} onChange={setFilterAssign}
+                            options={[{ value: "assigned", label: "Assigned" },{ value: "unassigned", label: "Non Assign" },]}
                         />
                         <DatePicker.RangePicker format="YYYY-MM-DD" value={dateRange} onChange={setDateRange} />
                     </Space>
