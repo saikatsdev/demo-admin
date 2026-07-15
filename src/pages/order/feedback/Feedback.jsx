@@ -553,7 +553,7 @@ export default function Feedback() {
                     pageSize: pagination.pageSize, 
                     total: pagination.total, 
                     showSizeChanger: true, 
-                    pageSizeOptions: ["10", "25", "50", "100"]}}
+                    pageSizeOptions: ["25", "50", "100","150","200","250","300","350","400","450","500"]}}
                 onChange={handleTableChange}
             />
 

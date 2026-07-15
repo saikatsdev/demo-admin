@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useEffect, useState } from "react";
 import { getDatas, postData } from "../../../api/common/common";
+import { useRole } from "../../../hooks/useRole";
 
 dayjs.extend(relativeTime);
 
@@ -171,11 +172,13 @@ export default function FollowupSell() {
     useTitle("Follow Up Orders");
 
     const navigate = useNavigate();
+    const { hasAnyRole } = useRole();
+    const isAdminOrSuperAdmin = hasAnyRole(["admin", "superadmin"]);
 
     // core state
     const [followUpOrders, setFollowUpOrders] = useState([]);
     const [loading, setLoading]               = useState(false);
-    const [pagination, setPagination]         = useState({ current: 1, pageSize: 10, total: 0 });
+    const [pagination, setPagination]         = useState({ current: 1, pageSize: 25, total: 0 });
     const [summary, setSummary]               = useState({});
     const [messageApi, contextHolder]         = message.useMessage();
 
@@ -843,36 +846,40 @@ export default function FollowupSell() {
                         <Select placeholder="Priority" allowClear style={{ width: 120 }} value={filterPriority} onChange={setFilterPriority}
                             options={[{ value: "overdue", label: "🔴 Overdue" }, { value: "today", label: "🟠 Today" }, { value: "upcoming", label: "🔵 Upcoming" }]}
                         />
-                        <Select
-                            placeholder="Assign"
-                            style={{ width: 130 }}
-                            value={filterAssign}
-                            onChange={(value) => setFilterAssign(value)}
-                            options={[
-                                { value: "assigned", label: "Assigned" },
-                                { value: "unassigned", label: "Non Assign" },
-                            ]}
-                        />
+                        {isAdminOrSuperAdmin && (
+                            <Select
+                                placeholder="Assign"
+                                style={{ width: 130 }}
+                                value={filterAssign}
+                                onChange={(value) => setFilterAssign(value)}
+                                options={[
+                                    { value: "assigned", label: "Assigned" },
+                                    { value: "unassigned", label: "Non Assign" },
+                                ]}
+                            />
+                        )}
                         <DatePicker.RangePicker format="YYYY-MM-DD" value={dateRange} onChange={setDateRange} />
                     </Space>
                     <Space>
-                        <Button
-                            type={filterAssign === "unassigned" && selectedRowKeys.length > 0 ? "primary" : "default"}
-                            icon={<UserSwitchOutlined />}
-                            onClick={() => assignOrder()}
-                        >
-                            Assign Orders
-                            {filterAssign === "unassigned" && selectedRowKeys.length > 0
-                                ? ` (${selectedRowKeys.length})`
-                                : ""}
-                        </Button>
+                        {isAdminOrSuperAdmin && (
+                            <Button
+                                type={filterAssign === "unassigned" && selectedRowKeys.length > 0 ? "primary" : "default"}
+                                icon={<UserSwitchOutlined />}
+                                onClick={() => assignOrder()}
+                            >
+                                Assign Orders
+                                {filterAssign === "unassigned" && selectedRowKeys.length > 0
+                                    ? ` (${selectedRowKeys.length})`
+                                    : ""}
+                            </Button>
+                        )}
                         <Button icon={<ReloadOutlined />} onClick={() => fetchOrders(1, pagination.pageSize)}>Refresh</Button>
                         <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
                     </Space>
                 </Space>
             </div>
 
-            {filterAssign === "unassigned" && selectedRowKeys.length > 0 && (
+            {isAdminOrSuperAdmin && filterAssign === "unassigned" && selectedRowKeys.length > 0 && (
                 <div style={{
                     display: "flex",
                     alignItems: "center",
@@ -913,7 +920,7 @@ export default function FollowupSell() {
                 dataSource={followUpOrders}
                 loading={loading}
                 rowSelection={
-                    filterAssign === "unassigned"
+                    isAdminOrSuperAdmin && filterAssign === "unassigned"
                         ? {
                               selectedRowKeys,
                               onChange: setSelectedRowKeys,
@@ -926,7 +933,7 @@ export default function FollowupSell() {
                     pageSize: pagination.pageSize,
                     total: pagination.total,
                     showSizeChanger: true,
-                    pageSizeOptions: ["10", "25", "50", "100"],
+                    pageSizeOptions: ["25", "50", "100", "150", "200","250","300","350","400","450","500"],
                     showTotal: (total) => <span style={{ color: "#8c8c8c" }}>Total {total} records</span>,
                 }}
                 onChange={handleTableChange}
