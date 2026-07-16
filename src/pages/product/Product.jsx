@@ -17,7 +17,8 @@ import { exportData } from "../../api/common/common";
 const { Option } = Select;
 
 const { Text, Title } = Typography;
-const DEFAULT_PRODUCT_PAGE_SIZE = 50;
+const DEFAULT_PRODUCT_PAGE_SIZE = 25;
+const PRODUCT_PAGE_SIZE_OPTIONS = [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 const PRODUCT_RETURN_FOCUS_KEY = "product_return_focus_id";
 
 export default function Product() {
@@ -87,6 +88,7 @@ export default function Product() {
     const [quickEditLoading, setQuickEditLoading]     = useState(false);
     const [slugLoading, setSlugLoading]               = useState(false);
     const [highlightedProductId, setHighlightedProductId] = useState(null);
+    const [csvExportLoading, setCsvExportLoading]         = useState(false);
     const [form]                                      = Form.useForm();
 
     const slugTimer = useRef(null);
@@ -1022,6 +1024,7 @@ export default function Product() {
 
     const handleExportCSV = async () => {
         try {
+            setCsvExportLoading(true);
             const response = await exportData(
                 "/admin/products/export-csv",
                 {},
@@ -1042,20 +1045,32 @@ export default function Product() {
             link.click();
 
             window.URL.revokeObjectURL(url);
-
+            messageApi.success("Products exported successfully");
         } catch (error) {
             console.error(error);
+            messageApi.error("Failed to export products");
+        } finally {
+            setCsvExportLoading(false);
         }
-    }
+    };
 
     return (
         <>
             {modalContextHolder}
             {contextHolder}
 
-            <div className="pagehead">
+            <div className="prd-page">
+            <div className="pagehead prd-pagehead">
                 <div className="head-left">
-                    <h1 className="title">All Products</h1>
+                    <div className="prd-page-title-block">
+                        <span className="prd-page-title-icon">
+                            <ShoppingCartOutlined />
+                        </span>
+                        <div>
+                            <h1 className="title">All Products</h1>
+                            <p className="prd-page-subtitle">Manage catalog, stock and product status</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div className="head-actions">
@@ -1063,11 +1078,14 @@ export default function Product() {
                 </div>
             </div>
 
-            <div className="product-filter-section" style={{ marginBottom: 16 }}>
+            <div className="product-filter-section prd-toolbar-card" style={{ marginBottom: 16 }}>
                 <div className="filter-desktop-actions" style={{ marginBottom: 12 }}>
                     <Row gutter={16} justify="space-between" align="middle">
                         <Col>
-                            <Tabs activeKey={activeTab} onChange={(key) => {setActiveTab(key);setProductStatus(key);}}
+                            <Tabs
+                                className="prd-status-tabs"
+                                activeKey={activeTab}
+                                onChange={(key) => {setActiveTab(key);setProductStatus(key);}}
                                 items={
                                 [
                                     {
@@ -1091,46 +1109,52 @@ export default function Product() {
                         </Col>
             
                         <Col>
-                            <Space>
-                                <Button size="small" icon={<FilterOutlined />} onClick={() => setFiltersOpen((v) => !v)}>
+                            <Space wrap className="prd-action-bar">
+                                <Button className="prd-btn prd-btn--ghost" icon={<FilterOutlined />} onClick={() => setFiltersOpen((v) => !v)}>
                                     {filtersOpen ? "Hide Filters" : "Show Filters"}
                                 </Button>
             
                                 {isActionShow && (
-                                    <Select value={selectedAction} onChange={handleBulkAction} placeholder="Action" style={{ width: 150 }}>
+                                    <Select value={selectedAction} onChange={handleBulkAction} placeholder="Action" style={{ width: 160 }}>
                                         <Option value="bulk-status-update">Bulk Status Update</Option>
                                     </Select>
                                 )}
             
                                 {isActionShow && (
-                                    <Select value={selectedAction} onChange={handleBulkDelete} placeholder="Action" style={{ width: 150 }}>
+                                    <Select value={selectedAction} onChange={handleBulkDelete} placeholder="Action" style={{ width: 140 }}>
                                         <Option value="bulk-delete">Bulk Delete</Option>
                                     </Select>
                                 )}
             
                                 {productCreate && (
-                                    <Button size="small" type="primary" icon={<PlusOutlined />} onClick={handleProductAdd}>
-                                        Add
+                                    <Button className="prd-btn prd-btn--primary" type="primary" icon={<PlusOutlined />} onClick={handleProductAdd}>
+                                        Add Product
                                     </Button>
                                 )}
 
                                 {productCreate && (
-                                    <Button size="small" type="primary" icon={<DownloadOutlined />} onClick={handleExportCSV}>
+                                    <Button
+                                        className="prd-btn prd-btn--export"
+                                        type="primary"
+                                        icon={<DownloadOutlined />}
+                                        onClick={handleExportCSV}
+                                        loading={csvExportLoading}
+                                    >
                                         Export CSV
                                     </Button>
                                 )}
             
                                 {productDelete && (
-                                    <Button size="small" danger icon={<DeleteOutlined />} onClick={handleToggleTrash}>
+                                    <Button className="prd-btn prd-btn--danger" danger icon={<DeleteOutlined />} onClick={handleToggleTrash}>
                                         Trash
                                     </Button>
                                 )}
             
-                                <Button size="small" icon={<ReloadOutlined />} onClick={fetchProductsData} style={{ borderRadius: 6 }}>
+                                <Button className="prd-btn prd-btn--ghost" icon={<ReloadOutlined />} onClick={fetchProductsData}>
                                     Refresh
                                 </Button>
 
-                                <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                                <Button className="prd-btn prd-btn--ghost" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                                     Back
                                 </Button>
                             </Space>
@@ -1140,8 +1164,8 @@ export default function Product() {
         
                 {/* Mobile Actions (Always Visible) */}
                 <div className="filter-mobile-actions" style={{ marginBottom: 12 }}>
-                    <Space size="small" style={{ width: "100%" }}>
-                        <Button icon={<FilterOutlined />} onClick={() => setFiltersOpen((v) => !v)} style={{ flex: 1 }}>
+                    <Space size="small" style={{ width: "100%" }} wrap className="prd-action-bar">
+                        <Button className="prd-btn prd-btn--ghost" icon={<FilterOutlined />} onClick={() => setFiltersOpen((v) => !v)} style={{ flex: 1 }}>
                             {filtersOpen ? "Hide" : "Filters"}
                         </Button>
         
@@ -1152,25 +1176,39 @@ export default function Product() {
                         )}
         
                         {productCreate && (
-                            <Button type="primary" icon={<PlusOutlined />} onClick={handleProductAdd} style={{ flex: 1 }}>
+                            <Button className="prd-btn prd-btn--primary" type="primary" icon={<PlusOutlined />} onClick={handleProductAdd} style={{ flex: 1 }}>
                                 Add
+                            </Button>
+                        )}
+
+                        {productCreate && (
+                            <Button
+                                className="prd-btn prd-btn--export"
+                                type="primary"
+                                icon={<DownloadOutlined />}
+                                onClick={handleExportCSV}
+                                loading={csvExportLoading}
+                                style={{ flex: 1 }}
+                            >
+                                Export
                             </Button>
                         )}
         
                         {productDelete && (
-                            <Button type="primary" icon={<DeleteOutlined />} onClick={handleToggleTrash} style={{ flex: 1 }}>
+                            <Button className="prd-btn prd-btn--danger" danger icon={<DeleteOutlined />} onClick={handleToggleTrash} style={{ flex: 1 }}>
                                 Trash
                             </Button>
                         )}
         
-                        <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} style={{ flex: 1 }}>
+                        <Button className="prd-btn prd-btn--ghost" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} style={{ flex: 1 }}>
                             Back
                         </Button>
                     </Space>
                 </div>
         
                 <div className={`product-filter-collapsible ${filtersOpen ? "is-open" : ""}`} aria-hidden={!filtersOpen} aria-expanded={filtersOpen}>
-                    <div className="filter-desktop">
+                    <div className="filter-desktop prd-filter-panel">
+                        <div className="prd-filter-panel__head">Filters</div>
                         <Row gutter={16} justify="space-between" align="middle">
                             <Col>
                                 <Space wrap>
@@ -1244,13 +1282,13 @@ export default function Product() {
                 
                                     <InputNumber value={maxStock} onChange={setMaxStock} placeholder="Max Stock" style={{ width: 120 }} min={0}/>
                 
-                                    <Button onClick={clearFilters}>Clear Filters</Button>
+                                    <Button className="prd-btn prd-btn--ghost" onClick={clearFilters}>Clear Filters</Button>
                                 </Space>
                             </Col>
                         </Row>
                     </div>
         
-                    <div className="filter-mobile">
+                    <div className="filter-mobile prd-filter-panel">
                         <div className="filter-mobile-inputs">
                             <AntInput placeholder="Search..." value={searchQuery} onChange={(e) => handleSearch(e.target.value)}/>
             
@@ -1313,7 +1351,7 @@ export default function Product() {
 
                             <InputNumber value={maxPrice} onChange={setMaxPrice} placeholder="Max Price" style={{ width: "100%" }} min={0}/>
             
-                            <Button onClick={clearFilters} block>
+                            <Button className="prd-btn prd-btn--ghost" onClick={clearFilters} block>
                                 Clear Filters
                             </Button>
                         </div>
@@ -1321,23 +1359,35 @@ export default function Product() {
                 </div>
             </div>
 
-            <div>
+            <div className="prd-table-section">
                 <Flex gap="middle" vertical>
-                    <Flex align="center" gap="middle">
-                        {hasSelected ? `Selected ${selectedRowKeys.length} items` : null}
-                    </Flex>
+                    {hasSelected ? (
+                        <div className="prd-selection-bar">
+                            <span className="prd-selection-count">{selectedRowKeys.length} selected</span>
+                            <span className="prd-selection-text">products ready for bulk action</span>
+                        </div>
+                    ) : null}
         
-                    <div className="product-table-desktop">
-                        <Table rowSelection={rowSelection} columns={columns} dataSource={products} loading={loading} tableLayout="fixed" size="small" bordered scroll={{ x: "max-content" }} rowKey="id"
+                    <div className="product-table-desktop prd-table-card">
+                        <Table
+                            rowSelection={rowSelection}
+                            columns={columns}
+                            dataSource={products}
+                            loading={loading}
+                            tableLayout="fixed"
+                            size="small"
+                            bordered
+                            scroll={{ x: "max-content", y: "calc(100vh - 320px)" }}
+                            rowKey="id"
                             rowClassName={(record) => String(record.id) === String(highlightedProductId) ? "product-return-highlight-row" : ""}
                             pagination={{
                                 current: currentPage,
                                 pageSize: pageSize,
                                 total: tableData?.total || 0,
                                 showSizeChanger: true,
-                                pageSizeOptions: [10, 20, 50, 100],
+                                pageSizeOptions: PRODUCT_PAGE_SIZE_OPTIONS,
                                 showQuickJumper: true,
-                                showTotal: (total, range) =>`${range[0]}-${range[1]} of ${total} items`,
+                                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
                                 onChange: (page, size) => {setCurrentPage(page);setPageSize(size);},
                             }}
                         />
@@ -1504,6 +1554,7 @@ export default function Product() {
                         )}
                     </div>
                 </Flex>
+            </div>
             </div>
 
             <Modal title="Product Preview" open={previewModal} onCancel={() => setPreviewModal(false)} footer={null} width={900}>

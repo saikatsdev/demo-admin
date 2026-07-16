@@ -1,3 +1,229 @@
+/* =========================================================
+   Products Page — Admin Design System
+   Brand: #1C558B
+   ========================================================= */
+
+.prd-page {
+  --prd-brand: #1c558b;
+  --prd-brand-dark: #14426c;
+  --prd-brand-soft: #e8f1f8;
+  --prd-brand-mid: #d0e4f2;
+  --prd-ink: #0f172a;
+  --prd-ink-2: #334155;
+  --prd-muted: #64748b;
+  --prd-line: #e2e8f0;
+  --prd-line-strong: #cbd5e1;
+  --prd-surface: #ffffff;
+  --prd-radius: 10px;
+  --prd-shadow: 0 1px 2px rgba(15, 23, 42, 0.04),
+    0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.prd-pagehead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
+  border: 1px solid var(--prd-line);
+  border-radius: var(--prd-radius);
+  box-shadow: var(--prd-shadow);
+}
+
+.prd-page-title-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.prd-page-title-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--prd-brand);
+  color: #fff;
+  font-size: 18px;
+  box-shadow: 0 6px 14px rgba(28, 85, 139, 0.28);
+}
+
+.prd-pagehead .title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--prd-ink);
+}
+
+.prd-page-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--prd-muted);
+  font-weight: 500;
+}
+
+.prd-toolbar-card {
+  background: var(--prd-surface);
+  border: 1px solid var(--prd-line);
+  border-radius: var(--prd-radius);
+  box-shadow: var(--prd-shadow);
+  padding: 14px 16px;
+}
+
+.prd-status-tabs .ant-tabs-nav {
+  margin-bottom: 0 !important;
+}
+
+.prd-status-tabs .ant-tabs-tab {
+  font-weight: 600;
+  padding: 8px 4px !important;
+}
+
+.prd-status-tabs .ant-tabs-ink-bar {
+  background: var(--prd-brand);
+}
+
+.prd-status-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--prd-brand) !important;
+}
+
+.prd-action-bar .ant-btn {
+  height: 36px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.prd-btn--primary.ant-btn-primary {
+  background: var(--prd-brand);
+  border-color: var(--prd-brand);
+  box-shadow: 0 4px 10px rgba(28, 85, 139, 0.25);
+}
+
+.prd-btn--primary.ant-btn-primary:hover {
+  background: var(--prd-brand-dark) !important;
+  border-color: var(--prd-brand-dark) !important;
+}
+
+.prd-btn--export.ant-btn-primary {
+  background: #0f766e;
+  border-color: #0f766e;
+  box-shadow: 0 4px 10px rgba(15, 118, 110, 0.25);
+}
+
+.prd-btn--export.ant-btn-primary:hover {
+  background: #0d9488 !important;
+  border-color: #0d9488 !important;
+}
+
+.prd-btn--ghost.ant-btn {
+  border-color: var(--prd-line-strong);
+  color: var(--prd-ink-2);
+  background: #fff;
+}
+
+.prd-btn--ghost.ant-btn:hover {
+  border-color: var(--prd-brand) !important;
+  color: var(--prd-brand) !important;
+  background: var(--prd-brand-soft) !important;
+}
+
+.prd-btn--danger.ant-btn-dangerous {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.prd-filter-panel {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--prd-line);
+}
+
+.prd-filter-panel__head {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--prd-muted);
+  margin-bottom: 10px;
+}
+
+.prd-filter-panel .ant-select-selector,
+.prd-filter-panel .ant-input,
+.prd-filter-panel .ant-picker,
+.prd-filter-panel .ant-input-number {
+  border-radius: 8px !important;
+}
+
+.prd-selection-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--prd-surface);
+  border: 1px solid var(--prd-line);
+  border-left: 4px solid var(--prd-brand);
+  border-radius: var(--prd-radius);
+  box-shadow: var(--prd-shadow);
+}
+
+.prd-selection-count {
+  background: var(--prd-brand-soft);
+  color: var(--prd-brand);
+  border: 1px solid var(--prd-brand-mid);
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.prd-selection-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--prd-ink);
+}
+
+.prd-table-card {
+  background: var(--prd-surface);
+  border: 1px solid var(--prd-line);
+  border-radius: var(--prd-radius);
+  box-shadow: var(--prd-shadow);
+  overflow: hidden;
+}
+
+.prd-table-card .ant-table-thead > tr > th {
+  background: #f1f5f9 !important;
+  color: var(--prd-ink-2) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--prd-line) !important;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+.prd-table-card .ant-table-tbody > tr:hover > td {
+  background: #f8fbff !important;
+}
+
+.prd-table-card .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: var(--prd-brand-soft) !important;
+}
+
+.prd-table-card .ant-pagination {
+  padding: 12px 16px;
+  margin: 0 !important;
+  background: #fafbfc;
+  border-top: 1px solid var(--prd-line);
+}
+
 /* Responsive Product Table Styling */
 
 /* Compact Table Styling */
