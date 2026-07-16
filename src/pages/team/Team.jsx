@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Table, Typography, Divider, Row, Col, Card, Avatar, Tag, Space, Progress, Button, Tooltip, Badge,Select, Input, DatePicker, Statistic,} from "antd";
-import {UserOutlined,TeamOutlined,DollarOutlined,BarChartOutlined,ReloadOutlined,FireOutlined,ThunderboltOutlined,HistoryOutlined,ClockCircleOutlined,SearchOutlined,CheckCircleOutlined,CloseCircleOutlined,SyncOutlined,} from "@ant-design/icons";
+import {UserOutlined,TeamOutlined,DollarOutlined,BarChartOutlined,ReloadOutlined,FireOutlined,ThunderboltOutlined,HistoryOutlined,ClockCircleOutlined,SearchOutlined,ArrowLeftOutlined,} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -339,16 +339,37 @@ export default function Team() {
     return (
         <div className="teamWrapper">
             <div className="topBar no-print">
-                <div>
-                    <Title level={4} style={{ margin: 0 }}>Team Dashboard</Title>
-                    <Text type="secondary">Employee assigned & prepared order performance</Text>
+                <div className="team-page-title-block">
+                    <span className="team-page-title-icon">
+                        <TeamOutlined />
+                    </span>
+                    <div>
+                        <Title level={4} style={{ margin: 0 }}>Team Dashboard</Title>
+                        <Text type="secondary">Employee assigned & prepared order performance</Text>
+                    </div>
                 </div>
-                <Button icon={<ReloadOutlined />} onClick={getTeamDashboard} loading={loading}>
-                    Refresh
-                </Button>
+                <div className="team-page-actions">
+                    <Button
+                        className="team-btn-ghost"
+                        icon={<ArrowLeftOutlined />}
+                        onClick={() => window.history.back()}
+                    >
+                        Back
+                    </Button>
+                    <Button
+                        className="team-btn-primary"
+                        type="primary"
+                        icon={<ReloadOutlined />}
+                        onClick={getTeamDashboard}
+                        loading={loading}
+                    >
+                        Refresh
+                    </Button>
+                </div>
             </div>
 
             <Card className="filter-card no-print" bordered={false}>
+                <div className="filter-card__head">Filters</div>
                 <Row gutter={[12, 12]} align="middle">
                     <Col xs={24} sm={12} md={6}>
                         <Text type="secondary" className="filter-label">Date Filter</Text>
@@ -389,7 +410,13 @@ export default function Team() {
 
                     <Col xs={24} sm={12} md={4}>
                         <Text type="secondary" className="filter-label">&nbsp;</Text>
-                        <Button type="primary" block onClick={getTeamDashboard} loading={loading}>
+                        <Button
+                            className="team-btn-primary"
+                            type="primary"
+                            block
+                            onClick={getTeamDashboard}
+                            loading={loading}
+                        >
                             Apply
                         </Button>
                     </Col>
@@ -402,7 +429,7 @@ export default function Team() {
                         <Col xs={24} sm={12} xl={6}>
                             <Card bordered={false} className="summary-card gold-indicator">
                                 <Space direction="vertical" size={0}>
-                                    <Text type="secondary">Team Members</Text>
+                                    <Text type="secondary" className="summary-label">Team Members</Text>
                                     <Title level={3} style={{ margin: 0 }}>{summary.total_team_members}</Title>
                                     <Text type="secondary" className="summary-sub">
                                         <Badge status="processing" text={`${summary.checked_in_today} checked in today`} />
@@ -415,7 +442,7 @@ export default function Team() {
                         <Col xs={24} sm={12} xl={6}>
                             <Card bordered={false} className="summary-card green-indicator">
                                 <Space direction="vertical" size={0}>
-                                    <Text type="secondary">Assigned Orders</Text>
+                                    <Text type="secondary" className="summary-label">Assigned Orders</Text>
                                     <Title level={3} style={{ margin: 0 }}>{summary.total_assigned_orders}</Title>
                                     <Text type="secondary" className="summary-sub">
                                         {summary.total_unprepared_assigned} unprepared · {summary.total_prepared_assigned} prepared
@@ -428,7 +455,7 @@ export default function Team() {
                         <Col xs={24} sm={12} xl={6}>
                             <Card bordered={false} className="summary-card indigo-indicator">
                                 <Space direction="vertical" size={0}>
-                                    <Text type="secondary">Prepared Orders</Text>
+                                    <Text type="secondary" className="summary-label">Prepared Orders</Text>
                                     <Title level={3} style={{ margin: 0 }}>{summary.total_prepared_orders}</Title>
                                     <Text type="secondary" className="summary-sub">
                                         Assigned value: {formatMoney(summary.total_assigned_value)}
@@ -441,7 +468,7 @@ export default function Team() {
                         <Col xs={24} sm={12} xl={6}>
                             <Card bordered={false} className="summary-card cyan-indicator">
                                 <Space direction="vertical" size={0}>
-                                    <Text type="secondary">Preparation Rate</Text>
+                                    <Text type="secondary" className="summary-label">Preparation Rate</Text>
                                     <Title level={3} style={{ margin: 0 }}>{summary.overall_preparation_rate}%</Title>
                                     <Text type="secondary" className="summary-sub">
                                         Prepared value: {formatMoney(summary.total_prepared_value)}
@@ -455,12 +482,16 @@ export default function Team() {
             )}
 
             <div className="tableSection">
+                <div className="tableSection__head">
+                    <span>Team Performance</span>
+                    <Text type="secondary">{employees.length} employees</Text>
+                </div>
                 <Table
                     rowKey="id"
                     columns={columns}
                     dataSource={employees}
                     loading={loading}
-                    scroll={{ x: 1100 }}
+                    scroll={{ x: 1100, y: "calc(100vh - 360px)" }}
                     expandable={{
                         expandedRowRender,
                         rowExpandable: () => true,
@@ -468,6 +499,8 @@ export default function Team() {
                     pagination={{
                         pageSize: 25,
                         showSizeChanger: true,
+                        pageSizeOptions: [10, 25, 50, 100],
+                        showQuickJumper: true,
                         showTotal: (total) => `${total} employees`,
                         size: "small",
                         className: "custom-pagination",
