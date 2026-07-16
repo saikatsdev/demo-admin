@@ -46,7 +46,7 @@ export default function OrderReport() {
         }
 
         try {
-            const query = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([_, v]) => v != null && v !== ""))).toString();
+            const query = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([v]) => v != null && v !== ""))).toString();
             const res = await getDatas(`/admin/order/reports?${query}`);
 
             if (res?.success) {
