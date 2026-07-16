@@ -1,135 +1,193 @@
-import { ArrowLeftOutlined, SearchOutlined, MailOutlined, PhoneOutlined, CalendarOutlined, ShoppingOutlined, WalletOutlined, CheckCircleOutlined, TeamOutlined, UserAddOutlined } from "@ant-design/icons";
-import { Input as AntInput, Breadcrumb, Button, Space, Table, Tag, Typography, Card, Row, Col } from "antd";
+import {ArrowLeftOutlined,SearchOutlined,MailOutlined,CalendarOutlined,ShoppingOutlined,WalletOutlined,CheckCircleOutlined,TeamOutlined,UserAddOutlined,WhatsAppOutlined,CopyOutlined,DownloadOutlined,CloseCircleOutlined} from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Space, Table, Tooltip, Typography, Card, Row, Col, message } from "antd";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import dayjs from "dayjs";
+import "./Customer.css";
 
 const { Title, Text } = Typography;
 
+const PAGE_SIZE_OPTIONS = [25, 50, 100, 150, 200, 250, 300];
+
+const getRowKey = (record) =>
+    record.phone_number || record.last_order_id || record.customer_name;
+
 export default function Customer() {
-    // Hook
     useTitle("All Customer");
 
-    // State
-    const [users, setUsers]                     = useState(null);
-    const [loading, setLoading]                 = useState(false);
+    const [users, setUsers] = useState(null);
+    const [loading, setLoading] = useState(false);
     const [customerSummary, setCustomerSummary] = useState(null);
-    const [currentPage, setCurrentPage]         = useState(1);
-    const [pageSize, setPageSize]               = useState(25);
-    const [searchTerm, setSearchTerm]           = useState("");
-    const [activeFilter, setActiveFilter]       = useState("all");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(25);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [activeFilter, setActiveFilter] = useState("all");
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+    const [csvExportLoading, setCsvExportLoading] = useState(false);
+    const [messageApi, contextHolder] = message.useMessage();
 
-    const styles = {
-        container: {
-            padding: '24px',
-            background: '#f8fafc',
-            minHeight: '100vh',
-        },
-        header: {
-            background: '#ffffff',
-            padding: '24px 30px',
-            borderRadius: '16px',
-            marginBottom: '24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.03)',
-            border: '1px solid #e2e8f0',
-        },
-        statCard: {
-            borderRadius: '16px',
-            border: 'none',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)',
-            transition: 'transform 0.2s ease',
-            cursor: 'pointer',
-        },
-        tableCard: {
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.02)',
-            overflow: 'hidden',
-        },
-        searchInput: {
-            borderRadius: '10px',
-            width: 320,
-            height: '42px',
-        },
-        actionBtn: {
-            borderRadius: '8px',
-            height: '35px',
-            fontWeight: 500,
-        },
-        addBtn: {
-            borderRadius: '8px',
-            height: '35px',
-            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-            border: 'none',
-            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
-            fontWeight: 600,
+    const copyPhone = (phone) => {
+        if (!phone) return;
+        navigator.clipboard.writeText(phone);
+        messageApi.success("Phone number copied");
+    };
+
+    const openWhatsApp = (phone) => {
+        if (!phone) return;
+        const clean = String(phone).replace(/\D/g, "");
+        const num = clean.startsWith("880") ? clean : `880${clean.replace(/^0/, "")}`;
+        window.open(`https://wa.me/${num}`, "_blank");
+    };
+
+    const handleExportCSV = () => {
+        try {
+            setCsvExportLoading(true);
+            const rows = users?.data || [];
+            const exportRows =
+                selectedRowKeys.length > 0
+                    ? rows.filter((r) => selectedRowKeys.includes(getRowKey(r)))
+                    : rows;
+
+            if (!exportRows.length) {
+                messageApi.warning("No customers to export");
+                return;
+            }
+
+            const headers = [
+                "Customer Name",
+                "Email",
+                "Phone",
+                "Total Orders",
+                "Total Spent",
+                "Status",
+                "Last Order Date",
+                "Last Invoice",
+            ];
+
+            const escapeCsv = (val) => {
+                const str = String(val ?? "");
+                if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+                return str;
+            };
+
+            const lines = [
+                headers.join(","),
+                ...exportRows.map((r) =>
+                    [
+                        r.customer_name,
+                        r.email,
+                        r.phone_number,
+                        r.total_orders || 0,
+                        r.total_spent || 0,
+                        r.status || "active",
+                        r.last_order_date
+                            ? dayjs(r.last_order_date).format("YYYY-MM-DD HH:mm")
+                            : "",
+                        r.last_invoice_number || "",
+                    ]
+                        .map(escapeCsv)
+                        .join(",")
+                ),
+            ];
+
+            const blob = new Blob([lines.join("\n")], {
+                type: "text/csv;charset=utf-8;",
+            });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `customers_${dayjs().format("YYYYMMDD_HHmm")}.csv`;
+            link.click();
+            window.URL.revokeObjectURL(url);
+            messageApi.success(
+                selectedRowKeys.length > 0
+                    ? `${exportRows.length} selected customer(s) exported`
+                    : "Customers exported successfully"
+            );
+        } catch (error) {
+            console.log(error);
+            messageApi.error("Failed to export customers");
+        } finally {
+            setCsvExportLoading(false);
         }
     };
 
-    const columns = 
-    [
+    const columns = [
         {
             title: "SL",
             key: "sl",
-            width: 60,
-            align: 'center',
+            width: 64,
+            align: "center",
             render: (_, __, index) => (
-                <Text type="secondary" style={{ fontWeight: 600 }}>
-                    {(currentPage - 1) * (users?.per_page || 10) + index + 1}
-                </Text>
+                <span style={{ fontWeight: 600, color: "#64748b" }}>
+                    {(currentPage - 1) * (users?.per_page || pageSize) + index + 1}
+                </span>
             ),
         },
         {
             title: "Customer",
             dataIndex: "customer_name",
             key: "customer",
-            width: 300,
+            width: 260,
             render: (text, record) => (
-                <Space size="middle">
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Text strong style={{ fontSize: '14px', color: '#1e293b', textTransform: 'capitalize' }}>{text}</Text>
-                        <Text type="secondary" style={{ fontSize: '12px' }}>
-                            <MailOutlined style={{ marginRight: 4 }} />
-                            {record.email || "No email provided"}
-                        </Text>
-                    </div>
-                </Space>
+                <div className="cus-customer">
+                    <span className="cus-customer__name">{text || "—"}</span>
+                    <span className="cus-customer__email">
+                        <MailOutlined />
+                        {record.email || "No email"}
+                    </span>
+                </div>
             ),
         },
         {
             title: "Contact",
             dataIndex: "phone_number",
             key: "phone_number",
-            width: 160,
-            render: (phone) => (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ padding: '6px', background: '#f1f5f9', borderRadius: '6px', display: 'flex' }}>
-                        <PhoneOutlined style={{ color: '#64748b' }} />
+            width: 200,
+            render: (phone) =>
+                phone ? (
+                    <div className="cus-phone">
+                        <span className="cus-phone__number">{phone}</span>
+                        <span className="cus-phone__actions">
+                            <Tooltip title="WhatsApp">
+                                <Button
+                                    type="text"
+                                    className="cus-phone-btn cus-phone-btn--wa"
+                                    icon={<WhatsAppOutlined />}
+                                    onClick={() => openWhatsApp(phone)}
+                                />
+                            </Tooltip>
+                            <Tooltip title="Copy phone">
+                                <Button
+                                    type="text"
+                                    className="cus-phone-btn cus-phone-btn--copy"
+                                    icon={<CopyOutlined />}
+                                    onClick={() => copyPhone(phone)}
+                                />
+                            </Tooltip>
+                        </span>
                     </div>
-                    <Text style={{ color: '#475569' }}>{phone}</Text>
-                </div>
-            ),
+                ) : (
+                    <Text type="secondary">—</Text>
+                ),
         },
         {
             title: "Financials",
             key: "financials",
-            width: 200,
+            width: 180,
             render: (record) => (
-                <Space direction="vertical" size={2}>
-                    <Text style={{ fontSize: '13px' }}>
-                        <ShoppingOutlined style={{ marginRight: 6, color: '#6366f1' }} />
-                        Orders: <Text strong>{record.total_orders || 0}</Text>
-                    </Text>
-                    <Text style={{ fontSize: '13px' }}>
-                        <WalletOutlined style={{ marginRight: 6, color: '#16a34a' }} />
-                        Spent: <Text strong style={{ color: '#16a34a' }}>৳{Number(record.total_spent || 0).toLocaleString()}</Text>
-                    </Text>
-                </Space>
+                <div className="cus-finance">
+                    <div className="cus-finance__row">
+                        <ShoppingOutlined style={{ color: "#1c558b" }} />
+                        Orders: <strong>{record.total_orders || 0}</strong>
+                    </div>
+                    <div className="cus-finance__row cus-finance__spent">
+                        <WalletOutlined />
+                        Spent: <strong>৳{Number(record.total_spent || 0).toLocaleString()}</strong>
+                    </div>
+                </div>
             ),
         },
         {
@@ -140,18 +198,9 @@ export default function Customer() {
             render: (status) => {
                 const isActive = (status || "active") === "active";
                 return (
-                    <Tag 
-                        color={isActive ? "success" : "error"} 
-                        style={{ 
-                            borderRadius: '20px', 
-                            padding: '2px 12px', 
-                            fontWeight: 600,
-                            textTransform: 'capitalize'
-                        }}
-                    >
-                        <span style={{ marginRight: 6 }}>●</span>
-                        {status || "active"}
-                    </Tag>
+                    <span className={`cus-status ${isActive ? "cus-status--active" : "cus-status--inactive"}`}>
+                        ● {status || "active"}
+                    </span>
                 );
             },
         },
@@ -160,28 +209,29 @@ export default function Customer() {
             key: "last_order",
             width: 220,
             render: (record) => {
-                const date = record.last_order_date ? dayjs(record.last_order_date).format("DD-MMM-YYYY") : null;
-                const time = record.last_order_date ? dayjs(record.last_order_date).format("hh:mm A") : null;
+                const date = record.last_order_date
+                    ? dayjs(record.last_order_date).format("DD MMM YYYY")
+                    : null;
+                const time = record.last_order_date
+                    ? dayjs(record.last_order_date).format("hh:mm A")
+                    : null;
                 const invoice = record.last_invoice_number;
 
                 if (!date) return <Text type="secondary">No orders yet</Text>;
 
                 return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <Space size={4}>
-                            <CalendarOutlined style={{ color: '#94a3b8' }} />
-                            <Text style={{ fontSize: '13px', color: '#475569' }}>{date}</Text>
-                            <Text type="secondary" style={{ fontSize: '11px' }}>{time}</Text>
-                        </Space>
+                    <div className="cus-activity">
+                        <div className="cus-activity__date">
+                            <CalendarOutlined style={{ color: "#94a3b8" }} />
+                            {date}
+                            <span className="cus-activity__time">{time}</span>
+                        </div>
                         {invoice && (
-                            <Space size={4}>
-                                <Text type="secondary" style={{ fontSize: '11px' }}>Invoice:</Text>
-                                <Tag color="blue" style={{ borderRadius: '4px', fontSize: '10px', margin: 0 }}>#{invoice}</Tag>
-                            </Space>
+                            <span className="cus-activity__invoice">#{invoice}</span>
                         )}
                     </div>
                 );
-            }
+            },
         },
     ];
 
@@ -202,13 +252,14 @@ export default function Customer() {
             }
         } catch (error) {
             console.log(error);
-        }finally{
+        } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
         const timer = setTimeout(() => {
+            setSelectedRowKeys([]);
             fetchUsers(1, pageSize, searchTerm, activeFilter);
         }, 500);
 
@@ -217,138 +268,166 @@ export default function Customer() {
 
     useEffect(() => {
         if (!searchTerm) {
+            setSelectedRowKeys([]);
             fetchUsers(1, pageSize, "", activeFilter);
         }
     }, [activeFilter]);
 
     return (
-        <div style={styles.container}>
-            <div style={styles.header}>
-                <div className="head-left">
-                    <Title level={2} style={{ margin: 0, fontWeight: 800, color: '#1e293b' }}>
-                        <TeamOutlined style={{ marginRight: 12, color: '#6366f1' }} />
-                        Customer Directory
-                    </Title>
-                    <Breadcrumb
-                        style={{ marginTop: 8 }}
-                        items={[
-                            { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: <span style={{ color: '#64748b' }}>All Customers</span> },
-                        ]}
-                    />
+        <div className="cus-page">
+            {contextHolder}
+
+            <div className="cus-pagehead">
+                <div className="cus-page-title-block">
+                    <span className="cus-page-title-icon">
+                        <TeamOutlined />
+                    </span>
+                    <div>
+                        <h1>Customer Directory</h1>
+                        <p>Browse, filter and export your customer base</p>
+                        <Breadcrumb
+                            style={{ marginTop: 8 }}
+                            items={[
+                                { title: <Link to="/dashboard">Dashboard</Link> },
+                                { title: "All Customers" },
+                            ]}
+                        />
+                    </div>
                 </div>
-                <div className="head-actions">
-                    <Space size="middle">
-                        <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} style={styles.actionBtn}>
-                            Back
-                        </Button>
-                    </Space>
+                <div className="cus-pagehead__actions">
+                    <Button
+                        className="cus-btn-export"
+                        type="primary"
+                        icon={<DownloadOutlined />}
+                        loading={csvExportLoading}
+                        onClick={handleExportCSV}
+                    >
+                        Export CSV
+                        {selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ""}
+                    </Button>
+                    <Button
+                        className="cus-btn-ghost"
+                        icon={<ArrowLeftOutlined />}
+                        onClick={() => window.history.back()}
+                    >
+                        Back
+                    </Button>
                 </div>
             </div>
 
-            <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+            <Row gutter={[16, 16]} className="cus-stats">
                 <Col xs={24} md={8}>
-                    <Card onClick={() => setActiveFilter("all")}
-                        style={{ 
-                            ...styles.statCard, 
-                            background: activeFilter === "all" ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : '#fff',
-                            border: activeFilter === "all" ? 'none' : '1px solid #e2e8f0',
-                            transform: activeFilter === "all" ? 'scale(1.02)' : 'scale(1)'
-                        }}
+                    <Card
+                        className={`cus-stat-card ${activeFilter === "all" ? "is-active" : ""}`}
+                        onClick={() => setActiveFilter("all")}
+                        styles={{ body: { padding: "18px 20px" } }}
                     >
-                        <Space direction="vertical" size={0}>
-                            <Text style={{ color: activeFilter === "all" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>Total Customers</Text>
-                            <Title level={2} style={{ color: activeFilter === "all" ? '#fff' : '#1e293b', margin: '8px 0', fontWeight: 800 }}>
-                                {Number(customerSummary?.total_customers) || 0}
-                            </Title>
-                            <Space style={{ color: activeFilter === "all" ? '#fff' : '#6366f1', fontSize: '12px', opacity: activeFilter === "all" ? 0.9 : 1 }}>
-                                <TeamOutlined />
-                                <span>Lifetime Base</span>
-                            </Space>
-                        </Space>
+                        <div className="cus-stat-label">Total Customers</div>
+                        <Title level={2} className="cus-stat-value">
+                            {Number(customerSummary?.total_customers) || 0}
+                        </Title>
+                        <span className="cus-stat-meta">
+                            <TeamOutlined /> Audience Base
+                        </span>
                     </Card>
                 </Col>
                 <Col xs={24} md={8}>
-                    <Card 
+                    <Card
+                        className={`cus-stat-card ${activeFilter === "new" ? "is-active" : ""}`}
                         onClick={() => setActiveFilter("new")}
-                        style={{ 
-                            ...styles.statCard,
-                            background: activeFilter === "new" ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : '#fff',
-                            border: activeFilter === "new" ? 'none' : '1px solid #e2e8f0',
-                            transform: activeFilter === "new" ? 'scale(1.02)' : 'scale(1)'
-                        }}
+                        styles={{ body: { padding: "18px 20px" } }}
                     >
-                        <Space direction="vertical" size={0}>
-                            <Text style={{ color: activeFilter === "new" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>New Customers</Text>
-                            <Title level={2} style={{ color: activeFilter === "new" ? '#fff' : '#6366f1', margin: '8px 0', fontWeight: 800 }}>
-                                {Number(customerSummary?.current_month_customers) || 0}
-                            </Title>
-                            <Space style={{ color: activeFilter === "new" ? '#fff' : '#6366f1', fontSize: '12px', opacity: activeFilter === "new" ? 0.9 : 1 }}>
-                                <UserAddOutlined />
-                                <span>Recent Orders</span>
-                            </Space>
-                        </Space>
+                        <div className="cus-stat-label">New Customers</div>
+                        <Title level={2} className="cus-stat-value" style={{ color: activeFilter === "new" ? undefined : "#1c558b" }}>
+                            {Number(customerSummary?.current_month_customers) || 0}
+                        </Title>
+                        <span className="cus-stat-meta">
+                            <UserAddOutlined /> Recent Orders
+                        </span>
                     </Card>
                 </Col>
                 <Col xs={24} md={8}>
-                    <Card 
+                    <Card
+                        className={`cus-stat-card ${activeFilter === "active" ? "is-active-green" : ""}`}
                         onClick={() => setActiveFilter("active")}
-                        style={{ 
-                            ...styles.statCard,
-                            background: activeFilter === "active" ? 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)' : '#fff',
-                            border: activeFilter === "active" ? 'none' : '1px solid #e2e8f0',
-                            transform: activeFilter === "active" ? 'scale(1.02)' : 'scale(1)'
-                        }}
+                        styles={{ body: { padding: "18px 20px" } }}
                     >
-                        <Space direction="vertical" size={0}>
-                            <Text style={{ color: activeFilter === "active" ? 'rgba(255,255,255,0.8)' : '#64748b', fontSize: '14px', fontWeight: 500 }}>Active Customers</Text>
-                            <Title level={2} style={{ color: activeFilter === "active" ? '#fff' : '#16a34a', margin: '8px 0', fontWeight: 800 }}>
-                                {Number(customerSummary?.active_customers) || 0}
-                            </Title>
-                            <Space style={{ color: activeFilter === "active" ? '#fff' : '#16a34a', fontSize: '12px', opacity: activeFilter === "active" ? 0.9 : 1 }}>
-                                <CheckCircleOutlined />
-                                <span>Active</span>
-                            </Space>
-                        </Space>
+                        <div className="cus-stat-label">Active Customers</div>
+                        <Title level={2} className="cus-stat-value" style={{ color: activeFilter === "active" ? undefined : "#059669" }}>
+                            {Number(customerSummary?.active_customers) || 0}
+                        </Title>
+                        <span className="cus-stat-meta" style={{ color: activeFilter === "active" ? undefined : "#059669" }}>
+                            <CheckCircleOutlined /> Active
+                        </span>
                     </Card>
                 </Col>
             </Row>
 
-            <Card style={styles.tableCard} bodyStyle={{ padding: 0 }}>
-                <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Title level={5} style={{ margin: 0, color: '#334155' }}>Customer Base</Title>
-                    <AntInput 
-                        placeholder="Search by name, email or phone..." 
-                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
-                        style={styles.searchInput} 
-                        allowClear
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            <div className="cus-toolbar">
+                <h3 className="cus-toolbar__title">Customer Base</h3>
+                <AntInput
+                    placeholder="Search by name, email or phone..."
+                    prefix={<SearchOutlined style={{ color: "#94a3b8" }} />}
+                    allowClear
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+
+            {selectedRowKeys.length > 0 && (
+                <div className="cus-selection">
+                    <Space wrap>
+                        <span className="cus-selection__count">{selectedRowKeys.length} selected</span>
+                        <span className="cus-selection__text">customers selected</span>
+                        <Button
+                            type="primary"
+                            icon={<DownloadOutlined />}
+                            loading={csvExportLoading}
+                            onClick={handleExportCSV}
+                        >
+                            Export Selected
+                        </Button>
+                    </Space>
+                    <Button
+                        type="link"
+                        icon={<CloseCircleOutlined />}
+                        onClick={() => setSelectedRowKeys([])}
+                        style={{ padding: 0, color: "#1c558b" }}
+                    >
+                        Clear selection
+                    </Button>
                 </div>
-                <Table 
-                    rowKey={(record) => record.phone_number || record.last_order_id} 
-                    loading={loading} 
-                    columns={columns} 
-                    dataSource={users?.data || []} 
-                    scroll={{ x: "max-content" }}
-                    style={{ padding: '0 8px' }}
+            )}
+
+            <div className="cus-table-card">
+                <Table
+                    rowKey={getRowKey}
+                    loading={loading}
+                    columns={columns}
+                    dataSource={users?.data || []}
+                    scroll={{ x: 1100, y: "calc(100vh - 340px)" }}
+                    rowSelection={{
+                        selectedRowKeys,
+                        onChange: setSelectedRowKeys,
+                        columnWidth: 48,
+                    }}
                     pagination={{
                         current: currentPage,
                         pageSize: pageSize,
                         total: users?.total || 0,
                         onChange: (page, size) => {
+                            setSelectedRowKeys([]);
                             setPageSize(size);
                             fetchUsers(page, size);
                         },
                         showSizeChanger: true,
-                        pageSizeOptions: ['15', '25', '50', '75', '100'],
-                        showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} customers`,
-                        position: ['bottomRight'],
-                        style: { padding: '16px 24px' }
+                        pageSizeOptions: PAGE_SIZE_OPTIONS,
+                        showQuickJumper: true,
+                        showTotal: (total, range) =>
+                            `${range[0]}–${range[1]} of ${total} customers`,
                     }}
                 />
-            </Card>
+            </div>
         </div>
     );
 }
