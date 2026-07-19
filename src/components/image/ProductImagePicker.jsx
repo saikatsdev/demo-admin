@@ -49,11 +49,21 @@ export default function ProductImagePicker({ initialValue, gallery = [], fetchMo
             });
 
             if (res && res.success) {
-                const newGalleryItems = Array.isArray(res.result) ? res.result : (res.result?.data || []);
-                onUploadSuccess?.(newGalleryItems);
+                let newGalleryItems = [];
+                if (res.result?.data && Array.isArray(res.result.data)) {
+                    newGalleryItems = res.result.data;
+                } else if (Array.isArray(res.result)) {
+                    newGalleryItems = res.result;
+                } else if (res.result) {
+                    newGalleryItems = [res.result];
+                }
+
+                if (newGalleryItems.length > 0) {
+                    onUploadSuccess?.(newGalleryItems);
+                }
                 onSuccess(res, file);
             } else {
-                onError(new Error(res.message || "Upload failed"));
+                onError(new Error(res?.message || res?.msg || "Upload failed"));
             }
         } catch (error) {
             onError(error);

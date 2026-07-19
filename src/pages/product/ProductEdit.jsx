@@ -1089,7 +1089,7 @@ export default function ProductEdit() {
                                                 <Text strong style={{ display: "block", marginBottom: 12, fontSize: '14px' }}>
                                                     Main Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
                                                 </Text>
-                                                <ProductImagePicker name="image" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={handleImageChange} onUploadSuccess={(newImages) => { setGallery(prev => [...newImages, ...prev]);}} initialValue={thumbnailPreview}/>
+                                                <ProductImagePicker name="image" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(gallaryPage + 1)} onChange={handleImageChange} onUploadSuccess={(newImages) => { setGallery(prev => [...(Array.isArray(newImages) ? newImages : []), ...prev]);}} initialValue={thumbnailPreview}/>
                                                 {errors?.image && (
                                                     <div style={{ color: "#ef4444", marginTop: 8, fontSize: '12px' }}>
                                                         {errors.image.map((error, index) => (
@@ -1104,7 +1104,7 @@ export default function ProductEdit() {
                                                 <Text strong style={{ display: "block", marginBottom: 12, fontSize: '14px' }}>
                                                     Product Gallery
                                                 </Text>
-                                                <ProductGalleryPicker gallery={gallery} hasMore={hasMore} fetchMore={() => fetchMedia(page + 1)} loadingMore={loadingMore} onChange={handleGalleryImageFileChange} onUploadSuccess={(newImages) => { setGallery(prev => [...newImages, ...prev]); }} initialValues={imagePreview}/>
+                                                <ProductGalleryPicker gallery={gallery} hasMore={hasMore} fetchMore={() => fetchMedia(gallaryPage + 1)} loadingMore={loadingMore} onChange={handleGalleryImageFileChange} onUploadSuccess={(newImages) => { setGallery(prev => [...(Array.isArray(newImages) ? newImages : []), ...prev]); }} initialValues={imagePreview}/>
                                             </div>
                                         </Col>
                                     </Row>
@@ -1278,7 +1278,7 @@ export default function ProductEdit() {
                                             width: 150,
                                             render: (_, record) => (
                                                 <Space direction="vertical" style={{ width: "100%" }}>
-                                                    <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(page + 1)} onChange={(data) => handleColorImageChange(data, record.index)}/>
+                                                    <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(gallaryPage + 1)} onChange={(data) => handleColorImageChange(data, record.index)} onUploadSuccess={(newImages) => { setGallery(prev => [...(Array.isArray(newImages) ? newImages : []), ...prev]); }}/>
 
                                                     {colorImagePreview[record.index] && (
                                                         <div style={{ position: "relative", display: "inline-block" }}>
