@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled, ShoppingCartOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons'
+import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled, ShoppingCartOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, ClearOutlined, ReloadOutlined } from '@ant-design/icons'
 import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Divider,Tag, Select, Radio, Drawer, Row, Col, Typography, Card, Image, Form, Timeline, Empty} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -191,22 +191,17 @@ export default function Feedback() {
             render: (_, record) => (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
                     {record.employee != null ? (
-                        <Tag color="purple" style={{ borderRadius: "10px", padding: "2px 10px", textTransform: "capitalize", margin: 0 }}>
-                            {record?.employee?.username}
-                        </Tag>
+                        <>
+                            <Tag color="purple" style={{ borderRadius: "10px", padding: "2px 10px", textTransform: "capitalize", margin: 0 }}>
+                                {record?.employee?.username}
+                            </Tag>
+                            <Button type="primary" ghost size="small" icon={<EyeOutlined />} onClick={() => handleInteractionDetails(record)} style={{ fontSize: 12, padding: "0 10px", height: 28 }}>
+                                Details
+                            </Button>
+                        </>
                     ) : (
                         <span style={{ color: "#bfbfbf", fontStyle: "italic", fontSize: "13px" }}>Unassigned</span>
                     )}
-                    <Button
-                        type="primary"
-                        ghost
-                        size="small"
-                        icon={<EyeOutlined />}
-                        onClick={() => handleInteractionDetails(record)}
-                        style={{ fontSize: 12, padding: "0 10px", height: 28 }}
-                    >
-                        Details
-                    </Button>
                 </div>
             ),
         },
@@ -259,6 +254,7 @@ export default function Feedback() {
             if (quickFilter === "today") {
                 params.from_date = dayjs().format("YYYY-MM-DD 00:00:00");
                 params.to_date = dayjs().format("YYYY-MM-DD 23:59:59");
+                params.status = "active";
             } else if (quickFilter === "this_week") {
                 params.from_date = dayjs().startOf("week").format("YYYY-MM-DD 00:00:00");
                 params.to_date = dayjs().endOf("week").format("YYYY-MM-DD 23:59:59");
@@ -447,6 +443,20 @@ export default function Feedback() {
                             <Radio.Button value="this_week">This Week</Radio.Button>
                         </Radio.Group>
                         
+                        <Button icon={<ClearOutlined />} onClick={() => {
+                            setKeyword("");
+                            setAssignedEmp(null);
+                            setDeliveredDate(null);
+                            setQuickFilter("all");
+                            setSummaryFilter("total_orders");
+                        }}>
+                            Clear
+                        </Button>
+
+                        <Button icon={<ReloadOutlined />} onClick={() => fetchFeedbackOrders(pagination.current, pagination.pageSize)}>
+                            Refresh
+                        </Button>
+
                         <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                             Back
                         </Button>
@@ -663,6 +673,7 @@ export default function Feedback() {
                                         { value: "answered", label: "Answered" },
                                         { value: "no_answer", label: "No Answer" },
                                         { value: "busy", label: "Busy" },
+                                        { value: "block-list", label: "Block List" },
                                         { value: "switched_off", label: "Switched Off" },
                                         { value: "wrong_number", label: "Wrong Number" },
                                         { value: "call_rejected", label: "Call Rejected" },
@@ -709,7 +720,7 @@ export default function Feedback() {
 
                                 <Form.Item noStyle shouldUpdate={(prev, curr) => prev.call_status !== curr.call_status}>
                                     {({ getFieldValue }) =>
-                                        ['answered', 'no_answer', 'wrong_number'].includes(
+                                        ['answered', 'no_answer', 'busy','block-list','wrong_number'].includes(
                                             getFieldValue('call_status')
                                         ) ? (
                                             <Form.Item name="next_action" label={<span style={{ fontWeight: 500 }}>Next Action</span>}>
@@ -717,8 +728,8 @@ export default function Feedback() {
                                                     placeholder="Select Next Action"
                                                     size="large"
                                                     options={[
+                                                        { value: "active", label: "Active" },
                                                         { value: "followup", label: "Move to Follow-up" },
-                                                        { value: "converted", label: "Converted" },
                                                         { value: "cancelled", label: "Cancelled" },
                                                     ]}
                                                 />
