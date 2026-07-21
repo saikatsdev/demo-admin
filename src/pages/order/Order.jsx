@@ -25,6 +25,8 @@ import { useRole } from "../../hooks/useRole";
 const { Option } = Select;
 const { TextArea } = Input;
 const { RangePicker } = DatePicker;
+const DEFAULT_ORDER_PAGE_SIZE = 25;
+const ORDER_PAGE_SIZE_OPTIONS = [25, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500];
 
 export default function Order() {
     // Hook
@@ -125,7 +127,7 @@ export default function Order() {
     const [noteLoader, setNoteLoader]                                                                  = useState(false);
     const [isCourierModalOpen, setIsCourierModalOpen]                                                  = useState(false);
     const [courierLogs, setCourierLogs]                                                                = useState([]);
-    const [pageSize, setPageSize]                                                                      = useState(orders?.per_page);
+    const [pageSize, setPageSize]                                                                      = useState(DEFAULT_ORDER_PAGE_SIZE);
     const [bulkLoading, setBulLoading]                                                                 = useState(false);
     const [digitalModalOpen, setDigitalModalOpen]                                                      = useState(false);
     const [selectedDigitalOrderId, setSelectedDigitalOrderId]                                          = useState(null);
@@ -142,7 +144,7 @@ export default function Order() {
         try {
             const res = await getDatas("/admin/orders/list", {
                 page              : page,
-                paginate_size     : "paginate_size" in overrides ? overrides.paginate_size          : pageSize,
+                paginate_size     : "paginate_size" in overrides ? overrides.paginate_size          : (pageSize || DEFAULT_ORDER_PAGE_SIZE),
                 search_key        : "search_key" in overrides ? overrides.search_key                : searchQuery,
                 paid_status       : "paid_status" in overrides ? overrides.paid_status              : isPaid,
                 customer_type_id  : "customer_type_id" in overrides ? overrides.customer_type_id    : selectedCustomerTypeId,
@@ -168,7 +170,7 @@ export default function Order() {
                 setOrders(res?.result?.orders || []);
         
                 setCurrentPage(res?.result?.orders?.meta?.current_page);
-                setPageSize(res?.result?.orders?.meta?.per_page);
+                setPageSize(res?.result?.orders?.meta?.per_page || DEFAULT_ORDER_PAGE_SIZE);
         
                 const keysToCheck = ["paid_status", "order_from_id","start_date", "end_date","courier_id", "district_id","is_invoice_printed", "customer_type_id", "min_price", "max_price", "min_invoice", "max_invoice"];
                 const hasRelevantOverride = keysToCheck.some(key => key in overrides);
@@ -2628,7 +2630,7 @@ export default function Order() {
                             pageSize: pageSize,
                             total: orders?.meta?.total || 0,
                             showSizeChanger: true,
-                            pageSizeOptions: [10, 20, 50, 100,150,200,250,300,400,500],
+                            pageSizeOptions: ORDER_PAGE_SIZE_OPTIONS,
                             showQuickJumper: true,
                             showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} items`,
 
