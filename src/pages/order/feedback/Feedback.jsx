@@ -708,14 +708,20 @@ export default function Feedback() {
                                 </Form.Item>
 
                                 <Form.Item noStyle shouldUpdate={(prev, curr) => prev.call_status !== curr.call_status}>
-                                    {({ getFieldValue }) => 
-                                        getFieldValue('call_status') === 'answered' ? (
-                                            <Form.Item name="next_action" label={<span style={{fontWeight: 500}}>Next Action</span>}>
-                                                <Select placeholder="Select Next Action" size="large" options={[
-                                                    { value: "followup", label: "Move to Follow-up" },
-                                                    { value: "converted", label: "Converted" },
-                                                    { value: "close", label: "Close" },
-                                                ]} />
+                                    {({ getFieldValue }) =>
+                                        ['answered', 'no_answer', 'wrong_number'].includes(
+                                            getFieldValue('call_status')
+                                        ) ? (
+                                            <Form.Item name="next_action" label={<span style={{ fontWeight: 500 }}>Next Action</span>}>
+                                                <Select
+                                                    placeholder="Select Next Action"
+                                                    size="large"
+                                                    options={[
+                                                        { value: "followup", label: "Move to Follow-up" },
+                                                        { value: "converted", label: "Converted" },
+                                                        { value: "cancelled", label: "Cancelled" },
+                                                    ]}
+                                                />
                                             </Form.Item>
                                         ) : null
                                     }
