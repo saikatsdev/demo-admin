@@ -1,132 +1,187 @@
-import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, CopyOutlined, ReloadOutlined } from "@ant-design/icons";
-import {Input as AntInput,Breadcrumb,Button,Popconfirm,Space,Table,Tag, Tooltip, message} from "antd";
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { deleteData, getDatas } from "../../api/common/common";
+import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, CopyOutlined, ReloadOutlined, SearchOutlined, TeamOutlined, CheckCircleOutlined, ClockCircleOutlined, UserOutlined, MailOutlined, PhoneOutlined, SafetyOutlined, CalendarOutlined } from "@ant-design/icons";
+import { Input as AntInput, Breadcrumb, Button, Popconfirm, Space, Table, Tag, Card, Row, Col, Typography, Avatar, Tooltip } from "antd";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import useTitle from "../../hooks/useTitle";
+import { deleteData, getDatas } from "../../api/common/common";
+import { useEffect, useMemo, useState } from "react";
 import { usePermission } from "../../hooks/usePermission";
+
+const { Title, Text } = Typography;
 
 export default function Employee() {
     // Hook
     useTitle("Employees");
-
-    // State
-    const [query, setQuery]                   = useState("");
-    const [users, setUsers]                   = useState([]);
-    const [loading, setLoading]               = useState(false);
-    const [pagination, setPagination]         = useState({current: 1,pageSize: 10,total: 0});
-    const { current, pageSize }               = pagination;
-    const [messageApi, contextHolder]         = message.useMessage();
-    const [debouncedQuery, setDebouncedQuery] = useState("");
 
     // Variable
     const navigate = useNavigate();
     const {permissions} = usePermission();
 
     const can = (permission) => permissions?.includes(permission);
-    
-    const fetchUsers = useCallback(async () => {
-        setLoading(true);
-        const params = {
-            user_category_id: 3,
-            page            : pagination.current,
-            per_page        : pagination.pageSize,
-            search_key      : debouncedQuery || undefined,
-        };
-        const res = await getDatas("/admin/users", params);
-        const list = res?.result?.data || [];
-        const meta = res?.result?.meta;
 
-        setUsers(list);
-        if (meta) {
-            setPagination((p) => ({
-                ...p,
-                current: meta.current_page || p.current,
-                pageSize: meta.per_page || p.pageSize,
-                total: meta.total || p.total,
-            }));
+    // State
+    const [query, setQuery]                     = useState("");
+    const [users, setUsers]                     = useState([]);
+    const [loading, setLoading]                 = useState(false);
+    const [pagination, setPagination]           = useState({current: 1,pageSize: 10,total: 0});
+    const { current, pageSize }                 = pagination;
+    const [debouncedQuery, setDebouncedQuery]   = useState("");
+
+    // Local Styles for Professional Look
+    const styles = {
+        container: {
+            padding: '24px',
+            background: '#f8fafc',
+            minHeight: '100vh',
+        },
+        header: {
+            background: '#ffffff',
+            padding: '24px 30px',
+            borderRadius: '16px',
+            marginBottom: '24px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.03)',
+            border: '1px solid #e2e8f0',
+        },
+        statCard: {
+            borderRadius: '16px',
+            border: 'none',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.03)',
+            transition: 'transform 0.2s ease',
+            cursor: 'pointer',
+        },
+        tableCard: {
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.02)',
+            overflow: 'hidden',
+        },
+        searchInput: {
+            borderRadius: '10px',
+            width: 320,
+            height: '42px',
+        },
+        actionBtn: {
+            borderRadius: '8px',
+            height: '42px',
+            fontWeight: 500,
+        },
+        addBtn: {
+            borderRadius: '8px',
+            height: '42px',
+            background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+            border: 'none',
+            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+            fontWeight: 600,
         }
-        setLoading(false);
-    }, [pagination.current, pagination.pageSize, debouncedQuery]);
-
-    const handleRefresh = () => {
-        fetchUsers();
-        message.success("Data refreshed");
     };
 
-    const columns = 
-    [
+    // Table Columns
+    const columns = [
         {
             title: "SL",
             key: "sl",
-            width: 40,
-            render: (_, __, index) => (current - 1) * pageSize + index + 1,
-        },
-        {
-            title: "Image",
-            dataIndex: "image",
-            key: "image",
-            width: 70,
-            render: (src, record) => (
-                <img src={src} alt={record.username} style={{ width: 32, height: 32, borderRadius: 4, objectFit: "cover" }}/>
+            width: 60,
+            align: 'center',
+            render: (_, __, index) => (
+                <Text type="secondary" style={{ fontWeight: 600 }}>
+                    {(current - 1) * pageSize + index + 1}
+                </Text>
             ),
         },
         {
-            title: "Username",
+            title: "Member",
             dataIndex: "username",
-            key: "username",
+            key: "member",
+            width: 250,
             render: (text, record) => (
-                <Space>
-                    <Tag color="green" style={{ fontWeight: 700, fontSize: '13px', padding: '2px 10px', borderRadius: '4px', letterSpacing: '0.5px', textTransform: "capitalize" }}>{text}</Tag>
+                <Space size="middle">
+                    <Avatar 
+                        src={record.image} 
+                        size={44} 
+                        icon={<UserOutlined />} 
+                        style={{ border: '2px solid #e2e8f0' }}
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <Text strong style={{ fontSize: '14px', color: '#1e293b' }}>{text}</Text>
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                            <MailOutlined style={{ marginRight: 4 }} />
+                            {record.email || "No email provided"}
+                        </Text>
+                    </div>
                 </Space>
             ),
         },
         {
-            title: "Email",
-            dataIndex: "email",
-            key: "email",
-        },
-        {
-            title: "Phone",
+            title: "Contact",
             dataIndex: "phone_number",
             key: "phone_number",
+            width: 180,
+            render: (phone) => (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ padding: '6px', background: '#f1f5f9', borderRadius: '6px', display: 'flex' }}>
+                        <PhoneOutlined style={{ color: '#64748b' }} />
+                    </div>
+                    <Text style={{ color: '#475569' }}>{phone}</Text>
+                </div>
+            ),
         },
         {
             title: "OTP",
             dataIndex: "staff_login_otp",
             key: "staff_login_otp",
+            width: 150,
             render: (text) => text ? (
-                 <Space>
-                    <Tag color="blue" style={{ fontWeight: 700, fontSize: '13px', padding: '2px 10px', borderRadius: '4px', letterSpacing: '0.5px' }}>{text}</Tag>
+                <Space>
+                    <Tag color="blue" style={{ borderRadius: '6px', fontWeight: 500, padding: '2px 10px', border: 'none' }}>{text}</Tag>
                     <Tooltip title="Copy OTP">
-                        <Button size="small" type="text" icon={<CopyOutlined style={{ fontSize: '12px' }} />} 
+                        <Button 
+                            size="small" 
+                            type="text" 
+                            icon={<CopyOutlined style={{ fontSize: '12px' }} />} 
                             onClick={() => {
                                 navigator.clipboard.writeText(text);
-                                messageApi.open({
-                                    type: "success",
-                                    content: "OTP copied to clipboard",
-                                });
                             }}
                             style={{ color: '#1890ff', padding: '0 4px' }}
                         />
                     </Tooltip>
                 </Space>
-            ) : <Tag color="default">N/A</Tag>,
+            ) : <Tag color="default" style={{ borderRadius: '6px' }}>N/A</Tag>,
         },
         {
             title: "Category",
             dataIndex: ["category", "name"],
             key: "category",
-            render: (_, record) => record?.category?.name || "",
+            width: 150,
+            render: (cat) => (
+                <Tag color="blue" style={{ borderRadius: '6px', fontWeight: 500, padding: '2px 10px', border: 'none' }}>
+                    {cat || "General"}
+                </Tag>
+            ),
         },
         {
             title: "Roles",
             dataIndex: "roles",
             key: "roles",
+            width: 200,
             render: (roles) => (
                 <Space size={[4, 4]} wrap>
                     {(roles || []).map((r) => (
-                        <Tag key={r.id}>{r.display_name || r.name}</Tag>
+                        <Tag 
+                            key={r.id} 
+                            style={{ 
+                                borderRadius: '6px', 
+                                background: '#f8fafc', 
+                                color: '#6366f1', 
+                                border: '1px solid #e2e8f0',
+                                fontWeight: 500
+                            }}
+                        >
+                            <SafetyOutlined style={{ marginRight: 4 }} />
+                            {r.display_name || r.name}
+                        </Tag>
                     ))}
                 </Space>
             ),
@@ -135,32 +190,79 @@ export default function Employee() {
             title: "Status",
             dataIndex: "status",
             key: "status",
-            render: (status) => (
-                <Tag color={status === "active" ? "green" : "red"} style={{textTransform:"capitalize"}}>{status}</Tag>
-            ),
+            width: 120,
+            render: (status) => {
+                const isActive = status === "active";
+                return (
+                    <Tag 
+                        color={isActive ? "success" : "error"} 
+                        style={{ 
+                            borderRadius: '20px', 
+                            padding: '2px 12px', 
+                            fontWeight: 600,
+                            textTransform: 'capitalize'
+                        }}
+                    >
+                        <span style={{ marginRight: 6 }}>●</span>
+                        {status}
+                    </Tag>
+                );
+            },
         },
         {
             title: "Last Login",
             dataIndex: "login_at",
             key: "login_at",
+            width: 180,
+            render: (date) => (
+                <Space direction="vertical" size={0}>
+                    <Text style={{ fontSize: '13px', color: '#475569' }}>
+                        <CalendarOutlined style={{ marginRight: 6, color: '#94a3b8' }} />
+                        {date ? date.split(' ')[0] : "Never"}
+                    </Text>
+                    {date && <Text type="secondary" style={{ fontSize: '11px' }}>{date.split(' ')[1]}</Text>}
+                </Space>
+            ),
         },
         {
             title: "Action",
             key: "operation",
-            width: 120,
-            align: "center",
+            width: 160,
+            fixed: 'right',
+            align: 'center',
             render: (_, record) => (
                 <Space>
                     <Tooltip title="Edit Employee">
-                        <Button size="small" type="text" style={{ color: '#1890ff', backgroundColor: '#e6f7ff' }} icon={<EditOutlined />} onClick={() => onEdit(record)} disabled={can("users.update")} />
+                        <Button 
+                            icon={<EditOutlined />} 
+                            onClick={() => onEdit(record)}
+                            style={{ borderRadius: '8px', color: '#4f46e5', borderColor: '#4f46e5' }}
+                            disabled={can("users.update")}
+                        />
                     </Tooltip>
-                    
                     <Tooltip title="Update Password">
-                        <Button size="small" type="text" style={{ color: '#faad14', backgroundColor: '#fff7e6' }} icon={<KeyOutlined />} onClick={() => navigate(`/edit/employee/password/${record.id}`)} disabled={can("users.update")} />
+                        <Button 
+                            icon={<KeyOutlined />} 
+                            onClick={() => navigate(`/edit/employee/password/${record.id}`)}
+                            style={{ borderRadius: '8px', color: '#faad14', borderColor: '#faad14' }}
+                            disabled={can("users.update")}
+                        />
                     </Tooltip>
-                    <Popconfirm title="Delete user?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Tooltip title="Delete Employee">
-                            <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} disabled={can("users.delete")} />
+                    <Popconfirm 
+                        title="Delete Employee" 
+                        description="Are you sure you want to remove this employee?"
+                        okText="Yes, Delete" 
+                        cancelText="No" 
+                        onConfirm={() => onDelete(record.id)}
+                        okButtonProps={{ danger: true }}
+                    >
+                        <Tooltip title="Remove Employee">
+                            <Button 
+                                danger 
+                                icon={<DeleteOutlined />} 
+                                style={{ borderRadius: '8px' }}
+                                disabled={can("users.delete")}
+                            />
                         </Tooltip>
                     </Popconfirm>
                 </Space>
@@ -174,30 +276,59 @@ export default function Employee() {
         }, 500);
         return () => clearTimeout(handle);
     }, [query]);
-
+    
     useEffect(() => {
         setPagination((p) => (p.current === 1 ? p : { ...p, current: 1 }));
     }, [debouncedQuery]);
 
     useEffect(() => {
+        let isMounted = true;
+        const fetchUsers = async () => {
+            setLoading(true);
+
+            const params = {user_category_id:3,page: current,per_page: pageSize,search_key: debouncedQuery || undefined};
+            const res = await getDatas("/admin/users", params);
+            const list = res?.result?.data || [];
+            const meta = res?.result?.meta;
+
+            if (isMounted) {
+                setUsers(list);
+                
+                if (meta) {
+                    setPagination((p) => {
+                        const next = {...p,current: meta.current_page || p.current,pageSize: meta.per_page || p.pageSize,total: meta.total || p.total,};
+                        const unchanged = p.current === next.current && p.pageSize === next.pageSize && p.total === next.total;
+                        return unchanged ? p : next;
+                    });
+                }
+            }
+          setLoading(false);
+        };
         fetchUsers();
-    }, [fetchUsers]);
-
+        return () => {
+          isMounted = false;
+        };
+    }, [current, pageSize, debouncedQuery]);
+    
+    
     const filteredData = useMemo(() => users, [users]);
-
+    
     const openCreate = () => {
         navigate("/add/employee");
     };
-
+    
     const onEdit = (record) => {
         navigate(`/edit/employee/${record.id}`);
     };
-
+    
     const onDelete = async (id) => {
         const res = await deleteData(`/admin/users/${id}`);
         if (res && res?.success) {
-            fetchUsers();
-            messageApi.success("Employee deleted successfully");
+            const params = { user_category_id:3, page: current,per_page: pageSize,search_key: debouncedQuery || undefined};
+            const refreshed = await getDatas("/admin/users", params);
+            setUsers(refreshed?.result?.data || []);
+            const meta = refreshed?.result?.meta;
+            if (meta) setPagination((p) => ({ ...p, total: meta.total || p.total }));
         }
     };
 
@@ -205,65 +336,132 @@ export default function Employee() {
 
     const activeEmployees = Array.isArray(users) ? users.filter(u => u.status === "active").length : 0;
 
-    const onLeaveEmployees = Array.isArray(users) ? users.filter(u => u.status !== "active").length : 0;
+    const pendingEmployees = Array.isArray(users) ? users.filter(u => u.status !== "active").length : 0;
 
     return (
-        <>
-            {contextHolder}
-            <div className="pagehead">
+        <div style={styles.container}>
+            <div style={styles.header}>
                 <div className="head-left">
-                    <h1 className="title">Employee</h1>
-                </div>
-                <div className="head-actions">
+                    <Title level={2} style={{ margin: 0, fontWeight: 800, color: '#1e293b' }}>
+                        <TeamOutlined style={{ marginRight: 12, color: '#6366f1' }} />
+                        Employees
+                    </Title>
                     <Breadcrumb
+                        style={{ marginTop: 8 }}
                         items={[
                             { title: <Link to="/dashboard">Dashboard</Link> },
-                            { title: "Employee" },
+                            { title: <span style={{ color: '#64748b' }}>Employee List</span> },
                         ]}
                     />
                 </div>
-            </div>
-
-            <div style={{display: "flex",justifyContent: "space-between",alignItems: "*",marginBottom: 16}}>
-                <AntInput.Search allowClear placeholder="Search Key ..." value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }}/>
-                <Space>
-                    <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate} disabled={can("users.create")}>
-                        Add
-                    </Button>
-                    <Button size="small" icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading}>
-                        Refresh
-                    </Button>
-                    <Button size="small" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                        Back
-                    </Button>
-                </Space>
-            </div>
-
-            <div class="customer-stats">
-                <div>
-                    <p>
-                        Total Employees  
-                    </p>
-                    <h2>{totalEmployees}</h2>
-                </div>
-
-                <div>
-                    <p>
-                        Active Employees  
-                    </p>
-                    <h2 class="blue">{activeEmployees}</h2>
-                </div>
-
-                <div>
-                    <p>
-                        On Leave
-                    </p>
-                    <h2 class="green">{onLeaveEmployees}</h2>
+                <div className="head-actions">
+                    <Space size="middle">
+                        <Button 
+                            icon={<ReloadOutlined />} 
+                            onClick={() => {
+                                const params = {user_category_id:3,page: current,per_page: pageSize,search_key: debouncedQuery || undefined};
+                                setLoading(true);
+                                getDatas("/admin/users", params).then(res => {
+                                    setUsers(res?.result?.data || []);
+                                    setLoading(false);
+                                });
+                            }}
+                            loading={loading}
+                            style={styles.actionBtn}
+                        >
+                            Refresh
+                        </Button>
+                        <Button 
+                            icon={<ArrowLeftOutlined />} 
+                            onClick={() => window.history.back()}
+                            style={styles.actionBtn}
+                        >
+                            Back
+                        </Button>
+                        <Button 
+                            type="primary" 
+                            icon={<PlusOutlined />} 
+                            onClick={openCreate}
+                            style={styles.addBtn}
+                            disabled={can("users.create")}
+                        >
+                            Add New Employee
+                        </Button>
+                    </Space>
                 </div>
             </div>
 
-            <Table rowKey="id" loading={loading} pagination={{current: pagination.current, pageSize: pagination.pageSize, total: pagination.total, showSizeChanger: true,
-            onChange: (page, pageSize) => {setPagination((p) => ({ ...p, current: page, pageSize }));}}} columns={columns} dataSource={filteredData} scroll={{ x: "max-content" }}/>
-        </>
-    )
+            <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+                <Col xs={24} md={8}>
+                    <Card style={{ ...styles.statCard, background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' }}>
+                        <Space direction="vertical" size={0}>
+                            <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: 500 }}>Total Employees</Text>
+                            <Title level={2} style={{ color: '#fff', margin: '8px 0', fontWeight: 800 }}>{totalEmployees}</Title>
+                            <Space style={{ color: '#fff', fontSize: '12px', opacity: 0.9 }}>
+                                <TeamOutlined />
+                                <span>All Registered Staff</span>
+                            </Space>
+                        </Space>
+                    </Card>
+                </Col>
+                <Col xs={24} md={8}>
+                    <Card style={styles.statCard}>
+                        <Space direction="vertical" size={0}>
+                            <Text type="secondary" style={{ fontSize: '14px', fontWeight: 500 }}>Active Employees</Text>
+                            <Title level={2} style={{ color: '#16a34a', margin: '8px 0', fontWeight: 800 }}>{activeEmployees}</Title>
+                            <Space style={{ color: '#16a34a', fontSize: '12px' }}>
+                                <CheckCircleOutlined />
+                                <span>Verified & Online</span>
+                            </Space>
+                        </Space>
+                    </Card>
+                </Col>
+                <Col xs={24} md={8}>
+                    <Card style={styles.statCard}>
+                        <Space direction="vertical" size={0}>
+                            <Text type="secondary" style={{ fontSize: '14px', fontWeight: 500 }}>Inactive / On Leave</Text>
+                            <Title level={2} style={{ color: '#f59e0b', margin: '8px 0', fontWeight: 800 }}>{pendingEmployees}</Title>
+                            <Space style={{ color: '#f59e0b', fontSize: '12px' }}>
+                                <ClockCircleOutlined />
+                                <span>Awaiting Review</span>
+                            </Space>
+                        </Space>
+                    </Card>
+                </Col>
+            </Row>
+
+            <Card style={styles.tableCard} bodyStyle={{ padding: 0 }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Title level={5} style={{ margin: 0, color: '#334155' }}>Employee Directory</Title>
+                    <AntInput 
+                        placeholder="Search by name, email or phone..." 
+                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
+                        value={query} 
+                        onChange={(e) => setQuery(e.target.value)}
+                        style={styles.searchInput}
+                        allowClear
+                    />
+                </div>
+                <Table 
+                    rowKey="id" 
+                    loading={loading} 
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize, 
+                        total: pagination.total, 
+                        showSizeChanger: true,
+                        pageSizeOptions: ['10', '20', '50'],
+                        showTotal: (total) => `Total ${total} employees`,
+                        onChange: (page, pageSize) => {
+                            setPagination((p) => ({ ...p, current: page, pageSize }));
+                        },
+                    }} 
+                    columns={columns} 
+                    dataSource={filteredData} 
+                    scroll={{ x: "max-content" }}
+                    style={{ padding: '0 8px' }}
+                />
+            </Card>
+        </div>
+    );
 }
