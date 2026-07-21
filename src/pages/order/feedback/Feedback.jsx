@@ -11,20 +11,21 @@ export default function Feedback() {
     useTitle("All Feedback Order");
 
     // State
-    const [feedbackOrders, setFeedbackOrders]         = useState([]);
-    const [loading, setLoading]                       = useState(false);
-    const [pagination, setPagination]                 = useState({current: 1,pageSize: 25,total: 0});
-    const [feedbackDrawerOpen, setFeedbackDrawerOpen] = useState(false);
-    const [form] = Form.useForm();
-    const [selectedNoteRecord, setSelectedNoteRecord] = useState(null);
-    const [messageApi, contextHolder]                 = message.useMessage();
-    const [isStatusModalOpen, setIsStatusModalOpen]   = useState(false);
-    const [selectedOrder, setSelectedOrder]           = useState(null);
-    const [newStatus, setNewStatus]                   = useState("");
-    const [statusLoader, setStatusLoader]             = useState(false);
-    const [submitLoading, setSubmitLoading]           = useState(false);
-    const [interactionModalOpen, setInteractionModalOpen] = useState(false);
+    const [feedbackOrders, setFeedbackOrders]                       = useState([]);
+    const [loading, setLoading]                                     = useState(false);
+    const [pagination, setPagination]                               = useState({current: 1,pageSize: 25,total: 0});
+    const [feedbackDrawerOpen, setFeedbackDrawerOpen]               = useState(false);
+    const [form]                                                    = Form.useForm();
+    const [selectedNoteRecord, setSelectedNoteRecord]               = useState(null);
+    const [messageApi, contextHolder]                               = message.useMessage();
+    const [isStatusModalOpen, setIsStatusModalOpen]                 = useState(false);
+    const [selectedOrder, setSelectedOrder]                         = useState(null);
+    const [newStatus, setNewStatus]                                 = useState("");
+    const [statusLoader, setStatusLoader]                           = useState(false);
+    const [submitLoading, setSubmitLoading]                         = useState(false);
+    const [interactionModalOpen, setInteractionModalOpen]           = useState(false);
     const [selectedInteractionRecord, setSelectedInteractionRecord] = useState(null);
+    const [feedbacks, setFeedbacks]                                 = useState([]);
 
     // Filters State
     const [keyword, setKeyword]             = useState("");
@@ -309,11 +310,24 @@ export default function Feedback() {
         }
     };
 
+    const getFeedbacks = async () => {
+        try {
+            const res = await getDatas("/admin/customer/feedback", { page: 1, paginate_size: 500 });
+
+            if (res?.success) {
+                setFeedbacks(res?.result?.data || []);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     useEffect(() => {
         fetchFeedbackOrders(1, pagination.pageSize);
     }, [keyword, assignedEmp, deliveredDate, quickFilter, summaryFilter]);
 
     useEffect(() => {
+        getFeedbacks();
         fetchEmployeeList();
     }, []);
 
@@ -660,12 +674,18 @@ export default function Feedback() {
                                         getFieldValue('call_status') === 'answered' ? (
                                             <>
                                                 <Form.Item name="customer_feedback" label={<span style={{fontWeight: 500}}>Customer Feedback</span>} rules={[{ required: true, message: 'Required' }]}>
-                                                    <Select placeholder="Select Customer Feedback" size="large" options={[
-                                                        { value: "Interested", label: "Interested" },
-                                                        { value: "Need More Time", label: "Need More Time" },
-                                                        { value: "Not Interested", label: "Not Interested" },
-                                                        { value: "Already Purchased Elsewhere", label: "Already Purchased Elsewhere" },
-                                                    ]} />
+                                                    <Select
+                                                        placeholder="Select Customer Feedback"
+                                                        size="large"
+                                                        showSearch
+                                                        optionFilterProp="label"
+                                                        options={feedbacks
+                                                            .filter((item) => item.status === "active")
+                                                            .map((item) => ({
+                                                                value: item.title,
+                                                                label: item.title,
+                                                            }))}
+                                                    />
                                                 </Form.Item>
 
                                                 <Form.Item name="rating" label={<span style={{fontWeight: 500}}>Product Rating</span>}>
