@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled, ShoppingCartOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
-import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Divider,Tag, Select, Radio, Drawer, Row, Col, Typography, Card, Image, Form, Timeline} from "antd";
+import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled, ShoppingCartOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons'
+import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Divider,Tag, Select, Radio, Drawer, Row, Col, Typography, Card, Image, Form, Timeline, Empty} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
@@ -23,6 +23,8 @@ export default function Feedback() {
     const [newStatus, setNewStatus]                   = useState("");
     const [statusLoader, setStatusLoader]             = useState(false);
     const [submitLoading, setSubmitLoading]           = useState(false);
+    const [interactionModalOpen, setInteractionModalOpen] = useState(false);
+    const [selectedInteractionRecord, setSelectedInteractionRecord] = useState(null);
 
     // Filters State
     const [keyword, setKeyword]             = useState("");
@@ -32,6 +34,45 @@ export default function Feedback() {
     const [employeeList, setEmployeeList]   = useState([]);
     const [summary, setSummary]             = useState({});
     const [summaryFilter, setSummaryFilter] = useState("total_orders");
+
+    const copyPhoneNo = (phone) => {
+        navigator.clipboard.writeText(phone);
+        messageApi.open({
+            type: "success",
+            content: "Phone number copied.",
+        });
+    };
+
+    const openWhatsApp = (phone) => {
+        if (!phone) return;
+        const cleaned = phone.replace(/\D/g, "");
+        const finalNumber = cleaned.startsWith("880") ? cleaned : `880${cleaned}`;
+        window.open(`https://wa.me/${finalNumber}`, "_blank");
+    };
+
+    const handleNote = (record) => {
+        setSelectedNoteRecord(record);
+        form.resetFields();
+        setFeedbackDrawerOpen(true);
+    };
+
+    const handleStatus = (record) => {
+        setSelectedOrder(record);
+        setNewStatus(record?.status);
+        setIsStatusModalOpen(true);
+    };
+
+    const handleInteractionDetails = (record) => {
+        setSelectedInteractionRecord(record);
+        setInteractionModalOpen(true);
+    };
+
+    const getInteractions = (record) => {
+        const interactions = record?.interactions;
+        if (Array.isArray(interactions)) return interactions;
+        if (interactions && typeof interactions === "object") return Object.values(interactions);
+        return [];
+    };
 
     // Columns for AntD Table
     const columns = [
@@ -46,7 +87,15 @@ export default function Feedback() {
             title: "Invoice",
             dataIndex: "invoice_number",
             key: "invoice_number",
-            render: (text) => <span style={{ fontWeight: 600, color: "#1677ff", fontSize: "14px" }}>{text || "N/A"}</span>,
+            render: (text, record) => (
+                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontWeight: 600, color: "#1677ff", fontSize: "14px" }}>{text || "N/A"}</span>
+                    <span style={{ fontSize: 11, color: "#8c8c8c", fontWeight: 600, letterSpacing: "0.2px" }}>Delivered:</span>
+                    <span style={{ color: "#595959", fontSize: 12, whiteSpace: "nowrap" }}>
+                        {record.delivered_at ? dayjs(record.delivered_at).format("DD MMM YY, hh:mm A") : "N/A"}
+                    </span>
+                </div>
+            ),
         },
         {
             title: "Customer",
@@ -54,6 +103,7 @@ export default function Feedback() {
             render: (_, record) => {
                 const name = record.customer_name || "N/A";
                 const phone = record.phone_number || "N/A";
+                const address = record.customer_address || record.order?.customer_address || "";
                 return (
                     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                         <span style={{ fontWeight: 600, color: "#262626", fontSize: "14px" }}>{name}</span>
@@ -71,6 +121,15 @@ export default function Feedback() {
                                 </>
                             )}
                         </Space>
+                        {address ? (
+                            <Tooltip title={address}>
+                                <span style={{ fontSize: "12px", color: "#8c8c8c", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                    {address}
+                                </span>
+                            </Tooltip>
+                        ) : (
+                            <span style={{ fontSize: "12px", color: "#bfbfbf", fontStyle: "italic" }}>No address</span>
+                        )}
                     </div>
                 );
             },
@@ -126,37 +185,28 @@ export default function Feedback() {
             render: (text) => <span style={{ fontWeight: 600, color: "#262626" }}>৳{Number(text || 0).toLocaleString(undefined, {minimumFractionDigits: 2})}</span>,
         },
         {
-            title: "Dates",
-            key: "dates",
-            render: (_, record) => (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {[
-                        { label: "Delivered", value: record.delivered_at, dot: "#1677ff" },
-                        { label: "Feedback",  value: record.created_at,   dot: "#52c41a" },
-                        { label: "Updated",   value: record.updated_at,   dot: "#fa8c16" },
-                    ].map(({ label, value, dot }) => (
-                        <div key={label} style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: dot, flexShrink: 0, display: "inline-block" }} />
-                            <span style={{ fontSize: 11, color: "#8c8c8c", fontWeight: 600, minWidth: 58, letterSpacing: "0.2px" }}>{label}:</span>
-                            <span style={{ color: "#3d3d3d", fontSize: 12, fontWeight: 400, whiteSpace: "nowrap" }}>
-                                {value ? dayjs(value).format("DD MMM YY, hh:mm A") : <span style={{ color: "#bfbfbf", fontStyle: "italic" }}>N/A</span>}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            ),
-        },
-
-        {
             title: "Assigned To",
-            render: (_,record) => (
-                record.employee != null ? (
-                    <Tag color="purple" style={{ borderRadius: "10px", padding: "2px 10px",textTransform: "capitalize" }}>
-                        {record?.employee?.username}
-                    </Tag>
-                ) : (
-                    <span style={{ color: "#bfbfbf", fontStyle: "italic", fontSize: "13px" }}>Unassigned</span>
-                )
+            key: "assigned_to",
+            render: (_, record) => (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-start" }}>
+                    {record.employee != null ? (
+                        <Tag color="purple" style={{ borderRadius: "10px", padding: "2px 10px", textTransform: "capitalize", margin: 0 }}>
+                            {record?.employee?.username}
+                        </Tag>
+                    ) : (
+                        <span style={{ color: "#bfbfbf", fontStyle: "italic", fontSize: "13px" }}>Unassigned</span>
+                    )}
+                    <Button
+                        type="primary"
+                        ghost
+                        size="small"
+                        icon={<EyeOutlined />}
+                        onClick={() => handleInteractionDetails(record)}
+                        style={{ fontSize: 12, padding: "0 10px", height: 28 }}
+                    >
+                        Details
+                    </Button>
+                </div>
             ),
         },
         {
@@ -192,38 +242,6 @@ export default function Feedback() {
             align: "center",
         },
     ];
-
-    const copyPhoneNo = (phone) => {
-        navigator.clipboard.writeText(phone);
-        
-        messageApi.open({
-            type: "success",
-            content: "Phone number copied.",
-        });
-
-    };
-
-    const openWhatsApp = (phone) => {
-        if (!phone) return;
-
-        const cleaned = phone.replace(/\D/g, "");
-
-        const finalNumber = cleaned.startsWith("880") ? cleaned : `880${cleaned}`;
-
-        window.open(`https://wa.me/${finalNumber}`, "_blank");
-    };
-
-    const handleNote = (record) => {
-        setSelectedNoteRecord(record);
-        form.resetFields();
-        setFeedbackDrawerOpen(true);
-    }
-
-    const handleStatus = (record) => {
-        setSelectedOrder(record);
-        setNewStatus(record?.status);
-        setIsStatusModalOpen(true);
-    };
 
     const fetchFeedbackOrders = async (page = pagination.current, pageSize = pagination.pageSize) => {
         setLoading(true);
@@ -366,56 +384,6 @@ export default function Feedback() {
         }
     };
 
-    const expandedRowRender = (record) => {
-        if (!record.interactions || record.interactions.length === 0) return null;
-
-        return (
-            <div style={{ padding: "16px", background: "#f5f5f5", borderRadius: "8px", margin: "8px", border: "1px solid #e8e8e8" }}>
-                <Typography.Title level={5} style={{ marginTop: 0, marginBottom: "20px", color: "#262626" }}>
-                    Follow-up Interactions
-                </Typography.Title>
-                <Timeline>
-                    {record.interactions.map((interaction, index) => (
-                        <Timeline.Item key={interaction.id || index} color={interaction.call_status === 'answered' ? 'green' : 'red'}>
-                            <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
-                                <div style={{ minWidth: "150px" }}>
-                                    <div style={{ fontSize: "13px", color: "#595959", fontWeight: 500 }}>
-                                        {dayjs(interaction.created_at).format("DD MMM, YY hh:mm A")}
-                                    </div>
-                                    <div style={{ fontSize: "12px", fontWeight: 600, color: "#1677ff", marginTop: "4px" }}>
-                                        By: {interaction.employee?.username || "Unknown"}
-                                    </div>
-                                </div>
-                                <div style={{ background: "#fff", padding: "12px 16px", borderRadius: "8px", border: "1px solid #e8e8e8", flex: 1, boxShadow: "0 1px 2px rgba(0,0,0,0.02)" }}>
-                                    <div style={{ display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" }}>
-                                        <Tag color={interaction.call_status === 'answered' ? "success" : "volcano"} style={{ textTransform: "capitalize", borderRadius: "12px", border: "none", fontWeight: 500 }}>
-                                            {interaction.call_status?.replace('_', ' ')}
-                                        </Tag>
-                                        {interaction.customer_feedback && (
-                                            <Tag color="cyan" style={{ borderRadius: "12px", border: "none", fontWeight: 500 }}>{interaction.customer_feedback}</Tag>
-                                        )}
-                                        {interaction.rating && (
-                                            <Tag color="gold" style={{ borderRadius: "12px", border: "none", fontWeight: 600 }}>{interaction.rating} ⭐</Tag>
-                                        )}
-                                        {interaction.next_action && (
-                                            <Tag color="purple" style={{ borderRadius: "12px", border: "none", fontWeight: 500 }}>Action: {interaction.next_action}</Tag>
-                                        )}
-                                    </div>
-                                    
-                                    {interaction.remarks && (
-                                        <div style={{ color: "#262626", fontSize: "14px", lineHeight: "1.5", marginTop: "8px", background: "#fafafa", padding: "8px 12px", borderLeft: "3px solid #d9d9d9" }}>
-                                            <span style={{ fontWeight: 600, color: "#8c8c8c", marginRight: "6px" }}>Remarks:</span> {interaction.remarks}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </Timeline.Item>
-                    ))}
-                </Timeline>
-            </div>
-        );
-    };
-
     return (
         <>
             {contextHolder}
@@ -544,10 +512,6 @@ export default function Feedback() {
             </Row>
 
             <Table rowKey="id" columns={columns} dataSource={feedbackOrders} loading={loading}
-                expandable={{
-                    expandedRowRender,
-                    rowExpandable: (record) => record.interactions && record.interactions.length > 0,
-                }}
                 pagination={{ 
                     current: pagination.current, 
                     pageSize: pagination.pageSize, 
@@ -757,6 +721,88 @@ export default function Feedback() {
                     </Col>
                 </Row>
             </Drawer>
+
+            <Modal
+                title={null}
+                open={interactionModalOpen}
+                onCancel={() => setInteractionModalOpen(false)}
+                footer={null}
+                width={760}
+                styles={{ body: { padding: 0 } }}
+            >
+                <div style={{ padding: "24px 28px 8px", borderBottom: "1px solid #f0f0f0", background: "linear-gradient(135deg, #f8fbff 0%, #ffffff 100%)" }}>
+                    <Typography.Title level={4} style={{ margin: 0, color: "#1C558B" }}>
+                        Interaction Details
+                    </Typography.Title>
+                    <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 16, fontSize: 13, color: "#595959" }}>
+                        <span><strong style={{ color: "#262626" }}>Invoice:</strong> {selectedInteractionRecord?.invoice_number || "N/A"}</span>
+                        <span><strong style={{ color: "#262626" }}>Customer:</strong> {selectedInteractionRecord?.customer_name || "N/A"}</span>
+                        <span><strong style={{ color: "#262626" }}>Delivered:</strong> {selectedInteractionRecord?.delivered_at ? dayjs(selectedInteractionRecord.delivered_at).format("DD MMM YY, hh:mm A") : "N/A"}</span>
+                    </div>
+                </div>
+
+                <div style={{ padding: "20px 28px 28px", maxHeight: "65vh", overflowY: "auto", background: "#fafafa" }}>
+                    {getInteractions(selectedInteractionRecord).length > 0 ? (
+                        <Timeline>
+                            {getInteractions(selectedInteractionRecord).map((interaction, index) => (
+                                <Timeline.Item
+                                    key={interaction.id || index}
+                                    color={interaction.call_status === "answered" ? "green" : "red"}
+                                >
+                                    <Card
+                                        size="small"
+                                        bordered={false}
+                                        style={{ borderRadius: 10, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
+                                        styles={{ body: { padding: "14px 16px" } }}
+                                    >
+                                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 10, flexWrap: "wrap" }}>
+                                            <div>
+                                                <div style={{ fontSize: 13, color: "#595959", fontWeight: 500 }}>
+                                                    {interaction.created_at ? dayjs(interaction.created_at).format("DD MMM, YY hh:mm A") : "N/A"}
+                                                </div>
+                                                <div style={{ fontSize: 12, fontWeight: 600, color: "#1C558B", marginTop: 4 }}>
+                                                    By: {interaction.employee?.username || "Unknown"}
+                                                </div>
+                                            </div>
+                                            <Space wrap size={[6, 6]}>
+                                                <Tag color={interaction.call_status === "answered" ? "success" : "volcano"} style={{ textTransform: "capitalize", borderRadius: 12, border: "none", fontWeight: 500, margin: 0 }}>
+                                                    {(interaction.call_status || "N/A").replace(/_/g, " ")}
+                                                </Tag>
+                                                {interaction.customer_feedback && (
+                                                    <Tag color="cyan" style={{ borderRadius: 12, border: "none", fontWeight: 500, margin: 0 }}>{interaction.customer_feedback}</Tag>
+                                                )}
+                                                {interaction.rating && (
+                                                    <Tag color="gold" style={{ borderRadius: 12, border: "none", fontWeight: 600, margin: 0 }}>{interaction.rating} <StarFilled style={{ fontSize: 11 }} /></Tag>
+                                                )}
+                                                {interaction.next_action && (
+                                                    <Tag color="purple" style={{ borderRadius: 12, border: "none", fontWeight: 500, margin: 0 }}>Action: {interaction.next_action}</Tag>
+                                                )}
+                                            </Space>
+                                        </div>
+
+                                        {interaction.remarks ? (
+                                            <div style={{ color: "#262626", fontSize: 14, lineHeight: 1.6, background: "#f5f5f5", padding: "10px 12px", borderRadius: 8, borderLeft: "3px solid #1C558B" }}>
+                                                <span style={{ fontWeight: 600, color: "#8c8c8c", marginRight: 6 }}>Remarks:</span>
+                                                {interaction.remarks}
+                                            </div>
+                                        ) : (
+                                            <span style={{ color: "#bfbfbf", fontStyle: "italic", fontSize: 13 }}>No remarks added</span>
+                                        )}
+
+                                        {interaction.next_followup_date && (
+                                            <div style={{ marginTop: 10, fontSize: 12, color: "#8c8c8c" }}>
+                                                <strong style={{ color: "#595959" }}>Next Follow-up:</strong> {dayjs(interaction.next_followup_date).format("DD MMM, YYYY")}
+                                            </div>
+                                        )}
+                                    </Card>
+                                </Timeline.Item>
+                            ))}
+                        </Timeline>
+                    ) : (
+                        <Empty description="No interactions found" />
+                    )}
+                </div>
+            </Modal>
 
             <Modal title={`Update Status for Order #${selectedOrder?.order_id || selectedOrder?.id}`} open={isStatusModalOpen} onCancel={() => setIsStatusModalOpen(false)} onOk={submitStatus} loading={statusLoader}>
                 <Select  value={newStatus} onChange={(value) => setNewStatus(value)} style={{ width: 200 }}>
