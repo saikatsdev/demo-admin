@@ -1,0 +1,120 @@
+.customer-feedback-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.customer-feedback-toolbar {
+    padding: 16px 20px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #eef2f6;
+    box-shadow: 0 1px 3px rgba(28, 85, 139, 0.06);
+}
+
+.customer-feedback-toolbar-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.customer-feedback-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.customer-feedback-stat-card {
+    border-radius: 12px;
+    border: 1px solid #eef2f6;
+    box-shadow: 0 1px 3px rgba(28, 85, 139, 0.06);
+    transition: all 0.2s ease;
+}
+
+.customer-feedback-stat-card:hover {
+    border-color: #c9dcef;
+    box-shadow: 0 4px 12px rgba(28, 85, 139, 0.1);
+}
+
+.customer-feedback-stat-card .ant-card-body {
+    padding: 18px 20px;
+}
+
+.customer-feedback-stat-label {
+    font-size: 13px;
+    color: #8c8c8c;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.customer-feedback-stat-value {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1C558B;
+    line-height: 1.2;
+}
+
+.customer-feedback-table-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #eef2f6;
+    box-shadow: 0 1px 3px rgba(28, 85, 139, 0.06);
+    overflow: hidden;
+}
+
+.customer-feedback-table-card .ant-table-wrapper .ant-table-thead > tr > th {
+    background: #f7fafc !important;
+    color: #1C558B !important;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 1px solid #e6edf5 !important;
+    white-space: nowrap;
+}
+
+.customer-feedback-table-card .ant-table-wrapper .ant-table-tbody > tr:hover > td {
+    background: #f8fbff !important;
+}
+
+.customer-feedback-title {
+    font-weight: 600;
+    color: #1C558B;
+    font-size: 14px;
+}
+
+.customer-feedback-slug {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: #f0f5fa;
+    color: #5b6b7c;
+    font-size: 12px;
+    font-family: Consolas, Monaco, "Courier New", monospace;
+}
+
+.customer-feedback-search {
+    width: min(320px, 100%);
+    border-radius: 8px;
+}
+
+.customer-feedback-search .ant-input-affix-wrapper {
+    border-radius: 8px;
+}
+
+.customer-feedback-btn-primary {
+    background: #1C558B;
+    border-color: #1C558B;
+    border-radius: 8px;
+}
+
+.customer-feedback-btn-primary:hover {
+    background: #174a79 !important;
+    border-color: #174a79 !important;
+}
+
+@media (max-width: 992px) {
+    .customer-feedback-stats {
+        grid-template-columns: 1fr;
+    }
+}
