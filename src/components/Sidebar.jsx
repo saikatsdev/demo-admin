@@ -87,6 +87,7 @@ const Sidebar = ({ onMenuSelect }) => {
         can('incomplete-orders-read') && { label: "Incomplete", path: "/incomplete/orders" },
         can('feedback-read') && { label: "Feedback Order", path: "/feedback-sell" },
         can('follow-up-read') && { label: "Follow Up Order", path: "/followup-sell" },
+        can('feedback-read') && { label: "Customer Feedback", path: "/all-feedback" },
         can('cancel-reasons-read') && { label: "Cancel Reason", path: "/cancel-reasons" },
         can('delivery-gateways-read') && { label: "Delivery Charge", path: "/delivery/charge" },
         can('free-delivery-read') && { label: "Free Delivery", path: "/free/delivery" },

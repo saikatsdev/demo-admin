@@ -179,6 +179,7 @@ import ScreeningManager from "./components/auth/ScreeningManager";
 import PrepareOrderList from "./pages/team/PrepareOrderList";
 import UnAssignList from "./pages/team/UnAssignList";
 import OrderList from "./pages/order/followupsell/order/OrderList";
+import CustomerFeedback from "./pages/order/customerFeedback/CustomerFeedback";
 
 function App() {
     const dispatch         = useDispatch();
@@ -350,6 +351,8 @@ function App() {
                     <Route path="/order-add" element={<OrderAdd />} />
                     <Route path="/order-edit/:id" element={<OrderEdit />} />
                     <Route path="/downsell-coupon" element={<DownSellCoupon />} />
+
+                    <Route path="/all-feedback" element={<CustomerFeedback />} />
 
 
                     <Route path="/trash/list" element={<TrashList />} />
