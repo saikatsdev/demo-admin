@@ -9,6 +9,29 @@ import './OrderAdd.css';
 
 const currency = (value) => `৳ ${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
+const mapPrefillItemToCart = (item, index) => {
+    const product = item.product || item;
+    const productId = product?.id || item.product_id || item.item_id;
+
+    return {
+        item_id: productId,
+        key: `prefill_${productId || "item"}_${index}`,
+        name: product?.name || item.name || "",
+        image: product?.image || product?.img_path || item.image,
+        buy_price: Number(item.buy_price ?? product?.buy_price ?? 0),
+        mrp: Number(item.mrp ?? product?.mrp ?? 0),
+        offer_price: Number(
+            item.offer_price ?? item.sell_price ?? product?.offer_price ?? product?.sell_price ?? 0
+        ),
+        discount: Number(item.discount ?? product?.discount ?? 0),
+        variation_1: item.attribute_value_1 || item.variation_1 || null,
+        variation_2: item.attribute_value_2 || item.variation_2 || null,
+        variation_3: item.attribute_value_3 || item.variation_3 || null,
+        quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,
+        variations: product?.variations,
+    };
+};
+
 export default function OrderAdd() {
     // Hook
     useTitle("Create Order");
@@ -64,7 +87,7 @@ export default function OrderAdd() {
     const [isIncomplte, setIsIncomplte]                     = useState(false);
     const [loading, setLoading]                             = useState(false);
     const location                                          = useLocation();
-    const orderData                                         = location.state || "{}";
+    const orderData                                         = location.state;
     const [itemQuantity, setItemQuantity]                   = useState("");
     const [itemDescription, setItemDescription]             = useState("");
 
@@ -80,17 +103,37 @@ export default function OrderAdd() {
     const deliveryGateways          = useSelector((state) => state.deliveryGateway.list);
 
     useEffect(() => {
-        if(orderData.name) setCustomerName(orderData.name);
-        if(orderData.phone_number) setPhoneNumber(orderData.phone_number);
-        if(orderData.address) setAddress(orderData.address);
-        
-        if(orderData.is_incomplete === 1){
+        if (!orderData || typeof orderData !== "object") return;
+
+        const customer =
+            orderData.customer_name ||
+            orderData.name ||
+            "";
+        const phone =
+            orderData.customer_phone ||
+            orderData.phone_number ||
+            "";
+        const addr =
+            orderData.customer_address ||
+            orderData.address ||
+            "";
+
+        if (customer) setCustomerName(customer);
+        if (phone) setPhoneNumber(phone);
+        if (addr) setAddress(addr);
+        if (orderData.district_id) setDistrict(orderData.district_id);
+
+        if (orderData.is_incomplete === 1) {
             setIsIncomplte(true);
         }
 
-        const initialProducts = (orderData.items || []).map((item) => ({...item.product,quantity: 1,}));
-        setCartItems(initialProducts);
-    }, [orderData]);
+        const prefillItems = orderData.items || orderData.products || [];
+        if (prefillItems.length > 0) {
+            setCartItems(prefillItems.map(mapPrefillItemToCart));
+        } else if (Array.isArray(orderData.prefillCartItems) && orderData.prefillCartItems.length > 0) {
+            setCartItems(orderData.prefillCartItems);
+        }
+    }, [location.key, orderData]);
 
     useEffect(() => {
         const fetchInitialData = async () => {

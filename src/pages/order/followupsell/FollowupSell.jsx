@@ -466,15 +466,91 @@ export default function FollowupSell() {
     };
 
     const handleConvert = async (record) => {
+        const orderId = record.order_id || record.order?.id;
+
+        const buildNavigateState = (orderInfo = null) => {
+            const customerName =
+                orderInfo?.customer_name ||
+                record.customer_name ||
+                record.order?.customer_name ||
+                "";
+            const customerPhone =
+                orderInfo?.phone_number ||
+                record.phone_number ||
+                record.order?.phone_number ||
+                "";
+            const customerAddress =
+                orderInfo?.address_details ||
+                record.address ||
+                record.address_details ||
+                record.order?.customer_address ||
+                "";
+
+            const details = orderInfo?.details || [];
+            const fallbackProducts = record.order?.products || [];
+
+            const items = details.length
+                ? details.map((item) => ({
+                    product: item.product,
+                    quantity: item.quantity || 1,
+                    mrp: item.mrp,
+                    sell_price: item.sell_price,
+                    offer_price: item.sell_price,
+                    discount: item.discount,
+                    buy_price: item.buy_price,
+                    attribute_value_1: item.attribute_value_1,
+                    attribute_value_2: item.attribute_value_2,
+                    attribute_value_3: item.attribute_value_3,
+                }))
+                : fallbackProducts.map((p) => ({
+                    product: {
+                        id: p.product_id || p.id,
+                        name: p.name,
+                        image: p.image || p.img_path,
+                        img_path: p.image || p.img_path,
+                        mrp: p.mrp,
+                        sell_price: p.sell_price,
+                        offer_price: p.offer_price || p.sell_price,
+                        discount: p.discount,
+                        buy_price: p.buy_price,
+                    },
+                    quantity: p.quantity || 1,
+                    mrp: p.mrp,
+                    sell_price: p.sell_price,
+                    offer_price: p.offer_price || p.sell_price,
+                    discount: p.discount,
+                    buy_price: p.buy_price,
+                }));
+
+            return {
+                name: customerName,
+                customer_name: customerName,
+                phone_number: customerPhone,
+                customer_phone: customerPhone,
+                address: customerAddress,
+                customer_address: customerAddress,
+                district_id: orderInfo?.district?.id || record.order?.district_id || null,
+                followup_id: record.id,
+                source_order_id: orderId || null,
+                items,
+            };
+        };
+
         try {
-            navigate("/order-add", {
-                state: {
-                    name:         record.customer_name || record.order?.customer_name,
-                    phone_number: record.phone_number  || record.order?.phone_number,
-                    address:      record.address       || record.order?.customer_address,
+            if (orderId) {
+                messageApi.open({ type: "loading", content: "Loading order for conversion...", duration: 0, key: "convert" });
+                const res = await getDatas(`/admin/orders/${orderId}`);
+                messageApi.destroy("convert");
+
+                if (res?.success) {
+                    navigate("/order-add", { state: buildNavigateState(res.result) });
+                    return;
                 }
-            });
+            }
+
+            navigate("/order-add", { state: buildNavigateState() });
         } catch (err) {
+            messageApi.destroy("convert");
             console.error(err);
             message.error("Conversion failed");
         }
