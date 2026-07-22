@@ -14,21 +14,19 @@ const mapPrefillItemToCart = (item, index) => {
     const productId = product?.id || item.product_id || item.item_id;
 
     return {
-        item_id: productId,
-        key: `prefill_${productId || "item"}_${index}`,
-        name: product?.name || item.name || "",
-        image: product?.image || product?.img_path || item.image,
-        buy_price: Number(item.buy_price ?? product?.buy_price ?? 0),
-        mrp: Number(item.mrp ?? product?.mrp ?? 0),
-        offer_price: Number(
-            item.offer_price ?? item.sell_price ?? product?.offer_price ?? product?.sell_price ?? 0
-        ),
-        discount: Number(item.discount ?? product?.discount ?? 0),
+        item_id    : productId,
+        key        : `prefill_${productId || "item"}_${index}`,
+        name       : product?.name || item.name || "",
+        image      : product?.image || product?.img_path || item.image,
+        buy_price  : Number(item.buy_price ?? product?.buy_price ?? 0),
+        mrp        : Number(item.mrp ?? product?.mrp ?? 0),
+        offer_price: Number(item.offer_price ?? item.sell_price ?? product?.offer_price ?? product?.sell_price ?? 0),
+        discount   : Number(item.discount ?? product?.discount ?? 0),
         variation_1: item.attribute_value_1 || item.variation_1 || null,
         variation_2: item.attribute_value_2 || item.variation_2 || null,
         variation_3: item.attribute_value_3 || item.variation_3 || null,
-        quantity: Number(item.quantity) > 0 ? Number(item.quantity) : 1,
-        variations: product?.variations,
+        quantity   : Number(item.quantity) > 0 ? Number(item.quantity)                                              : 1,
+        variations : product?.variations,
     };
 };
 
@@ -85,6 +83,8 @@ export default function OrderAdd() {
     const [shippingError, setShippingError]                 = useState('');
     const [errors, setErrors]                               = useState({});
     const [isIncomplte, setIsIncomplte]                     = useState(false);
+    const [isFollowOrder, setIsFollowOrder]                 = useState(0);
+    const [followupId, setFollowupId]                       = useState(null);
     const [loading, setLoading]                             = useState(false);
     const location                                          = useLocation();
     const orderData                                         = location.state;
@@ -103,7 +103,11 @@ export default function OrderAdd() {
     const deliveryGateways          = useSelector((state) => state.deliveryGateway.list);
 
     useEffect(() => {
-        if (!orderData || typeof orderData !== "object") return;
+        if (!orderData || typeof orderData !== "object") {
+            setIsFollowOrder(0);
+            setFollowupId(null);
+            return;
+        }
 
         const customer =
             orderData.customer_name ||
@@ -125,6 +129,14 @@ export default function OrderAdd() {
 
         if (orderData.is_incomplete === 1) {
             setIsIncomplte(true);
+        }
+
+        if (orderData.is_follow_order === 1 || orderData.followup_id) {
+            setIsFollowOrder(1);
+            setFollowupId(orderData.followup_id || null);
+        } else {
+            setIsFollowOrder(0);
+            setFollowupId(null);
         }
 
         const prefillItems = orderData.items || orderData.products || [];
@@ -426,7 +438,7 @@ export default function OrderAdd() {
             items.push(item)
         })
 
-        const res = await postData('/admin/orders', {
+        const payload = {
             payment_gateway_id : paymentGatewayId,
             delivery_gateway_id: deliveryChargeId,
             current_status_id  : statusId,
@@ -451,8 +463,15 @@ export default function OrderAdd() {
             item_weight        : itemWeight,
             item_quantity      : itemQuantity,
             item_description   : itemDescription,
-            is_incomplete      : isIncomplte ? 1             : 0
-        })
+            is_incomplete      : isIncomplte ? 1             : 0,
+        };
+
+        if (isFollowOrder === 1) {
+            payload.is_follow_order = 1;
+            if (followupId) payload.followup_id = followupId;
+        }
+
+        const res = await postData('/admin/orders', payload);
 
         setSubmitLoading(false)
 

@@ -531,6 +531,7 @@ export default function FollowupSell() {
                 customer_address: customerAddress,
                 district_id: orderInfo?.district?.id || record.order?.district_id || null,
                 followup_id: record.id,
+                is_follow_order: 1,
                 source_order_id: orderId || null,
                 items,
             };
