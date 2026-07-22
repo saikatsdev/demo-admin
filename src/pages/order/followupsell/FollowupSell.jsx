@@ -368,6 +368,7 @@ export default function FollowupSell() {
         {
             title: "Status",
             key: "status",
+            width: 140,
             align: "center",
             render: (_, record) => {
                 const status = record.status;
@@ -404,8 +405,54 @@ export default function FollowupSell() {
                         label = status;
                 }
 
-                return <Tag color={color} style={{ borderRadius: 20, padding: "2px 10px", fontWeight: 600, fontSize: 11, border: "none" }}>{label}</Tag>;
-            }
+                const newInvoice =
+                    record.new_invoice_number ||
+                    record.converted_invoice_number ||
+                    record.order?.new_invoice_number;
+
+                return (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                        <Tag
+                            color={color}
+                            style={{ borderRadius: 20, padding: "2px 10px", fontWeight: 600, fontSize: 11, border: "none", margin: 0 }}
+                        >
+                            {label}
+                        </Tag>
+                        {status === "converted" && newInvoice ? (
+                            <Tooltip title="New order invoice from conversion">
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        gap: 2,
+                                        padding: "4px 10px",
+                                        borderRadius: 8,
+                                        background: "linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%)",
+                                        border: "1px solid #91caff",
+                                        maxWidth: "100%",
+                                    }}
+                                >
+                                    <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#597ef7" }}>
+                                        New invoice
+                                    </span>
+                                    <span
+                                        style={{
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            color: "#1677ff",
+                                            lineHeight: 1.2,
+                                            wordBreak: "break-all",
+                                        }}
+                                    >
+                                        {newInvoice}
+                                    </span>
+                                </div>
+                            </Tooltip>
+                        ) : null}
+                    </div>
+                );
+            },
         },
         {
             title: "Action",
