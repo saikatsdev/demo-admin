@@ -181,42 +181,56 @@ export default function FollowupSell() {
             ),
         },
         {
-            title: "Customer",
-            key: "customer",
+            title: "Customer & Order",
+            key: "customer_order",
+            width: 260,
             render: (_, record) => {
                 const name  = record.customer_name || record.order?.customer_name || "N/A";
                 const phone = record.phone_number  || record.order?.phone_number  || "N/A";
+                const inv       = record.order?.invoice_number || "—";
+                const delivered = record.order?.delivered_at;
+
                 return (
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <Avatar size={36} icon={<UserOutlined />}
-                            style={{ background: "#e6f4ff", color: "#1677ff", flexShrink: 0 }} />
-                        <div>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                        <Avatar
+                            size={36}
+                            icon={<UserOutlined />}
+                            style={{ background: "#e6f4ff", color: "#1677ff", flexShrink: 0, marginTop: 2 }}
+                        />
+                        <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={{ fontWeight: 600, fontSize: 13, color: "#262626" }}>{name}</div>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
                                 <span style={{ fontSize: 12, color: "#595959" }}>{phone}</span>
                                 {phone !== "N/A" && (
                                     <>
-                                        <Tooltip title="Copy"><CopyOutlined style={{ fontSize: 12, color: "#1677ff", cursor: "pointer" }} onClick={() => copyPhone(phone)} /></Tooltip>
-                                        <Tooltip title="WhatsApp"><WhatsAppOutlined style={{ fontSize: 12, color: "#25D366", cursor: "pointer" }} onClick={() => openWhatsApp(phone)} /></Tooltip>
+                                        <Tooltip title="Copy">
+                                            <CopyOutlined
+                                                style={{ fontSize: 12, color: "#1677ff", cursor: "pointer" }}
+                                                onClick={() => copyPhone(phone)}
+                                            />
+                                        </Tooltip>
+                                        <Tooltip title="WhatsApp">
+                                            <WhatsAppOutlined
+                                                style={{ fontSize: 12, color: "#25D366", cursor: "pointer" }}
+                                                onClick={() => openWhatsApp(phone)}
+                                            />
+                                        </Tooltip>
                                     </>
                                 )}
                             </div>
-                        </div>
-                    </div>
-                );
-            },
-        },
-        {
-            title: "Order",
-            key: "order",
-            render: (_, record) => {
-                const inv       = record.order?.invoice_number || "—";
-                const delivered = record.order?.delivered_at;
-                return (
-                    <div>
-                        <div style={{ fontWeight: 600, fontSize: 13, color: "#1677ff" }}>{inv}</div>
-                        <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>
-                            Delivered: {delivered ? dayjs(delivered).format("DD MMM YYYY") : "—"}
+
+                            <div
+                                style={{
+                                    marginTop: 8,
+                                    paddingTop: 8,
+                                    borderTop: "1px solid #f0f0f0",
+                                }}
+                            >
+                                <div style={{ fontWeight: 600, fontSize: 12, color: "#1677ff" }}>{inv}</div>
+                                <div style={{ fontSize: 11, color: "#8c8c8c", marginTop: 2 }}>
+                                    Delivered: {delivered ? dayjs(delivered).format("DD MMM YYYY") : "—"}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 );
