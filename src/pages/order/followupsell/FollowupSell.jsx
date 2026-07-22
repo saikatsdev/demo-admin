@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined, CloseCircleOutlined} from '@ant-design/icons';
+import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined, CloseCircleOutlined, FlagOutlined} from '@ant-design/icons';
 import {Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Spin, Badge} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -45,8 +45,51 @@ const getStepConfig = (step) => {
             text: "#ff4d4f", 
             label: "Step 3" 
         },
+        4: { 
+            color: "purple", 
+            bg: "#f9f0ff", 
+            text: "#722ed1", 
+            label: "Step 4" 
+        },
+        5: { 
+            color: "cyan", 
+            bg: "#e6fffb", 
+            text: "#13c2c2", 
+            label: "Step 5" 
+        },
     };
     return cfg[step] || { color: "default", bg: "#f5f5f5", text: "#8c8c8c", label: `Step ${step}` };
+};
+
+const FOLLOWUP_STEP_OPTIONS = [1, 2, 3, 4, 5].map((step) => ({
+    value: step,
+    label: `Step ${step}`,
+}));
+
+const normalizeFollowupSummary = (raw) => {
+    const s = raw && typeof raw === "object" ? raw : {};
+    const num = (key, altKey) => {
+        const val = s[key] ?? (altKey ? s[altKey] : undefined);
+        const n = Number(val);
+        return Number.isFinite(n) ? n : 0;
+    };
+    return {
+        all_followups: num("all_followups"),
+        today_followups: num("today_followups"),
+        overdue_followups: num("overdue_followups"),
+        step_1: num("step_1", "step1"),
+        step_2: num("step_2", "step2"),
+        step_3: num("step_3", "step3"),
+        step_4: num("step_4", "step4"),
+        step_5: num("step_5", "step5"),
+    };
+};
+
+const extractFollowupSummary = (result) => {
+    if (!result || typeof result !== "object") return {};
+    if (result.summary && typeof result.summary === "object") return result.summary;
+    if (result.data?.summary && typeof result.data.summary === "object") return result.data.summary;
+    return {};
 };
 
 const getFollowupLabel = (dateStr) => {
@@ -93,7 +136,7 @@ export default function FollowupSell() {
     const [followUpOrders, setFollowUpOrders] = useState([]);
     const [loading, setLoading]               = useState(false);
     const [pagination, setPagination]         = useState({ current: 1, pageSize: 25, total: 0 });
-    const [summary, setSummary]               = useState({});
+    const [summary, setSummary]               = useState(() => normalizeFollowupSummary({}));
     const [messageApi, contextHolder]         = message.useMessage();
 
     // filter state
@@ -424,23 +467,13 @@ export default function FollowupSell() {
 
     const handleConvert = async (record) => {
         try {
-            const formData = new FormData();
-            formData.append("_method", "PUT");
-
-            formData.append("status", "converted");
-
-            const res = await postData(`/admin/followup/status/update/${record.id}`, formData);
-
-            if (res?.success) {
-                messageApi.success("Converted to order successfully");
-                navigate("/order-add", {
-                    state: {
-                        name:         record.customer_name || record.order?.customer_name,
-                        phone_number: record.phone_number  || record.order?.phone_number,
-                        address:      record.address       || record.order?.address,
-                    }
-                });
-            }
+            navigate("/order-add", {
+                state: {
+                    name:         record.customer_name || record.order?.customer_name,
+                    phone_number: record.phone_number  || record.order?.phone_number,
+                    address:      record.address       || record.order?.customer_address,
+                }
+            });
         } catch (err) {
             console.error(err);
             message.error("Conversion failed");
@@ -496,6 +529,12 @@ export default function FollowupSell() {
                 } else if (summaryKey === "step3") {
                     params.step = 3;
                     params.status       = filterStatus || "active";
+                } else if (summaryKey === "step4") {
+                    params.step = 4;
+                    params.status       = filterStatus || "active";
+                } else if (summaryKey === "step5") {
+                    params.step = 5;
+                    params.status       = filterStatus || "active";
                 }
             }
 
@@ -503,7 +542,12 @@ export default function FollowupSell() {
 
             if (res?.success) {
                 setFollowUpOrders(res.result?.data?.data || []);
-                setSummary(res.result?.summary || {});
+                setSummary((prev) =>
+                    normalizeFollowupSummary({
+                        ...prev,
+                        ...extractFollowupSummary(res.result),
+                    })
+                );
                 setPagination({
                     current:  res.result?.data?.meta?.current_page,
                     pageSize: res.result?.data?.meta?.per_page,
@@ -620,7 +664,7 @@ export default function FollowupSell() {
         }
     };
 
-    const summaryCards = [
+    const overviewSummaryCards = [
         { 
             key: "all", 
             label: "All Follow-ups", 
@@ -642,6 +686,9 @@ export default function FollowupSell() {
             icon: <ExclamationCircleOutlined />, 
             color: "#ff4d4f", bg: "#fff2f0" 
         },
+    ];
+
+    const stepSummaryCards = [
         { 
             key: "step1",   
             label: "Step 1",          
@@ -663,7 +710,54 @@ export default function FollowupSell() {
             icon: <CheckCircleOutlined />,     
             color: "#ff4d4f", bg: "#fff2f0" 
         },
+        { 
+            key: "step4",   
+            label: "Step 4",          
+            value: summary.step_4,           
+            icon: <HistoryOutlined />,        
+            color: "#722ed1", bg: "#f9f0ff" 
+        },
+        { 
+            key: "step5",   
+            label: "Step 5",          
+            value: summary.step_5,           
+            icon: <FlagOutlined />,        
+            color: "#13c2c2", bg: "#e6fffb" 
+        },
     ];
+
+    const allSummaryCards = [...overviewSummaryCards, ...stepSummaryCards];
+
+    const renderSummaryCard = (c) => (
+        <Card
+            hoverable
+            onClick={() => setSummaryKey(c.key)}
+            styles={{ body: { padding: "14px 18px" } }}
+            style={{
+                borderRadius: 10,
+                cursor: "pointer",
+                transition: "all 0.2s",
+                border: summaryKey === c.key ? `2px solid ${c.color}` : "1px solid #f0f0f0",
+                background: summaryKey === c.key ? c.bg : "#fff",
+                height: "100%",
+            }}
+        >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                    <div style={{ fontSize: 11, color: "#8c8c8c", fontWeight: 500 }}>{c.label}</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: "#262626", marginTop: 2 }}>{c.value ?? 0}</div>
+                </div>
+                <div style={{
+                    width: 40, height: 40, borderRadius: 10, fontSize: 18, display: "flex",
+                    alignItems: "center", justifyContent: "center", transition: "all 0.2s",
+                    background: summaryKey === c.key ? c.color : "#f5f5f5",
+                    color: summaryKey === c.key ? "#fff" : c.color,
+                }}>
+                    {c.icon}
+                </div>
+            </div>
+        </Card>
+    );
 
     const assignOrder = () => {
         if (filterAssign === "unassigned") {
@@ -689,45 +783,20 @@ export default function FollowupSell() {
                 </div>
             </div>
 
-            <Row gutter={12} style={{ marginBottom: 16 }}>
-                {summaryCards.map((c) => (
-                    <Col key={c.key} flex="1">
-                        <Card
-                            hoverable
-                            onClick={() => setSummaryKey(c.key)}
-                            styles={{ body: { padding: "14px 18px" } }}
-                            style={{
-                                borderRadius: 10, cursor: "pointer", transition: "all 0.2s",
-                                border:     summaryKey === c.key ? `2px solid ${c.color}` : "1px solid #f0f0f0",
-                                background: summaryKey === c.key ? c.bg : "#fff",
-                            }}
-                        >
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <div>
-                                    <div style={{ fontSize: 11, color: "#8c8c8c", fontWeight: 500 }}>{c.label}</div>
-                                    <div style={{ fontSize: 22, fontWeight: 700, color: "#262626", marginTop: 2 }}>{c.value ?? 0}</div>
-                                </div>
-                                <div style={{
-                                    width: 40, height: 40, borderRadius: 10, fontSize: 18, display: "flex",
-                                    alignItems: "center", justifyContent: "center", transition: "all 0.2s",
-                                    background: summaryKey === c.key ? c.color : "#f5f5f5",
-                                    color:      summaryKey === c.key ? "#fff"   : c.color,
-                                }}>
-                                    {c.icon}
-                                </div>
-                            </div>
-                        </Card>
+            <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
+                {allSummaryCards.map((c) => (
+                    <Col key={c.key} xs={24} sm={12} md={8} lg={6} xl={3}>
+                        {renderSummaryCard(c)}
                     </Col>
                 ))}
             </Row>
 
-            {/* Filters */}
             <div style={{ padding: "14px 16px", background: "#fff", borderRadius: 8, marginBottom: 16, border: "1px solid #f0f0f0", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
                 <Space wrap size="middle" style={{ width: "100%", justifyContent: "space-between" }}>
                     <Space wrap size="middle">
                         <AntInput.Search allowClear placeholder="Search Invoice / Phone / Name..." onSearch={(v) => setSearch(v)} style={{ width: 260 }}/>
 
-                        <Select placeholder="Step" allowClear style={{ width: 110 }} value={filterStep} onChange={setFilterStep} options={[{ value: 1, label: "Step 1" }, { value: 2, label: "Step 2" }, { value: 3, label: "Step 3" }]}/>
+                        <Select placeholder="Step" allowClear style={{ width: 110 }} value={filterStep} onChange={setFilterStep} options={FOLLOWUP_STEP_OPTIONS}/>
 
                         <Select placeholder="Status" allowClear style={{ width: 120 }} value={filterStatus} onChange={setFilterStatus}
                             options={[
@@ -899,20 +968,7 @@ export default function FollowupSell() {
                             style={{ width: "100%" }}
                             value={stepValue}
                             onChange={setStepValue}
-                            options={[
-                                { 
-                                    value: 1, 
-                                    label: "Step 1" 
-                                },
-                                { 
-                                    value: 2, 
-                                    label: "Step 2" 
-                                },
-                                { 
-                                    value: 3, 
-                                    label: "Step 3" 
-                                },
-                            ]}
+                            options={FOLLOWUP_STEP_OPTIONS}
                         />
                     </div>
 
