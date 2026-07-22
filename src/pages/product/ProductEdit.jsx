@@ -1513,10 +1513,6 @@ export default function ProductEdit() {
                             })()}
                         </div>
                     )}
-        
-                    <Form.Item label="Buy Price">
-                        <Input placeholder="Enter Buy Price" value={multiBuyPrice} onChange={(e) => setMultiBuyPrice(e.target.value)}/>
-                    </Form.Item>
 
                     <Form.Item label="Regular Price">
                         <Input placeholder="Enter Regular Price" value={multiRegularPrice} onChange={(e) => setMultiRegularPrice(e.target.value)}/>

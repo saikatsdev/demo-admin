@@ -42,7 +42,7 @@ export default function ProductAdd() {
     const [shortDescription, setShortDescription]               = useState("");
     const [offerPrice, setOfferPrice]                           = useState("");
     const [dynamicInputs, setDynamicInputs]                     = useState([]);
-    const [allVariations, setAllVariations]                     = useState([]);
+    const [allVariations, setAllVariations]                     = useState({ data: [] });
     const [attributes, setAttributes]                           = useState([]);
     const [selectedAttributeId, setSelectedAttributeId]         = useState([]);
     const [attributeValue, setAttributeValue]                   = useState([]);
@@ -128,7 +128,19 @@ export default function ProductAdd() {
             if (typeRes?.success) setProductTypes(typeRes?.result || []);
         
             const variationRes = await getDatas("/admin/attributes");
-            if (variationRes?.success) setAllVariations(variationRes?.result?.data);
+            if (variationRes?.success) {
+                let attrs = [];
+                if (Array.isArray(variationRes.result)) {
+                    attrs = variationRes.result;
+                } else if (Array.isArray(variationRes.result?.data)) {
+                    attrs = variationRes.result.data;
+                } else if (variationRes.result && typeof variationRes.result === "object") {
+                    attrs = variationRes.result.data && Array.isArray(variationRes.result.data)
+                        ? variationRes.result.data
+                        : [];
+                }
+                setAllVariations({ data: attrs });
+            }
         };
         init();
     }, []);
@@ -248,7 +260,7 @@ export default function ProductAdd() {
 
     const handleAttributeValue = (index, selectedIds = null) => {
         const attributeIds = selectedIds || selectedAttributeId[index] || [];
-        const newAttributes = allVariations?.filter((i) => attributeIds.includes(i.id)) || [];
+        const newAttributes = allVariations?.data?.filter((i) => attributeIds.includes(i.id)) || [];
 
         let updated = [...attributes];
         updated[index] = newAttributes;
@@ -1039,7 +1051,7 @@ export default function ProductAdd() {
                                                     <Space direction="vertical" style={{ width: "100%" }}>
                                                         <Select mode="multiple" placeholder="Select Attributes" style={{ width: "100%" }} value={selectedAttributeId[record.index]}
                                                         onChange={(val) => {let updated = [...selectedAttributeId];updated[record.index] = val;setSelectedAttributeId(updated);handleAttributeValue(record.index, val);}}
-                                                        options={(allVariations || []).map((v) => ({label: v.name,value: v.id,}))}/>
+                                                        options={(allVariations?.data || []).map((v) => ({label: v.name,value: v.id,}))}/>
                                                         {attributes[record.index]?.map((attr, i) => (
                                                             <Select key={i} placeholder={`Select ${attr.name}`} style={{ width: "100%" }} value={attributeValue[record.index]?.find((val) => val.attribute_id === attr.id)?.id}
                                                                 onChange={(val) => {
@@ -1261,7 +1273,7 @@ export default function ProductAdd() {
                                     setSelectedVariationValues((prev) => prev.filter((val) => !removedAttributeIds.includes(val.attribute_id)));
                                 }
                             }}
-                            options={(allVariations || []).map((v) => ({label: v.name,value: v.id,}))} style={{ width: "100%" }}
+                            options={(allVariations?.data || []).map((v) => ({label: v.name,value: v.id,}))} style={{ width: "100%" }}
                         />
                     </Form.Item>
         
@@ -1347,10 +1359,6 @@ export default function ProductAdd() {
                             })()}
                         </div>
                     )}
-        
-                    <Form.Item label="Buy Price">
-                        <Input placeholder="Enter Buy Price" value={multiBuyPrice} onChange={(e) => setMultiBuyPrice(e.target.value)}/>
-                    </Form.Item>
 
                     <Form.Item label="Regular Price">
                         <Input placeholder="Enter Regular Price" value={multiRegularPrice} onChange={(e) => setMultiRegularPrice(e.target.value)}/>
