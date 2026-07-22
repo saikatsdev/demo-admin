@@ -17,14 +17,11 @@ export default function AddEmployee() {
     const navigate = useNavigate();
 
     // State
-    const [image, setImage]                     = useState(null);
     const [roleOptions, setRoleOptions]         = useState([]);
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [managerOptions, setManagerOptions]   = useState([]);
     const [messageApi, contextHolder]           = message.useMessage();
-    const [preview, setPreview]                 = useState(null);
     const [loading, setLoading]                 = useState(false);
-    const [errors, setErrors]                   = useState({});
 
     // Gallery States for ImagePicker
     const [gallery, setGallery]                 = useState([]);
@@ -89,20 +86,6 @@ export default function AddEmployee() {
             fontSize: '16px',
             fontWeight: 600,
         }
-    };
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        setImage(file);
-
-        setPreview(URL.createObjectURL(file));
-    };
-
-    const removeImage = () => {
-        setImage(null);
-        setPreview(null);
     };
 
     const fetchGallery = async (pageNum = 1) => {
@@ -222,7 +205,6 @@ export default function AddEmployee() {
                 }, 500);
             }else{
                 if (res?.errors) {
-                    setErrors(res?.errors);
                     const formErrors = Object.keys(res.errors).map(key => ({
                         name: key,
                         errors: [res.errors[key][0]]

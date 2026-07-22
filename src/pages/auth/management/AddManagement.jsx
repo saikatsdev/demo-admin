@@ -22,7 +22,6 @@ export default function AddManagement() {
     const [roleOptions, setRoleOptions]         = useState([]);
     const [categoryOptions, setCategoryOptions] = useState([]);
     const [managerOptions, setManagerOptions]   = useState([]);
-    const [errors, setErrors]                   = useState({});
 
     // Gallery States for ImagePicker
     const [gallery, setGallery]                 = useState([]);
@@ -197,7 +196,6 @@ export default function AddManagement() {
                 }, 500);
             }else{
                 if (res?.errors) {
-                    setErrors(res?.errors);
                     const formErrors = Object.keys(res.errors).map(key => ({
                         name: key,
                         errors: [res.errors[key][0]]

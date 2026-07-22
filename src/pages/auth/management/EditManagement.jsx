@@ -17,17 +17,10 @@ export default function EditManagement() {
     const navigate = useNavigate();
     const {id} = useParams();
 
-    const [image, setImage]                       = useState(null);
-    const [preview, setPreview]                   = useState(null);
     const [roleOptions, setRoleOptions]           = useState([]);
     const [categoryOptions, setCategoryOptions]   = useState([]);
     const [managerOptions, setManagerOptions]     = useState([]);
     const [messageApi, contextHolder]             = message.useMessage();
-    const [selectedRoles, setSelectedRoles]       = useState([]);
-    const [user, setUser]                         = useState({});
-    const [selectedCategory, setSelectedCategory] = useState("");
-    const [status, setStatus]                     = useState("");
-    const [manager, setManager]                   = useState("");
     const [loading, setLoading]                   = useState(false);
 
     // Gallery States for ImagePicker
@@ -136,7 +129,6 @@ export default function EditManagement() {
 
                 if (userData?.result) {
                     const u = userData.result;
-                    setUser(u);
                     
                     const userRoles = u.roles?.map(r => r.id) || [];
                     
@@ -156,13 +148,6 @@ export default function EditManagement() {
                             url: u.image,
                         }] : []
                     });
-
-                    setSelectedCategory(u.category?.id);
-                    setStatus(u.status);
-                    setManager(u.manager?.id);
-                    if (u.image) {
-                        setPreview(u.image);
-                    }
                 }
             } catch (error) {
                 console.error("Error loading options:", error);

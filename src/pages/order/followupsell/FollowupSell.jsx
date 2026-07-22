@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
-import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, StarFilled, StarOutlined,MessageOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined, CloseCircleOutlined} from '@ant-design/icons';
-import {Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Divider, Spin, Badge} from "antd";
+import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined, CloseCircleOutlined} from '@ant-design/icons';
+import {Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Spin, Badge} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -80,92 +80,6 @@ const callStatusLabel = (status) => {
     };
     return map[status] || { label: status || "—", color: "#8c8c8c" };
 };
-
-
-function RatingStars({ rating, max = 5 }) {
-    return (
-        <span style={{ display: "inline-flex", gap: 2 }}>
-            {Array.from({ length: max }).map((_, i) =>
-                i < rating ? <StarFilled  key={i} style={{ color: "#faad14", fontSize: 13 }} /> : <StarOutlined key={i} style={{ color: "#d9d9d9", fontSize: 13 }} />
-            )}
-        </span>
-    );
-}
-
-function LastInteractionPanel({ record }) {
-    const it = record.last_interaction;
-    if (!it) return null;
-
-    const cfg  = callStatusLabel(it.call_status);
-    const when = it.created_at ? dayjs(it.created_at).format("DD MMM YYYY, hh:mm A") : "—";
-    const ago  = it.created_at ? dayjs(it.created_at).fromNow() : "";
-
-    return (
-        <div style={{margin: "0 48px 4px", padding: "14px 20px",background: "linear-gradient(135deg, #f8fbff 0%, #fff7f0 100%)",borderRadius: 10, border: "1px solid #e8edf5",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.05)"}}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{
-                        width: 32, height: 32, borderRadius: 8, background: cfg.color + "18",
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                        <PhoneFilled style={{ color: cfg.color, fontSize: 14 }} />
-                    </div>
-                    <div>
-                        <div style={{ fontSize: 12, fontWeight: 700, color: "#262626" }}>Last Interaction</div>
-                        <div style={{ fontSize: 11, color: "#8c8c8c" }}>{when} · <span style={{ color: "#1677ff" }}>{ago}</span></div>
-                    </div>
-                </div>
-                <Tag style={{
-                    borderRadius: 20, padding: "2px 12px", fontWeight: 600, fontSize: 12,
-                    border: "none", background: cfg.color + "18", color: cfg.color,
-                }}>
-                    {cfg.label}
-                </Tag>
-            </div>
-
-            <Divider style={{ margin: "8px 0" }} />
-
-            <Row gutter={[16, 8]} style={{ marginTop: 4 }}>
-                <Col xs={24} sm={8}>
-                    <div style={{
-                        padding: "10px 14px", borderRadius: 8, background: "#fff",
-                        border: "1px solid #f0f0f0",
-                    }}>
-                        <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 4, fontWeight: 500 }}>Rating</div>
-                        {it.rating != null
-                            ? <><RatingStars rating={it.rating} /> <span style={{ fontSize: 11, color: "#8c8c8c", marginLeft: 4 }}>({it.rating}/5)</span></>
-                            : <span style={{ fontSize: 12, color: "#bfbfbf", fontStyle: "italic" }}>Not rated</span>
-                        }
-                    </div>
-                </Col>
-
-                <Col xs={24} sm={8}>
-                    <div style={{padding: "10px 14px", borderRadius: 8, background: "#fff", border: "1px solid #f0f0f0", height: "100%"}}>
-                        <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 4, fontWeight: 500, display: "flex", alignItems: "center", gap: 4 }}>
-                            <MessageOutlined /> Remarks
-                        </div>
-                        {it.remarks ? <span style={{ fontSize: 12, color: "#262626" }}>{it.remarks}</span> : <span style={{ fontSize: 12, color: "#bfbfbf", fontStyle: "italic" }}>No remarks</span>
-                        }
-                    </div>
-                </Col>
-
-                <Col xs={24} sm={8}>
-                    <div style={{
-                        padding: "10px 14px", borderRadius: 8, background: "#fff",
-                        border: "1px solid #f0f0f0", height: "100%",
-                    }}>
-                        <div style={{ fontSize: 11, color: "#8c8c8c", marginBottom: 4, fontWeight: 500 }}>Customer Feedback</div>
-                        {it.customer_feedback
-                            ? <span style={{ fontSize: 12, color: "#262626" }}>{it.customer_feedback}</span>
-                            : <span style={{ fontSize: 12, color: "#bfbfbf", fontStyle: "italic" }}>No feedback</span>
-                        }
-                    </div>
-                </Col>
-            </Row>
-        </div>
-    );
-}
 
 export default function FollowupSell() {
     // Hook
@@ -938,11 +852,6 @@ export default function FollowupSell() {
                 }}
                 onChange={handleTableChange}
                 rowClassName={(_, idx) => idx % 2 === 0 ? "" : "ant-table-row-striped"}
-                expandable={{
-                    rowExpandable: (record) => !!record.last_interaction,
-                    expandedRowRender: (record) => <LastInteractionPanel record={record} />,
-                    expandRowByClick: false,
-                }}
             />
 
             <Modal
