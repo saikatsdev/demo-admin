@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getDatas, postData } from "../../../../api/common/common";
 import useTitle from "../../../../hooks/useTitle";
 import { Breadcrumb, Button, Col, DatePicker, Input, message, Modal, Row, Select, Table, Tooltip } from "antd";
-import {ArrowLeftOutlined,CloseCircleOutlined,EnvironmentOutlined,EyeOutlined,SearchOutlined,UserSwitchOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,CloseCircleOutlined,EnvironmentOutlined,EyeOutlined,SearchOutlined,UserSwitchOutlined,ShoppingOutlined} from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import "./OrderList.css";
@@ -344,8 +344,8 @@ export default function OrderList() {
             setAssignLoading(true);
 
             const res = await postData("/admin/followup", {
-                order_ids: selectedRowKeys,
-                user_id: selectedEmployee,
+                order_ids    : selectedRowKeys,
+                user_id      : selectedEmployee,
                 followup_date: followupDate.format("YYYY-MM-DD"),
             });
 
@@ -390,6 +390,23 @@ export default function OrderList() {
                         ]}
                     />
                 </div>
+            </div>
+
+            <div className="ual-stats">
+                <article className="ual-stat-card">
+                    <div className="ual-stat-card__icon" aria-hidden>
+                        <ShoppingOutlined />
+                    </div>
+                    <div className="ual-stat-card__content">
+                        <p className="ual-stat-card__label">Total Orders</p>
+                        <p className="ual-stat-card__value">
+                            {loading ? "—" : Number(pagination.total || 0).toLocaleString()}
+                        </p>
+                        <p className="ual-stat-card__meta">
+                            Unassigned follow-up orders matching your filters
+                        </p>
+                    </div>
+                </article>
             </div>
 
             <div className="ual-toolbar">

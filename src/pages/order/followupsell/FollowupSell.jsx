@@ -776,15 +776,9 @@ export default function FollowupSell() {
                     </Space>
                     <Space>
                         {isAdminOrSuperAdmin && (
-                            <Button
-                                type={filterAssign === "unassigned" && selectedRowKeys.length > 0 ? "primary" : "default"}
-                                icon={<UserSwitchOutlined />}
-                                onClick={() => assignOrder()}
-                            >
+                            <Button type={filterAssign === "unassigned" && selectedRowKeys.length > 0 ? "primary" : "default"} icon={<UserSwitchOutlined />} onClick={() => assignOrder()}>
                                 Assign Orders
-                                {filterAssign === "unassigned" && selectedRowKeys.length > 0
-                                    ? ` (${selectedRowKeys.length})`
-                                    : ""}
+                                {filterAssign === "unassigned" && selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ""}
                             </Button>
                         )}
                         <Button icon={<ReloadOutlined />} onClick={() => fetchOrders(1, pagination.pageSize)}>Refresh</Button>
@@ -795,17 +789,17 @@ export default function FollowupSell() {
 
             {isAdminOrSuperAdmin && filterAssign === "unassigned" && selectedRowKeys.length > 0 && (
                 <div style={{
-                    display: "flex",
-                    alignItems: "center",
+                    display       : "flex",
+                    alignItems    : "center",
                     justifyContent: "space-between",
-                    gap: 12,
-                    flexWrap: "wrap",
-                    padding: "12px 16px",
-                    marginBottom: 16,
-                    background: "#fff",
-                    border: "1px solid #e8edf5",
-                    borderLeft: "4px solid #1c558b",
-                    borderRadius: 8,
+                    gap           : 12,
+                    flexWrap      : "wrap",
+                    padding       : "12px 16px",
+                    marginBottom  : 16,
+                    background    : "#fff",
+                    border        : "1px solid #e8edf5",
+                    borderLeft    : "4px solid #1c558b",
+                    borderRadius  : 8,
                 }}>
                     <Space wrap>
                         <Badge count={selectedRowKeys.length} style={{ backgroundColor: "#1c558b" }} />
