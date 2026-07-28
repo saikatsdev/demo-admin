@@ -18,7 +18,6 @@ export default function Pusher() {
     const [loading, setLoading]           = useState(false);
     const [messageApi, contextHolder]     = message.useMessage();
     const [showForm, setShowForm]         = useState(false);
-    const [pusherConfig, setPusherConfig] = useState({key: import.meta.env.VITE_PUSHER_APP_KEY,});
 
     // Method
     useEffect(() => {
@@ -88,7 +87,6 @@ export default function Pusher() {
             const data = await res.json();
 
             if (data.success) {
-                setPusherConfig(prev => ({...prev,key: values.app_key}));
                 messageApi.open({
                     type: 'success',
                     content: data.message || 'Updated successfully',

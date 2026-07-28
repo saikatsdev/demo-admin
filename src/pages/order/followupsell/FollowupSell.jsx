@@ -983,10 +983,16 @@ export default function FollowupSell() {
                     </Space>
                     <Space>
                         {isAdminOrSuperAdmin && (
-                            <Button type={filterAssign === "unassigned" && selectedRowKeys.length > 0 ? "primary" : "default"} icon={<UserSwitchOutlined />} onClick={() => assignOrder()}>
-                                Assign Orders
-                                {filterAssign === "unassigned" && selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ""}
-                            </Button>
+                            <>
+                                <Button type={filterAssign === "unassigned" && selectedRowKeys.length > 0 ? "primary" : "default"} icon={<UserSwitchOutlined />} onClick={() => assignOrder()}>
+                                    Assign Orders
+                                    {filterAssign === "unassigned" && selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ""}
+                                </Button>
+
+                                <Button type="primary">
+                                    Team Dashboard
+                                </Button>
+                            </>
                         )}
                         <Button icon={<ReloadOutlined />} onClick={() => fetchOrders(1, pagination.pageSize)}>Refresh</Button>
                         <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
