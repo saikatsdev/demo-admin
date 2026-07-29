@@ -46,15 +46,15 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
             }
             styles={{ body: { padding: 0, background: "#f7f9fc" } }}
         >
-            <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", minHeight: 620, background: "#f7f9fc" }}>
-                <div style={{ borderRight: "1px solid #e8edf5", padding: 18, background: "#fff" }}>
-                    <div style={{ marginBottom: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", height: 620, maxHeight: "70vh", overflow: "hidden", background: "#f7f9fc" }}>
+                <div style={{ borderRight: "1px solid #e8edf5", padding: 18, background: "#fff", display: "flex", flexDirection: "column", minHeight: 0 }}>
+                    <div style={{ marginBottom: 12, flexShrink: 0 }}>
                         <Typography.Text strong style={{ fontSize: 14 }}>
                             Employee List
                         </Typography.Text>
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1, overflowY: "auto", overflowX: "hidden", minHeight: 0, paddingRight: 4 }}>
                         {employees.length ? (
                             employees.map((employee, index) => {
                                 const isActive = activeEmployee?.id === employee.id;
@@ -109,7 +109,7 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
                     </div>
                 </div>
 
-                <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", minHeight: 0 }}>
                     <Card
                         style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #e8edf5", background: "linear-gradient(135deg, #1677ff 0%, #722ed1 100%)" }}
                         bodyStyle={{ padding: 20, color: "#fff" }}
