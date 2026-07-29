@@ -4,9 +4,10 @@ import {Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,Date
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getDatas, postData } from "../../../api/common/common";
 import { useRole } from "../../../hooks/useRole";
+import TeamDashboardModal from "../../../components/order/TeamDashboardModal";
 
 dayjs.extend(relativeTime);
 
@@ -155,6 +156,8 @@ export default function FollowupSell() {
     const [employeeLoading, setEmployeeLoading] = useState(false);
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [assignLoading, setAssignLoading]     = useState(false);
+    const [teamDashboardOpen, setTeamDashboardOpen] = useState(false);
+    const [selectedTeamEmployee, setSelectedTeamEmployee] = useState(null);
 
     // modal state
     const [editRecord, setEditRecord]       = useState(null);
@@ -628,7 +631,7 @@ export default function FollowupSell() {
         setNoteValue("");
     };
 
-    const fetchOrders = async (page = 1, pageSize = 10) => {
+    const fetchOrders = useCallback(async (page = 1, pageSize = 10) => {
         setLoading(true);
         try {
             const params = { page, paginate_size: pageSize };
@@ -698,12 +701,12 @@ export default function FollowupSell() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [dateRange, filterAssign, filterPriority, filterStatus, filterStep, search, summaryKey]);
 
     useEffect(() => { 
         setSelectedRowKeys([]);
         fetchOrders(1, pagination.pageSize); 
-    },[search, filterStep, filterStatus, filterPriority, filterAssign, dateRange, summaryKey]);
+    }, [fetchOrders, pagination.pageSize]);
 
     const handleTableChange = (pag) => {
         setSelectedRowKeys([]);
@@ -989,12 +992,18 @@ export default function FollowupSell() {
                                     {filterAssign === "unassigned" && selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ""}
                                 </Button>
 
-                                <Button type="primary">
+                                <Button type="primary" onClick={() => {
+                                    setSelectedTeamEmployee(null);
+                                    setTeamDashboardOpen(true);
+                                    fetchEmployees();
+                                }}>
                                     Team Dashboard
                                 </Button>
                             </>
                         )}
+
                         <Button icon={<ReloadOutlined />} onClick={() => fetchOrders(1, pagination.pageSize)}>Refresh</Button>
+
                         <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
                     </Space>
                 </Space>
@@ -1096,6 +1105,14 @@ export default function FollowupSell() {
                     }))}
                 />
             </Modal>
+
+            <TeamDashboardModal
+                open={teamDashboardOpen}
+                onClose={() => setTeamDashboardOpen(false)}
+                employees={employees}
+                selectedEmployee={selectedTeamEmployee}
+                onSelectEmployee={(employeeId) => setSelectedTeamEmployee(employeeId)}
+            />
 
             <Modal title={<span style={{ fontWeight: 600 }}>Update Follow-up — <span style={{ color: "#1677ff" }}>{editRecord?.order?.invoice_number}</span></span>}
                 open={!!editRecord} onCancel={() => setEditRecord(null)} onOk={handleSave} okText="Save" confirmLoading={saveLoading} width={420}>
