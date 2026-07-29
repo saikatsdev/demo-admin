@@ -4,15 +4,38 @@ import { useEffect, useState } from "react";
 import { getDatas } from "../../api/common/common";
 
 const statCards = [
-    { key: "total_orders", label: "Total Orders", color: "#1677ff", bg: "#e6f4ff", icon: <TeamOutlined /> },
-    { key: "active_orders", label: "Active Orders", color: "#52c41a", bg: "#f6ffed", icon: <CheckCircleOutlined /> },
-    { key: "cancelled_orders", label: "Cancelled Orders", color: "#ff4d4f", bg: "#fff2f0", icon: <CloseCircleOutlined /> },
-    { key: "converted_orders", label: "Converted Orders", color: "#722ed1", bg: "#f9f0ff", icon: <UserOutlined /> },
+    { 
+        key: "total_orders", 
+        label: "Total Orders", 
+        color: "#1677ff", 
+        bg: "#e6f4ff", 
+        icon: <TeamOutlined /> 
+    },
+    { 
+        key: "active_orders", 
+        label: "Active Orders", 
+        color: "#52c41a", 
+        bg: "#f6ffed", 
+        icon: <CheckCircleOutlined /> 
+    },
+    { 
+        key: "cancelled_orders", 
+        label: "Cancelled Orders", 
+        color: "#ff4d4f", 
+        bg: "#fff2f0", 
+        icon: <CloseCircleOutlined /> 
+    },
+    { 
+        key: "converted_orders", 
+        label: "Converted Orders", 
+        color: "#722ed1", 
+        bg: "#f9f0ff", icon: <UserOutlined /> 
+    },
 ];
 
 export default function TeamDashboardModal({ open, onClose, employees = [], selectedEmployee, onSelectEmployee }) {
-    const activeEmployee = employees.find((employee) => employee.id === selectedEmployee) || employees[0] || null;
-    const [details, setDetails] = useState(null);
+    const activeEmployee                      = employees.find((employee) => employee.id === selectedEmployee) || employees[0] || null;
+    const [details, setDetails]               = useState(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
 
     useEffect(() => {
@@ -53,20 +76,16 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
         };
     }, [activeEmployee?.id, employees, onSelectEmployee, open, selectedEmployee]);
 
-    const overview = details?.overview || {};
-    const snapshot = details?.performance_snapshot || {};
-    const successRate = snapshot?.success_rate ?? 0;
-    const followupCoverage = snapshot?.followup_coverage ?? 0;
-    const conversionRate = snapshot?.conversion_rate ?? 0;
-    const cancelRate = snapshot?.cancel_rate ?? 0;
+    const overview            = details?.overview || {};
+    const snapshot            = details?.performance_snapshot || {};
+    const successRate         = snapshot?.success_rate ?? 0;
+    const followupCoverage    = snapshot?.followup_coverage ?? 0;
+    const conversionRate      = snapshot?.conversion_rate ?? 0;
+    const cancelRate          = snapshot?.cancel_rate ?? 0;
+    const hasEmployeeSelected = Boolean(activeEmployee?.id);
 
     return (
-        <Modal
-            open={open}
-            onCancel={onClose}
-            footer={null}
-            width={1200}
-            centered
+        <Modal open={open} onCancel={onClose} footer={null} width={1200} centered
             title={
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 38, height: 38, borderRadius: 12, background: "#e6f4ff", display: "flex", alignItems: "center", justifyContent: "center", color: "#1677ff" }}>
@@ -144,7 +163,7 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
 
                 <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", minHeight: 0 }}>
                     <Card
-                        style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #e8edf5", background: "linear-gradient(135deg, #1677ff 0%, #722ed1 100%)" }}
+                        style={{ borderRadius: 16, overflow: "hidden", border: "1px solid #e8edf5", background: "linear-gradient(135deg, #1677ff 0%, #722ed1 100%)", flexShrink: 0 }}
                         bodyStyle={{ padding: 20, color: "#fff" }}
                     >
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
@@ -164,7 +183,7 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
                         </div>
                     </Card>
 
-                    {!activeEmployee?.id ? (
+                    {!hasEmployeeSelected ? (
                         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: 220, border: "1px dashed #d9d9d9", borderRadius: 14, background: "#fff" }}>
                             <Spin size="large" />
                             <div style={{ marginTop: 12, color: "#8c8c8c", fontSize: 14 }}>Loading employee details...</div>

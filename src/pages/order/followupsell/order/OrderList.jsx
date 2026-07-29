@@ -311,7 +311,7 @@ export default function OrderList() {
     const fetchEmployees = async () => {
         try {
             setEmployeeLoading(true);
-            const res = await getDatas("/admin/users/list");
+            const res = await getDatas("/admin/users/list", {user_category_id:3});
             if (res?.success) {
                 setEmployees(res?.result?.data || []);
             }

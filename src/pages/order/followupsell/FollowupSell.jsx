@@ -716,7 +716,7 @@ export default function FollowupSell() {
     const fetchEmployees = async () => {
         try {
             setEmployeeLoading(true);
-            const res = await getDatas("/admin/users/list");
+            const res = await getDatas("/admin/users/list", {user_category_id:3});
             if (res?.success) {
                 setEmployees(res?.result?.data || []);
             }
@@ -992,11 +992,7 @@ export default function FollowupSell() {
                                     {filterAssign === "unassigned" && selectedRowKeys.length > 0 ? ` (${selectedRowKeys.length})` : ""}
                                 </Button>
 
-                                <Button type="primary" onClick={() => {
-                                    setSelectedTeamEmployee(null);
-                                    setTeamDashboardOpen(true);
-                                    fetchEmployees();
-                                }}>
+                                <Button type="primary" onClick={() => {setSelectedTeamEmployee(null);setTeamDashboardOpen(true);fetchEmployees();}}>
                                     Team Dashboard
                                 </Button>
                             </>
