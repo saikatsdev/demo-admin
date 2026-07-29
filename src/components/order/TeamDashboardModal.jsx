@@ -1,30 +1,56 @@
-import { Avatar, Button, Card, Col, Modal, Progress, Row, Space, Tag, Typography } from "antd";
+import { Avatar, Button, Card, Col, Modal, Progress, Row, Space, Spin, Tag, Typography } from "antd";
 import { CheckCircleOutlined, CloseCircleOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
-
-const getEmployeeMetrics = (employee, index) => {
-    const base = (index % 5) + 1;
-    const idValue = employee?.id ?? 0;
-
-    return {
-        assigned: 8 + base * 3 + (idValue % 4),
-        active: 4 + base * 2 + (idValue % 3),
-        cancelled: Math.max(0, base - 2),
-        converted: 3 + base + (idValue % 5),
-        successRate: Math.min(98, 72 + base * 4 + (idValue % 6)),
-    };
-};
+import { useEffect, useState } from "react";
+import { getDatas } from "../../api/common/common";
 
 const statCards = [
-    { key: "assigned", label: "Assign Order", color: "#1677ff", bg: "#e6f4ff", icon: <TeamOutlined /> },
-    { key: "active", label: "Active Order", color: "#52c41a", bg: "#f6ffed", icon: <CheckCircleOutlined /> },
-    { key: "cancelled", label: "Cancelled Orders", color: "#ff4d4f", bg: "#fff2f0", icon: <CloseCircleOutlined /> },
-    { key: "converted", label: "Convert Orders", color: "#722ed1", bg: "#f9f0ff", icon: <UserOutlined /> },
+    { key: "total_orders", label: "Total Orders", color: "#1677ff", bg: "#e6f4ff", icon: <TeamOutlined /> },
+    { key: "active_orders", label: "Active Orders", color: "#52c41a", bg: "#f6ffed", icon: <CheckCircleOutlined /> },
+    { key: "cancelled_orders", label: "Cancelled Orders", color: "#ff4d4f", bg: "#fff2f0", icon: <CloseCircleOutlined /> },
+    { key: "converted_orders", label: "Converted Orders", color: "#722ed1", bg: "#f9f0ff", icon: <UserOutlined /> },
 ];
 
 export default function TeamDashboardModal({ open, onClose, employees = [], selectedEmployee, onSelectEmployee }) {
     const activeEmployee = employees.find((employee) => employee.id === selectedEmployee) || employees[0] || null;
-    const activeIndex = employees.findIndex((employee) => employee.id === activeEmployee?.id);
-    const metrics = activeEmployee ? getEmployeeMetrics(activeEmployee, activeIndex >= 0 ? activeIndex : 0) : null;
+    const [details, setDetails] = useState(null);
+    const [loadingDetails, setLoadingDetails] = useState(false);
+
+    useEffect(() => {
+        if (!open || !activeEmployee?.id) {
+            setDetails(null);
+            setLoadingDetails(false);
+            return;
+        }
+
+        let isMounted = true;
+
+        const fetchDetails = async () => {
+            setLoadingDetails(true);
+            const response = await getDatas("/admin/followup/details", { employee_id: activeEmployee.id });
+
+            if (isMounted) {
+                if (response?.success) {
+                    setDetails(response.result || null);
+                } else {
+                    setDetails(null);
+                }
+                setLoadingDetails(false);
+            }
+        };
+
+        fetchDetails();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [open, activeEmployee?.id]);
+
+    const overview = details?.overview || {};
+    const snapshot = details?.performance_snapshot || {};
+    const successRate = snapshot?.success_rate ?? 0;
+    const followupCoverage = snapshot?.followup_coverage ?? 0;
+    const conversionRate = snapshot?.conversion_rate ?? 0;
+    const cancelRate = snapshot?.cancel_rate ?? 0;
 
     return (
         <Modal
@@ -56,9 +82,8 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
 
                     <div style={{ display: "flex", flexDirection: "column", gap: 10, flex: 1, overflowY: "auto", overflowX: "hidden", minHeight: 0, paddingRight: 4 }}>
                         {employees.length ? (
-                            employees.map((employee, index) => {
+                            employees.map((employee) => {
                                 const isActive = activeEmployee?.id === employee.id;
-                                const itemMetrics = getEmployeeMetrics(employee, index);
 
                                 return (
                                     <Button
@@ -93,7 +118,7 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
                                                 </div>
                                                 <div style={{ marginTop: 6 }}>
                                                     <Tag color={isActive ? "cyan" : "blue"} style={{ margin: 0, borderRadius: 999 }}>
-                                                        {itemMetrics.active} active
+                                                        {isActive ? "Selected" : "Available"}
                                                     </Tag>
                                                 </div>
                                             </div>
@@ -126,61 +151,76 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
                             </div>
                             <div style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.18)", minWidth: 140 }}>
                                 <div style={{ fontSize: 12, opacity: 0.9 }}>Success Rate</div>
-                                <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2 }}>{metrics?.successRate ?? 0}%</div>
+                                <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2 }}>{successRate}%</div>
                             </div>
                         </div>
                     </Card>
 
-                    <Row gutter={[12, 12]}>
-                        {statCards.map((stat) => (
-                            <Col xs={24} sm={12} lg={6} key={stat.key}>
-                                <Card
-                                    hoverable
-                                    style={{ borderRadius: 14, border: "1px solid #e8edf5", background: "#fff" }}
-                                    bodyStyle={{ padding: "16px 16px 14px" }}
-                                >
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <div>
-                                            <div style={{ fontSize: 12, color: "#8c8c8c", fontWeight: 500 }}>{stat.label}</div>
-                                            <div style={{ fontSize: 22, fontWeight: 700, color: "#262626", marginTop: 4 }}>
-                                                {metrics?.[stat.key] ?? 0}
+                    {loadingDetails ? (
+                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 220 }}>
+                            <Spin size="large" />
+                        </div>
+                    ) : (
+                        <>
+                            <Row gutter={[12, 12]}>
+                                {statCards.map((stat) => (
+                                    <Col xs={24} sm={12} lg={6} key={stat.key}>
+                                        <Card
+                                            hoverable
+                                            style={{ borderRadius: 14, border: "1px solid #e8edf5", background: "#fff" }}
+                                            bodyStyle={{ padding: "16px 16px 14px" }}
+                                        >
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                <div>
+                                                    <div style={{ fontSize: 12, color: "#8c8c8c", fontWeight: 500 }}>{stat.label}</div>
+                                                    <div style={{ fontSize: 22, fontWeight: 700, color: "#262626", marginTop: 4 }}>
+                                                        {overview?.[stat.key] ?? 0}
+                                                    </div>
+                                                </div>
+                                                <div style={{ width: 42, height: 42, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: stat.bg, color: stat.color, fontSize: 18 }}>
+                                                    {stat.icon}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div style={{ width: 42, height: 42, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", background: stat.bg, color: stat.color, fontSize: 18 }}>
-                                            {stat.icon}
-                                        </div>
-                                    </div>
-                                </Card>
-                            </Col>
-                        ))}
-                    </Row>
+                                        </Card>
+                                    </Col>
+                                ))}
+                            </Row>
 
-                    <Card style={{ borderRadius: 14, border: "1px solid #e8edf5" }} bodyStyle={{ padding: 16 }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Performance Snapshot</div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                            <div>
-                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                                    <span style={{ color: "#8c8c8c" }}>Follow-up Coverage</span>
-                                    <span style={{ fontWeight: 600 }}>{Math.min(100, (metrics?.active ?? 0) * 6)}%</span>
+                            <Card style={{ borderRadius: 14, border: "1px solid #e8edf5" }} bodyStyle={{ padding: 16 }}>
+                                <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Performance Snapshot</div>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                                    <div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                                            <span style={{ color: "#8c8c8c" }}>Follow-up Coverage</span>
+                                            <span style={{ fontWeight: 600 }}>{followupCoverage}%</span>
+                                        </div>
+                                        <Progress percent={followupCoverage} strokeColor="#1677ff" showInfo={false} />
+                                    </div>
+                                    <div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                                            <span style={{ color: "#8c8c8c" }}>Conversion Focus</span>
+                                            <span style={{ fontWeight: 600 }}>{conversionRate}%</span>
+                                        </div>
+                                        <Progress percent={conversionRate} strokeColor="#52c41a" showInfo={false} />
+                                    </div>
+                                    <div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                                            <span style={{ color: "#8c8c8c" }}>Cancel Rate</span>
+                                            <span style={{ fontWeight: 600 }}>{cancelRate}%</span>
+                                        </div>
+                                        <Progress percent={cancelRate} strokeColor="#ff4d4f" showInfo={false} />
+                                    </div>
+                                    <div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                                            <span style={{ color: "#8c8c8c" }}>Success Rate</span>
+                                            <span style={{ fontWeight: 600 }}>{successRate}%</span>
+                                        </div>
+                                        <Progress percent={successRate} strokeColor="#722ed1" showInfo={false} />
+                                    </div>
                                 </div>
-                                <Progress percent={Math.min(100, (metrics?.active ?? 0) * 6)} strokeColor="#1677ff" showInfo={false} />
-                            </div>
-                            <div>
-                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                                    <span style={{ color: "#8c8c8c" }}>Conversion Focus</span>
-                                    <span style={{ fontWeight: 600 }}>{Math.min(100, (metrics?.converted ?? 0) * 8)}%</span>
-                                </div>
-                                <Progress percent={Math.min(100, (metrics?.converted ?? 0) * 8)} strokeColor="#52c41a" showInfo={false} />
-                            </div>
-                            <div>
-                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                                    <span style={{ color: "#8c8c8c" }}>Retention Health</span>
-                                    <span style={{ fontWeight: 600 }}>{metrics?.successRate ?? 0}%</span>
-                                </div>
-                                <Progress percent={metrics?.successRate ?? 0} strokeColor="#722ed1" showInfo={false} />
-                            </div>
-                        </div>
-                    </Card>
+                            </Card>
+                        </>
+                    )}
                 </div>
             </div>
         </Modal>
