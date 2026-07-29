@@ -16,9 +16,17 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
     const [loadingDetails, setLoadingDetails] = useState(false);
 
     useEffect(() => {
-        if (!open || !activeEmployee?.id) {
+        if (!open) {
             setDetails(null);
             setLoadingDetails(false);
+            return;
+        }
+
+        if (!selectedEmployee && employees[0]?.id) {
+            onSelectEmployee?.(employees[0].id);
+        }
+
+        if (!activeEmployee?.id) {
             return;
         }
 
@@ -43,7 +51,7 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
         return () => {
             isMounted = false;
         };
-    }, [open, activeEmployee?.id]);
+    }, [activeEmployee?.id, employees, onSelectEmployee, open, selectedEmployee]);
 
     const overview = details?.overview || {};
     const snapshot = details?.performance_snapshot || {};
@@ -151,13 +159,18 @@ export default function TeamDashboardModal({ open, onClose, employees = [], sele
                             </div>
                             <div style={{ padding: "10px 12px", borderRadius: 12, background: "rgba(255,255,255,0.18)", minWidth: 140 }}>
                                 <div style={{ fontSize: 12, opacity: 0.9 }}>Success Rate</div>
-                                <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2 }}>{successRate}%</div>
+                                <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2 }}>{loadingDetails ? "--" : `${successRate}%`}</div>
                             </div>
                         </div>
                     </Card>
 
-                    {loadingDetails ? (
-                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 220 }}>
+                    {!activeEmployee?.id ? (
+                        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", minHeight: 220, border: "1px dashed #d9d9d9", borderRadius: 14, background: "#fff" }}>
+                            <Spin size="large" />
+                            <div style={{ marginTop: 12, color: "#8c8c8c", fontSize: 14 }}>Loading employee details...</div>
+                        </div>
+                    ) : loadingDetails ? (
+                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: 220, border: "1px dashed #d9d9d9", borderRadius: 14, background: "#fff" }}>
                             <Spin size="large" />
                         </div>
                     ) : (
