@@ -180,6 +180,9 @@ import PrepareOrderList from "./pages/team/PrepareOrderList";
 import UnAssignList from "./pages/team/UnAssignList";
 import OrderList from "./pages/order/followupsell/order/OrderList";
 import CustomerFeedback from "./pages/order/customerFeedback/CustomerFeedback";
+import CrossSell from "./pages/product/crosssell/CrossSell";
+import AddCrossSell from "./pages/product/crosssell/AddCrossSell";
+import EditCrossSell from "./pages/product/crosssell/EditCrossSell";
 
 function App() {
     const dispatch         = useDispatch();
@@ -353,6 +356,10 @@ function App() {
                     <Route path="/downsell-coupon" element={<DownSellCoupon />} />
 
                     <Route path="/all-feedback" element={<CustomerFeedback />} />
+
+                    <Route path="/cross-sell" element={<CrossSell/>} />
+                    <Route path="/cross-sell/add" element={<AddCrossSell/>} />
+                    <Route path="/cross-sell/edit/:id" element={<EditCrossSell/>} />
 
 
                     <Route path="/trash/list" element={<TrashList />} />

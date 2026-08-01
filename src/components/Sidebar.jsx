@@ -48,6 +48,7 @@ const Sidebar = ({ onMenuSelect }) => {
     const productSubmenus = [
         can("products-read") && { label: "Products", path: "/products" },
         can("up-sells-read") && { label: "Upsell Products", path: "/upsell" },
+        can("cross-sells-read") && { label: "Cross Sell Products", path: "/cross-sell" },
         can("down-sells-read") && { label: "Downsell Products", path: "/downsell-coupon" },
         can("reviews-read") && { label: "Review", path: "/review" },
         can("attributes-read") && { label: "Attributes", path: "/attributes" },
