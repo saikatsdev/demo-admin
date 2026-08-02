@@ -1,4 +1,4 @@
-import {ArrowLeftOutlined,PlusOutlined,SettingOutlined,HistoryOutlined,ThunderboltOutlined,BarChartOutlined, EyeOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,PlusOutlined,SettingOutlined,HistoryOutlined,ThunderboltOutlined,BarChartOutlined, EyeOutlined, EditOutlined, DeleteOutlined} from "@ant-design/icons";
 import {Input as AntInput,Breadcrumb,Button,Popconfirm,Space,Table,Tag,message,Modal} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
@@ -87,19 +87,13 @@ export default function UpSell() {
         {
             title: "Action",
             key: "operation",
-            width: 160,
+            width: 120,
             render: (_, record) => (
                 <Space>
-                    <Button size="small" icon={<EyeOutlined />} onClick={() => onView(record.id)}>
-                        View
-                    </Button>
-                    <Button size="small" type="primary" onClick={() => onEdit(record)}>
-                        Edit
-                    </Button>
+                    <Button size="small" shape="circle" icon={<EyeOutlined />} title="View" onClick={() => onView(record.id)} />
+                    <Button size="small" type="primary" shape="circle" icon={<EditOutlined />} title="Edit" onClick={() => onEdit(record)} />
                     <Popconfirm title="Delete this?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                        <Button size="small" danger>
-                            Delete
-                        </Button>
+                        <Button size="small" danger shape="circle" icon={<DeleteOutlined />} title="Delete" />
                     </Popconfirm>
                 </Space>
             ),

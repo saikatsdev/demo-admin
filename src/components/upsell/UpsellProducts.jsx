@@ -58,8 +58,7 @@ export default function UpsellProducts({ upsellId, onClose }) {
         },
         {
             title: "Stock",
-            dataIndex: "current_stock",
-            render: (v) => <Tag color="blue">{v}</Tag>,
+            render: (_, p) => <Tag color="blue">{p.stock ?? p.current_stock ?? "N/A"}</Tag>,
         },
     ];
 
@@ -67,13 +66,13 @@ export default function UpsellProducts({ upsellId, onClose }) {
         ...productColumns,
         {
             title: "Custom Name",
-            dataIndex: ["pivot", "custom_name"],
+            dataIndex: "custom_name",
         },
         {
             title: "Discount",
             render: (_, p) => (
                 <Tag color="green">
-                    {p.pivot?.discount_type} — {p.pivot?.discount_amount}
+                    {p.discount_type ?? p.pivot?.discount_type} — {p.discount_amount ?? p.pivot?.discount_amount}
                 </Tag>
             ),
         },
@@ -93,8 +92,8 @@ export default function UpsellProducts({ upsellId, onClose }) {
                                     {info?.status}
                                 </Tag>
 
-                            {info?.is_all ? (
-                                <Tag color="blue">Applies to ALL Products</Tag>
+                            {info?.condition_type === "on_order" ? (
+                                <Tag color="blue">Applies to ALL Orders</Tag>
                             ) : (
                                 <Tag color="gold">Conditional Trigger</Tag>
                             )}
