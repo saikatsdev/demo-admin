@@ -104,13 +104,7 @@ export default function EditUpSell() {
                     const data = res.result || {};
                     const formatDate = (dateTime) => dateTime ? dateTime.split(" ")[0] : "";
                     
-                    const getTriggerRule = (data) => {
-                        if (data.is_all == 1) return "on_order";
-                        if (Array.isArray(data.trigger_category_ids) && data.trigger_category_ids.length > 0) return "on_category";
-                        return "on_product";
-                    };
-
-                    const triggerRule = getTriggerRule(data);
+                    const triggerRule = data.condition_type || "on_order";
 
                     setOfferInfo({
                         title: data.title || "",
@@ -127,18 +121,27 @@ export default function EditUpSell() {
                             id             : item.id,
                             name           : item.name,
                             slug           : item.slug,
-                            image          : item.image,
+                            image          : item.img_path,
                             sell_price     : item.sell_price,
-                            discount_type  : item?.pivot?.discount_type || "percentage",
-                            discount_amount: item?.pivot?.discount_amount || 0,
-                            category_name  : item?.category?.name || "N/A"
+                            discount_type  : item.discount_type || "percentage",
+                            discount_amount: item.discount_amount || 0,
+                            category_name  : item?.category_name || "N/A"
                         }))
                     );
 
                     if (triggerRule === "on_product") {
                         setSelectedTriggerProducts(data.trigger_products || []);
                     } else if (triggerRule === "on_category") {
-                        setTriggerCategoryIds(data.trigger_category_ids || []);
+                        let categoryIds = data.trigger_category_ids;
+                        if (typeof categoryIds === "string") {
+                            try {
+                                categoryIds = JSON.parse(categoryIds);
+                            } catch (e) {
+                                categoryIds = [];
+                                console.log(e);
+                            }
+                        }
+                        setTriggerCategoryIds(Array.isArray(categoryIds) ? categoryIds.map(id => Number(id)) : []);
                     }
                 }
             } catch (error) {
@@ -203,24 +206,36 @@ export default function EditUpSell() {
             status        : offerInfo.status,
             started_at    : offerInfo.started_at,
             ended_at      : offerInfo.ended_at,
-            is_all        : trigger === "on_order" ? 1: 0,
+            condition_type: trigger,
             up_sell_offers: selectedProducts.map(p => ({
                 product_id     : p.id,
+                custom_name    : p.name,
                 discount_type  : p.discount_type,
                 discount_amount: p.discount_amount,
             })),
-            _method: "PUT"
         };
 
-        if (trigger === "on_product") data.trigger_product_ids = selectedTriggerProducts.map(p => p.id);
-        if (trigger === "on_category") data.trigger_category_ids = selectedCategories.map(cat => cat.id);
+        if (trigger === "on_product") {
+            data.trigger_product_ids  = selectedTriggerProducts.map(p => p.id);
+            data.trigger_category_ids = null;
+        }
+
+        if (trigger === "on_category") {
+            data.trigger_product_ids  = null;
+            data.trigger_category_ids = selectedCategories.map(cat => cat.id);
+        }
+
+        if (trigger === "on_order") {
+            data.trigger_product_ids  = null;
+            data.trigger_category_ids = null;
+        }
 
         try {
             setFormLoading(true);
-            const res = await postData(`/admin/up-sells/${id}`, data);
+            const res = await postData(`/admin/up-sells`, data);
             if (res && res?.success) {
                 messageApi.success(res.msg || "Upsell offer updated successfully");
-                setTimeout(() => navigate("/upsell"), 1000);
+                setTimeout(() => navigate("/upsell"), 500);
             }
         } catch (error) {
             console.log(error);
@@ -290,10 +305,10 @@ export default function EditUpSell() {
                                         <div className="antd-search-dropdown">
                                             {product?.length > 0 ? product.map((p) => (
                                                 <div key={p.id} className="search-item-row" onClick={() => handleSelectProduct(p, "main")}>
-                                                    <img src={p.img_path || p.image} alt="Image" />
+                                                    <img src={p.image} alt="Image" />
                                                     <div className="info">
                                                         <div className="name">{p.name}</div>
-                                                        <div className="meta">{p?.category_name || 'N/A'} | ৳{p.sell_price}</div>
+                                                        <div className="meta">৳{p.sell_price}</div>
                                                     </div>
                                                     <Button type="primary" size="small" icon={<PlusOutlined />}>Add</Button>
                                                 </div>
@@ -306,7 +321,7 @@ export default function EditUpSell() {
                                     {selectedProducts.map((p) => (
                                         <div key={p.id} className="upsell-product-card-lite">
                                             <div className="card-top">
-                                                <img src={p.image} alt="Image" />
+                                                <img src={p.image || p.img_path} alt="Image" />
                                                 <div className="details">
                                                     <h4>{p.name}</h4>
                                                     <p>৳{p.sell_price} | {p.category_name || 'N/A'}</p>

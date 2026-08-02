@@ -130,18 +130,26 @@ export default function AddUpSell() {
             discount_amount: p.discount_amount,
         }));
 
-        data.is_all = trigger === "on_order" ? 1 : 0;
+        data.condition_type = trigger;
 
         if (trigger === "on_product") {
-            data.trigger_product_ids = selectedTriggerProducts.map((p) => p.id);
+            data.trigger_product_ids  = selectedTriggerProducts.map((p) => p.id);
+            data.trigger_category_ids = null;
         }
 
         if (trigger === "on_category") {
+            data.trigger_product_ids  = null;
             data.trigger_category_ids = selectedCategories.map((cat) => cat.id);
+        }
+
+        if (trigger === "on_order") {
+            data.trigger_product_ids  = null;
+            data.trigger_category_ids = null;
         }
 
         try {
             setFormLoading(true);
+            
             const res = await postData("/admin/up-sells", data);
 
             if(res && res?.success){
@@ -230,12 +238,11 @@ export default function AddUpSell() {
                                         {filteredProducts?.length > 0 ? (
                                             filteredProducts?.map((product) => (
                                                 <div key={product.id} className="search-item-row" onClick={() => handleSelectProduct(product, "main")}>
-                                                    <img src={product.image} alt="" />
+                                                    <img src={product.image} alt="Product Name" />
                                                     <div className="info">
                                                         <div className="name">{product.name}</div>
                                                         <div className="meta">
-                                                            {Array.isArray(product?.categories) && product.categories.length > 0
-                                                                ? product.categories.map(category => category?.name).join(", ") : "N/A"} | ৳{product.sell_price}
+                                                            ৳{product.sell_price}
                                                         </div>
                                                     </div>
                                                     <Button type="primary" size="small" icon={<PlusOutlined />}>Add</Button>
@@ -255,13 +262,11 @@ export default function AddUpSell() {
                                     {selectedProducts.map((product) => (
                                         <div key={product.id} className="upsell-product-card-lite">
                                             <div className="card-top">
-                                                <img src={product.image} alt="" />
+                                                <img src={product.image} alt="Product Name" />
                                                 <div className="details">
                                                     <h4>{product.name}</h4>
                                                     <p>
-                                                        ৳{product.sell_price} |{" "}
-                                                        {Array.isArray(product?.categories) && product.categories.length > 0
-                                                            ? product.categories.map(category => category?.name).join(", ") : "N/A"}
+                                                        ৳{product.sell_price}
                                                     </p>
                                                 </div>
                                                 <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleRemoveProduct(product.id, "main")}/>
@@ -312,7 +317,7 @@ export default function AddUpSell() {
                                             {triggerProducts?.length > 0 ? (
                                                 triggerProducts?.map((product) => (
                                                     <div key={product.id} className="search-item-row" onClick={() => handleSelectProduct(product, "trigger")}>
-                                                        <img src={product.image} alt="" />
+                                                        <img src={product.image} alt="Product Name" />
                                                         <div className="info">
                                                             <div className="name">{product.name}</div>
                                                         </div>
