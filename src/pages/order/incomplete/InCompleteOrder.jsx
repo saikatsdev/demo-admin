@@ -1,6 +1,6 @@
-import {ArrowLeftOutlined,ShoppingCartOutlined,WhatsAppOutlined,CopyOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined,EditOutlined,SwapOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,ShoppingCartOutlined,WhatsAppOutlined,CopyOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined,EditOutlined,SwapOutlined,ClockCircleOutlined,CloseCircleOutlined,UnorderedListOutlined} from "@ant-design/icons";
 import * as XLSX from "xlsx";
-import {Input as AntInput,Breadcrumb,Button,message,DatePicker,Popconfirm,Space,Table,Modal,Tooltip,Image,Row,Col} from "antd";
+import {Input as AntInput,Breadcrumb,Button,message,DatePicker,Popconfirm,Space,Table,Modal,Tooltip,Image} from "antd";
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { Link, useNavigate } from "react-router-dom";
@@ -200,16 +200,16 @@ export default function InCompleteOrder() {
                             const variations = [item?.attribute_value_1, item?.attribute_value_2, item?.attribute_value_3].filter(val => val && typeof val === "string");
 
                             return (
-                                <div key={index} style={{display: "flex",gap: 10,marginBottom: 8,paddingBottom: 8,borderBottom: index !== record.items.length - 1 ? "1px dashed #ddd" : "none"}}>
-                                    <Image src={product?.image} alt={product?.name || "Product"} width={40} height={50} style={{ objectFit: "cover", borderRadius: 4 }} preview={{ mask: "Preview" }}/>
+                                <div key={index} className="io-product-item">
+                                    <Image src={product?.image} alt={product?.name || "Product"} width={40} height={50} className="io-product-item__img" preview={{ mask: "Preview" }}/>
 
                                     <div>
-                                        <div style={{ fontWeight: 600 }}>
+                                        <div className="io-product-item__name">
                                             {product?.name || "N/A"}
                                         </div>
 
                                         {variations.length > 0 && (
-                                            <div style={{ fontSize: 12, color: "#666" }}>
+                                            <div className="io-product-item__variation">
                                                 Variation: {variations.join(" / ")}
                                             </div>
                                         )}
@@ -226,25 +226,28 @@ export default function InCompleteOrder() {
             dataIndex: "name",
             key: "name",
             width:140,
+            render: (name) => <span className="io-customer-name">{name || "N/A"}</span>,
         },
         {
             title: "Phone Number",
             dataIndex: "phone_number",
             key: "phone_number",
             render: (text) => (
-                <Space>
-                    {text}
+                <div className="io-phone-cell">
+                    <span className="io-phone-cell__number">{text}</span>
 
                     <Tooltip title="Copy Phone Number.">
-                        <CopyOutlined style={{fontSize: 18,color: "#1890ff",cursor: "pointer",marginRight: 8}} onClick={() => copyPhoneNo(text)}/>
+                        <CopyOutlined className="io-icon-btn io-icon-btn--copy" onClick={() => copyPhoneNo(text)}/>
                     </Tooltip>
 
                     <Tooltip title="WhatsApp">
-                        <WhatsAppOutlined style={{fontSize: 17,color: "#25D366",cursor: "pointer",marginRight: 10}} onClick={() => openWhatsApp(text)}/>
+                        <WhatsAppOutlined className="io-icon-btn io-icon-btn--whatsapp" onClick={() => openWhatsApp(text)}/>
                     </Tooltip>
 
-                    <InfoCircleOutlined style={{ color: "#1C558B", cursor: "pointer" }} onClick={() => handleOpenModal(text)}/>
-                </Space>
+                    <Tooltip title="View delivery report">
+                        <InfoCircleOutlined className="io-icon-btn io-icon-btn--info" onClick={() => handleOpenModal(text)}/>
+                    </Tooltip>
+                </div>
             ),
             width:250
         },
@@ -252,24 +255,30 @@ export default function InCompleteOrder() {
             title: "Address",
             dataIndex: "address",
             key: "address",
+            render: (address) => <span className="io-address-cell">{address || "N/A"}</span>,
         },
         {
             title: "Ip Address",
             dataIndex: "ip_address",
             key: "ip_address",
+            render: (ip) => <span className="io-meta-cell">{ip || "N/A"}</span>,
         },
         {
             title: "Created_at",
             dataIndex: "created_at",
             key: "created_at",
-            render: (created_at) => created_at ? dayjs(created_at).format("MMMM DD, YYYY hh:mm:ss A") : "N/A",
+            render: (created_at) => (
+                <span className="io-date-cell">
+                    {created_at ? dayjs(created_at).format("MMMM DD, YYYY hh:mm:ss A") : "N/A"}
+                </span>
+            ),
             width:150
         },
         {
             title: "Status",
             key: "status",
             render: (_, record) => (
-                <span style={{color: "#007bff", backgroundColor: "#e6f2ff",padding: "6px 12px",borderRadius: "20px",fontWeight: "600",fontSize: "12px",display: "inline-block",letterSpacing: "0.3px",lineHeight: 1}}>
+                <span className="io-status-pill">
                     {record.status?.name || "N/A"}
                 </span>
             ),
@@ -282,16 +291,16 @@ export default function InCompleteOrder() {
             render: (_, record) => (
                 <Space size={6}>
                     <Tooltip title="Edit Order">
-                        <Button size="small" type="text" style={{ color: '#1890ff', backgroundColor: '#e6f7ff' }} icon={<EditOutlined />} onClick={() => onEdit(record.id)} />
+                        <Button size="small" type="text" className="io-action-btn io-action-btn--edit" icon={<EditOutlined />} onClick={() => onEdit(record.id)} />
                     </Tooltip>
 
                     <Tooltip title="Convert to Order">
-                        <Button size="small" type="text" style={{ color: '#faad14', backgroundColor: '#fff7e6' }} icon={<SwapOutlined />} onClick={() => handleOrder(record)} />
+                        <Button size="small" type="text" className="io-action-btn io-action-btn--convert" icon={<SwapOutlined />} onClick={() => handleOrder(record)} />
                     </Tooltip>
 
                     <Tooltip title="Delete Order">
                         <Popconfirm title="Delete Order?" okText="Yes" cancelText="No" onConfirm={() => onDelete(record.id)}>
-                            <Button size="small" type="text" danger style={{ backgroundColor: '#fff2f0' }} icon={<DeleteOutlined />} />
+                            <Button size="small" type="text" danger className="io-action-btn io-action-btn--delete" icon={<DeleteOutlined />} />
                         </Popconfirm>
                     </Tooltip>
                 </Space>
@@ -487,45 +496,56 @@ export default function InCompleteOrder() {
         }
     };
 
+    const statusFilters = [
+        { key: null, label: "Total", count: orderCounts.total, icon: <UnorderedListOutlined /> },
+        { key: 1, label: "Pending", count: orderCounts.pending, icon: <ClockCircleOutlined /> },
+        { key: 3, label: "Approved", count: orderCounts.approved, icon: <CheckCircleOutlined /> },
+        { key: 8, label: "Canceled", count: orderCounts.canceled, icon: <CloseCircleOutlined />, danger: true },
+    ];
+
     return (
         <>
             {contextHolder}
-            <div className="pagehead">
-                <div className="head-left">
-                    <h1 className="title" style={{ fontWeight: "600" }}>
-                        All In Complete Order List
-                    </h1>
+            <div className="io-page">
+                <div className="pagehead">
+                    <div className="head-left">
+                        <h1 className="title">Incomplete Orders</h1>
+                        <p className="subtitle">Track abandoned carts and recover lost sales</p>
+                    </div>
+                    <div className="head-actions">
+                        <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> }, { title: "Incomplete Orders" }]}/>
+                    </div>
                 </div>
-                <div className="head-actions">
-                    <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> },{ title: "All In Complete Order List" },]}/>
+
+                <div className="io-toolbar">
+                    <AntInput.Search
+                        allowClear
+                        className="io-toolbar__search"
+                        placeholder="Search by Invoice / Phone / Name"
+                        onChange={(e) => { setSearchText(e.target.value); setCurrentPage(1); }}
+                    />
+                    <div className="io-toolbar__actions">
+                        <Button className="io-btn-ghost-brand" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                            Back
+                        </Button>
+                    </div>
                 </div>
-            </div>
 
-            <div className="incomplete-order-head" style={{ marginBottom: 24 }}>
-                <AntInput.Search allowClear placeholder="Search by Invoice / Phone / Name" style={{ width: 350, height: 40 }} onChange={(e) => {setSearchText(e.target.value);setCurrentPage(1);}}/>
-                <Space>
-                    <Button type="primary" ghost icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                        Back
-                    </Button>
-                </Space>
-            </div>
-
-            <div className="page-header-block">
-                <div className="filter-data">
-                    <Space style={{ marginBottom: 16 }}>
-                        <DatePicker.RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} format="YYYY-MM-DD" placeholder={['Start Date', 'End Date']}/>
-
+                <div className="io-filters-row">
+                    <Space wrap>
+                        <DatePicker.RangePicker
+                            value={dateRange}
+                            onChange={(dates) => setDateRange(dates)}
+                            format="YYYY-MM-DD"
+                            placeholder={["Start Date", "End Date"]}
+                        />
                         <Button onClick={() => setDateRange(null)}>Clear Dates</Button>
                     </Space>
-                </div>
 
-                <div className="incomplete-bulk-action">
-                    <Space style={{ marginBottom: 16 }}>
-                            <Button icon={<DeleteOutlined />} danger="danger" disabled={selectedOrders?.length === 0} onClick={() => handleBulkDelete()}>
-                                Bulk Delete
-                            </Button>
-
-
+                    <div className="io-bulk-actions">
+                        <Button icon={<DeleteOutlined />} danger disabled={selectedOrders?.length === 0} onClick={() => handleBulkDelete()}>
+                            Bulk Delete
+                        </Button>
 
                         <Tooltip title="Show Trash">
                             <Button danger icon={<DeleteOutlined />} onClick={() => navigate("/incomplete/orders-trash")}>
@@ -537,49 +557,67 @@ export default function InCompleteOrder() {
                             {csvLoader ? "Exporting..." : "Export CSV"}
                         </Button>
 
-                        <Button icon={<BarChartOutlined />} onClick={handleStatistics}>
+                        <Button className="io-btn-primary" icon={<BarChartOutlined />} onClick={handleStatistics}>
                             Statistics
                         </Button>
-                    </Space>
+                    </div>
+                </div>
+
+                <div className="io-status-grid">
+                    {statusFilters.map(({ key, label, count, icon, danger }) => (
+                        <button
+                            key={String(key)}
+                            type="button"
+                            className={`io-status-card${activeStatus === key ? " io-status-card--active" : ""}${danger ? " io-status-card--danger" : ""}`}
+                            onClick={() => setActiveStatus(key)}
+                        >
+                            <div>
+                                <div className="io-status-card__label">{label}</div>
+                                <div className="io-status-card__value">{count ?? 0}</div>
+                            </div>
+                            <div className="io-status-card__icon">{icon}</div>
+                        </button>
+                    ))}
+                </div>
+
+                {selectedRowKeys.length > 0 && (
+                    <div className="io-selection-bar">
+                        <Space>
+                            <span className="io-selection-bar__count">{selectedRowKeys.length} selected</span>
+                            <span className="io-selection-bar__hint">Bulk actions apply to selected rows</span>
+                        </Space>
+                        <Button size="small" onClick={() => { setSelectedRowKeys([]); setSelectedOrders([]); }}>
+                            Clear selection
+                        </Button>
+                    </div>
+                )}
+
+                <div className="io-table-card">
+                    <Table
+                        bordered
+                        loading={loading}
+                        columns={columns}
+                        dataSource={filteredOrders}
+                        rowSelection={rowSelection}
+                        rowKey="id"
+                        scroll={{ x: 1200 }}
+                        pagination={{
+                            current: currentPage,
+                            pageSize: pageSize,
+                            total: totalOrders,
+                            showSizeChanger: true,
+                            pageSizeOptions: ["10", "20", "50", "100"],
+                            showQuickJumper: true,
+                            onChange: (page, size) => {
+                                setCurrentPage(page);
+                                setPageSize(size);
+                            },
+                            showTotal: (total, range) =>
+                                `${range[0]}–${range[1]} of ${total} items`,
+                        }}
+                    />
                 </div>
             </div>
-
-            <div className="page-item-data-wrapper" style={{marginBottom:10}}>
-                <Space wrap size="middle">
-                    <Button type={activeStatus === null ? "primary" : "default"} onClick={() => setActiveStatus(null)}>
-                        Total <span className="count-badge">{orderCounts.total}</span>
-                    </Button>
-
-                    <Button type={activeStatus === 1 ? "primary" : "default"} onClick={() => setActiveStatus(1)}>
-                        Pending <span className="count-badge">{orderCounts.pending}</span>
-                    </Button>
-
-                    <Button type={activeStatus === 3 ? "primary" : "default"} onClick={() => setActiveStatus(3)}>
-                        Approved <span className="count-badge">{orderCounts.approved}</span>
-                    </Button>
-
-                    <Button danger type={activeStatus === 8 ? "primary" : "default"} onClick={() => setActiveStatus(8)}>
-                        Canceled <span className="count-badge">{orderCounts.canceled}</span>
-                    </Button>
-                </Space>
-            </div>
-
-            <Table bordered loading={loading} columns={columns} dataSource={filteredOrders} rowSelection={rowSelection} rowKey="id"
-                pagination={{
-                current: currentPage,
-                pageSize: pageSize,
-                total: totalOrders,
-                showSizeChanger: true,
-                pageSizeOptions: ["10", "20", "50", "100"],
-                showQuickJumper: true,
-                onChange: (page, size) => {
-                    setCurrentPage(page);
-                    setPageSize(size);
-                },
-                showTotal: (total, range) =>
-                    `${range[0]}–${range[1]} of ${total} items`,
-                }}
-            />
 
             <Modal title="Incomplete Order Statistics" open={isModalOpen} onOk={() => setIsModalOpen(false)} onCancel={() => setIsModalOpen(false)} className="io-modal" width={1000}>
                 <div className="io-cards">
