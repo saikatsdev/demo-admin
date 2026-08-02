@@ -1,10 +1,9 @@
-import { Breadcrumb, message, Select as AntSelect, Card, Row, Col, Input as AntInput, Button, Typography, Space, Divider, Form } from "antd";
+import { Breadcrumb, message, Select as AntSelect, Card, Row, Col, Input as AntInput, Button, Typography, Space, Divider, Form, Upload } from "antd";
 import { UserOutlined, PhoneOutlined, MailOutlined, LockOutlined, DollarCircleOutlined, TeamOutlined, AppstoreOutlined, CheckCircleOutlined, ArrowLeftOutlined, CameraOutlined, DeleteOutlined, SaveOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
 import { getDatas, postData } from "../../../api/common/common";
-import ImagePicker from "../../../components/image/ImagePicker";
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = AntSelect;
@@ -22,12 +21,6 @@ export default function AddEmployee() {
     const [managerOptions, setManagerOptions]   = useState([]);
     const [messageApi, contextHolder]           = message.useMessage();
     const [loading, setLoading]                 = useState(false);
-
-    // Gallery States for ImagePicker
-    const [gallery, setGallery]                 = useState([]);
-    const [page, setPage]                       = useState(1);
-    const [hasMore, setHasMore]                 = useState(true);
-    const [loadingMore, setLoadingMore]         = useState(false);
 
     const [form] = Form.useForm();
 
@@ -88,22 +81,6 @@ export default function AddEmployee() {
         }
     };
 
-    const fetchGallery = async (pageNum = 1) => {
-        try {
-            setLoadingMore(true);
-            const res = await getDatas(`/admin/gallary?page=${pageNum}`);
-            if (res && res.success) {
-                const newData = res.result.data || [];
-                setGallery(prev => pageNum === 1 ? newData : [...prev, ...newData]);
-                setHasMore(res.result.current_page < res.result.last_page);
-            }
-        } catch (error) {
-            console.error("Error fetching gallery:", error);
-        } finally {
-            setLoadingMore(false);
-        }
-    };
-
     useEffect(() => {
         let active = true;
 
@@ -140,22 +117,11 @@ export default function AddEmployee() {
         };
 
         loadOptions();
-        fetchGallery(1);
 
         return () => {
             active = false;
         };
     }, []);
-
-    const handleFetchMore = () => {
-        const nextPage = page + 1;
-        setPage(nextPage);
-        fetchGallery(nextPage);
-    };
-
-    const handleUploadSuccess = (newItems) => {
-        setGallery(prev => [...newItems, ...prev]);
-    };
 
     const handleSubmit = async (values) => {
         const formData = new FormData();
@@ -174,14 +140,10 @@ export default function AddEmployee() {
         formData.append("status", values.status || "active");
 
         const imageFile = values.image?.[0];
-        if (imageFile) {
-            if (imageFile.isFromGallery) {
-                formData.append("image", imageFile.galleryPath);
-            } else if (imageFile.originFileObj) {
-                formData.append("image", imageFile.originFileObj);
-            }
-            formData.append("width", 450);
-            formData.append("height", 450);
+        if (imageFile?.originFileObj) {
+            formData.append("image", imageFile.originFileObj);
+            formData.append("width", imageFile.width || 450);
+            formData.append("height", imageFile.height || 450);
         }
 
         try {
@@ -332,7 +294,34 @@ export default function AddEmployee() {
                                 <CameraOutlined /> Profile Picture
                             </div>
                             
-                            <ImagePicker form={form} name="image" label="" gallery={gallery} fetchMore={handleFetchMore} hasMore={hasMore} loadingMore={loadingMore} onUploadSuccess={handleUploadSuccess}/>
+                            <Form.Item name="image" valuePropName="fileList" getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}>
+                                <Upload
+                                    listType="picture-card"
+                                    maxCount={1}
+                                    accept="image/*"
+                                    beforeUpload={(file) => {
+                                        const img = new window.Image();
+                                        const objectUrl = URL.createObjectURL(file);
+                                        img.onload = () => {
+                                            file.width = img.width;
+                                            file.height = img.height;
+                                            URL.revokeObjectURL(objectUrl);
+                                        };
+                                        img.onerror = () => {
+                                            file.width = 450;
+                                            file.height = 450;
+                                            URL.revokeObjectURL(objectUrl);
+                                        };
+                                        img.src = objectUrl;
+                                        return false;
+                                    }}
+                                >
+                                    <div>
+                                        <CameraOutlined style={{ fontSize: 20 }} />
+                                        <div style={{ marginTop: 8 }}>Upload</div>
+                                    </div>
+                                </Upload>
+                            </Form.Item>
 
                             <div style={{ marginTop: 32 }}>
                                 <Button type="primary" htmlType="submit" loading={loading} block size="large" icon={<SaveOutlined />} style={styles.submitBtn}>

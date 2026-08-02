@@ -51,8 +51,8 @@ export default function EmployeeDashboard() {
     }, [roles]);    
 
     return (
-        <div style={{ padding: "24px", background: "#f0f2f5", minHeight: "100vh" }}>
-            <div className="dashboard-header" style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="ed-dashboard" style={{ background: "#f0f2f5", minHeight: "100vh" }}>
+            <div className="dashboard-header" style={{ marginBottom: 24 }}>
                 <div>
                     <Title level={2} style={{ margin: 0 }}>Employee Dashboard</Title>
                     <Text type="secondary" style={{textTransform: "capitalize"}}>
@@ -144,9 +144,9 @@ export default function EmployeeDashboard() {
                                     <Text type="secondary"><PhoneOutlined /> Phone</Text>
                                     <Text strong>{valueOrDash(phone_number)}</Text>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                                     <Text type="secondary"><MailOutlined /> Email</Text>
-                                    <Text strong>{email || "N/A"}</Text>
+                                    <Text strong style={{ textAlign: 'right', overflowWrap: 'anywhere' }}>{email || "N/A"}</Text>
                                 </div>
                             </Space>
 
@@ -201,20 +201,20 @@ export default function EmployeeDashboard() {
                         </Descriptions>
 
                         <Divider orientation="left">Quick Links & Resources</Divider>
-                        <Row gutter={16}>
-                            <Col span={8}>
+                        <Row gutter={[16, 16]}>
+                            <Col xs={24} sm={8}>
                                 <Card size="small" hoverable style={{ textAlign: 'center', background: '#f6ffed', border: '1px solid #b7eb8f' }}>
                                     <SafetyCertificateOutlined style={{ fontSize: 24, color: '#52c41a' }} />
                                     <div style={{ marginTop: 8, fontWeight: 500 }}>Security</div>
                                 </Card>
                             </Col>
-                            <Col span={8}>
+                            <Col xs={24} sm={8}>
                                 <Card size="small" hoverable style={{ textAlign: 'center', background: '#e6f7ff', border: '1px solid #91d5ff' }}>
                                     <IdcardOutlined style={{ fontSize: 24, color: '#1890ff' }} />
                                     <div style={{ marginTop: 8, fontWeight: 500 }}>Documents</div>
                                 </Card>
                             </Col>
-                            <Col span={8}>
+                            <Col xs={24} sm={8}>
                                 <Card size="small" hoverable style={{ textAlign: 'center', background: '#fff7e6', border: '1px solid #ffd591' }}>
                                     <ClockCircleOutlined style={{ fontSize: 24, color: '#faad14' }} />
                                     <div style={{ marginTop: 8, fontWeight: 500 }}>Attendance</div>

@@ -1,4 +1,4 @@
-import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, CopyOutlined, ReloadOutlined, SearchOutlined, TeamOutlined, CheckCircleOutlined, ClockCircleOutlined, UserOutlined, MailOutlined, PhoneOutlined, SafetyOutlined, CalendarOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, CopyOutlined,EyeInvisibleOutlined, EyeOutlined,ReloadOutlined, SearchOutlined, TeamOutlined, CheckCircleOutlined, ClockCircleOutlined, UserOutlined, MailOutlined, PhoneOutlined, SafetyOutlined, CalendarOutlined } from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button, Popconfirm, Space, Table, Tag, Card, Row, Col, Typography, Avatar, Tooltip } from "antd";
 import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,7 @@ export default function Employee() {
     const [pagination, setPagination]           = useState({current: 1,pageSize: 10,total: 0});
     const { current, pageSize }                 = pagination;
     const [debouncedQuery, setDebouncedQuery]   = useState("");
+    const [visiblePasswords, setVisiblePasswords] = useState({});
 
     // Local Styles for Professional Look
     const styles = {
@@ -223,6 +224,28 @@ export default function Employee() {
                     {date && <Text type="secondary" style={{ fontSize: '11px' }}>{date.split(' ')[1]}</Text>}
                 </Space>
             ),
+        },
+        {
+            title: "Password",
+            dataIndex: "plain_password",
+            key: "plain_password",
+            render: (text, record) => {
+                if (!text) return <Tag color="default">N/A</Tag>;
+                const visible = !!visiblePasswords[record.id];
+                return (
+                    <Space>
+                        <span style={{ fontFamily: visible ? "inherit" : "inherit" }}>
+                            {visible ? text : "••••••••"}
+                        </span>
+                        <Tooltip title={visible ? "Hide password" : "Show password"}>
+                            <Button size="small" type="text" icon={visible ? <EyeInvisibleOutlined style={{ fontSize: '12px' }} /> : <EyeOutlined style={{ fontSize: '12px' }} />}
+                                onClick={() => setVisiblePasswords((prev) => ({ ...prev, [record.id]: !visible }))}
+                                style={{ color: '#1890ff', padding: '0 4px' }}
+                            />
+                        </Tooltip>
+                    </Space>
+                );
+            },
         },
         {
             title: "Action",
