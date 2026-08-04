@@ -98,7 +98,7 @@ export default function AddSlider() {
                     navigate("/sliders")
                 }
             } catch (error) {
-                messageApi.error("Failed to create slider. Please try again.");
+                console.log(error);
             } finally {
                 setLoading(false);
             }

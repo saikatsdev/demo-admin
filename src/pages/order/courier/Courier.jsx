@@ -122,12 +122,18 @@ export default function Courier() {
             if (res?.success) {
                 const refresh = await getDatas("/admin/couriers");
                 setCouriers(refresh?.result?.data || []);
-                message.success(res.msg);
+                messageApi.open({
+                    type: "success",
+                    content: res.msg,
+                });
             } else {
-                message.error("Failed to delete courier");
+                messageApi.open({
+                    type: "error",
+                    content: res.msg || "Failed to delete courier",
+                });
             }
         } catch (error) {
-            message.error("An error occurred during deletion");
+            console.log(error);
         }
     }
 

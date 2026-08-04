@@ -11,7 +11,6 @@ export default function AllSettings() {
     const [allSettings, setAllSettings]               = useState([]);
     const [isModalOpen, setIsModalOpen]               = useState(false);
     const [isAddMode, setIsAddMode]                   = useState(false);
-    const [editingRecord, setEditingRecord]           = useState(null);
     const [selectedImage, setSelectedImage]           = useState(null);
     const [imagePreview, setImagePreview]             = useState(null);
     const [editKey, setEditKey]                       = useState("");
@@ -48,7 +47,6 @@ export default function AllSettings() {
     }, []);
 
     const handleEdit = (record) => {
-        setEditingRecord(record);
         setEditKey(record.key);
         setEditType(record.type);
         setSettingValue(record.value);
@@ -61,7 +59,6 @@ export default function AllSettings() {
     };
 
     const handleAdd = () => {
-        setEditingRecord(null)
         setEditKey("");
         setEditType("");
         setSettingValue("");

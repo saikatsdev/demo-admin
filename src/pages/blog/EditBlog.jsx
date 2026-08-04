@@ -1,4 +1,4 @@
-import {Input as AntInput,Breadcrumb,Button,Col,Form,Row,Select,Upload,message,Card,Space,Divider,Typography,ConfigProvider,theme,Tooltip} from "antd";
+import {Input as AntInput,Breadcrumb,Button,Col,Form,Row,Select,Upload,message,Card,Space,Divider,Typography,ConfigProvider,Tooltip} from "antd";
 import {ArrowLeftOutlined,SaveOutlined,FileTextOutlined,PictureOutlined,SearchOutlined, SettingOutlined,InfoCircleOutlined,InboxOutlined} from "@ant-design/icons";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
@@ -13,7 +13,6 @@ const { Dragger } = Upload;
 export default function EditBlog() {
     // Hook
     useTitle("Edit Blog Post");
-    const { token } = theme.useToken();
     const navigate = useNavigate();
     const { id } = useParams();
 

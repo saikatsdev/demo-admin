@@ -1,10 +1,9 @@
-import { Breadcrumb, message, Select as AntSelect, Card, Row, Col, Input as AntInput, Button, Typography, Space, Divider, Form } from "antd";
-import { UserOutlined, PhoneOutlined, MailOutlined, LockOutlined, DollarCircleOutlined, TeamOutlined, AppstoreOutlined, CheckCircleOutlined, ArrowLeftOutlined, CameraOutlined, DeleteOutlined, SaveOutlined } from "@ant-design/icons";
+import { Breadcrumb, message, Select as AntSelect, Card, Row, Col, Input as AntInput, Button, Typography, Space, Divider, Form, Upload } from "antd";
+import { UserOutlined, PhoneOutlined, MailOutlined, LockOutlined, DollarCircleOutlined, TeamOutlined, AppstoreOutlined, CheckCircleOutlined, ArrowLeftOutlined, CameraOutlined, SaveOutlined, PlusOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
 import useTitle from "../../../hooks/useTitle";
-import ImagePicker from "../../../components/image/ImagePicker";
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = AntSelect;
@@ -22,12 +21,7 @@ export default function EditManagement() {
     const [managerOptions, setManagerOptions]     = useState([]);
     const [messageApi, contextHolder]             = message.useMessage();
     const [loading, setLoading]                   = useState(false);
-
-    // Gallery States for ImagePicker
-    const [gallery, setGallery]                 = useState([]);
-    const [page, setPage]                       = useState(1);
-    const [hasMore, setHasMore]                 = useState(true);
-    const [loadingMore, setLoadingMore]         = useState(false);
+    const [fileList, setFileList]                 = useState([]);
 
     const [form] = Form.useForm();
 
@@ -79,22 +73,6 @@ export default function EditManagement() {
         }
     };
 
-    const fetchGallery = async (pageNum = 1) => {
-        try {
-            setLoadingMore(true);
-            const res = await getDatas(`/admin/gallary?page=${pageNum}`);
-            if (res && res.success) {
-                const newData = res.result.data || [];
-                setGallery(prev => pageNum === 1 ? newData : [...prev, ...newData]);
-                setHasMore(res.result.current_page < res.result.last_page);
-            }
-        } catch (error) {
-            console.error("Error fetching gallery:", error);
-        } finally {
-            setLoadingMore(false);
-        }
-    };
-
     useEffect(() => {
         let active = true;
 
@@ -141,13 +119,16 @@ export default function EditManagement() {
                         manager_id: u.manager?.id,
                         user_category_id: u.category?.id,
                         status: u.status,
-                        image: u.image ? [{
+                    });
+
+                    if (u.image) {
+                        setFileList([{
                             uid: '-1',
                             name: 'profile-picture.jpg',
                             status: 'done',
                             url: u.image,
-                        }] : []
-                    });
+                        }]);
+                    }
                 }
             } catch (error) {
                 console.error("Error loading options:", error);
@@ -155,21 +136,14 @@ export default function EditManagement() {
         };
 
         loadOptions();
-        fetchGallery(1);
 
         return () => {
             active = false;
         };
     }, [id, form]);
 
-    const handleFetchMore = () => {
-        const nextPage = page + 1;
-        setPage(nextPage);
-        fetchGallery(nextPage);
-    };
-
-    const handleUploadSuccess = (newItems) => {
-        setGallery(prev => [...newItems, ...prev]);
+    const handleUploadChange = ({ fileList: newFileList }) => {
+        setFileList(newFileList.slice(-1));
     };
 
     const handleSubmit = async (values) => {
@@ -191,13 +165,9 @@ export default function EditManagement() {
         if (values.user_category_id) formData.append("user_category_id", values.user_category_id);
         formData.append("status", values.status);
 
-        const imageFile = values.image?.[0];
-        if (imageFile) {
-            if (imageFile.isFromGallery) {
-                formData.append("image", imageFile.galleryPath);
-            } else if (imageFile.originFileObj) {
-                formData.append("image", imageFile.originFileObj);
-            }
+        const imageFile = fileList?.[0];
+        if (imageFile?.originFileObj) {
+            formData.append("image", imageFile.originFileObj);
         }
 
         formData.append("_method", "PUT");
@@ -354,7 +324,21 @@ export default function EditManagement() {
                                 <CameraOutlined /> Profile Picture
                             </div>
                             
-                            <ImagePicker form={form} name="image" label="" gallery={gallery} fetchMore={handleFetchMore} hasMore={hasMore} loadingMore={loadingMore} onUploadSuccess={handleUploadSuccess} />
+                            <Upload
+                                listType="picture-card"
+                                maxCount={1}
+                                accept="image/*"
+                                beforeUpload={() => false}
+                                fileList={fileList}
+                                onChange={handleUploadChange}
+                            >
+                                {fileList.length >= 1 ? null : (
+                                    <div>
+                                        <PlusOutlined />
+                                        <div style={{ marginTop: 8 }}>Upload</div>
+                                    </div>
+                                )}
+                            </Upload>
 
                             <div style={{ marginTop: 32 }}>
                                 <Button type="primary" htmlType="submit" loading={loading} block size="large" icon={<SaveOutlined />} style={styles.submitBtn} >

@@ -87,7 +87,7 @@ export default function EditSlider() {
                     });
                 }
             } catch (error) {
-                message.error("Failed to fetch slider data");
+                console.log(error);
             } finally {
                 if (isMounted) setFetching(false);
             }
@@ -133,7 +133,7 @@ export default function EditSlider() {
                 navigate("/sliders")
             }
         } catch (error) {
-            messageApi.error("Update failed. Please try again.");
+            console.log(error);
         } finally {
             setLoading(false);
         }
