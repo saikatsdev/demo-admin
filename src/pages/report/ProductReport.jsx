@@ -401,7 +401,7 @@ export default function ProductReport() {
             {/* Header */}
             <div className="topBar no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div>
-                    <Title level={4} style={{ margin: 0, color: '#0f172a' }}>Product Performance & Sales Report</Title>
+                    <Title level={4} style={{ margin: 0, color: '#0f172a' }}>Product Report</Title>
                     <Text type="secondary" style={{ fontSize: 12 }}>Comprehensive top-selling product metrics, status distribution, and financial revenue</Text>
                 </div>
                 <Space>

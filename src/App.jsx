@@ -119,7 +119,6 @@ import EditBanner from "./pages/product/banner/EditBanner";
 import UpsellReport from "./pages/report/UpsellReport";
 import DownsellReport from "./pages/report/DownsellReport";
 import FollowupReport from "./pages/report/FollowupReport";
-import StockReport from "./pages/report/StockReport";
 import CrossSellReport from "./pages/report/CrossSellReport";
 import ReturnReport from "./pages/report/ReturnReport";
 import CancelReport from "./pages/report/CancelReport";
@@ -430,7 +429,6 @@ function App() {
                     <Route path="/all/upsell/report" element={<UpsellReport />} />
                     <Route path="/downsell/report" element={<DownsellReport />} />
                     <Route path="/followup/report" element={<FollowupReport />} />
-                    <Route path="/stock/report" element={<StockReport />} />
                     <Route path="/cross/sell/report" element={<CrossSellReport />} />
                     <Route path="/return/report" element={<ReturnReport />} />
                     <Route path="/cancel/report" element={<CancelReport />} />

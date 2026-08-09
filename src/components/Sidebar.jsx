@@ -123,7 +123,6 @@ const Sidebar = ({ onMenuSelect }) => {
         can('reports-read') && { label: "Upsell Report", path: "/all/upsell/report" },
         can('reports-read') && { label: "Downsell Report", path: "/downsell/report" },
         can('reports-read') && { label: "Followup Report", path: "/followup/report" },
-        can('reports-read') && { label: "Stock Report", path: "/stock/report" },
         can('reports-read') && { label: "Cross Sell Report", path: "/cross/sell/report" },
         can('reports-read') && { label: "Return Report", path: "/return/report" },
         can('reports-read') && { label: "Cancel Report", path: "/cancel/report" },
