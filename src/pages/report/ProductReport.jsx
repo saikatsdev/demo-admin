@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Tag, Progress, Tooltip, Typography, Divider, Card, Row, Col, Avatar, Badge } from "antd";
-import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, EyeOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, SearchOutlined, ShoppingCartOutlined, DollarOutlined, DropboxOutlined, RiseOutlined, TagOutlined, BarChartOutlined } from "@ant-design/icons";
+import { Table, Input, Select, Button, DatePicker, Space, Tag, Progress, Tooltip, Typography, Card, Row, Col, Avatar, Badge } from "antd";
+import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, SearchOutlined, ShoppingCartOutlined, DollarOutlined, TagOutlined, BarChartOutlined,ShoppingOutlined} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import jsPDF from "jspdf";
@@ -18,6 +18,7 @@ export default function ProductReport() {
 
     // State
     const [localSearch, setLocalSearch]         = useState("");
+    const [search, setSearch]                   = useState("");
     const [loading, setLoading]                 = useState(false);
     const [dateFilter, setDateFilter]           = useState("all");
     const [products, setProducts]               = useState([]);
@@ -26,13 +27,17 @@ export default function ProductReport() {
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [pagination, setPagination]           = useState({ current: 1, pageSize: 25, total: 0 });
 
-    const getOrderReport = async () => {
+    const getProductReport = async () => {
         let params = {};
         if (dateFilter && dateFilter !== "custom") {
             params.filter = dateFilter;
         } else if (dateFilter === "custom" && dateRange[0] && dateRange[1]) {
             params.from_date = dateRange[0].format("YYYY-MM-DD");
             params.to_date = dateRange[1].format("YYYY-MM-DD");
+        }
+
+        if (search?.trim()) {
+            params.product_name = search.trim();
         }
 
         params.page = pagination.current;
@@ -50,33 +55,40 @@ export default function ProductReport() {
                 setPagination(prev => ({
                     ...prev,
                     total: result.products?.total || 0,
-                    current: result.products?.current_page || 1
+                    current: result.products?.current_page || 1,
+                    pageSize: result.products?.per_page || prev.pageSize
                 }));
             }
+        } catch (error) {
+            console.error("Error fetching product sales report:", error);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        getOrderReport();
-    }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
+        getProductReport();
+    }, [dateFilter, dateRange, search, pagination.current, pagination.pageSize]);
 
-    const getFilteredData = () => {
-        return products.filter(p => 
-            !localSearch || 
-            p.name?.toLowerCase().includes(localSearch.toLowerCase()) || 
-            p.sku?.toLowerCase().includes(localSearch.toLowerCase()) ||
-            p.brand?.name?.toLowerCase().includes(localSearch.toLowerCase())
-        );
+    const handleSearchSubmit = () => {
+        setPagination(prev => ({ ...prev, current: 1 }));
+        setSearch(localSearch);
+    };
+
+    const handleReset = () => {
+        setDateFilter("all");
+        setLocalSearch("");
+        setSearch("");
+        setDateRange([null, null]);
+        setSelectedRowKeys([]);
+        setPagination(prev => ({ ...prev, current: 1 }));
     };
 
     const getExportData = () => {
-        const filtered = getFilteredData();
         if (selectedRowKeys.length > 0) {
-            return filtered.filter(item => selectedRowKeys.includes(item.id));
+            return products.filter(item => selectedRowKeys.includes(item.id));
         }
-        return filtered;
+        return products;
     };
 
     const handlePrint = () => {
@@ -86,50 +98,67 @@ export default function ProductReport() {
     const downloadPDF = () => {
         const dataToExport = getExportData();
         const doc = new jsPDF();
-        doc.setFontSize(18);
-        doc.text("Product Performance Report", 14, 22);
-        const dateStr = dayjs().format("YYYY-MM-DD");
-        doc.setFontSize(11);
-        doc.text(`Generated on: ${dateStr}`, 14, 30);
+        doc.setFontSize(16);
+        doc.text("Top Selling Products Performance Report", 14, 20);
+        const dateStr = dayjs().format("YYYY-MM-DD HH:mm");
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${dateStr}`, 14, 27);
         
-        const tableColumn = ["#", "Product Name", "SKU", "Sold Qty", "Revenue", "Success Rate"];
+        const tableColumn = ["#", "Product Name", "SKU", "Brand", "Current Stock", "Sold Qty", "Orders", "Revenue", "Success Rate"];
         const tableRows = dataToExport.map((p, index) => [
             index + 1,
             p.name,
             p.sku,
-            p.total_quantity_sold,
-            `৳${Number(p.total_revenue || 0).toLocaleString()}`,
-            `${p.sales_metrics?.success_rate}%`
+            p.brand?.name || "N/A",
+            p.current_stock,
+            p.total_quantity_sold || p.sales_metrics?.total_quantity_sold || 0,
+            p.order_count || p.sales_metrics?.order_count || 0,
+            `৳${Number(p.total_revenue || p.sales_metrics?.total_revenue || 0).toLocaleString()}`,
+            `${p.sales_metrics?.success_rate || 0}%`
         ]);
 
         autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
-            startY: 40,
+            startY: 34,
             theme: 'grid',
-            headStyles: { fillColor: [28, 85, 139], textColor: 255 },
+            headStyles: { fillColor: [30, 80, 162], textColor: 255 },
             styles: { fontSize: 8 }
         });
-        doc.save(`Product_Report_${dateStr}.pdf`);
+        doc.save(`Product_Sales_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
     };
 
     const downloadCSV = () => {
         const dataToExport = getExportData();
-        const headers = ["SL", "Product Name", "SKU", "Brand", "Current Stock", "Total Sold", "Revenue", "Success Rate"];
+        const headers = ["SL", "Product Name", "SKU", "Brand", "Current Stock", "Stock Status", "Sold Quantity", "Total Orders", "Delivered", "Canceled", "Returned", "Processing", "MRP", "Discount", "Sell Price", "Average Price", "Total Revenue", "Total MRP", "Total Discount", "Delivery Success Rate (%)", "Cancel Rate (%)", "Return Rate (%)"];
         const rows = dataToExport.map((p, i) => [
             i + 1,
-            p.name,
-            p.sku,
-            p.brand?.name || "N/A",
-            p.current_stock,
-            p.total_quantity_sold,
-            p.total_revenue,
-            `${p.sales_metrics?.success_rate}%`
+            `"${p.name || ''}"`,
+            `"${p.sku || ''}"`,
+            `"${p.brand?.name || 'N/A'}"`,
+            p.current_stock || 0,
+            `"${p.stock_info?.stock_status || 'in_stock'}"`,
+            p.total_quantity_sold || p.sales_metrics?.total_quantity_sold || 0,
+            p.order_count || p.sales_metrics?.order_count || 0,
+            p.delivered_count || p.sales_metrics?.delivered_count || 0,
+            p.canceled_count || p.sales_metrics?.canceled_count || 0,
+            p.returned_count || p.sales_metrics?.returned_count || 0,
+            p.processing_count || p.sales_metrics?.processing_count || 0,
+            p.mrp || 0,
+            p.discount || 0,
+            p.sell_price || 0,
+            p.sales_metrics?.average_sell_price || p.sell_price || 0,
+            p.total_revenue || p.sales_metrics?.total_revenue || 0,
+            p.total_mrp || p.sales_metrics?.total_mrp || 0,
+            p.total_discount || p.sales_metrics?.total_discount || 0,
+            `${p.sales_metrics?.success_rate || 0}%`,
+            `${p.sales_metrics?.cancel_rate || 0}%`,
+            `${p.sales_metrics?.return_rate || 0}%`
         ]);
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
         const link = document.createElement("a");
         link.href = encodeURI(csvContent);
-        link.download = `Product_Report_${dayjs().format('YYYY-MM-DD')}.csv`;
+        link.download = `Product_Sales_Report_${dayjs().format('YYYY-MM-DD')}.csv`;
         link.click();
     };
 
@@ -137,263 +166,364 @@ export default function ProductReport() {
         {
             title: "#",
             key: "sl",
-            render: (_, __, index) => (
-                <span style={{ fontWeight: 600, color: '#94a3b8' }}>
-                    {(pagination.current - 1) * pagination.pageSize + index + 1}
-                </span>
-            ),
-            width: 60,
+            render: (_, __, index) => {
+                const rank = (pagination.current - 1) * pagination.pageSize + index + 1;
+                return (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        {rank <= 3 ? (
+                            <Tag color={rank === 1 ? 'gold' : rank === 2 ? 'blue' : 'orange'} style={{ margin: 0, fontWeight: 800, fontSize: 10, borderRadius: 10 }}>
+                                #{rank}
+                            </Tag>
+                        ) : (
+                            <span style={{ fontWeight: 700, color: '#94a3b8', fontSize: 12 }}>
+                                #{rank}
+                            </span>
+                        )}
+                    </div>
+                );
+            },
+            width: 48,
             align: 'center'
         },
         {
             title: "Product Identity",
             key: "product",
             render: (_, record) => (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <Badge count={record.order_count} overflowCount={999} size="small" offset={[0, 40]} color="#3b82f6">
-                        <Avatar shape="square" size={54} src={record.img_path} style={{ borderRadius: 8, border: '1px solid #f1f5f9' }} />
-                    </Badge>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Text strong style={{ color: '#1e293b', fontSize: 13 }}>{record.name}</Text>
-                        <Space style={{ marginTop: 4 }} size={4} wrap>
-                            <Tag color="blue" style={{ fontSize: 10, margin: 0, borderRadius: 4 }}>SKU: {record.sku}</Tag>
-                            {record.brand && <Tag style={{ fontSize: 10, margin: 0, borderRadius: 4 }}>{record.brand.name}</Tag>}
-                            {record.categories?.slice(0, 1).map(cat => <Tag key={cat.id} style={{ fontSize: 10, margin: 0, borderRadius: 4 }}>{cat.name}</Tag>)}
-                        </Space>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    <Avatar 
+                        shape="square" 
+                        size={38} 
+                        src={record.img_path} 
+                        icon={<ShoppingOutlined />} 
+                        style={{ borderRadius: 6, border: '1px solid #e2e8f0', background: '#f8fafc', flexShrink: 0 }} 
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0, overflow: 'hidden' }}>
+                        <Text strong style={{ color: '#0f172a', fontSize: 12, lineHeight: '1.2' }} ellipsis={{ tooltip: record.name }}>
+                            {record.name}
+                        </Text>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap', overflow: 'hidden' }}>
+                            <span style={{ fontSize: 9.5, color: '#1d4ed8', fontWeight: 700, whiteSpace: 'nowrap' }}>SKU: {record.sku}</span>
+                            {record.brand && (
+                                <>
+                                    <span style={{ color: '#cbd5e1', fontSize: 9 }}>•</span>
+                                    <span style={{ fontSize: 9.5, color: '#475569', fontWeight: 600, whiteSpace: 'nowrap' }}>{record.brand.name}</span>
+                                </>
+                            )}
+                        </div>
+                        {record.has_variations ? (
+                            <span style={{ fontSize: 9, color: '#7c3aed', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                Variable ({record.variation_count} options)
+                            </span>
+                        ) : (
+                            <span style={{ fontSize: 9, color: '#94a3b8', whiteSpace: 'nowrap' }}>Simple Product</span>
+                        )}
                     </div>
                 </div>
             ),
-            width: 320,
+            width: 210,
         },
         {
-            title: "Sell Price",
-            key: "price",
-            align: 'right',
-            render: (_, record) => (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <Text strong style={{ color: '#0f172a' }}>৳{Number(record.sell_price).toLocaleString()}</Text>
-                    {Number(record.discount) > 0 && (
-                        <Text delete type="secondary" style={{ fontSize: 11 }}>৳{Number(record.mrp).toLocaleString()}</Text>
-                    )}
-                </div>
-            ),
-            width: 120
-        },
-        {
-            title: "Stock Status",
-            key: "stock",
+            title: "Pricing & Stock",
+            key: "pricing_stock",
             align: 'center',
             render: (_, record) => {
                 const stock = record.current_stock;
-                const status = record.stock_info?.stock_status;
-                let color = "green";
-                if (stock <= 5) color = "red";
-                else if (stock <= 20) color = "orange";
-                
+                const status = record.stock_info?.stock_status || "in_stock";
+                let stockColor = "green";
+                let stockLabel = "In Stock";
+                if (stock <= 0 || status === "out_of_stock") {
+                    stockColor = "red";
+                    stockLabel = "Out of Stock";
+                } else if (stock <= 10) {
+                    stockColor = "orange";
+                    stockLabel = "Low Stock";
+                }
+
+                const avgPrice = record.sales_metrics?.average_sell_price || record.sell_price;
+                const mrpVal = Number(record.mrp || 0);
+                const sellVal = Number(record.sell_price || 0);
+                const discountVal = Number(record.discount || 0);
+
                 return (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <Text strong style={{ color: color === 'red' ? '#ef4444' : '#1e293b' }}>{stock}</Text>
-                        <Tag color={color} style={{ fontSize: 9, margin: '4px 0 0 0', borderRadius: 10, textTransform: 'uppercase' }}>
-                            {status?.replace('_', ' ')}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                            <Text strong style={{ color: '#0f172a', fontSize: 12.5 }}>
+                                ৳{sellVal.toLocaleString()}
+                            </Text>
+                            {mrpVal > sellVal && (
+                                <Text delete type="secondary" style={{ fontSize: 10 }}>
+                                    ৳{mrpVal.toLocaleString()}
+                                </Text>
+                            )}
+                        </div>
+                        {discountVal > 0 && (
+                            <Tag color="error" style={{ fontSize: 9, margin: 0, padding: '0 4px', borderRadius: 3, fontWeight: 700 }}>
+                                -৳{discountVal.toLocaleString()} Discount
+                            </Tag>
+                        )}
+                        <div style={{ fontSize: 9.5, color: '#64748b', marginTop: 1 }}>
+                            Average Price: <span style={{ fontWeight: 700, color: '#334155' }}>৳{Number(avgPrice || 0).toLocaleString()}</span>
+                        </div>
+                        <Tag color={stockColor} style={{ fontSize: 9.5, margin: '2px 0 0 0', borderRadius: 10, fontWeight: 700, padding: '0 6px' }}>
+                            {stock} Items ({stockLabel})
                         </Tag>
                     </div>
-                )
+                );
             },
-            width: 110
+            width: 130
         },
         {
-            title: "Volume",
+            title: "Sales Volume",
             key: "volume",
             align: 'center',
             render: (_, record) => (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <Tooltip title="Total items sold across all orders">
-                        <Tag color="cyan" style={{ margin: 0, borderRadius: 4 }}>
-                            {record.total_quantity_sold} Sold
-                        </Tag>
-                    </Tooltip>
-                    <Text type="secondary" style={{ fontSize: 11, marginTop: 4 }}>{record.order_count} Orders</Text>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <Tag color="cyan" style={{ margin: 0, borderRadius: 6, fontWeight: 700, fontSize: 10.5, padding: '2px 8px' }}>
+                        {record.total_quantity_sold || record.sales_metrics?.total_quantity_sold || 0} Units Sold
+                    </Tag>
+                    <Text type="secondary" style={{ fontSize: 10.5, fontWeight: 600 }}>
+                        {record.order_count || record.sales_metrics?.order_count || 0} Total Orders
+                    </Text>
                 </div>
             ),
-            width: 100
+            width: 110
+        },
+        {
+            title: "Order Status Breakdown",
+            key: "status_breakdown",
+            align: 'center',
+            render: (_, record) => {
+                const del = record.delivered_count || record.sales_metrics?.delivered_count || 0;
+                const proc = record.processing_count || record.sales_metrics?.processing_count || 0;
+                const canc = record.canceled_count || record.sales_metrics?.canceled_count || 0;
+                const ret = record.returned_count || record.sales_metrics?.returned_count || 0;
+
+                return (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                            <Tooltip title={`Delivered: ${del}`}>
+                                <Tag style={{ background: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', fontSize: 9.5, margin: 0, borderRadius: 4, fontWeight: 700, padding: '1px 5px' }}>
+                                    Delivered: {del}
+                                </Tag>
+                            </Tooltip>
+                            <Tooltip title={`Processing: ${proc}`}>
+                                <Tag style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', fontSize: 9.5, margin: 0, borderRadius: 4, fontWeight: 700, padding: '1px 5px' }}>
+                                    Processing: {proc}
+                                </Tag>
+                            </Tooltip>
+                        </div>
+                        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                            <Tooltip title={`Canceled: ${canc}`}>
+                                <Tag style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fecaca', fontSize: 9.5, margin: 0, borderRadius: 4, fontWeight: 700, padding: '1px 5px' }}>
+                                    Canceled: {canc}
+                                </Tag>
+                            </Tooltip>
+                            <Tooltip title={`Returned: ${ret}`}>
+                                <Tag style={{ background: '#fffbe8', color: '#d97706', border: '1px solid #fef08a', fontSize: 9.5, margin: 0, borderRadius: 4, fontWeight: 700, padding: '1px 5px' }}>
+                                    Returned: {ret}
+                                </Tag>
+                            </Tooltip>
+                        </div>
+                    </div>
+                );
+            },
+            width: 160
         },
         {
             title: "Performance Rates",
             key: "rates",
-            render: (_, record) => (
-                <div style={{ width: 160 }}>
-                    <Tooltip title={`Success: ${record.sales_metrics?.delivered_count} Delivered`}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 2 }}>
-                            <Text type="secondary">Success</Text>
-                            <Text strong>{record.sales_metrics?.success_rate}%</Text>
+            render: (_, record) => {
+                const successRate = record.sales_metrics?.success_rate || 0;
+                const cancelRate = record.sales_metrics?.cancel_rate || 0;
+                const returnRate = record.sales_metrics?.return_rate || 0;
+
+                return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 1 }}>
+                                <span style={{ color: '#475569', fontWeight: 600 }}>Delivery Success</span>
+                                <strong style={{ color: '#10b981' }}>{successRate}%</strong>
+                            </div>
+                            <Progress percent={successRate} size={['100%', 4]} showInfo={false} strokeColor="#10b981" trailColor="#f1f5f9" />
                         </div>
-                        <Progress percent={record.sales_metrics?.success_rate} size={[160, 4]} showInfo={false} strokeColor="#10b981" />
-                    </Tooltip>
-                    <div style={{ display: 'flex', gap: '8px', marginTop: 8 }}>
-                        <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 9, color: '#94a3b8' }}>Cancel</div>
-                            <Progress percent={record.sales_metrics?.cancel_rate} size={[80, 2]} showInfo={false} strokeColor="#ef4444" />
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, marginBottom: 1 }}>
+                                <span style={{ color: '#64748b' }}>Cancel Rate</span>
+                                <strong style={{ color: '#ef4444' }}>{cancelRate}%</strong>
+                            </div>
+                            <Progress percent={cancelRate} size={['100%', 3]} showInfo={false} strokeColor="#ef4444" trailColor="#f1f5f9" />
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 9, color: '#94a3b8' }}>Return</div>
-                            <Progress percent={record.sales_metrics?.return_rate} size={[80, 2]} showInfo={false} strokeColor="#f59e0b" />
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9.5, marginBottom: 1 }}>
+                                <span style={{ color: '#64748b' }}>Return Rate</span>
+                                <strong style={{ color: '#f59e0b' }}>{returnRate}%</strong>
+                            </div>
+                            <Progress percent={returnRate} size={['100%', 3]} showInfo={false} strokeColor="#f59e0b" trailColor="#f1f5f9" />
                         </div>
                     </div>
-                </div>
-            ),
-            width: 200
+                );
+            },
+            width: 170
         },
         {
-            title: "Total Revenue",
+            title: "Financial Revenue",
             key: "revenue",
             align: 'right',
-            render: (_, record) => (
-                <div style={{ background: '#f8fafc', padding: '6px 12px', borderRadius: 8, border: '1px solid #e2e8f0', display: 'inline-block' }}>
-                    <Text strong style={{ color: '#0f172a' }}>৳{Number(record.total_revenue || 0).toLocaleString()}</Text>
-                </div>
-            ),
+            render: (_, record) => {
+                const totRev = Number(record.total_revenue || record.sales_metrics?.total_revenue || 0);
+                const totMrp = Number(record.total_mrp || record.sales_metrics?.total_mrp || 0);
+                const totDisc = Number(record.total_discount || record.sales_metrics?.total_discount || 0);
+
+                return (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                        <div style={{ background: '#f0fdf4', padding: '2px 8px', borderRadius: 6, border: '1px solid #bbf7d0', display: 'inline-block' }}>
+                            <Text strong style={{ color: '#15803d', fontSize: 13 }}>
+                                ৳{totRev.toLocaleString()}
+                            </Text>
+                        </div>
+                        <div style={{ fontSize: 9.5, color: '#64748b' }}>
+                            MRP: ৳{totMrp.toLocaleString()}
+                        </div>
+                        {totDisc > 0 && (
+                            <span style={{ fontSize: 9.5, color: '#ef4444', fontWeight: 600 }}>
+                                Discount: -৳{totDisc.toLocaleString()}
+                            </span>
+                        )}
+                    </div>
+                );
+            },
             width: 140
         }
     ];
 
-    const expandedRowRender = (record) => (
-        <div style={{ padding: '20px 30px', background: '#f8fafc', borderRadius: 12 }}>
-            <Title level={5} style={{ margin: '0 0 20px 0', fontSize: 14, color: '#64748b' }}>In-depth Sales Analytics: {record.name}</Title>
-            <Row gutter={[24, 24]}>
-                <Col span={8}>
-                    <Card size="small" title="Status Distribution" variant="borderless">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Delivered</Text>
-                                <Text strong style={{ color: '#10b981' }}>{record.sales_metrics?.delivered_count}</Text>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Canceled</Text>
-                                <Text strong style={{ color: '#ef4444' }}>{record.sales_metrics?.canceled_count}</Text>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Returned</Text>
-                                <Text strong style={{ color: '#f59e0b' }}>{record.sales_metrics?.returned_count}</Text>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Processing</Text>
-                                <Text strong style={{ color: '#3b82f6' }}>{record.sales_metrics?.processing_count}</Text>
-                            </div>
-                        </div>
-                    </Card>
-                </Col>
-                <Col span={8}>
-                    <Card size="small" title="Financials" variant="borderless">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Average Sell Price</Text>
-                                <Text strong>৳{Number(record.sales_metrics?.average_sell_price).toLocaleString()}</Text>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Total MRP Value</Text>
-                                <Text strong>৳{Number(record.sales_metrics?.total_mrp).toLocaleString()}</Text>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Total Discount Given</Text>
-                                <Text strong style={{ color: '#ef4444' }}>৳{Number(record.sales_metrics?.total_discount).toLocaleString()}</Text>
-                            </div>
-                        </div>
-                    </Card>
-                </Col>
-                <Col span={8}>
-                    <Card size="small" title="Stock Info" variant="borderless">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Current Available</Text>
-                                <Tag color={record.current_stock > 10 ? 'green' : 'red'}>{record.current_stock} Items</Tag>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Variation Type</Text>
-                                <Text strong>{record.has_variations ? 'Variable' : 'Simple'}</Text>
-                            </div>
-                            {record.has_variations && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Text type="secondary">Variations</Text>
-                                    <Text strong>{record.variation_count} Options</Text>
-                                </div>
-                            )}
-                        </div>
-                    </Card>
-                </Col>
-            </Row>
-        </div>
-    );
-
     return (
         <div className="reportWrapper">
-            <div className="topBar no-print">
-                <Title level={4} style={{ margin: 0 }}>Main Product Sales Report</Title>
-                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+            {/* Header */}
+            <div className="topBar no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div>
+                    <Title level={4} style={{ margin: 0, color: '#0f172a' }}>Product Performance & Sales Report</Title>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Comprehensive top-selling product metrics, status distribution, and financial revenue</Text>
+                </div>
+                <Space>
+                    <Button icon={<ReloadOutlined />} onClick={getProductReport} loading={loading}>
+                        Refresh Data
+                    </Button>
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} className="back-btn">
+                        Back
+                    </Button>
+                </Space>
             </div>
 
-            <Divider className="no-print" style={{ margin: '12px 0' }} />
-
+            {/* KPI Summary Cards */}
             {summary && (
-                <div className="no-print" style={{ marginBottom: 24 }}>
-                    <Row gutter={[16, 16]}>
+                <div className="no-print" style={{ marginBottom: 20 }}>
+                    <Row gutter={[12, 12]}>
                         <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card main-stats">
-                                <Space direction="vertical" size={0}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Overall Revenue</Text>
-                                    <Title level={3} style={{ margin: 0 }}>৳{Number(summary.total_revenue || 0).toLocaleString()}</Title>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>from {summary.total_orders} total orders</Text>
-                                </Space>
-                                <RiseOutlined className="summary-icon" style={{ color: '#10b981' }} />
-                                <div className="card-indicator success"></div>
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card">
-                                <Space direction="vertical" size={0}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Quantity Sold</Text>
-                                    <Title level={3} style={{ margin: 0 }}>{summary.total_quantity_sold?.toLocaleString()}</Title>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>across {summary.total_products} products</Text>
-                                </Space>
-                                <DropboxOutlined className="summary-icon" style={{ color: '#3b82f6' }} />
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card">
-                                <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Order Dispatch Health</Text>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Title level={3} style={{ margin: 0 }}>{summary.success_rate}%</Title>
-                                        <Progress type="circle" percent={summary.success_rate} size={30} strokeWidth={15} showInfo={false} strokeColor="#10b981" />
+                            <Card bordered={false} className="mini-summary-card blue">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon blue">
+                                        <DollarOutlined />
                                     </div>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>Success delivery rate</Text>
-                                </Space>
-                                <BarChartOutlined className="summary-icon" style={{ color: '#8b5cf6' }} />
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Total Product Revenue</span>
+                                        <span className="mini-card-val">
+                                            ৳{Number(summary.total_revenue || 0).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill">MRP: ৳{Number(summary.total_mrp || 0).toLocaleString()}</span>
+                                    <span className="footer-pill red">Discount: -৳{Number(summary.total_discount || 0).toLocaleString()}</span>
+                                </div>
                             </Card>
                         </Col>
+
                         <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card">
-                                <Space direction="vertical" size={0}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Operational Loss</Text>
-                                    <Title level={3} style={{ margin: 0, color: '#ef4444' }}>৳{Number(summary.total_discount || 0).toLocaleString()}</Title>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>total discount applied</Text>
-                                </Space>
-                                <TagOutlined className="summary-icon" style={{ color: '#ef4444' }} />
+                            <Card bordered={false} className="mini-summary-card green">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon green">
+                                        <ShoppingCartOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Total Quantity Sold</span>
+                                        <span className="mini-card-val">
+                                            {Number(summary.total_quantity_sold || 0).toLocaleString()} Units
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill">{summary.total_products || 0} Products</span>
+                                    <span className="footer-pill green">{summary.total_orders || 0} Total Orders</span>
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={6}>
+                            <Card bordered={false} className="mini-summary-card purple">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon purple">
+                                        <BarChartOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Delivery Success Rate</span>
+                                        <span className="mini-card-val">
+                                            {summary.success_rate || 0}%
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill green">Delivered: {summary.delivered_count || 0}</span>
+                                    <span className="footer-pill">Orders: {summary.total_orders || 0}</span>
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={6}>
+                            <Card bordered={false} className="mini-summary-card orange">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon orange">
+                                        <TagOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Losses & Rejections</span>
+                                        <span className="mini-card-val" style={{ fontSize: 14 }}>
+                                            {summary.canceled_count || 0} Canceled / {summary.returned_count || 0} Returned
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill red">Discount: ৳{Number(summary.total_discount || 0).toLocaleString()}</span>
+                                </div>
                             </Card>
                         </Col>
                     </Row>
                 </div>
             )}
 
-            <div className="topBar no-print">
-                <Space wrap size="middle">
+            {/* Filter and Action Bar */}
+            <div className="filter-toolbar no-print" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <Space wrap size="middle" align="center">
                     <Input 
-                        placeholder="Search product, SKU or brand..." 
+                        placeholder="Search by Product Name..." 
                         allowClear 
                         value={localSearch}
-                        onChange={(e) => setLocalSearch(e.target.value)} 
-                        style={{ width: 280 }}
-                        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setLocalSearch(val);
+                            if (!val) {
+                                setPagination(prev => ({ ...prev, current: 1 }));
+                                setSearch("");
+                            }
+                        }} 
+                        onPressEnter={handleSearchSubmit}
+                        style={{ width: 260 }}
+                        className="search-input"
+                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
                     />
+
+                    <Button type="primary" icon={<SearchOutlined />} onClick={handleSearchSubmit}>
+                        Search
+                    </Button>
                     
                     <Select 
                         value={dateFilter} 
@@ -402,7 +532,7 @@ export default function ProductReport() {
                             setDateFilter(val);
                             if (val !== "custom") setDateRange([null, null]);
                         }}
-                        suffixIcon={<CalendarOutlined style={{ color: '#bfbfbf' }} />}
+                        suffixIcon={<CalendarOutlined style={{ color: '#94a3b8' }} />}
                     >
                         <Option value="all">All Time</Option>
                         <Option value="today">Today</Option>
@@ -414,38 +544,33 @@ export default function ProductReport() {
                     </Select>
 
                     {dateFilter === "custom" && (
-                        <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear style={{ width: 250 }} />
+                        <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear style={{ width: 240 }} />
                     )}
 
-                    <Button icon={<ReloadOutlined />} onClick={() => {
-                        setDateFilter("all");
-                        setLocalSearch("");
-                        setDateRange([null, null]);
-                        setSelectedRowKeys([]);
-                        setPagination(prev => ({ ...prev, current: 1 }));
-                    }}>
+                    <Button icon={<ReloadOutlined />} onClick={handleReset} className="reset-btn">
                         Reset
                     </Button>
                 </Space>
 
-                <Space size="middle">
+                <Space size="middle" align="center" className="export-actions">
                     {selectedRowKeys.length > 0 && (
-                        <Text strong style={{ color: '#1677ff' }}>
+                        <Tag color="blue" className="selected-tag">
                             {selectedRowKeys.length} selected
-                        </Text>
+                        </Tag>
                     )}
-                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>
+                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV} className="btn-csv">
                         CSV
                     </Button>
-                    <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>
+                    <Button type="primary" icon={<FilePdfOutlined />} onClick={downloadPDF} className="btn-pdf">
                         PDF
                     </Button>
-                    <Button icon={<PrinterOutlined />} onClick={handlePrint}>
+                    <Button icon={<PrinterOutlined />} onClick={handlePrint} className="btn-print">
                         Print
                     </Button>
                 </Space>
             </div>
 
+            {/* Main Table */}
             <div className="printable">
                 <Table
                     rowSelection={{
@@ -454,12 +579,8 @@ export default function ProductReport() {
                     }}
                     rowKey="id"
                     columns={columns}
-                    dataSource={getFilteredData()}
+                    dataSource={products}
                     loading={loading}
-                    expandable={{
-                        expandedRowRender,
-                        rowExpandable: (record) => true,
-                    }}
                     pagination={{
                         current: pagination.current,
                         pageSize: pagination.pageSize,
@@ -468,50 +589,10 @@ export default function ProductReport() {
                         showSizeChanger: true,
                         size: "small",
                         className: "custom-pagination no-print",
-                        showTotal: (total) => `Total ${total} entries`,
+                        showTotal: (total) => `Total ${total} products`,
                     }}
                 />
             </div>
-
-            <style jsx>{`
-                .summary-card {
-                    height: 100%;
-                    border-radius: 12px;
-                    border: 1px solid #f1f5f9;
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-                    position: relative;
-                    overflow: hidden;
-                    transition: all 0.3s ease;
-                    background: #fff;
-                }
-                .summary-card:hover {
-                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                    transform: translateY(-2px);
-                }
-                .summary-icon {
-                    position: absolute;
-                    right: 16px;
-                    bottom: 16px;
-                    font-size: 28px;
-                    opacity: 0.12;
-                    transition: all 0.3s ease;
-                }
-                .summary-card:hover .summary-icon {
-                    opacity: 0.25;
-                    transform: scale(1.1);
-                }
-                .card-indicator {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    bottom: 0;
-                    width: 4px;
-                }
-                .card-indicator.success { background: #10b981; }
-                .main-stats {
-                    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
-                }
-            `}</style>
         </div>
     );
 }
