@@ -118,6 +118,7 @@ const Sidebar = ({ onMenuSelect }) => {
     const reportSubmenus = [
         can('reports-read') && { label: "Order Report", path: "/report/orders" },
         can('reports-read') && { label: "Sell Report", path: "/sales/report" },
+        can('reports-read') && { label: "Product Report", path: "/product/report" },
         can('reports-read') && { label: "Customer Report", path: "/all/customer/report" },
         can('reports-read') && { label: "Upsell Report", path: "/all/upsell/report" },
         can('reports-read') && { label: "Downsell Report", path: "/downsell/report" },
@@ -126,7 +127,6 @@ const Sidebar = ({ onMenuSelect }) => {
         can('reports-read') && { label: "Cross Sell Report", path: "/cross/sell/report" },
         can('reports-read') && { label: "Return Report", path: "/return/report" },
         can('reports-read') && { label: "Cancel Report", path: "/cancel/report" },
-        can('reports-read') && { label: "Product Report", path: "/product/report" },
         can('reports-read') && { label: "Location Report", path: "/location/report" },
         can('reports-read') && { label: "Courier Report", path: "/courier/report" },
     ].filter(Boolean);
