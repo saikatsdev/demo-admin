@@ -1,4 +1,4 @@
-import {CopyOutlined,DeleteFilled,DeleteOutlined,WalletOutlined,ReloadOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined} from "@ant-design/icons";
+import {CopyOutlined,DeleteFilled,DeleteOutlined,WalletOutlined,ReloadOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined,FilterOutlined} from "@ant-design/icons";
 import {Badge,Button,Col,DatePicker,Dropdown,Form,Input,InputNumber,message,Modal,Popover,Row,Select,Space,Spin,Table,Tag,Tooltip} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
@@ -132,6 +132,25 @@ export default function Order() {
     const [digitalModalOpen, setDigitalModalOpen]                                                      = useState(false);
     const [selectedDigitalOrderId, setSelectedDigitalOrderId]                                          = useState(null);
 	const [csvLoading, setCsvLoading]                                                                  = useState(false);
+    const [showFilter, setShowFilter]                                                                  = useState(false);
+
+    const activeFilterCount = [
+        statusId,
+        isPaid,
+        selectedCustomerTypeId,
+        orderTagId,
+        selectedDistrictId,
+        employeeId,
+        selectedCourier,
+        minPrice,
+        maxPrice,
+        minInvoice,
+        maxInvoice,
+        startDate,
+        endDate,
+        invoiceStatus !== null && invoiceStatus !== undefined ? invoiceStatus : null,
+        searchQuery
+    ].filter(val => val !== null && val !== undefined && val !== "").length;
 
     // Redux State
     const orderTagList  = useSelector((state) => state.orderFrom.list);
@@ -2123,6 +2142,21 @@ export default function Order() {
                             </Button>
                         )}
 
+                        <Button
+                            icon={<FilterOutlined />}
+                            type={showFilter ? "primary" : "default"}
+                            onClick={() => setShowFilter((prev) => !prev)}
+                        >
+                            {showFilter ? "Hide Filter" : "Filter"}
+                            {activeFilterCount > 0 && (
+                                <Badge
+                                    count={activeFilterCount}
+                                    size="small"
+                                    style={{ backgroundColor: showFilter ? "#ffffff" : "#1677ff", color: showFilter ? "#1677ff" : "#ffffff", marginLeft: 6 }}
+                                />
+                            )}
+                        </Button>
+
                         <Button danger icon={<DeleteOutlined />} onClick={handleTrashClick}>Trash</Button>
 
                         <Button
@@ -2205,223 +2239,228 @@ export default function Order() {
                     </div>
                 )}
 
-                <div className="orders-filter-panel">
-                    <div className="orders-filter-panel__head">
-                        <h3>Filters</h3>
+                {showFilter && (
+                    <div className="orders-filter-panel">
+                        <div className="orders-filter-panel__head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h3>Filters</h3>
+                            <Button size="small" type="text" onClick={() => setShowFilter(false)}>
+                                Hide Filter
+                            </Button>
+                        </div>
+                        <div className="filter-actions">
+                            <div className="filter-item">
+                                <label className="filter-label">Payment Status</label>
+                                <Select value={isPaid} onChange={(value) => {setIsPaid(value);getOrders(1, { paid_status: value });}} placeholder="Is Paid" style={{ width: 170, height: 40 }}allowClear>
+                                    <Option value="Paid">Paid</Option>
+                                    <Option value="Unpaid">Unpaid</Option>
+                                </Select>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">Order Tag</label>
+                                <Select value={orderTagId} onChange={(value) => {setOrderTagId(value);getOrders(1, { order_from_id: value });}} placeholder="Order Tag" style={{ width: 170, height: 40 }} allowClear>
+                                    {orderTagList?.map((item) => (
+                                        <Option key={item.id} value={item.id}>
+                                            {item.name}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">Customer Type</label>
+                                <Select value={selectedCustomerTypeId} onChange={(value) => {setSelectedCustomerTypeId(value);getOrders(1, { customer_type_id: value });}} placeholder="Customer Type" style={{ width: 170, height: 40 }} allowClear>
+                                    {customerTypeList?.map((item) => (
+                                        <Option key={item.id} value={item.id}>
+                                            {item.name}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">Employee</label>
+                                <Select value={employeeId} onChange={(value) => {setEmployeeId(value);getOrders(1, { assign_user_id: value });}}placeholder="Employee" style={{ width: 170, height: 40 }} allowClear>
+                                    {employeeList?.map((item) => (
+                                        <Option key={item.id} value={item.id}>
+                                            {item.username}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">Courier</label>
+                                <Select value={selectedCourier} onChange={(value) => {setSelectedCourier(value);getOrders(1, { courier_id: value });}} placeholder="Courier" style={{ width: 170, height: 40 }}
+                                allowClear>
+                                    {couriers?.map((item) => (
+                                        <Option key={item.id} value={item.id}>
+                                            {item.name}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">District</label>
+                                <Select value={selectedDistrictId} onChange={(value) => {setSelectedDistrictId(value); getOrders(1, { district_id: value });}} placeholder="District"
+                                style={{ width: 170, height: 40 }} allowClear>
+                                    {districtList?.map((item) => (
+                                        <Option key={item.id} value={item.id}>
+                                            {item.name}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">Min Price</label>
+                                <Input value={minPrice} onChange={(e) => {setMinPrice(e.target.value);getOrders(1, { min_price: e.target.value });}} placeholder="Min Price"style={{ width: 170, height: 40 }}/>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">Max Price</label>
+                                <Input value={maxPrice} onChange={(e) => {setMaxPrice(e.target.value);getOrders(1, { max_price: e.target.value });}} placeholder="Max Price" style={{ width: 170, height: 40 }}/>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">Start Invoice</label>
+                                <Input value={minInvoice} onChange={(e) => {setMinInvoice(e.target.value); getOrders(1, { min_invoice: e.target.value });}} placeholder="Start Invoice"style={{ width: 170, height: 40 }}/>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">End Invoice</label>
+                                <Input value={maxInvoice} onChange={(e) => {setMaxInvoice(e.target.value); getOrders(1, { max_invoice: e.target.value });}} placeholder="End Invoice" style={{ width: 170, height: 40 }}
+                                />
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">Start Date</label>
+                                <DatePicker value={startDate ? dayjs(startDate) : null} onChange={(date) => {setStartDate(date); getOrders(1, {start_date: date ? dayjs(date).format("YYYY-MM-DD"): "",
+                                    });}} style={{ width: 170, height: 40 }}/>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">End Date</label>
+                                <DatePicker value={endDate ? dayjs(endDate) : null} onChange={(date) => {setEndDate(date);getOrders(1, {end_date: date? dayjs(date).format("YYYY-MM-DD"): "",
+                                    });}} style={{ width: 170, height: 40 }}/>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">Invoice Status</label>
+                                <Select value={invoiceStatus} onChange={(value) => {setInvoiceStatus(value);getOrders(1, { is_invoice_printed: value });}} placeholder="Invoice Status"style={{ width: 170, height: 40 }}allowClear>
+                                    <Option value={1}>Printed</Option>
+                                    <Option value={0}>Not Printed</Option>
+                                </Select>
+                            </div>
+
+                            <div className="filter-item">
+                                <label className="filter-label">Search</label>
+                                <Input
+                                    className="orders-search-input"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onPressEnter={filterData}
+                                    placeholder="Search Key..."
+                                    prefix={<SearchOutlined />}
+                                    style={{ width: 250, height: 40 }}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="orders-active-filters">
+                            {statusId && (
+                                <Tag closable onClose={() => {allOrderStatus();}}>
+                                    Status: {orderStatus?.find((o) => Number(o.status_id) === statusId)?.status_name || "N/A"}
+                                </Tag>
+                            )}
+
+                            {isPaid && (
+                                <Tag closable onClose={() => {setIsPaid(null);getOrders(1);}}>
+                                    Paid: {isPaid}
+                                </Tag>
+                            )}
+
+                            {selectedCustomerTypeId && (
+                                <Tag closable onClose={() => {setSelectedCustomerTypeId(null);getOrders(1, { customer_type_id: null });}}>
+                                    Customer Type: {customerTypeList?.find((c) => c.id === selectedCustomerTypeId)?.name || "N/A"}
+                                </Tag>
+                            )}
+
+                            {orderTagId && (
+                                <Tag closable onClose={() => {setOrderTagId(null); getOrders(1);}}>
+                                    Order Tag: {orderTagList?.find((t) => t.id === orderTagId)?.name || "N/A"}
+                                </Tag>
+                            )}
+
+                            {selectedDistrictId && (
+                                <Tag closable onClose={() => {setSelectedDistrictId(null);getOrders(1, { district_id: null });}}>
+                                    District:{districtList?.find((d) => d.id === selectedDistrictId)?.name || "N/A"}
+                                </Tag>
+                            )}
+
+                            {employeeId && (
+                                <Tag closable onClose={() => {setEmployeeId(null);getOrders(1, { assign_user_id: null });}}>
+                                    Employee:{employeeList?.find((e) => e.id === employeeId)?.name || "N/A"}
+                                </Tag>
+                            )}
+
+                            {selectedCourier && (
+                                <Tag closable onClose={() => {setSelectedCourier(null);getOrders(1, { courier_id: null });}}>
+                                    Courier: {couriers?.find((c) => c.id === selectedCourier) ?.name || "N/A"}
+                                </Tag>
+                            )}
+
+                            {minPrice && (
+                                <Tag closable onClose={() => {setMinPrice(""); getOrders(1);}}>
+                                    Min Price: ৳{minPrice}
+                                </Tag>
+                            )}
+
+                            {maxPrice && (
+                                <Tag closable onClose={() => {setMaxPrice(""); getOrders(1);}}>
+                                    Max Price: ৳{maxPrice}
+                                </Tag>
+                            )}
+
+                            {minInvoice && (
+                                <Tag closable onClose={() => {setMinInvoice("");getOrders(1);}}>
+                                    Invoice Start: {minInvoice}
+                                </Tag>
+                            )}
+
+                            {maxInvoice && (
+                                <Tag closable onClose={() => {setMaxInvoice(""); getOrders(1);}}>
+                                    Invoice End: {maxInvoice}
+                                </Tag>
+                            )}
+
+                            {startDate && (
+                                <Tag closable onClose={() => {setStartDate(null);getOrders(1);}}>
+                                    Start: {dayjs(startDate).format("YYYY-MM-DD")}
+                                </Tag>
+                            )}
+
+                            {endDate && (
+                                <Tag closable onClose={() => {setEndDate(null);getOrders(1);}}>
+                                    End: {dayjs(endDate).format("YYYY-MM-DD")}
+                                </Tag>
+                            )}
+
+                            {invoiceStatus !== null && invoiceStatus !== undefined && (
+                                <Tag closable onClose={() => {setInvoiceStatus(null);getOrders(1);}}>
+                                    Invoice: {invoiceStatus === 1 ? "Printed" : "Not Printed"}
+                                </Tag>
+                            )}
+
+                            {searchQuery && (
+                                <Tag closable onClose={() => {setSearchQuery("");getOrders(1);}}>
+                                    Search: {searchQuery}
+                                </Tag>
+                            )}
+                        </div>
                     </div>
-                    <div className="filter-actions">
-                        <div className="filter-item">
-                            <label className="filter-label">Payment Status</label>
-                            <Select value={isPaid} onChange={(value) => {setIsPaid(value);getOrders(1, { paid_status: value });}} placeholder="Is Paid" style={{ width: 170, height: 40 }}allowClear>
-                                <Option value="Paid">Paid</Option>
-                                <Option value="Unpaid">Unpaid</Option>
-                            </Select>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">Order Tag</label>
-                            <Select value={orderTagId} onChange={(value) => {setOrderTagId(value);getOrders(1, { order_from_id: value });}} placeholder="Order Tag" style={{ width: 170, height: 40 }} allowClear>
-                                {orderTagList?.map((item) => (
-                                    <Option key={item.id} value={item.id}>
-                                        {item.name}
-                                    </Option>
-                                ))}
-                            </Select>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">Customer Type</label>
-                            <Select value={selectedCustomerTypeId} onChange={(value) => {setSelectedCustomerTypeId(value);getOrders(1, { customer_type_id: value });}} placeholder="Customer Type" style={{ width: 170, height: 40 }} allowClear>
-                                {customerTypeList?.map((item) => (
-                                    <Option key={item.id} value={item.id}>
-                                        {item.name}
-                                    </Option>
-                                ))}
-                            </Select>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">Employee</label>
-                            <Select value={employeeId} onChange={(value) => {setEmployeeId(value);getOrders(1, { assign_user_id: value });}}placeholder="Employee" style={{ width: 170, height: 40 }} allowClear>
-                                {employeeList?.map((item) => (
-                                    <Option key={item.id} value={item.id}>
-                                        {item.username}
-                                    </Option>
-                                ))}
-                            </Select>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">Courier</label>
-                            <Select value={selectedCourier} onChange={(value) => {setSelectedCourier(value);getOrders(1, { courier_id: value });}} placeholder="Courier" style={{ width: 170, height: 40 }}
-                            allowClear>
-                                {couriers?.map((item) => (
-                                    <Option key={item.id} value={item.id}>
-                                        {item.name}
-                                    </Option>
-                                ))}
-                            </Select>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">District</label>
-                            <Select value={selectedDistrictId} onChange={(value) => {setSelectedDistrictId(value); getOrders(1, { district_id: value });}} placeholder="District"
-                            style={{ width: 170, height: 40 }} allowClear>
-                                {districtList?.map((item) => (
-                                    <Option key={item.id} value={item.id}>
-                                        {item.name}
-                                    </Option>
-                                ))}
-                            </Select>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">Min Price</label>
-                            <Input value={minPrice} onChange={(e) => {setMinPrice(e.target.value);getOrders(1, { min_price: e.target.value });}} placeholder="Min Price"style={{ width: 170, height: 40 }}/>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">Max Price</label>
-                            <Input value={maxPrice} onChange={(e) => {setMaxPrice(e.target.value);getOrders(1, { max_price: e.target.value });}} placeholder="Max Price" style={{ width: 170, height: 40 }}/>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">Start Invoice</label>
-                            <Input value={minInvoice} onChange={(e) => {setMinInvoice(e.target.value); getOrders(1, { min_invoice: e.target.value });}} placeholder="Start Invoice"style={{ width: 170, height: 40 }}/>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">End Invoice</label>
-                            <Input value={maxInvoice} onChange={(e) => {setMaxInvoice(e.target.value); getOrders(1, { max_invoice: e.target.value });}} placeholder="End Invoice" style={{ width: 170, height: 40 }}
-                            />
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">Start Date</label>
-                            <DatePicker value={startDate ? dayjs(startDate) : null} onChange={(date) => {setStartDate(date); getOrders(1, {start_date: date ? dayjs(date).format("YYYY-MM-DD"): "",
-                                });}} style={{ width: 170, height: 40 }}/>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">End Date</label>
-                            <DatePicker value={endDate ? dayjs(endDate) : null} onChange={(date) => {setEndDate(date);getOrders(1, {end_date: date? dayjs(date).format("YYYY-MM-DD"): "",
-                                });}} style={{ width: 170, height: 40 }}/>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">Invoice Status</label>
-                            <Select value={invoiceStatus} onChange={(value) => {setInvoiceStatus(value);getOrders(1, { is_invoice_printed: value });}} placeholder="Invoice Status"style={{ width: 170, height: 40 }}allowClear>
-                                <Option value={1}>Printed</Option>
-                                <Option value={0}>Not Printed</Option>
-                            </Select>
-                        </div>
-
-                        <div className="filter-item">
-                            <label className="filter-label">Search</label>
-                            <Input
-                                className="orders-search-input"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onPressEnter={filterData}
-                                placeholder="Search Key..."
-                                prefix={<SearchOutlined />}
-                                style={{ width: 250, height: 40 }}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="orders-active-filters">
-                        {statusId && (
-                            <Tag closable onClose={() => {allOrderStatus();}}>
-                                Status: {orderStatus?.find((o) => Number(o.status_id) === statusId)?.status_name || "N/A"}
-                            </Tag>
-                        )}
-
-                        {isPaid && (
-                            <Tag closable onClose={() => {setIsPaid(null);getOrders(1);}}>
-                                Paid: {isPaid}
-                            </Tag>
-                        )}
-
-                        {selectedCustomerTypeId && (
-                            <Tag closable onClose={() => {setSelectedCustomerTypeId(null);getOrders(1, { customer_type_id: null });}}>
-                                Customer Type: {customerTypeList?.find((c) => c.id === selectedCustomerTypeId)?.name || "N/A"}
-                            </Tag>
-                        )}
-
-                        {orderTagId && (
-                            <Tag closable onClose={() => {setOrderTagId(null); getOrders(1);}}>
-                                Order Tag: {orderTagList?.find((t) => t.id === orderTagId)?.name || "N/A"}
-                            </Tag>
-                        )}
-
-                        {selectedDistrictId && (
-                            <Tag closable onClose={() => {setSelectedDistrictId(null);getOrders(1, { district_id: null });}}>
-                                District:{districtList?.find((d) => d.id === selectedDistrictId)?.name || "N/A"}
-                            </Tag>
-                        )}
-
-                        {employeeId && (
-                            <Tag closable onClose={() => {setEmployeeId(null);getOrders(1, { assign_user_id: null });}}>
-                                Employee:{employeeList?.find((e) => e.id === employeeId)?.name || "N/A"}
-                            </Tag>
-                        )}
-
-                        {selectedCourier && (
-                            <Tag closable onClose={() => {setSelectedCourier(null);getOrders(1, { courier_id: null });}}>
-                                Courier: {couriers?.find((c) => c.id === selectedCourier) ?.name || "N/A"}
-                            </Tag>
-                        )}
-
-                        {minPrice && (
-                            <Tag closable onClose={() => {setMinPrice(""); getOrders(1);}}>
-                                Min Price: ৳{minPrice}
-                            </Tag>
-                        )}
-
-                        {maxPrice && (
-                            <Tag closable onClose={() => {setMaxPrice(""); getOrders(1);}}>
-                                Max Price: ৳{maxPrice}
-                            </Tag>
-                        )}
-
-                        {minInvoice && (
-                            <Tag closable onClose={() => {setMinInvoice("");getOrders(1);}}>
-                                Invoice Start: {minInvoice}
-                            </Tag>
-                        )}
-
-                        {maxInvoice && (
-                            <Tag closable onClose={() => {setMaxInvoice(""); getOrders(1);}}>
-                                Invoice End: {maxInvoice}
-                            </Tag>
-                        )}
-
-                        {startDate && (
-                            <Tag closable onClose={() => {setStartDate(null);getOrders(1);}}>
-                                Start: {dayjs(startDate).format("YYYY-MM-DD")}
-                            </Tag>
-                        )}
-
-                        {endDate && (
-                            <Tag closable onClose={() => {setEndDate(null);getOrders(1);}}>
-                                End: {dayjs(endDate).format("YYYY-MM-DD")}
-                            </Tag>
-                        )}
-
-                        {invoiceStatus !== null && invoiceStatus !== undefined && (
-                            <Tag closable onClose={() => {setInvoiceStatus(null);getOrders(1);}}>
-                                Invoice: {invoiceStatus === 1 ? "Printed" : "Not Printed"}
-                            </Tag>
-                        )}
-
-                        {searchQuery && (
-                            <Tag closable onClose={() => {setSearchQuery("");getOrders(1);}}>
-                                Search: {searchQuery}
-                            </Tag>
-                        )}
-                    </div>
-                </div>
+                )}
 
                 <div className="orders-status-toolbar">
                     <div className="all-status-tags">
