@@ -6,7 +6,6 @@ import useTitle from '../../hooks/useTitle';
 import SummaryCards from './components/SummaryCards';
 import PerformanceTabs from './components/PerformanceTabs';
 import CampaignQuality from './components/CampaignQuality';
-import SettingCard from './components/SettingCard';
 import AccountLimit from './components/AccountLimit';
 import AccountExpense from './components/AccountExpense';
 import OrderAnalysis from './components/OrderAnalysis';
@@ -171,18 +170,6 @@ const MetaAdsReport = () => {
                             label: 'Hourly Analysis', 
                             children: (
                                 <HourlyAnalysis/>
-                            )
-                        },
-                        { 
-                            key: 'profit', 
-                            label: 'Estimated Profit', 
-                            children: <Card bordered={false}>ROI & Profit Estimation coming soon...</Card> 
-                        },
-                        { 
-                            key: 'settings', 
-                            label: 'Settings', 
-                            children: (
-                                <SettingCard/>
                             )
                         },
                     ]}

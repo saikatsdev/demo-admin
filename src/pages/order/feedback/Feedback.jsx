@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled, ShoppingCartOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, ClearOutlined, ReloadOutlined } from '@ant-design/icons'
+import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled, ShoppingCartOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, ClearOutlined, ReloadOutlined, MinusCircleOutlined } from '@ant-design/icons'
 import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Divider,Tag, Select, Radio, Drawer, Row, Col, Typography, Card, Image, Form, Timeline, Empty} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -33,6 +33,8 @@ export default function Feedback() {
     const [deliveredDate, setDeliveredDate] = useState(null);
     const [quickFilter, setQuickFilter]     = useState("all");
     const [employeeList, setEmployeeList]   = useState([]);
+    const [customerTypeList, setCustomerTypeList] = useState([]);
+    const [customerType, setCustomerType]   = useState(null);
     const [summary, setSummary]             = useState({});
     const [summaryFilter, setSummaryFilter] = useState("total_orders");
 
@@ -105,8 +107,19 @@ export default function Feedback() {
                 const name = record.customer_name || "N/A";
                 const phone = record.phone_number || "N/A";
                 const address = record.customer_address || record.order?.customer_address || "";
+                const customerType = record.customer_type || "N/A";
+                const typeColors = {
+                    regular: { bg: "#e6f4ff", color: "#1677ff" },
+                    vip: { bg: "#fff7e6", color: "#fa8c16" },
+                    premium: { bg: "#f9f0ff", color: "#722ed1" },
+                    new: { bg: "#f6ffed", color: "#52c41a" },
+                };
+                const typeColor = typeColors[String(customerType).toLowerCase()] || { bg: "#f5f5f5", color: "#595959" };
                 return (
                     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <Tag style={{ width: "fit-content", borderRadius: "8px", padding: "0 8px", margin: 0, background: typeColor.bg, color: typeColor.color, border: "none", fontWeight: 600, fontSize: "11px", textTransform: "capitalize", lineHeight: "18px" }}>
+                            {customerType}
+                        </Tag>
                         <span style={{ fontWeight: 600, color: "#262626", fontSize: "14px" }}>{name}</span>
                         <Space size="small">
                             <span style={{ fontSize: "13px", color: "#595959" }}>{phone}</span>
@@ -246,6 +259,7 @@ export default function Feedback() {
 
             if (keyword) params.search_key = keyword;
             if (assignedEmp) params.employee_id = assignedEmp;
+            if (customerType) params.customer_type_id = customerType;
             if (deliveredDate && deliveredDate[0] && deliveredDate[1]) {
                 params.from_date = deliveredDate[0].format("YYYY-MM-DD 00:00:00");
                 params.to_date = deliveredDate[1].format("YYYY-MM-DD 23:59:59");
@@ -267,6 +281,8 @@ export default function Feedback() {
                 params.status = "active";
             } else if (summaryFilter === "cancelled_orders") {
                 params.status = "cancelled";
+            } else if (summaryFilter === "auto_closed_orders") {
+                params.status = "auto_closed";
             }
 
             const res = await getDatas("/admin/feedback", params);
@@ -287,6 +303,22 @@ export default function Feedback() {
             message.error("Failed to fetch feedback orders");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchCustomerTypes = async () => {
+        try {
+            const res = await getDatas("admin/customer-types/list");
+            if (res && res.success) {
+                setCustomerTypeList(
+                    (res?.result || []).map((item) => ({
+                        label: item.name,
+                        value: item.id,
+                    }))
+                );
+            }
+        } catch (err) {
+            console.error("Failed to fetch customer types", err);
         }
     };
 
@@ -320,11 +352,12 @@ export default function Feedback() {
 
     useEffect(() => {
         fetchFeedbackOrders(1, pagination.pageSize);
-    }, [keyword, assignedEmp, deliveredDate, quickFilter, summaryFilter]);
+    }, [keyword, assignedEmp, customerType, deliveredDate, quickFilter, summaryFilter]);
 
     useEffect(() => {
         getFeedbacks();
         fetchEmployeeList();
+        fetchCustomerTypes();
     }, []);
 
     const handleTableChange = (pag) => {
@@ -427,6 +460,17 @@ export default function Feedback() {
                             options={employeeList}
                         />
 
+                        <Select
+                            placeholder="Customer Type"
+                            allowClear
+                            showSearch
+                            optionFilterProp="label"
+                            style={{ width: 180 }}
+                            value={customerType}
+                            onChange={(val) => setCustomerType(val)}
+                            options={customerTypeList}
+                        />
+
                         <DatePicker.RangePicker format="YYYY-MM-DD" value={deliveredDate} onChange={(val) => setDeliveredDate(val)}/>
                     </Space>
                     
@@ -446,6 +490,7 @@ export default function Feedback() {
                         <Button icon={<ClearOutlined />} onClick={() => {
                             setKeyword("");
                             setAssignedEmp(null);
+                            setCustomerType(null);
                             setDeliveredDate(null);
                             setQuickFilter("all");
                             setSummaryFilter("total_orders");
@@ -464,7 +509,7 @@ export default function Feedback() {
                 </Space>
             </div>
 
-            <Row gutter={16} style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
                 {[
                     { 
                         key  : "total_orders",
@@ -496,44 +541,52 @@ export default function Feedback() {
                         color: "#ff4d4f",
                         bg   : "#fff2f0"
                     },
+                    { 
+                        key  : "auto_closed_orders",
+                        label: "Auto Closed",
+                        value: summary?.auto_closed,
+                        icon : <MinusCircleOutlined />,
+                        color: "#13c2c2",
+                        bg   : "#e6fffb"
+                    },
                 ].map((item) => (
-                    <Col span={6} key={item.key}>
-                        <Card
-                            hoverable
-                            style={{
-                                borderRadius: 10,
-                                cursor: "pointer",
-                                border: summaryFilter === item.key ? `2px solid ${item.color}` : "1px solid #f0f0f0",
-                                background: summaryFilter === item.key ? item.bg : "#fff",
-                                transition: "all 0.2s",
-                            }}
-                            styles={{ body: { padding: "20px 24px" } }}
-                            onClick={() => {
-                                setSummaryFilter(item.key);
-                                if (item.key === "total_orders") setQuickFilter("all");
-                                else if (item.key === "today_orders") setQuickFilter("today");
-                                else setQuickFilter("all");
-                            }}
-                        >
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                    <span style={{ fontSize: 13, color: "#8c8c8c", fontWeight: 500 }}>{item.label}</span>
-                                    <span style={{ fontSize: 24, fontWeight: 700, color: "#262626" }}>{item.value ?? 0}</span>
-                                </div>
-                                <div style={{
-                                    width: 48, height: 48, borderRadius: 12,
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                    background: summaryFilter === item.key ? item.color : "#f5f5f5",
-                                    fontSize: 22, color: summaryFilter === item.key ? "#fff" : item.color,
-                                    transition: "all 0.2s",
-                                }}>
-                                    {item.icon}
-                                </div>
+                    <Card
+                        key={item.key}
+                        hoverable
+                        style={{
+                            flex: 1,
+                            borderRadius: 10,
+                            cursor: "pointer",
+                            border: summaryFilter === item.key ? `2px solid ${item.color}` : "1px solid #f0f0f0",
+                            background: summaryFilter === item.key ? item.bg : "#fff",
+                            transition: "all 0.2s",
+                        }}
+                        styles={{ body: { padding: "20px 24px" } }}
+                        onClick={() => {
+                            setSummaryFilter(item.key);
+                            if (item.key === "total_orders") setQuickFilter("all");
+                            else if (item.key === "today_orders") setQuickFilter("today");
+                            else setQuickFilter("all");
+                        }}
+                    >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                <span style={{ fontSize: 13, color: "#8c8c8c", fontWeight: 500 }}>{item.label}</span>
+                                <span style={{ fontSize: 24, fontWeight: 700, color: "#262626" }}>{item.value ?? 0}</span>
                             </div>
-                        </Card>
-                    </Col>
+                            <div style={{
+                                width: 48, height: 48, borderRadius: 12,
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                background: summaryFilter === item.key ? item.color : "#f5f5f5",
+                                fontSize: 22, color: summaryFilter === item.key ? "#fff" : item.color,
+                                transition: "all 0.2s",
+                            }}>
+                                {item.icon}
+                            </div>
+                        </div>
+                    </Card>
                 ))}
-            </Row>
+            </div>
 
             <Table rowKey="id" columns={columns} dataSource={feedbackOrders} loading={loading}
                 pagination={{ 

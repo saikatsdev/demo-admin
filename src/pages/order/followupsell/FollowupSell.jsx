@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined, CloseCircleOutlined, FlagOutlined} from '@ant-design/icons';
-import {Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,DatePicker, Tooltip, Tag, Select, Row, Col, Card, Avatar, Typography, Spin, Badge} from "antd";
+import {Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,DatePicker, Tooltip, Tag, Select, Card, Avatar, Typography, Spin, Badge} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -76,6 +76,10 @@ const normalizeFollowupSummary = (raw) => {
     };
     return {
         all_followups: num("all_followups"),
+        active_followups: num("active_followups"),
+        auto_closed_followups: num("auto_closed_followups"),
+        converted_followups: num("converted_followups"),
+        cancelled_followups: num("cancelled_followups"),
         today_followups: num("today_followups"),
         overdue_followups: num("overdue_followups"),
         step_1: num("step_1", "step1"),
@@ -148,6 +152,8 @@ export default function FollowupSell() {
     const [filterAssign, setFilterAssign]     = useState("assigned");
     const [dateRange, setDateRange]         = useState(null);
     const [summaryKey, setSummaryKey]       = useState("all");
+    const [customerType, setCustomerType]   = useState(null);
+    const [customerTypeList, setCustomerTypeList] = useState([]);
 
     // assign selection (Non Assign mode)
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -192,6 +198,14 @@ export default function FollowupSell() {
                 const phone = record.phone_number  || record.order?.phone_number  || "N/A";
                 const inv       = record.order?.invoice_number || "—";
                 const delivered = record.order?.delivered_at;
+                const customerType = record.customer_type || "N/A";
+                const typeColors = {
+                    regular: { bg: "#e6f4ff", color: "#1677ff" },
+                    vip: { bg: "#fff7e6", color: "#fa8c16" },
+                    premium: { bg: "#f9f0ff", color: "#722ed1" },
+                    new: { bg: "#f6ffed", color: "#52c41a" },
+                };
+                const typeColor = typeColors[String(customerType).toLowerCase()] || { bg: "#f5f5f5", color: "#595959" };
 
                 return (
                     <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
@@ -201,6 +215,9 @@ export default function FollowupSell() {
                             style={{ background: "#e6f4ff", color: "#1677ff", flexShrink: 0, marginTop: 2 }}
                         />
                         <div style={{ minWidth: 0, flex: 1 }}>
+                            <Tag style={{ width: "fit-content", borderRadius: "8px", padding: "0 8px", margin: 0, background: typeColor.bg, color: typeColor.color, border: "none", fontWeight: 600, fontSize: "11px", textTransform: "capitalize", lineHeight: "18px" }}>
+                            {customerType}
+                            </Tag>
                             <div style={{ fontWeight: 600, fontSize: 13, color: "#262626" }}>{name}</div>
                             <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
                                 <span style={{ fontSize: 12, color: "#595959" }}>{phone}</span>
@@ -635,9 +652,10 @@ export default function FollowupSell() {
         setLoading(true);
         try {
             const params = { page, paginate_size: pageSize };
-            if (search)         params.search_key = search;
-            if (filterStep)     params.step       = filterStep;
-            if (filterStatus) params.status = filterStatus;
+            if (search)         params.search_key             = search;
+            if (filterStep)     params.step                   = filterStep;
+            if (filterStatus) params.status                   = filterStatus;
+            if (customerType) params.customer_type_id         = customerType;
             if (filterAssign === "assigned") params.is_assign = 1;
             else if (filterAssign === "unassigned") params.is_assign = 0;
 
@@ -676,6 +694,14 @@ export default function FollowupSell() {
                 } else if (summaryKey === "step5") {
                     params.step = 5;
                     params.status       = filterStatus || "active";
+                } else if (summaryKey === "active") {
+                    params.status = "active";
+                } else if (summaryKey === "auto_closed") {
+                    params.status = "auto_closed";
+                } else if (summaryKey === "converted") {
+                    params.status = "converted";
+                } else if (summaryKey === "cancelled") {
+                    params.status = "cancelled";
                 }
             }
 
@@ -701,7 +727,7 @@ export default function FollowupSell() {
         } finally {
             setLoading(false);
         }
-    }, [dateRange, filterAssign, filterPriority, filterStatus, filterStep, search, summaryKey]);
+    }, [dateRange, filterAssign, filterPriority, filterStatus, filterStep, search, summaryKey, customerType]);
 
     useEffect(() => { 
         setSelectedRowKeys([]);
@@ -726,6 +752,26 @@ export default function FollowupSell() {
             setEmployeeLoading(false);
         }
     };
+
+    const fetchCustomerTypes = async () => {
+        try {
+            const res = await getDatas("/admin/customer-types/list");
+            if (res && res.success) {
+                setCustomerTypeList(
+                    (res?.result || []).map((item) => ({
+                        label: item.name,
+                        value: item.id,
+                    }))
+                );
+            }
+        } catch (err) {
+            console.error("Failed to fetch customer types", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchCustomerTypes();
+    }, []);
 
     const handleAssignOpen = () => {
         if (selectedRowKeys.length === 0) {
@@ -827,6 +873,34 @@ export default function FollowupSell() {
             icon: <ExclamationCircleOutlined />, 
             color: "#ff4d4f", bg: "#fff2f0" 
         },
+        { 
+            key: "active",   
+            label: "Active",          
+            value: summary.active_followups,  
+            icon: <CheckCircleOutlined />,     
+            color: "#52c41a", bg: "#f6ffed" 
+        },
+        { 
+            key: "auto_closed", 
+            label: "Auto Closed",         
+            value: summary.auto_closed_followups,
+            icon: <ClockCircleOutlined />, 
+            color: "#13c2c2", bg: "#e6fffb" 
+        },
+        { 
+            key: "converted", 
+            label: "Converted",         
+            value: summary.converted_followups,
+            icon: <SwapOutlined />, 
+            color: "#722ed1", bg: "#f9f0ff" 
+        },
+        { 
+            key: "cancelled", 
+            label: "Cancelled",         
+            value: summary.cancelled_followups,
+            icon: <CloseCircleOutlined />, 
+            color: "#fa8c16", bg: "#fff7e6" 
+        },
     ];
 
     const stepSummaryCards = [
@@ -867,8 +941,6 @@ export default function FollowupSell() {
         },
     ];
 
-    const allSummaryCards = [...overviewSummaryCards, ...stepSummaryCards];
-
     const renderSummaryCard = (c) => (
         <Card
             hoverable
@@ -883,9 +955,9 @@ export default function FollowupSell() {
                 height: "100%",
             }}
         >
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                    <div style={{ fontSize: 11, color: "#8c8c8c", fontWeight: 500 }}>{c.label}</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: "#8c8c8c", fontWeight: 500, whiteSpace: "normal", wordBreak: "break-word" }}>{c.label}</div>
                     <div style={{ fontSize: 22, fontWeight: 700, color: "#262626", marginTop: 2 }}>{c.value ?? 0}</div>
                 </div>
                 <div style={{
@@ -898,6 +970,52 @@ export default function FollowupSell() {
                 </div>
             </div>
         </Card>
+    );
+
+    const renderStepCard = (c, index, total) => (
+        <div
+            key={c.key}
+            onClick={() => setSummaryKey(c.key)}
+            style={{ display: "flex", alignItems: "center", flex: 1, minWidth: 0, cursor: "pointer" }}
+        >
+            <Card
+                hoverable
+                styles={{ body: { padding: "12px 14px" } }}
+                style={{
+                    borderRadius: 10,
+                    width: "100%",
+                    transition: "all 0.2s",
+                    border: summaryKey === c.key ? `2px solid ${c.color}` : "1px solid #f0f0f0",
+                    background: summaryKey === c.key ? c.bg : "#fff",
+                }}
+            >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{
+                        width: 34, height: 34, borderRadius: "50%", flexShrink: 0,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 14, fontWeight: 700,
+                        background: summaryKey === c.key ? c.color : "#fff",
+                        color: c.color,
+                        border: `2px solid ${c.color}`,
+                    }}>
+                        {index + 1}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 10, color: "#8c8c8c", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            Step {index + 1}
+                        </div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: "#262626", lineHeight: 1.2 }}>{c.value ?? 0}</div>
+                    </div>
+                </div>
+            </Card>
+            {index < total - 1 && (
+                <div style={{
+                    width: 18, flexShrink: 0, height: 2, margin: "0 6px",
+                    background: summaryKey === c.key ? c.color : "#d9d9d9",
+                    borderRadius: 2,
+                }} />
+            )}
+        </div>
     );
 
     const assignOrder = () => {
@@ -924,13 +1042,17 @@ export default function FollowupSell() {
                 </div>
             </div>
 
-            <Row gutter={[12, 12]} style={{ marginBottom: 16 }}>
-                {allSummaryCards.map((c) => (
-                    <Col key={c.key} xs={24} sm={12} md={8} lg={6} xl={3}>
+            <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                {overviewSummaryCards.map((c) => (
+                    <div key={c.key} style={{ flex: 1, minWidth: 0 }}>
                         {renderSummaryCard(c)}
-                    </Col>
+                    </div>
                 ))}
-            </Row>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                {stepSummaryCards.map((c, i) => renderStepCard(c, i, stepSummaryCards.length))}
+            </div>
 
             <div style={{ padding: "14px 16px", background: "#fff", borderRadius: 8, marginBottom: 16, border: "1px solid #f0f0f0", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
                 <Space wrap size="middle" style={{ width: "100%", justifyContent: "space-between" }}>
@@ -970,6 +1092,7 @@ export default function FollowupSell() {
                         <Select placeholder="Priority" allowClear style={{ width: 120 }} value={filterPriority} onChange={setFilterPriority}
                             options={[{ value: "overdue", label: "🔴 Overdue" }, { value: "today", label: "🟠 Today" }, { value: "upcoming", label: "🔵 Upcoming" }]}
                         />
+                        <Select placeholder="Customer Type" allowClear showSearch optionFilterProp="label" style={{ width: 160 }} value={customerType} onChange={setCustomerType} options={customerTypeList} />
                         {isAdminOrSuperAdmin && (
                             <Select
                                 placeholder="Assign"
