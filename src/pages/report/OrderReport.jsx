@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Tag, Typography, Divider, Row, Col, Card, Progress } from "antd";
-import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, SearchOutlined, ShoppingOutlined, PrinterOutlined, ArrowLeftOutlined, CalendarOutlined, ShoppingCartOutlined, UserOutlined, GlobalOutlined, DollarOutlined, BarChartOutlined, LineChartOutlined, RocketOutlined } from "@ant-design/icons";
+import { 
+    Table, Input, Select, Button, DatePicker, Space, Tag, Typography, 
+    Divider, Row, Col, Card, Progress, Tooltip, Badge, Tabs 
+} from "antd";
+import { 
+    FilePdfOutlined, FileExcelOutlined, ReloadOutlined, SearchOutlined, 
+    ShoppingOutlined, PrinterOutlined, ArrowLeftOutlined, CalendarOutlined, 
+    ShoppingCartOutlined, UserOutlined, GlobalOutlined, DollarOutlined, 
+    BarChartOutlined, LineChartOutlined, RocketOutlined, TagOutlined,
+    CheckCircleOutlined, InfoCircleOutlined, WalletOutlined, FilterOutlined,
+    CloseCircleOutlined, SyncOutlined, PieChartOutlined, AppstoreOutlined
+} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import { useSelector } from "react-redux";
 import dayjs from "dayjs";
@@ -9,55 +19,74 @@ import autoTable from "jspdf-autotable";
 import useTitle from "../../hooks/useTitle";
 import "./report.css";
 
-const { Option }   = Select;
+const { Option } = Select;
 const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
 
 export default function OrderReport() {
     // Hook
-    useTitle("Global Order Intelligence");
+    useTitle("Global Order Intelligence Report");
 
-    // States
-    const orderFromList                         = useSelector((state) => state.orderFrom.list);
+    // Redux & State
+    const orderFromList                         = useSelector((state) => state.orderFrom?.list || []);
     const [orders, setOrders]                   = useState([]);
     const [summary, setSummary]                 = useState(null);
+    const [statusBreakdown, setStatusBreakdown] = useState([]);
+    const [orderFromBreakdown, setOrderFromBreakdown] = useState([]);
+    const [paymentBreakdown, setPaymentBreakdown]     = useState([]);
+
     const [loading, setLoading]                 = useState(false);
     const [dateFilter, setDateFilter]           = useState("all");
     const [localSearch, setLocalSearch]         = useState("");
     const [orderFromId, setOrderFromId]         = useState(null);
+    const [statusId, setStatusId]               = useState(null);
+    const [paidStatusFilter, setPaidStatusFilter] = useState(null);
     const [dateRange, setDateRange]             = useState([null, null]);
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-    const [pagination, setPagination]           = useState({current: 1, pageSize: 25, total: 0});
+    const [pagination, setPagination]           = useState({ current: 1, pageSize: 25, total: 0 });
+    const [breakdownView, setBreakdownView]     = useState("status");
 
     const fetchOrders = async () => {
         setLoading(true);
         let params = {
-            page         : pagination.current,
-            paginate_size: pagination.pageSize,
-            search       : localSearch,
-            order_from_id: orderFromId,
+            page             : pagination.current,
+            paginate_size    : pagination.pageSize,
+            search           : localSearch,
+            order_from_id    : orderFromId,
+            current_status_id: statusId,
+            paid_status      : paidStatusFilter,
         };
 
         if (dateFilter !== "all" && dateFilter !== "custom") {
             params.filter = dateFilter;
         } else if (dateFilter === "custom" && dateRange?.[0] && dateRange?.[1]) {
             params.from_date = dateRange[0].format("YYYY-MM-DD");
-            params.to_date   = dateRange[1].format("YYYY-MM-DD");
+            params.to_date = dateRange[1].format("YYYY-MM-DD");
         }
 
         try {
-            const query = new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([_, v]) => v != null && v !== ""))).toString();
+            const query = new URLSearchParams(
+                Object.fromEntries(Object.entries(params).filter(([_, v]) => v != null && v !== ""))
+            ).toString();
             const res = await getDatas(`/admin/order/reports?${query}`);
 
-            if (res?.success) {
-                setOrders(res?.result?.orders?.data || []);
-                setSummary(res?.result?.summary || null);
+            if (res?.success && res?.result) {
+                const resData = res.result;
+                setOrders(resData?.orders?.data || []);
+                setSummary(resData?.summary || null);
+                setStatusBreakdown(resData?.status_breakdown || []);
+                setOrderFromBreakdown(resData?.order_from_breakdown || []);
+                setPaymentBreakdown(resData?.payment_breakdown || []);
+
                 setPagination((prev) => ({
                     ...prev,
-                    total: res?.result?.orders?.total || 0,
-                    current: res?.result?.orders?.current_page || 1
+                    total: resData?.orders?.total || 0,
+                    current: resData?.orders?.current_page || 1,
+                    pageSize: resData?.orders?.per_page || prev.pageSize
                 }));
             }
+        } catch (err) {
+            console.error("Failed to fetch order report:", err);
         } finally {
             setLoading(false);
         }
@@ -65,7 +94,7 @@ export default function OrderReport() {
 
     useEffect(() => {
         fetchOrders();
-    }, [dateFilter, dateRange, pagination.current, pagination.pageSize, orderFromId]);
+    }, [dateFilter, dateRange, pagination.current, pagination.pageSize, orderFromId, statusId, paidStatusFilter]);
 
     const handleSearch = () => {
         setPagination(prev => ({ ...prev, current: 1 }));
@@ -76,6 +105,8 @@ export default function OrderReport() {
         setDateFilter("all");
         setLocalSearch("");
         setOrderFromId(null);
+        setStatusId(null);
+        setPaidStatusFilter(null);
         setDateRange([null, null]);
         setSelectedRowKeys([]);
         setPagination(prev => ({ ...prev, current: 1 }));
@@ -86,9 +117,11 @@ export default function OrderReport() {
             if (!localSearch) return true;
             const term = localSearch.toLowerCase();
             return (
-                order.invoice_number?.toLowerCase().includes(term) || 
+                order.invoice_number?.toLowerCase().includes(term) ||
                 order.customer_name?.toLowerCase().includes(term) ||
-                order.phone_number?.toLowerCase().includes(term)
+                order.phone_number?.toLowerCase().includes(term) ||
+                order.courier?.name?.toLowerCase().includes(term) ||
+                order.district?.name?.toLowerCase().includes(term)
             );
         });
     };
@@ -106,161 +139,207 @@ export default function OrderReport() {
             title: "#",
             key: "sl",
             render: (_, __, index) => (
-                <span style={{ fontWeight: 600, color: '#94a3b8' }}>
+                <span className="sl-badge">
                     {(pagination.current - 1) * pagination.pageSize + index + 1}
                 </span>
             ),
-            width: 60,
-            align: 'center'
+            width: 55,
+            align: 'center',
+            fixed: 'left'
         },
         {
             title: "Identity & Channel",
             key: "identity",
+            fixed: 'left',
             render: (_, record) => (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <Text strong style={{ color: '#1e293b' }}>{record.invoice_number}</Text>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                        <Tag style={{ fontSize: 10, margin: 0, borderRadius: 4, background: record.order_from?.color, color: '#fff', border: 'none' }}>
-                            {record.order_from?.name}
-                        </Tag>
-                        <Text type="secondary" style={{ fontSize: 10 }}>{dayjs(record.created_at).format('DD MMM, YYYY')}</Text>
+                <div className="cell-identity">
+                    <Text strong className="invoice-title">{record.invoice_number}</Text>
+                    <div className="channel-meta">
+                        {record.order_from?.name && (
+                            <Tag 
+                                className="channel-tag"
+                                style={{ 
+                                    background: record.order_from?.color || '#1E50A2',
+                                }}
+                            >
+                                {record.order_from?.name}
+                            </Tag>
+                        )}
+                        <Text type="secondary" className="date-text">
+                            {dayjs(record.created_at).format('DD MMM YY, hh:mm A')}
+                        </Text>
                     </div>
                 </div>
             ),
-            width: 200
+            width: 195
         },
         {
             title: "Customer Profile",
             key: "customer",
             render: (_, record) => (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <UserOutlined style={{ color: '#64748b' }} />
+                <div className="cell-customer">
+                    <div className="avatar-circle">
+                        <UserOutlined style={{ color: '#475569', fontSize: 13 }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                        <Text strong style={{ fontSize: 13 }} ellipsis>{record.customer_name}</Text>
-                        <Text type="secondary" style={{ fontSize: 11 }}>{record.phone_number}</Text>
+                    <div className="customer-info">
+                        <Text strong className="customer-name" ellipsis={{ tooltip: record.customer_name }}>
+                            {record.customer_name || "N/A"}
+                        </Text>
+                        <Text type="secondary" className="customer-phone">{record.phone_number || "N/A"}</Text>
                     </div>
-                </div>
-            ),
-            width: 210
-        },
-        {
-            title: "Logistics",
-            key: "logistics",
-            render: (_, record) => (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <RocketOutlined style={{ color: '#94a3b8', fontSize: 12 }} />
-                        <Text style={{ fontSize: 12 }}>{record.courier?.name || "Unassigned"}</Text>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <GlobalOutlined style={{ color: '#94a3b8', fontSize: 12 }} />
-                        <Text style={{ fontSize: 11 }} type="secondary">{record.district?.name || "N/A"}</Text>
-                    </div>
-                </div>
-            ),
-            width: 160
-        },
-        {
-            title: "Financials",
-            key: "financials",
-            align: 'right',
-            render: (_, record) => (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <div style={{ background: '#f0fdf4', padding: '2px 8px', borderRadius: 4, border: '1px solid #dcfce7', marginBottom: 4 }}>
-                        <Text strong style={{ color: '#166534', fontSize: 13 }}>৳{Number(record.payable_price).toLocaleString()}</Text>
-                    </div>
-                    <Text type="secondary" style={{ fontSize: 10 }}>Qty: {record.total_quantity} | Net: ৳{Number(record.net_order_price).toLocaleString()}</Text>
                 </div>
             ),
             width: 180
         },
         {
+            title: "Logistics",
+            key: "logistics",
+            render: (_, record) => (
+                <div className="cell-logistics">
+                    <div className="logistics-row">
+                        <RocketOutlined className="logistics-icon" />
+                        <Text className="courier-name">{record.courier?.name || "Unassigned"}</Text>
+                    </div>
+                    <div className="logistics-row">
+                        <GlobalOutlined className="logistics-icon" />
+                        <Text type="secondary" className="district-name">{record.district?.name || "N/A"}</Text>
+                    </div>
+                </div>
+            ),
+            width: 150
+        },
+        {
+            title: "Pricing Breakdown",
+            key: "pricing_breakdown",
+            render: (_, record) => (
+                <div className="pricing-grid">
+                    <div className="price-item">
+                        <span className="price-label">MRP:</span>
+                        <span className="price-val">৳{Number(record.mrp || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="price-item">
+                        <span className="price-label">Discount:</span>
+                        <span className="price-val text-red">-৳{Number(record.discount || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="price-item">
+                        <span className="price-label">Delivery:</span>
+                        <span className="price-val">+৳{Number(record.delivery_charge || 0).toLocaleString()}</span>
+                    </div>
+                    {Number(record.advance_payment || 0) > 0 && (
+                        <div className="price-item">
+                            <span className="price-label">Advance:</span>
+                            <span className="price-val text-green">৳{Number(record.advance_payment).toLocaleString()}</span>
+                        </div>
+                    )}
+                </div>
+            ),
+            width: 185
+        },
+        {
+            title: "Financial Summary",
+            key: "financials",
+            align: 'right',
+            render: (_, record) => (
+                <div className="cell-financials">
+                    <div className="payable-pill">
+                        <Text strong className="payable-amount">
+                            ৳{Number(record.payable_price || 0).toLocaleString()}
+                        </Text>
+                    </div>
+                    <div className="net-meta">
+                        <span className="qty-tag">Qty: {record.total_quantity || 1}</span>
+                        <span className="net-price">Net: ৳{Number(record.net_order_price || 0).toLocaleString()}</span>
+                    </div>
+                </div>
+            ),
+            width: 170
+        },
+        {
+            title: "Process Flags",
+            key: "flags",
+            align: 'center',
+            render: (_, record) => {
+                const hasFlags = record.is_duplicate || record.is_follow_order || record.is_down_sell;
+                if (!hasFlags) {
+                    return <Tag className="flag-tag standard">Standard</Tag>;
+                }
+                return (
+                    <div className="flags-wrapper">
+                        {Boolean(record.is_duplicate) && <Tag color="error" className="flag-tag">Duplicate</Tag>}
+                        {Boolean(record.is_follow_order) && <Tag color="processing" className="flag-tag">Follow-up</Tag>}
+                        {Boolean(record.is_down_sell) && <Tag color="warning" className="flag-tag">Downsell</Tag>}
+                    </div>
+                );
+            },
+            width: 140
+        },
+        {
             title: "Status",
             key: "status",
             align: 'center',
+            fixed: 'right',
             render: (_, record) => (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <div className="cell-status">
                     <Tag 
+                        className="status-pill"
                         style={{ 
-                            margin: 0, 
-                            borderRadius: 12, 
-                            padding: '2px 12px',
-                            background: record.current_status?.bg_color,
-                            color: record.current_status?.text_color,
-                            border: 'none',
-                            fontWeight: 600,
-                            fontSize: 11
+                            background: record.current_status?.bg_color || '#e2e8f0',
+                            color: record.current_status?.text_color || '#334155'
                         }}
                     >
-                        {record.current_status?.name}
+                        {record.current_status?.name || 'N/A'}
                     </Tag>
-                    <Tag color={record.paid_status === 'paid' ? 'success' : 'error'} size="small" style={{ fontSize: 9, borderRadius: 4, margin: 0 }}>
-                        {record.paid_status?.toUpperCase()}
+                    <Tag 
+                        color={record.paid_status === 'paid' ? 'success' : 'error'} 
+                        className="payment-tag"
+                    >
+                        {record.paid_status ? record.paid_status.toUpperCase() : 'UNPAID'}
                     </Tag>
                 </div>
             ),
-            width: 140
+            width: 135
         }
     ];
 
     const expandedRowRender = (record) => (
-        <div style={{ padding: '20px 30px', background: '#f8fafc', borderRadius: 12 }}>
-            <Title level={5} style={{ margin: '0 0 20px 0', fontSize: 14, color: '#64748b' }}>Technical Order Breakdown: {record.invoice_number}</Title>
-            <Row gutter={[24, 24]}>
-                <Col span={8}>
-                    <Card size="small" title="Pricing Structure" variant="borderless">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">MRP Value</Text>
-                                <Text strong>৳{Number(record.mrp).toLocaleString()}</Text>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Standard Discount</Text>
-                                <Text strong style={{ color: '#ef4444' }}>৳{Number(record.discount).toLocaleString()}</Text>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Delivery Cost</Text>
-                                <Text strong>৳{Number(record.delivery_charge).toLocaleString()}</Text>
-                            </div>
-                        </div>
+        <div className="order-expanded-details">
+            <div className="expanded-header">
+                <Text strong style={{ fontSize: 13, color: '#0f172a' }}>
+                    Detailed Metrics: {record.invoice_number}
+                </Text>
+                <Tag color={record.paid_status === 'paid' ? 'green' : 'red'}>
+                    {record.paid_status?.toUpperCase()}
+                </Tag>
+            </div>
+            <Row gutter={[16, 16]}>
+                <Col xs={24} sm={8}>
+                    <Card size="small" title="Financials & Pricing" className="expanded-card">
+                        <div className="detail-row"><span>MRP:</span><strong>৳{Number(record.mrp || 0).toLocaleString()}</strong></div>
+                        <div className="detail-row"><span>Discount:</span><strong className="text-red">-৳{Number(record.discount || 0).toLocaleString()}</strong></div>
+                        <div className="detail-row"><span>Sell Price:</span><strong>৳{Number(record.sell_price || 0).toLocaleString()}</strong></div>
+                        <div className="detail-row"><span>Delivery Charge:</span><strong>+৳{Number(record.delivery_charge || 0).toLocaleString()}</strong></div>
+                        <div className="detail-row"><span>Advance Payment:</span><strong className="text-green">৳{Number(record.advance_payment || 0).toLocaleString()}</strong></div>
+                        <Divider style={{ margin: '8px 0' }} />
+                        <div className="detail-row final"><span>Total Payable:</span><strong className="text-primary">৳{Number(record.payable_price || 0).toLocaleString()}</strong></div>
                     </Card>
                 </Col>
-                <Col span={8}>
-                    <Card size="small" title="Process Flags" variant="borderless">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Is Duplicate?</Text>
-                                <Tag color={record.is_duplicate ? 'red' : 'green'}>{record.is_duplicate ? 'Yes' : 'No'}</Tag>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Follow-up Order</Text>
-                                <Tag color={record.is_follow_order ? 'blue' : 'default'}>{record.is_follow_order ? 'Yes' : 'No'}</Tag>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Downsell Flag</Text>
-                                <Tag color={record.is_down_sell ? 'orange' : 'default'}>{record.is_down_sell ? 'Yes' : 'No'}</Tag>
-                            </div>
-                        </div>
+                <Col xs={24} sm={8}>
+                    <Card size="small" title="Logistics & Customer" className="expanded-card">
+                        <div className="detail-row"><span>Customer Name:</span><strong>{record.customer_name || 'N/A'}</strong></div>
+                        <div className="detail-row"><span>Phone Number:</span><strong>{record.phone_number || 'N/A'}</strong></div>
+                        <div className="detail-row"><span>District:</span><strong>{record.district?.name || 'N/A'}</strong></div>
+                        <div className="detail-row"><span>Courier Partner:</span><strong>{record.courier?.name || 'Unassigned'}</strong></div>
+                        <div className="detail-row"><span>Channel Source:</span><strong>{record.order_from?.name || 'Website'}</strong></div>
                     </Card>
                 </Col>
-                <Col span={8}>
-                    <Card size="small" title="Audit Information" variant="borderless">
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Total Quantity</Text>
-                                <Text strong>{record.total_quantity} Units</Text>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Advance Paid</Text>
-                                <Text strong style={{ color: '#10b981' }}>৳{Number(record.advance_payment).toLocaleString()}</Text>
-                            </div>
-                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                <Text type="secondary">Timestamp</Text>
-                                <Text strong>{dayjs(record.created_at).format('DD MMM YY, hh:mm A')}</Text>
-                            </div>
-                        </div>
+                <Col xs={24} sm={8}>
+                    <Card size="small" title="Order Metrics & Flags" className="expanded-card">
+                        <div className="detail-row"><span>Total Items / Qty:</span><strong>{record.total_quantity || 1} Pcs</strong></div>
+                        <div className="detail-row"><span>Net Order Price:</span><strong>৳{Number(record.net_order_price || 0).toLocaleString()}</strong></div>
+                        <div className="detail-row"><span>Duplicate Flag:</span><strong>{record.is_duplicate ? "Yes" : "No"}</strong></div>
+                        <div className="detail-row"><span>Follow-up Flag:</span><strong>{record.is_follow_order ? "Yes" : "No"}</strong></div>
+                        <div className="detail-row"><span>Downsell Flag:</span><strong>{record.is_down_sell ? "Yes" : "No"}</strong></div>
+                        <div className="detail-row"><span>Order Date:</span><strong>{dayjs(record.created_at).format('DD MMM YYYY, hh:mm A')}</strong></div>
                     </Card>
                 </Col>
             </Row>
@@ -273,16 +352,29 @@ export default function OrderReport() {
 
     const downloadCSV = () => {
         const dataToExport = getExportData();
-        const headers = ["SL", "Customer", "Invoice", "Quantity", "Total Price", "Date", "Status", "Source"];
+        const headers = ["SL", "Invoice Number", "Customer Name", "Phone", "Channel", "Courier", "District", "MRP", "Discount", "Sell Price", "Delivery Charge", "Advance Payment", "Payable Price", "Net Order Price", "Total Quantity", "Duplicate", "Followup", "Downsell", "Status", "Paid Status", "Created At"];
         const rows = dataToExport.map((item, index) => [
             index + 1,
-            item.customer_name,
-            item.invoice_number,
-            item.total_quantity,
-            item.payable_price,
-            dayjs(item.created_at).format("YYYY-MM-DD HH:mm"),
-            item.current_status?.name || 'N/A',
-            item.order_from?.name || 'N/A'
+            `"${item.invoice_number || ''}"`,
+            `"${item.customer_name || ''}"`,
+            `"${item.phone_number || ''}"`,
+            `"${item.order_from?.name || ''}"`,
+            `"${item.courier?.name || 'Unassigned'}"`,
+            `"${item.district?.name || 'N/A'}"`,
+            item.mrp || 0,
+            item.discount || 0,
+            item.sell_price || 0,
+            item.delivery_charge || 0,
+            item.advance_payment || 0,
+            item.payable_price || 0,
+            item.net_order_price || 0,
+            item.total_quantity || 1,
+            item.is_duplicate ? "Yes" : "No",
+            item.is_follow_order ? "Yes" : "No",
+            item.is_down_sell ? "Yes" : "No",
+            `"${item.current_status?.name || ''}"`,
+            `"${item.paid_status || 'unpaid'}"`,
+            `"${dayjs(item.created_at).format("YYYY-MM-DD HH:mm:ss")}"`
         ]);
 
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
@@ -296,29 +388,38 @@ export default function OrderReport() {
     const downloadPDF = () => {
         const dataToExport = getExportData();
         const doc = new jsPDF("landscape");
-        doc.setFontSize(18);
-        doc.text("Global Order Intelligence Report", 14, 22);
-        doc.setFontSize(11);
-        doc.text(`Generated on: ${dayjs().format("YYYY-MM-DD HH:mm")}`, 14, 30);
         
-        const tableColumn = ["#", "Customer", "Invoice", "Qty", "Amount", "Date", "Status"];
+        doc.setFontSize(16);
+        doc.text("Global Order Intelligence Report", 14, 18);
+        doc.setFontSize(9);
+        doc.text(`Generated on: ${dayjs().format("YYYY-MM-DD HH:mm:ss")} | Total Items: ${dataToExport.length}`, 14, 25);
+        
+        if (summary) {
+            doc.text(`Total Volume: ${summary.total_orders} Orders | Total Payable: ৳${Number(summary.total_payable_price || 0).toLocaleString()} | Success Rate: ${summary.success_rate}%`, 14, 31);
+        }
+
+        const tableColumn = ["#", "Invoice", "Customer", "Phone", "Logistics", "MRP", "Discount", "Advance", "Payable", "Status", "Paid"];
         const tableRows = dataToExport.map((item, index) => [
             index + 1,
-            item.customer_name,
             item.invoice_number,
-            item.total_quantity,
-            `৳${Number(item.payable_price).toLocaleString()}`,
-            dayjs(item.created_at).format("DD MMM YY"),
-            item.current_status?.name || 'N/A'
+            item.customer_name || 'N/A',
+            item.phone_number || 'N/A',
+            `${item.courier?.name || 'Unassigned'} (${item.district?.name || 'N/A'})`,
+            `৳${Number(item.mrp || 0).toLocaleString()}`,
+            `৳${Number(item.discount || 0).toLocaleString()}`,
+            `৳${Number(item.advance_payment || 0).toLocaleString()}`,
+            `৳${Number(item.payable_price || 0).toLocaleString()}`,
+            item.current_status?.name || 'N/A',
+            (item.paid_status || 'unpaid').toUpperCase()
         ]);
 
         autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
-            startY: 40,
+            startY: summary ? 36 : 30,
             theme: 'grid',
-            headStyles: { fillColor: [28, 85, 139], textColor: 255 },
-            styles: { fontSize: 8 }
+            headStyles: { fillColor: [15, 23, 42], textColor: 255, fontWeight: 'bold' },
+            styles: { fontSize: 8, cellPadding: 2.5 }
         });
 
         doc.save(`Orders_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
@@ -326,90 +427,284 @@ export default function OrderReport() {
 
     return (
         <div className="reportWrapper">
-            <div className="topBar no-print">
-                <Title level={4} style={{ margin: 0 }}>Global Order Intelligence</Title>
-                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+            {/* Top Navigation & Title Bar */}
+            <div className="topBar no-print flex-between">
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Title level={4} style={{ margin: 0, color: '#0f172a', fontWeight: 700 }}>
+                            Global Order Intelligence Report
+                        </Title>
+                        {summary && (
+                            <Badge 
+                                count={`${summary.total_orders?.toLocaleString()} Orders`} 
+                                style={{ backgroundColor: '#10b981' }} 
+                            />
+                        )}
+                    </div>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                        Comprehensive revenue analytics, channel distribution, and execution telemetry
+                    </Text>
+                </div>
+                <Space>
+                    <Button icon={<ReloadOutlined />} onClick={fetchOrders} loading={loading}>
+                        Refresh Data
+                    </Button>
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} className="back-btn">
+                        Back
+                    </Button>
+                </Space>
             </div>
 
-            <Divider className="no-print" style={{ margin: '12px 0' }} />
+            <Divider className="no-print" style={{ margin: '14px 0' }} />
 
+            {/* KPI Executive Summary Cards */}
             {summary && (
-                <div className="no-print" style={{ marginBottom: 24 }}>
-                    <Row gutter={[16, 16]}>
+                <div className="no-print" style={{ marginBottom: 16 }}>
+                    <Row gutter={[12, 12]}>
                         <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card main-stats">
-                                <Space direction="vertical" size={0}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Gross Pipeline</Text>
-                                    <Title level={3} style={{ margin: 0 }}>{summary.total_orders?.toLocaleString()}</Title>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>orders from {summary.unique_customers} unique clients</Text>
-                                </Space>
-                                <ShoppingCartOutlined className="summary-icon" style={{ color: '#3b82f6' }} />
-                                <div className="card-indicator info"></div>
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card">
-                                <Space direction="vertical" size={0}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>In-Flight Volume</Text>
-                                    <Title level={3} style={{ margin: 0 }}>{summary.processing_count?.toLocaleString()}</Title>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>parcels currently processing</Text>
-                                </Space>
-                                <BarChartOutlined className="summary-icon" style={{ color: '#10b981' }} />
-                                <div className="card-indicator success"></div>
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card">
-                                <Space direction="vertical" size={4} style={{ width: '100%' }}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Conversion Health</Text>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <Title level={3} style={{ margin: 0 }}>{summary.success_rate}%</Title>
-                                        <Progress type="circle" percent={summary.success_rate} size={30} strokeWidth={15} showInfo={false} strokeColor="#8b5cf6" />
+                            <div className="mini-summary-card blue">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon blue">
+                                        <DollarOutlined />
                                     </div>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>Global success benchmark</Text>
-                                </Space>
-                                <LineChartOutlined className="summary-icon" style={{ color: '#8b5cf6' }} />
-                                <div className="card-indicator secondary"></div>
-                            </Card>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Total Payable Value</span>
+                                        <div className="mini-card-val">
+                                            ৳{Number(summary.total_payable_price || 0).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill">MRP ৳{Number(summary.total_mrp || 0).toLocaleString()}</span>
+                                    <span className="footer-pill red">Disc -৳{Number(summary.total_discount || 0).toLocaleString()}</span>
+                                </div>
+                            </div>
                         </Col>
+
                         <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card">
-                                <Space direction="vertical" size={0}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Avg. Intelligence</Text>
-                                    <Title level={3} style={{ margin: 0 }}>৳{Number(summary.average_order_value || 0).toLocaleString()}</Title>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>mean value per order</Text>
-                                </Space>
-                                <DollarOutlined className="summary-icon" style={{ color: '#f59e0b' }} />
-                                <div className="card-indicator warning"></div>
-                            </Card>
+                            <div className="mini-summary-card green">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon green">
+                                        <ShoppingCartOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span className="mini-card-label">Total Orders</span>
+                                            <span className="mini-badge-pill">{summary.processing_count} Proc.</span>
+                                        </div>
+                                        <div className="mini-card-val">
+                                            {summary.total_orders?.toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill green">{summary.success_rate}% Del. ({summary.delivered_count})</span>
+                                    <span className="footer-pill">Canc {summary.canceled_count}</span>
+                                    <span className="footer-pill">Ret {summary.returned_count}</span>
+                                </div>
+                            </div>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={6}>
+                            <div className="mini-summary-card purple">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon purple">
+                                        <TagOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Units Sold & AOV</span>
+                                        <div className="mini-card-val">
+                                            {summary.total_quantity_sold?.toLocaleString()} <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Units</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill">AOV ৳{Number(summary.average_order_value || 0).toLocaleString()}</span>
+                                    <span className="footer-pill">{summary.unique_customers?.toLocaleString()} Clients</span>
+                                </div>
+                            </div>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={6}>
+                            <div className="mini-summary-card orange">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon orange">
+                                        <WalletOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Advance Collected</span>
+                                        <div className="mini-card-val text-green">
+                                            ৳{Number(summary.total_advance_payment || 0).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill green">Paid {summary.paid_order_count}</span>
+                                    <span className="footer-pill red">Unpaid {summary.unpaid_order_count}</span>
+                                    <span className="footer-pill">Cpn ৳{Number(summary.total_coupon_value || 0).toLocaleString()}</span>
+                                </div>
+                            </div>
                         </Col>
                     </Row>
                 </div>
             )}
 
-            <div className="topBar no-print">
-                <Space wrap size="middle">
+            {/* Interactive Breakdown Section */}
+            <div className="no-print breakdown-section" style={{ marginBottom: 14 }}>
+                <Card 
+                    size="small" 
+                    className="breakdown-card-wrapper"
+                    title={
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                            <Space align="center" size={6}>
+                                <PieChartOutlined style={{ color: '#1E50A2', fontSize: 14 }} />
+                                <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>Order Distribution Analytics</span>
+                                {(statusId || orderFromId || paidStatusFilter) && (
+                                    <Tag 
+                                        color="blue" 
+                                        closable 
+                                        onClose={() => {
+                                            setStatusId(null);
+                                            setOrderFromId(null);
+                                            setPaidStatusFilter(null);
+                                        }}
+                                        style={{ fontSize: 10, margin: 0 }}
+                                    >
+                                        Filter Active
+                                    </Tag>
+                                )}
+                            </Space>
+                            <Tabs 
+                                activeKey={breakdownView} 
+                                onChange={setBreakdownView} 
+                                size="small"
+                                style={{ marginBottom: -8 }}
+                                items={[
+                                    { key: 'status', label: `Status (${statusBreakdown.length})` },
+                                    { key: 'channel', label: `Channel (${orderFromBreakdown.length})` },
+                                    { key: 'payment', label: `Payment (${paymentBreakdown.length})` }
+                                ]}
+                            />
+                        </div>
+                    }
+                >
+                    {breakdownView === 'status' && (
+                        <div className="status-chip-ribbon">
+                            {statusBreakdown.map((item) => {
+                                const isSelected = statusId === item.status_id;
+                                const percent = summary?.total_orders ? Math.round((item.order_count / summary.total_orders) * 100) : 0;
+                                return (
+                                    <div 
+                                        key={item.status_id}
+                                        className={`status-chip ${isSelected ? 'active' : ''}`}
+                                        onClick={() => setStatusId(isSelected ? null : item.status_id)}
+                                    >
+                                        <span className="chip-name">{item.status_name}</span>
+                                        <span className="chip-count">{item.order_count}</span>
+                                        <span className="chip-price">৳{Number(item.total_payable_price || 0).toLocaleString()}</span>
+                                        <span className="chip-percent">{percent}%</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {breakdownView === 'channel' && (
+                        <div className="channel-chip-ribbon">
+                            {orderFromBreakdown.map((item) => {
+                                const isSelected = orderFromId === item.order_from_id;
+                                const percent = summary?.total_orders ? Math.round((item.order_count / summary.total_orders) * 100) : 0;
+                                return (
+                                    <div 
+                                        key={item.order_from_id}
+                                        className={`compact-channel-chip ${isSelected ? 'active' : ''}`}
+                                        onClick={() => setOrderFromId(isSelected ? null : item.order_from_id)}
+                                    >
+                                        <ShoppingOutlined style={{ color: '#1E50A2', fontSize: 14 }} />
+                                        <span className="chip-name">{item.order_from_name}</span>
+                                        <span className="chip-count">{item.order_count} Orders ({percent}%)</span>
+                                        <span className="chip-price">Total: ৳{Number(item.total_payable_price || 0).toLocaleString()}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {breakdownView === 'payment' && (
+                        <div className="payment-chip-ribbon">
+                            {paymentBreakdown.map((item) => {
+                                const isPaid = item.paid_status === 'paid';
+                                const isSelected = paidStatusFilter === item.paid_status;
+                                return (
+                                    <div 
+                                        key={item.paid_status}
+                                        className={`compact-payment-chip ${isPaid ? 'paid' : 'unpaid'} ${isSelected ? 'active' : ''}`}
+                                        onClick={() => setPaidStatusFilter(isSelected ? null : item.paid_status)}
+                                    >
+                                        <Badge status={isPaid ? "success" : "error"} text={
+                                            <span className="chip-name" style={{ textTransform: 'uppercase' }}>
+                                                {item.paid_status}
+                                            </span>
+                                        } />
+                                        <span className="chip-count">{item.order_count} Orders</span>
+                                        <span className="chip-price">Payable: ৳{Number(item.total_payable_price || 0).toLocaleString()}</span>
+                                        <span className="chip-advance">Advance: ৳{Number(item.total_advance_payment || 0).toLocaleString()}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </Card>
+            </div>
+
+            {/* Filter Toolbar */}
+            <div className="filter-toolbar no-print">
+                <Space wrap size="middle" align="center">
                     <Input 
-                        placeholder="Search Invoice/Customer/Phone..." 
+                        placeholder="Search Invoice, Customer, Phone, Courier, District..." 
                         allowClear 
                         value={localSearch}
                         onChange={(e) => setLocalSearch(e.target.value)} 
                         onPressEnter={handleSearch}
-                        style={{ width: 280 }}
-                        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                        className="search-input"
+                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
                     />
                     
                     <Select 
-                        placeholder="Source"
+                        placeholder="Order Source"
                         value={orderFromId} 
                         style={{ width: 140 }} 
                         onChange={setOrderFromId}
                         allowClear
-                        suffixIcon={<ShoppingOutlined style={{ color: '#bfbfbf' }} />}
+                        suffixIcon={<ShoppingOutlined style={{ color: '#94a3b8' }} />}
                     >
                         {orderFromList?.map(item => (
                             <Option key={item.id} value={item.id}>{item.name}</Option>
                         ))}
+                    </Select>
+
+                    <Select 
+                        placeholder="Order Status"
+                        value={statusId} 
+                        style={{ width: 150 }} 
+                        onChange={setStatusId}
+                        allowClear
+                        suffixIcon={<FilterOutlined style={{ color: '#94a3b8' }} />}
+                    >
+                        {statusBreakdown?.map(item => (
+                            <Option key={item.status_id} value={item.status_id}>{item.status_name} ({item.order_count})</Option>
+                        ))}
+                    </Select>
+
+                    <Select 
+                        placeholder="Payment Status"
+                        value={paidStatusFilter} 
+                        style={{ width: 140 }} 
+                        onChange={setPaidStatusFilter}
+                        allowClear
+                    >
+                        <Option value="paid">Paid</Option>
+                        <Option value="unpaid">Unpaid</Option>
                     </Select>
 
                     <Select 
@@ -419,7 +714,7 @@ export default function OrderReport() {
                             setDateFilter(val);
                             if (val !== "custom") setDateRange([null, null]);
                         }}
-                        suffixIcon={<CalendarOutlined style={{ color: '#bfbfbf' }} />}
+                        suffixIcon={<CalendarOutlined style={{ color: '#94a3b8' }} />}
                     >
                         <Option value="all">All Time</Option>
                         <Option value="today">Today</Option>
@@ -431,25 +726,34 @@ export default function OrderReport() {
                     </Select>
 
                     {dateFilter === "custom" && (
-                        <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear style={{ width: 250 }} />
+                        <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear style={{ width: 240 }} />
                     )}
 
-                    <Button icon={<ReloadOutlined />} onClick={handleClearFilters}>Reset</Button>
+                    <Button icon={<ReloadOutlined />} onClick={handleClearFilters} className="reset-btn">
+                        Reset
+                    </Button>
                 </Space>
 
-                <Space size="middle">
+                <Space size="middle" align="center" className="export-actions">
                     {selectedRowKeys.length > 0 && (
-                        <Text strong style={{ color: '#1677ff' }}>
+                        <Tag color="blue" className="selected-tag">
                             {selectedRowKeys.length} selected
-                        </Text>
+                        </Tag>
                     )}
-                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>CSV</Button>
-                    <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>PDF</Button>
-                    <Button icon={<PrinterOutlined />} onClick={handlePrint}>Print</Button>
+                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV} className="btn-csv">
+                        CSV
+                    </Button>
+                    <Button type="primary" icon={<FilePdfOutlined />} onClick={downloadPDF} className="btn-pdf">
+                        PDF
+                    </Button>
+                    <Button icon={<PrinterOutlined />} onClick={handlePrint} className="btn-print">
+                        Print
+                    </Button>
                 </Space>
             </div>
 
-            <div className="printable">
+            {/* Table section */}
+            <div className="printable order-table-container">
                 <Table
                     rowSelection={{
                         selectedRowKeys,
@@ -462,59 +766,21 @@ export default function OrderReport() {
                     expandable={{
                         expandedRowRender,
                     }}
+                    scroll={{ x: 1300 }}
                     pagination={{
                         current: pagination.current,
                         pageSize: pagination.pageSize,
                         total: pagination.total,
                         onChange: (page, pageSize) => setPagination(prev => ({ ...prev, current: page, pageSize })),
                         showSizeChanger: true,
+                        pageSizeOptions: ['10', '25', '50', '100'],
                         size: "small",
                         className: "custom-pagination no-print",
-                        showTotal: (total) => `Total ${total} entries`,
+                        showTotal: (total, range) => `Showing ${range[0]}-${range[1]} of ${total} orders`,
                     }}
+                    className="order-intelligence-table"
                 />
             </div>
-
-            <style jsx>{`
-                .summary-card {
-                    height: 100%;
-                    border-radius: 12px;
-                    border: 1px solid #f1f5f9;
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-                    position: relative;
-                    overflow: hidden;
-                    transition: all 0.3s ease;
-                    background: #fff;
-                    padding: 20px;
-                }
-                .summary-card:hover {
-                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                    transform: translateY(-2px);
-                }
-                .summary-icon {
-                    position: absolute;
-                    right: 16px;
-                    bottom: 16px;
-                    font-size: 32px;
-                    opacity: 0.1;
-                    transition: all 0.3s ease;
-                }
-                .summary-card:hover .summary-icon {
-                    opacity: 0.2;
-                    transform: scale(1.1);
-                }
-                .card-indicator {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    bottom: 0;
-                    width: 4px;
-                }
-                .card-indicator.info { background: #3b82f6; }
-                .card-indicator.success { background: #10b981; }
-                .card-indicator.secondary { background: #8b5cf6; }
-                .card-indicator.warning { background: #f59e0b; }
-            `}</style>
         </div>
     );
 }
