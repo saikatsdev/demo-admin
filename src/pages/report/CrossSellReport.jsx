@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Table, Input, Select, Button, DatePicker, Space, Tag, Typography, Divider, Row, Col, Card, Avatar, Tooltip } from "antd";
-import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, SearchOutlined, UserOutlined, ShoppingOutlined, GlobalOutlined, CarOutlined, PlusCircleOutlined, RiseOutlined, FireOutlined, ExperimentOutlined } from "@ant-design/icons";
+import { Table, Input, Select, Button, DatePicker, Space, Tag, Typography, Row, Col, Card, Avatar, Tooltip } from "antd";
+import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined, PrinterOutlined, CalendarOutlined, SearchOutlined, UserOutlined, ShoppingOutlined, DollarOutlined,BarChartOutlined, PercentageOutlined, LineChartOutlined} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import jsPDF from "jspdf";
@@ -14,10 +14,11 @@ const { RangePicker } = DatePicker;
 
 export default function CrossSellReport() {
     // Hooks
-    useTitle("Cross-sell Performance Intelligence");
+    useTitle("Cross-sell Performance Analytics");
 
     // States
     const [localSearch, setLocalSearch]         = useState("");
+    const [search, setSearch]                   = useState("");
     const [loading, setLoading]                 = useState(false);
     const [dateFilter, setDateFilter]           = useState("all");
     const [orders, setOrders]                   = useState([]);
@@ -37,6 +38,10 @@ export default function CrossSellReport() {
             params.to_date = dateRange[1].format("YYYY-MM-DD");
         }
 
+        if (search?.trim()) {
+            params.search_key = search.trim();
+        }
+
         params.page = pagination.current;
         params.paginate_size = pagination.pageSize;
 
@@ -45,7 +50,7 @@ export default function CrossSellReport() {
         try {
             setLoading(true);
             const res = await getDatas(`/admin/order/reports/cross-sell?${query}`);
-            if(res && res?.success){
+            if (res && res?.success) {
                 const result = res?.result;
                 setOrders(result?.orders?.data || []);
                 setSummary(result?.summary || null);
@@ -53,9 +58,12 @@ export default function CrossSellReport() {
                 setPagination(prev => ({ 
                     ...prev, 
                     total: result?.orders?.total || 0,
-                    current: result?.orders?.current_page || 1
+                    current: result?.orders?.current_page || 1,
+                    pageSize: result?.orders?.per_page || prev.pageSize || 25
                 }));
             }
+        } catch (error) {
+            console.error("Error fetching cross-sell report:", error);
         } finally {
             setLoading(false);
         }
@@ -63,55 +71,62 @@ export default function CrossSellReport() {
 
     useEffect(() => {
         getCrossSellReport();
-    }, [dateFilter, dateRange, pagination.current, pagination.pageSize]);
+    }, [dateFilter, dateRange, search, pagination.current, pagination.pageSize]);
+
+    const handleSearchSubmit = () => {
+        setPagination(prev => ({ ...prev, current: 1 }));
+        setSearch(localSearch);
+    };
+
+    const handleReset = () => {
+        setDateFilter("all");
+        setLocalSearch("");
+        setSearch("");
+        setDateRange([null, null]);
+        setSelectedRowKeys([]);
+        setPagination(prev => ({ ...prev, current: 1 }));
+    };
 
     const handlePrint = () => {
         window.print();
     };
 
-    const getFilteredData = () => {
-        return orders.filter((order) => {
-            if (!localSearch) return true;
-            const term = localSearch.toLowerCase();
-            return (
-                order.phone_number?.toLowerCase().includes(term) || 
-                order.customer_name?.toLowerCase().includes(term) ||
-                order.invoice_number?.toLowerCase().includes(term)
-            );
-        });
-    };
-
     const getExportData = () => {
-        const filtered = getFilteredData();
         if (selectedRowKeys.length > 0) {
-            return filtered.filter(item => selectedRowKeys.includes(item.id));
+            return orders.filter(item => selectedRowKeys.includes(item.id));
         }
-        return filtered;
+        return orders;
     };
 
     const downloadPDF = () => {
         const dataToExport = getExportData();
         const doc = new jsPDF("landscape");
-        doc.setFontSize(18);
-        doc.text("Cross-sell Performance Intelligence Report", 14, 22);
-        doc.setFontSize(11);
-        doc.text(`Generated on: ${dayjs().format("YYYY-MM-DD")} | Filter: ${dateFilter}`, 14, 30);
+        doc.setFontSize(16);
+        doc.text("Cross-sell Performance & Sales Report", 14, 20);
+        doc.setFontSize(10);
+        doc.text(`Generated on: ${dayjs().format("YYYY-MM-DD HH:mm")}`, 14, 27);
         
-        const tableColumn = ["#", "Invoice", "Customer", "Status", "Channel", "Incremental Value", "Date"];
-        const tableRows = dataToExport.map((o, i) => [
-            i + 1,
-            o.invoice_number,
-            o.customer_name,
-            o.current_status?.name || "N/A",
-            o.order_from?.name || "N/A",
-            `৳${Number(o.payable_price).toLocaleString()}`,
-            dayjs(o.created_at).format("DD MMM YYYY")
-        ]);
+        const tableColumn = ["#", "Customer", "Phone", "Invoice", "Status", "District", "Cross-sell Items", "Cross-sell Value", "Payable", "Date"];
+        const tableRows = dataToExport.map((o, i) => {
+            const productNames = o.cross_sell_details?.map(d => `${d.product_name} (x${d.quantity})`).join(', ') || 'N/A';
+            return [
+                i + 1,
+                o.customer_name,
+                o.phone_number,
+                o.invoice_number,
+                o.current_status?.name || "N/A",
+                o.district?.name || "N/A",
+                productNames,
+                `৳${Number(o.cross_sell_summary?.total_value || o.net_order_price || 0).toLocaleString()}`,
+                `৳${Number(o.payable_price || 0).toLocaleString()}`,
+                dayjs(o.created_at).format("DD MMM YYYY")
+            ];
+        });
 
         autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
-            startY: 40,
+            startY: 34,
             theme: 'grid',
             headStyles: { fillColor: [16, 185, 129], textColor: 255 },
             styles: { fontSize: 8 }
@@ -121,18 +136,31 @@ export default function CrossSellReport() {
 
     const downloadCSV = () => {
         const dataToExport = getExportData();
-        const headers = ["SL", "Invoice", "Customer", "Phone", "Status", "Channel", "Payable", "Advance", "Date"];
-        const rows = dataToExport.map((o, i) => [
-            i + 1,
-            o.invoice_number,
-            o.customer_name,
-            o.phone_number,
-            o.current_status?.name || "",
-            o.order_from?.name || "",
-            o.payable_price,
-            o.advance_payment,
-            dayjs(o.created_at).format("YYYY-MM-DD")
-        ]);
+        const headers = ["SL", "Invoice", "Customer Name", "Phone Number", "Status", "Order Source", "Courier", "District", "Paid Status", "Cross-sell Items List", "Cross-sell Items Count", "Cross-sell Quantity", "Cross-sell Value", "Delivery Charge", "Advance Payment", "Net Price", "Payable Price", "Date"];
+        const rows = dataToExport.map((o, i) => {
+            const productNames = o.cross_sell_details?.map(d => `${d.product_name} (Qty: ${d.quantity}, Total: ৳${d.line_total})`).join('; ') || '';
+            const s = o.cross_sell_summary || {};
+            return [
+                i + 1,
+                `"${o.invoice_number || ''}"`,
+                `"${o.customer_name || ''}"`,
+                `"${o.phone_number || ''}"`,
+                `"${o.current_status?.name || ''}"`,
+                `"${o.order_from?.name || ''}"`,
+                `"${o.courier?.name || ''}"`,
+                `"${o.district?.name || ''}"`,
+                `"${o.paid_status || ''}"`,
+                `"${productNames}"`,
+                s.items_count || 0,
+                s.total_quantity || 0,
+                s.total_value || 0,
+                o.delivery_charge || 0,
+                o.advance_payment || 0,
+                o.net_order_price || 0,
+                o.payable_price || 0,
+                `"${dayjs(o.created_at).format("YYYY-MM-DD HH:mm")}"`
+            ];
+        });
         let csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
         const link = document.createElement("a");
         link.href = encodeURI(csvContent);
@@ -144,234 +172,348 @@ export default function CrossSellReport() {
         {
             title: "#",
             key: "sl",
-            render: (_, __, index) => (
-                <span style={{ fontWeight: 600, color: '#94a3b8' }}>
-                    {(pagination.current - 1) * pagination.pageSize + index + 1}
-                </span>
-            ),
-            width: 60,
+            render: (_, __, index) => {
+                const rank = (pagination.current - 1) * pagination.pageSize + index + 1;
+                return (
+                    <span style={{ fontWeight: 600, color: '#94a3b8' }}>
+                        #{rank}
+                    </span>
+                );
+            },
+            width: 48,
             align: 'center'
         },
         {
-            title: "Identity & Origin",
-            key: "identity",
-            render: (_, record) => (
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <Text strong style={{ color: '#1e293b' }}>{record.invoice_number}</Text>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Tag color="green" style={{ fontSize: 10, margin: 0, borderRadius: 4 }}>{record.order_from?.name}</Tag>
-                        <Text type="secondary" style={{ fontSize: 11 }}>{dayjs(record.created_at).format("DD MMM, YYYY")}</Text>
-                    </div>
-                </div>
-            ),
-            width: 180
-        },
-        {
-            title: "Engagement Profile",
+            title: "Customer Profile",
             key: "customer",
             render: (_, record) => (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Avatar size={32} icon={<UserOutlined />} style={{ backgroundColor: '#ecfdf5', color: '#059669' }} />
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Text strong style={{ fontSize: 13, color: '#1e293b' }}>{record.customer_name}</Text>
-                        <Text type="secondary" style={{ fontSize: 11 }}>{record.phone_number}</Text>
+                    <Avatar 
+                        size={38} 
+                        icon={<UserOutlined />} 
+                        style={{ backgroundColor: '#ecfdf5', color: '#059669', border: '1px solid #a7f3d0', flexShrink: 0 }} 
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                        <Text strong style={{ fontSize: 12.5, color: '#0f172a', lineHeight: '1.25' }}>
+                            {record.customer_name}
+                        </Text>
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                            {record.phone_number}
+                        </Text>
+                        {record.district?.name && (
+                            <Text type="secondary" style={{ fontSize: 10, color: '#64748b' }}>
+                                Location: <span style={{ fontWeight: 600, color: '#334155' }}>{record.district.name}</span>
+                            </Text>
+                        )}
                     </div>
+                </div>
+            ),
+            width: 190
+        },
+        {
+            title: "Order Information",
+            key: "invoice",
+            render: (_, record) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Text strong style={{ fontSize: 12.5, color: '#0f172a' }}>
+                        {record.invoice_number}
+                    </Text>
+                    <Space size={4} wrap>
+                        {record.current_status && (
+                            <Tag 
+                                style={{ 
+                                    backgroundColor: (record.current_status.bg_color || '#10b981') + '18', 
+                                    color: record.current_status.bg_color || '#047857',
+                                    border: `1px solid ${(record.current_status.bg_color || '#a7f3d0')}50`,
+                                    borderRadius: 4,
+                                    fontWeight: 700,
+                                    fontSize: 9.5,
+                                    margin: 0,
+                                    padding: '0 5px'
+                                }}
+                            >
+                                {record.current_status.name}
+                            </Tag>
+                        )}
+                        <Tag color={record.paid_status === 'paid' ? 'green' : 'volcano'} style={{ fontSize: 9.5, margin: 0, borderRadius: 4, fontWeight: 700, padding: '0 5px', textTransform: 'uppercase' }}>
+                            {record.paid_status}
+                        </Tag>
+                        {record.order_from && (
+                            <Tag style={{ fontSize: 9.5, margin: 0, borderRadius: 4, background: '#f1f5f9', border: 'none', color: '#475569', fontWeight: 600 }}>
+                                {record.order_from.name}
+                            </Tag>
+                        )}
+                        {record.courier && (
+                            <Tag color="cyan" style={{ fontSize: 9.5, margin: 0, borderRadius: 4, fontWeight: 600, padding: '0 4px' }}>
+                                {record.courier.name}
+                            </Tag>
+                        )}
+                    </Space>
                 </div>
             ),
             width: 200
         },
         {
-            title: "Operational Compliance",
-            key: "status",
-            render: (_, record) => (
-                <Tag 
-                    style={{ 
-                        backgroundColor: record.current_status?.bg_color + '20', 
-                        color: record.current_status?.bg_color,
-                        border: `1px solid ${record.current_status?.bg_color}40`,
-                        borderRadius: 6,
-                        fontWeight: 600,
-                        fontSize: 11,
-                        padding: '2px 8px'
-                    }}
-                >
-                    {record.current_status?.name?.toUpperCase() || "PENDING"}
-                </Tag>
-            ),
-            width: 150
+            title: "Cross Sell Products",
+            key: "cross_sell_items",
+            render: (_, record) => {
+                const details = record.cross_sell_details || [];
+                if (details.length === 0) {
+                    return <Text type="secondary" style={{ fontSize: 11 }}>No items</Text>;
+                }
+
+                return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, width: '100%' }}>
+                        {details.map((item, idx) => (
+                            <div key={item.id || idx} style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 8, 
+                                padding: '4px 7px', 
+                                background: '#ecfdf550', 
+                                borderRadius: 6, 
+                                border: '1px solid #a7f3d0' 
+                            }}>
+                                <Avatar 
+                                    shape="square" 
+                                    size={32} 
+                                    src={item.img_path} 
+                                    icon={<ShoppingOutlined />} 
+                                    style={{ borderRadius: 4, flexShrink: 0, border: '1px solid #6ee7b7', background: '#fff' }} 
+                                />
+                                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                                    <Text strong style={{ fontSize: 11.5, color: '#0f172a', lineHeight: '1.2' }} ellipsis={{ tooltip: item.product_name }}>
+                                        {item.product_name}
+                                    </Text>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 9.5, marginTop: 1 }}>
+                                        <Tag color="emerald" style={{ fontSize: 9, margin: 0, padding: '0 4px', borderRadius: 3, fontWeight: 700, background: '#d1fae5', color: '#065f46', border: '1px solid #a7f3d0' }}>
+                                            x{item.quantity} Pcs
+                                        </Tag>
+                                        <span style={{ color: '#475569', fontWeight: 600 }}>৳{Number(item.sell_price || 0).toLocaleString()}</span>
+                                        {item.sku && (
+                                            <span style={{ color: '#94a3b8', fontSize: 9 }}>({item.sku})</span>
+                                        )}
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                    <div style={{ fontSize: 11.5, fontWeight: 700, color: Number(item.line_total || 0) >= 0 ? '#059669' : '#dc2626' }}>
+                                        ৳{Number(item.line_total || 0).toLocaleString()}
+                                    </div>
+                                    {Number(item.mrp || 0) > Number(item.sell_price || 0) && (
+                                        <Text delete type="secondary" style={{ fontSize: 9 }}>৳{Number(item.mrp || 0).toLocaleString()}</Text>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
+            },
+            width: 270
         },
         {
-            title: "Incremental Value",
-            key: "financial",
+            title: "Cross Sell Order Value",
+            key: "yield",
+            align: 'center',
+            render: (_, record) => {
+                const s = record.cross_sell_summary || {};
+                const val = Number(s.total_value ?? record.net_order_price ?? 0);
+
+                return (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <Tag color="emerald" style={{ margin: 0, borderRadius: 4, fontWeight: 700, fontSize: 10.5, padding: '1px 6px', background: '#d1fae5', color: '#065f46', border: '1px solid #a7f3d0' }}>
+                            {s.items_count || record.cross_sell_details?.length || 0} Items ({s.total_quantity || 0} Pcs)
+                        </Tag>
+
+                        <div style={{ background: val >= 0 ? '#f0fdf4' : '#fef2f2', padding: '3px 10px', borderRadius: 6, border: `1px solid ${val >= 0 ? '#bbf7d0' : '#fecaca'}`, display: 'inline-block' }}>
+                            <Text strong style={{ color: val >= 0 ? '#15803d' : '#dc2626', fontSize: 13 }}>
+                                ৳{val.toLocaleString()}
+                            </Text>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 6, fontSize: 9.5, color: '#64748b' }}>
+                            <span>MRP: ৳{Number(s.total_mrp || 0).toLocaleString()}</span>
+                            {Number(s.total_discount || 0) > 0 && (
+                                <span style={{ color: '#ef4444', fontWeight: 600 }}>
+                                    Disc: -৳{Number(s.total_discount || 0).toLocaleString()}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
+            width: 175
+        },
+        {
+            title: "Payable Price",
+            key: "payable",
             align: 'right',
-            render: (_, record) => (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <Text strong style={{ color: '#059669' }}>৳{Number(record.payable_price).toLocaleString()}</Text>
-                    <Tag color={record.paid_status === 'paid' ? 'success' : 'warning'} style={{ margin: 0, fontSize: 10, borderRadius: 4 }}>
-                        {record.paid_status?.toUpperCase()}
-                    </Tag>
+            render: (_, record) => {
+                const payable = Number(record.payable_price || 0);
+                const advance = Number(record.advance_payment || 0);
+                const delivery = Number(record.delivery_charge || 0);
+
+                return (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                        <div style={{ background: '#f0fdf4', padding: '2px 8px', borderRadius: 6, border: '1px solid #bbf7d0', display: 'inline-block' }}>
+                            <Text strong style={{ color: '#15803d', fontSize: 13 }}>
+                                ৳{payable.toLocaleString()}
+                            </Text>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, fontSize: 9.5 }}>
+                            {advance > 0 && (
+                                <span style={{ color: '#059669', fontWeight: 600 }}>
+                                    Advance: ৳{advance.toLocaleString()}
+                                </span>
+                            )}
+                            {delivery > 0 && (
+                                <span style={{ color: '#64748b' }}>
+                                    Del: ৳{delivery.toLocaleString()}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
+            width: 155
+        },
+        {
+            title: "Order Date",
+            dataIndex: "created_at",
+            key: "created_at",
+            render: (date) => (
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <Text style={{ fontSize: 11.5, color: '#334155', fontWeight: 600 }}>
+                        {dayjs(date).format("DD MMM YYYY")}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: 10 }}>
+                        {dayjs(date).format("hh:mm A")}
+                    </Text>
                 </div>
             ),
-            width: 150
+            width: 120
         }
     ];
 
-    const expandedRowRender = (record) => {
-        const detailColumns = [
-            {
-                title: "Cross-sold Item",
-                key: "item",
-                render: (_, item) => (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <Avatar shape="square" size={40} src={item.img_path} icon={<ShoppingOutlined />} />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <Text strong style={{ fontSize: 12 }}>{item.product_name}</Text>
-                            <Text type="secondary" style={{ fontSize: 10 }}>SKU: {item.sku}</Text>
-                        </div>
-                    </div>
-                )
-            },
-            {
-                title: "Incremental Lift",
-                key: "pricing",
-                align: 'right',
-                render: (_, item) => (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                        <Text style={{ fontSize: 12 }}>৳{Number(item.sell_price).toLocaleString()} × {item.quantity}</Text>
-                    </div>
-                )
-            },
-            {
-                title: "Net Yield",
-                key: "total",
-                align: 'right',
-                render: (_, item) => <Text strong style={{ color: '#059669' }}>৳{Number(item.line_total).toLocaleString()}</Text>
-            }
-        ];
-
-        return (
-            <div style={{ padding: '20px', background: '#ecfdf580', borderRadius: 12 }}>
-                <Row gutter={[24, 24]}>
-                    <Col span={16}>
-                        <Card size="small" variant="borderless" title="Itemized Incremental Impact">
-                            <Table
-                                columns={detailColumns}
-                                dataSource={record.cross_sell_details || []}
-                                pagination={false}
-                                size="small"
-                                rowKey="id"
-                            />
-                        </Card>
-                    </Col>
-                    <Col span={8}>
-                        <Card size="small" variant="borderless" title="Cross-sell Compliance">
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Text type="secondary"><GlobalOutlined /> Territory</Text>
-                                    <Text strong>{record.district?.name || "N/A"}</Text>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Text type="secondary"><CarOutlined /> Pickup Partner</Text>
-                                    <Text strong>{record.courier?.name || "N/A"}</Text>
-                                </div>
-                                <Divider style={{ margin: '8px 0' }} />
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Text type="secondary">Total MRP</Text>
-                                    <Text>৳{Number(record.mrp).toLocaleString()}</Text>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Text type="secondary">System Discount</Text>
-                                    <Text type="danger">-৳{Number(record.discount).toLocaleString()}</Text>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Text type="secondary">Product Revenue</Text>
-                                    <Text>৳{Number(record.sell_price).toLocaleString()}</Text>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Text type="secondary">Logistics Fee</Text>
-                                    <Text>+৳{Number(record.delivery_charge).toLocaleString()}</Text>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #6ee7b7', paddingTop: 8 }}>
-                                    <Text strong>Incremental Payable</Text>
-                                    <Title level={5} style={{ margin: 0, color: '#059669' }}>৳{Number(record.payable_price).toLocaleString()}</Title>
-                                </div>
-                            </div>
-                        </Card>
-                    </Col>
-                </Row>
-            </div>
-        );
-    };
-
     return (
         <div className="reportWrapper">
-            <div className="topBar no-print">
-                <Title level={4} style={{ margin: 0 }}>Cross-sell Performance Intelligence</Title>
-                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>Back</Button>
+            {/* Top Bar Header */}
+            <div className="topBar no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div>
+                    <Title level={4} style={{ margin: 0, color: '#0f172a' }}>Cross Sell Report</Title>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Cross-sold product conversions, incremental order revenue, and catalog attachment analytics</Text>
+                </div>
+                <Space>
+                    <Button icon={<ReloadOutlined />} onClick={getCrossSellReport} loading={loading}>
+                        Refresh Data
+                    </Button>
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} className="back-btn">
+                        Back
+                    </Button>
+                </Space>
             </div>
 
-            <Divider className="no-print" style={{ margin: '12px 0' }} />
-
+            {/* KPI Summary Cards */}
             {summary && (
-                <div className="no-print" style={{ marginBottom: 24 }}>
-                    <Row gutter={[16, 16]}>
+                <div className="no-print" style={{ marginBottom: 20 }}>
+                    <Row gutter={[12, 12]}>
                         <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card">
-                                <Space direction="vertical" size={0}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Cross-sell Pool</Text>
-                                    <Title level={3} style={{ margin: 0 }}>{summary.total_orders}</Title>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>successfully converted orders</Text>
-                                </Space>
-                                <PlusCircleOutlined className="summary-icon" style={{ color: '#10b981' }} />
-                                <div className="card-indicator info"></div>
+                            <Card bordered={false} className="mini-summary-card green">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon green">
+                                        <DollarOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Total Cross-sell Revenue</span>
+                                        <span className="mini-card-val">
+                                            ৳{Number(summary.total_payable_price || 0).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill green">Net: ৳{Number(summary.total_net_order_price || 0).toLocaleString()}</span>
+                                    <span className="footer-pill">Del: ৳{Number(summary.total_delivery_charge || 0).toLocaleString()}</span>
+                                </div>
                             </Card>
                         </Col>
+
                         <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card">
-                                <Space direction="vertical" size={0}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Incremental Lift</Text>
-                                    <Title level={3} style={{ margin: 0 }}>৳{Number(summary.total_payable_price || 0).toLocaleString()}</Title>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>additional revenue (gross)</Text>
-                                </Space>
-                                <RiseOutlined className="summary-icon" style={{ color: '#059669' }} />
-                                <div className="card-indicator success"></div>
+                            <Card bordered={false} className="mini-summary-card blue">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon blue">
+                                        <ShoppingOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Cross-sell Sold Quantity</span>
+                                        <span className="mini-card-val">
+                                            {Number(summary.total_quantity || 0).toLocaleString()} QTY
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill blue">{summary.total_items || 0} Items</span>
+                                    <span className="footer-pill">{summary.total_orders || 0} Orders</span>
+                                </div>
                             </Card>
                         </Col>
+
                         <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card alert-stats">
-                                <Space direction="vertical" size={0}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Upside Probability</Text>
-                                    <Title level={3} style={{ margin: 0 }}>{summary.success_rate}%</Title>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>fulfillment success conversion</Text>
-                                </Space>
-                                <ExperimentOutlined className="summary-icon" style={{ color: '#0ea5e9' }} />
-                                <div className="card-indicator secondary"></div>
+                            <Card bordered={false} className="mini-summary-card purple">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon purple">
+                                        <PercentageOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Cross-sell Success Rate</span>
+                                        <span className="mini-card-val">
+                                            {summary.success_rate || 0}%
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill green">Delivered: {summary.delivered_count || 0}</span>
+                                    <span className="footer-pill blue">Processing: {summary.processing_count || 0}</span>
+                                </div>
                             </Card>
                         </Col>
+
                         <Col xs={24} sm={12} md={6}>
-                            <Card bordered={false} className="summary-card">
-                                <Space direction="vertical" size={0}>
-                                    <Text type="secondary" style={{ fontSize: 13 }}>Mean Upside (AOV)</Text>
-                                    <Title level={3} style={{ margin: 0 }}>৳{Number(summary.average_order_value || 0).toLocaleString()}</Title>
-                                    <Text type="secondary" style={{ fontSize: 11 }}>incremental ticket average</Text>
-                                </Space>
-                                <FireOutlined className="summary-icon" style={{ color: '#f59e0b' }} />
-                                <div className="card-indicator warning"></div>
+                            <Card bordered={false} className="mini-summary-card orange">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon orange">
+                                        <LineChartOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Average Order Value (AOV)</span>
+                                        <span className="mini-card-val">
+                                            ৳{Number(summary.average_order_value || 0).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill orange">Advance: ৳{Number(summary.total_advance_payment || 0).toLocaleString()}</span>
+                                </div>
                             </Card>
                         </Col>
                     </Row>
 
+                    {/* Top Cross-sell Products Bar */}
                     {topProducts.length > 0 && (
-                        <Card size="small" style={{ marginTop: 16, borderRadius: 12 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 16, overflowX: 'auto', paddingBottom: 4 }}>
-                                <Text strong style={{ fontSize: 12, color: '#64748b', whiteSpace: 'nowrap' }}>TOP CROSS-SELL ASSETS:</Text>
-                                {topProducts.slice(0, 5).map((product, idx) => (
-                                    <Tooltip key={idx} title={`${product.product_name} - ${product.cross_sell_order_count} converted`}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
-                                            <Avatar size="small" src={product.img_path} icon={<ShoppingOutlined />} />
-                                            <Tag color="green" style={{ margin: 0, borderRadius: 12 }}>{product.sku}</Tag>
-                                            <Text strong style={{ fontSize: 11 }}>{product.total_quantity} pcs</Text>
-                                            <Divider type="vertical" />
+                        <Card size="small" style={{ marginTop: 12, borderRadius: 8, background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, overflowX: 'auto', paddingBottom: 2 }}>
+                                <Text strong style={{ fontSize: 11, color: '#64748b', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    TOP CROSS-SELL ASSETS:
+                                </Text>
+                                {topProducts.map((product, idx) => (
+                                    <Tooltip key={idx} title={`${product.product_name} — ${product.cross_sell_order_count} orders (${product.total_quantity} pcs)`}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', background: '#fff', padding: '3px 8px', borderRadius: 6, border: '1px solid #cbd5e1' }}>
+                                            <Avatar size={22} src={product.img_path} icon={<ShoppingOutlined />} style={{ borderRadius: 4 }} />
+                                            <Text strong style={{ fontSize: 11, color: '#0f172a' }}>{product.product_name}</Text>
+                                            <Tag color="emerald" style={{ margin: 0, borderRadius: 3, fontSize: 9.5, fontWeight: 700, background: '#d1fae5', color: '#065f46', border: '1px solid #a7f3d0' }}>
+                                                {product.total_quantity} pcs
+                                            </Tag>
+                                            <span style={{ fontSize: 10, color: Number(product.total_value || 0) >= 0 ? '#15803d' : '#dc2626', fontWeight: 600 }}>
+                                                ৳{Number(product.total_value || 0).toLocaleString()}
+                                            </span>
                                         </div>
                                     </Tooltip>
                                 ))}
@@ -381,16 +523,30 @@ export default function CrossSellReport() {
                 </div>
             )}
 
-            <div className="topBar no-print">
-                <Space wrap size="middle">
+            {/* Filter and Action Bar */}
+            <div className="filter-toolbar no-print" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <Space wrap size="middle" align="center">
                     <Input 
                         placeholder="Search Invoice, Customer, Phone..." 
                         allowClear 
                         value={localSearch}
-                        onChange={(e) => setLocalSearch(e.target.value)} 
-                        style={{ width: 300 }}
-                        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setLocalSearch(val);
+                            if (!val) {
+                                setPagination(prev => ({ ...prev, current: 1 }));
+                                setSearch("");
+                            }
+                        }} 
+                        onPressEnter={handleSearchSubmit}
+                        style={{ width: 260 }}
+                        className="search-input"
+                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
                     />
+
+                    <Button type="primary" icon={<SearchOutlined />} onClick={handleSearchSubmit}>
+                        Search
+                    </Button>
                     
                     <Select 
                         value={dateFilter} 
@@ -399,7 +555,7 @@ export default function CrossSellReport() {
                             setDateFilter(val);
                             if (val !== "custom") setDateRange([null, null]);
                         }}
-                        suffixIcon={<CalendarOutlined style={{ color: '#bfbfbf' }} />}
+                        suffixIcon={<CalendarOutlined style={{ color: '#94a3b8' }} />}
                     >
                         <Option value="all">All Time</Option>
                         <Option value="today">Today</Option>
@@ -411,32 +567,33 @@ export default function CrossSellReport() {
                     </Select>
 
                     {dateFilter === "custom" && (
-                        <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear style={{ width: 250 }} />
+                        <RangePicker value={dateRange} onChange={(dates) => setDateRange(dates)} allowClear style={{ width: 240 }} />
                     )}
 
-                    <Button icon={<ReloadOutlined />} onClick={() => {
-                        setDateFilter("all");
-                        setLocalSearch("");
-                        setDateRange([null, null]);
-                        setSelectedRowKeys([]);
-                        setPagination(prev => ({ ...prev, current: 1 }));
-                    }}>
+                    <Button icon={<ReloadOutlined />} onClick={handleReset} className="reset-btn">
                         Reset
                     </Button>
                 </Space>
 
-                <Space size="middle" className="no-print">
+                <Space size="middle" align="center" className="export-actions">
                     {selectedRowKeys.length > 0 && (
-                        <Text strong style={{ color: '#1677ff' }}>
+                        <Tag color="blue" className="selected-tag">
                             {selectedRowKeys.length} selected
-                        </Text>
+                        </Tag>
                     )}
-                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV}>CSV</Button>
-                    <Button type="primary" icon={<FilePdfOutlined />} style={{ backgroundColor: '#ff4d4f', borderColor: '#ff4d4f' }} onClick={downloadPDF}>PDF</Button>
-                    <Button icon={<PrinterOutlined />} onClick={handlePrint}>Print</Button>
+                    <Button type="primary" icon={<FileExcelOutlined />} onClick={downloadCSV} className="btn-csv">
+                        CSV
+                    </Button>
+                    <Button type="primary" icon={<FilePdfOutlined />} onClick={downloadPDF} className="btn-pdf">
+                        PDF
+                    </Button>
+                    <Button icon={<PrinterOutlined />} onClick={handlePrint} className="btn-print">
+                        Print
+                    </Button>
                 </Space>
             </div>
 
+            {/* Main Table */}
             <div className="printable">
                 <Table
                     rowSelection={{
@@ -445,12 +602,8 @@ export default function CrossSellReport() {
                     }}
                     rowKey="id"
                     columns={columns}
-                    dataSource={getFilteredData()}
+                    dataSource={orders}
                     loading={loading}
-                    expandable={{
-                        expandedRowRender,
-                        rowExpandable: (record) => record.cross_sell_details?.length > 0,
-                    }}
                     pagination={{
                         current: pagination.current,
                         pageSize: pagination.pageSize,
@@ -459,51 +612,10 @@ export default function CrossSellReport() {
                         showSizeChanger: true,
                         size: "small",
                         className: "custom-pagination no-print",
-                        showTotal: (total) => `Total ${total} entries`,
+                        showTotal: (total) => `Total ${total} orders`,
                     }}
                 />
             </div>
-
-            <style jsx>{`
-                .summary-card {
-                    height: 100%;
-                    border-radius: 12px;
-                    border: 1px solid #f1f5f9;
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-                    position: relative;
-                    overflow: hidden;
-                    transition: all 0.3s ease;
-                    background: #fff;
-                    padding: 20px;
-                }
-                .summary-card:hover {
-                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                    transform: translateY(-2px);
-                }
-                .summary-icon {
-                    position: absolute;
-                    right: 16px;
-                    bottom: 16px;
-                    font-size: 32px;
-                    opacity: 0.1;
-                    transition: all 0.3s ease;
-                }
-                .summary-card:hover .summary-icon {
-                    opacity: 0.2;
-                    transform: scale(1.1);
-                }
-                .card-indicator {
-                    position: absolute;
-                    left: 0;
-                    top: 0;
-                    bottom: 0;
-                    width: 4px;
-                }
-                .card-indicator.info { background: #10b981; }
-                .card-indicator.success { background: #059669; }
-                .card-indicator.secondary { background: #0ea5e9; }
-                .card-indicator.warning { background: #f59e0b; }
-            `}</style>
         </div>
     );
 }
