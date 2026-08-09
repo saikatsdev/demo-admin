@@ -25,7 +25,7 @@ const { Title, Text } = Typography;
 
 export default function OrderReport() {
     // Hook
-    useTitle("Global Order Intelligence Report");
+    useTitle("Order Report");
 
     // Redux & State
     const orderFromList                         = useSelector((state) => state.orderFrom?.list || []);
@@ -259,15 +259,16 @@ export default function OrderReport() {
             key: "flags",
             align: 'center',
             render: (_, record) => {
-                const hasFlags = record.is_duplicate || record.is_follow_order || record.is_down_sell;
+                const hasFlags = record.is_duplicate || record.is_follow_order || record.is_down_sell || record.is_cross_sell;
                 if (!hasFlags) {
-                    return <Tag className="flag-tag standard">Standard</Tag>;
+                    return <Tag color="success" className="flag-tag standard">Regular</Tag>;
                 }
                 return (
                     <div className="flags-wrapper">
                         {Boolean(record.is_duplicate) && <Tag color="error" className="flag-tag">Duplicate</Tag>}
-                        {Boolean(record.is_follow_order) && <Tag color="processing" className="flag-tag">Follow-up</Tag>}
-                        {Boolean(record.is_down_sell) && <Tag color="warning" className="flag-tag">Downsell</Tag>}
+                        {Boolean(record.is_follow_order) && <Tag color="processing" className="flag-tag">Follow Up</Tag>}
+                        {Boolean(record.is_down_sell) && <Tag color="warning" className="flag-tag">Down Sell</Tag>}
+                        {Boolean(record.is_cross_sell) && <Tag color="purple" className="flag-tag">Cross Sell</Tag>}
                     </div>
                 );
             },
@@ -339,6 +340,7 @@ export default function OrderReport() {
                         <div className="detail-row"><span>Duplicate Flag:</span><strong>{record.is_duplicate ? "Yes" : "No"}</strong></div>
                         <div className="detail-row"><span>Follow-up Flag:</span><strong>{record.is_follow_order ? "Yes" : "No"}</strong></div>
                         <div className="detail-row"><span>Downsell Flag:</span><strong>{record.is_down_sell ? "Yes" : "No"}</strong></div>
+                        <div className="detail-row"><span>Cross-sell Flag:</span><strong>{record.is_cross_sell ? "Yes" : "No"}</strong></div>
                         <div className="detail-row"><span>Order Date:</span><strong>{dayjs(record.created_at).format('DD MMM YYYY, hh:mm A')}</strong></div>
                     </Card>
                 </Col>
@@ -352,7 +354,7 @@ export default function OrderReport() {
 
     const downloadCSV = () => {
         const dataToExport = getExportData();
-        const headers = ["SL", "Invoice Number", "Customer Name", "Phone", "Channel", "Courier", "District", "MRP", "Discount", "Sell Price", "Delivery Charge", "Advance Payment", "Payable Price", "Net Order Price", "Total Quantity", "Duplicate", "Followup", "Downsell", "Status", "Paid Status", "Created At"];
+        const headers = ["SL", "Invoice Number", "Customer Name", "Phone", "Channel", "Courier", "District", "MRP", "Discount", "Sell Price", "Delivery Charge", "Advance Payment", "Payable Price", "Net Order Price", "Total Quantity", "Duplicate", "Followup", "Downsell", "Cross-sell", "Status", "Paid Status", "Created At"];
         const rows = dataToExport.map((item, index) => [
             index + 1,
             `"${item.invoice_number || ''}"`,
@@ -372,6 +374,7 @@ export default function OrderReport() {
             item.is_duplicate ? "Yes" : "No",
             item.is_follow_order ? "Yes" : "No",
             item.is_down_sell ? "Yes" : "No",
+            item.is_cross_sell ? "Yes" : "No",
             `"${item.current_status?.name || ''}"`,
             `"${item.paid_status || 'unpaid'}"`,
             `"${dayjs(item.created_at).format("YYYY-MM-DD HH:mm:ss")}"`
@@ -390,7 +393,7 @@ export default function OrderReport() {
         const doc = new jsPDF("landscape");
         
         doc.setFontSize(16);
-        doc.text("Global Order Intelligence Report", 14, 18);
+        doc.text("Order Report", 14, 18);
         doc.setFontSize(9);
         doc.text(`Generated on: ${dayjs().format("YYYY-MM-DD HH:mm:ss")} | Total Items: ${dataToExport.length}`, 14, 25);
         
@@ -432,7 +435,7 @@ export default function OrderReport() {
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <Title level={4} style={{ margin: 0, color: '#0f172a', fontWeight: 700 }}>
-                            Global Order Intelligence Report
+                            Order Report
                         </Title>
                         {summary && (
                             <Badge 
@@ -442,7 +445,7 @@ export default function OrderReport() {
                         )}
                     </div>
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                        Comprehensive revenue analytics, channel distribution, and execution telemetry
+                        Comprehensive revenue analytics, channel distribution
                     </Text>
                 </div>
                 <Space>
@@ -512,7 +515,7 @@ export default function OrderReport() {
                                         <TagOutlined />
                                     </div>
                                     <div className="mini-card-info">
-                                        <span className="mini-card-label">Units Sold & AOV</span>
+                                        <span className="mini-card-label">Products Sold & AOV</span>
                                         <div className="mini-card-val">
                                             {summary.total_quantity_sold?.toLocaleString()} <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>Units</span>
                                         </div>
