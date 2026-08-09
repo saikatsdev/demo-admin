@@ -1,16 +1,6 @@
 import { useEffect, useState } from "react";
-import { 
-    Table, Input, Select, Button, DatePicker, Space, Tag, Typography, 
-    Divider, Row, Col, Card, Progress, Tooltip, Badge, Tabs 
-} from "antd";
-import { 
-    FilePdfOutlined, FileExcelOutlined, ReloadOutlined, SearchOutlined, 
-    ShoppingOutlined, PrinterOutlined, ArrowLeftOutlined, CalendarOutlined, 
-    ShoppingCartOutlined, UserOutlined, GlobalOutlined, DollarOutlined, 
-    BarChartOutlined, LineChartOutlined, RocketOutlined, TagOutlined,
-    CheckCircleOutlined, InfoCircleOutlined, WalletOutlined, FilterOutlined,
-    CloseCircleOutlined, SyncOutlined, PieChartOutlined, AppstoreOutlined
-} from "@ant-design/icons";
+import { Table, Input, Select, Button, DatePicker, Space, Tag, Typography, Divider, Row, Col, Card, Progress, Tooltip, Badge, Tabs } from "antd";
+import { FilePdfOutlined, FileExcelOutlined, ReloadOutlined, SearchOutlined, ShoppingOutlined, PrinterOutlined, ArrowLeftOutlined, CalendarOutlined, ShoppingCartOutlined, UserOutlined, GlobalOutlined, DollarOutlined, BarChartOutlined, LineChartOutlined, RocketOutlined, TagOutlined,CheckCircleOutlined, InfoCircleOutlined, WalletOutlined, FilterOutlined,CloseCircleOutlined, SyncOutlined, PieChartOutlined, AppstoreOutlined} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import { useSelector } from "react-redux";
 import dayjs from "dayjs";
@@ -57,9 +47,7 @@ export default function OrderReport() {
             paid_status      : paidStatusFilter,
         };
 
-        if (dateFilter !== "all" && dateFilter !== "custom") {
-            params.filter = dateFilter;
-        } else if (dateFilter === "custom" && dateRange?.[0] && dateRange?.[1]) {
+        if (dateFilter !== "all" && dateFilter !== "custom") {params.filter = dateFilter} else if (dateFilter === "custom" && dateRange?.[0] && dateRange?.[1]) {
             params.from_date = dateRange[0].format("YYYY-MM-DD");
             params.to_date = dateRange[1].format("YYYY-MM-DD");
         }
@@ -255,7 +243,7 @@ export default function OrderReport() {
             width: 170
         },
         {
-            title: "Process Flags",
+            title: "Order Flags",
             key: "flags",
             align: 'center',
             render: (_, record) => {
@@ -290,10 +278,7 @@ export default function OrderReport() {
                     >
                         {record.current_status?.name || 'N/A'}
                     </Tag>
-                    <Tag 
-                        color={record.paid_status === 'paid' ? 'success' : 'error'} 
-                        className="payment-tag"
-                    >
+                    <Tag  color={record.paid_status === 'paid' ? 'success' : 'error'} className="payment-tag">
                         {record.paid_status ? record.paid_status.toUpperCase() : 'UNPAID'}
                     </Tag>
                 </div>
@@ -430,7 +415,6 @@ export default function OrderReport() {
 
     return (
         <div className="reportWrapper">
-            {/* Top Navigation & Title Bar */}
             <div className="topBar no-print flex-between">
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -438,10 +422,7 @@ export default function OrderReport() {
                             Order Report
                         </Title>
                         {summary && (
-                            <Badge 
-                                count={`${summary.total_orders?.toLocaleString()} Orders`} 
-                                style={{ backgroundColor: '#10b981' }} 
-                            />
+                            <Badge count={`${summary.total_orders?.toLocaleString()} Orders`} style={{ backgroundColor: '#10b981' }}/>
                         )}
                     </div>
                     <Text type="secondary" style={{ fontSize: 12 }}>
@@ -460,7 +441,6 @@ export default function OrderReport() {
 
             <Divider className="no-print" style={{ margin: '14px 0' }} />
 
-            {/* KPI Executive Summary Cards */}
             {summary && (
                 <div className="no-print" style={{ marginBottom: 16 }}>
                     <Row gutter={[12, 12]}>
@@ -552,7 +532,6 @@ export default function OrderReport() {
                 </div>
             )}
 
-            {/* Interactive Breakdown Section */}
             <div className="no-print breakdown-section" style={{ marginBottom: 14 }}>
                 <Card 
                     size="small" 
@@ -563,9 +542,7 @@ export default function OrderReport() {
                                 <PieChartOutlined style={{ color: '#1E50A2', fontSize: 14 }} />
                                 <span style={{ fontWeight: 700, fontSize: 13, color: '#0f172a' }}>Order Distribution Analytics</span>
                                 {(statusId || orderFromId || paidStatusFilter) && (
-                                    <Tag 
-                                        color="blue" 
-                                        closable 
+                                    <Tag color="blue" closable 
                                         onClose={() => {
                                             setStatusId(null);
                                             setOrderFromId(null);
@@ -577,11 +554,7 @@ export default function OrderReport() {
                                     </Tag>
                                 )}
                             </Space>
-                            <Tabs 
-                                activeKey={breakdownView} 
-                                onChange={setBreakdownView} 
-                                size="small"
-                                style={{ marginBottom: -8 }}
+                            <Tabs activeKey={breakdownView} onChange={setBreakdownView} size="small" style={{ marginBottom: -8 }}
                                 items={[
                                     { key: 'status', label: `Status (${statusBreakdown.length})` },
                                     { key: 'channel', label: `Channel (${orderFromBreakdown.length})` },
@@ -597,11 +570,7 @@ export default function OrderReport() {
                                 const isSelected = statusId === item.status_id;
                                 const percent = summary?.total_orders ? Math.round((item.order_count / summary.total_orders) * 100) : 0;
                                 return (
-                                    <div 
-                                        key={item.status_id}
-                                        className={`status-chip ${isSelected ? 'active' : ''}`}
-                                        onClick={() => setStatusId(isSelected ? null : item.status_id)}
-                                    >
+                                    <div key={item.status_id} className={`status-chip ${isSelected ? 'active' : ''}`} onClick={() => setStatusId(isSelected ? null : item.status_id)}>
                                         <span className="chip-name">{item.status_name}</span>
                                         <span className="chip-count">{item.order_count}</span>
                                         <span className="chip-price">৳{Number(item.total_payable_price || 0).toLocaleString()}</span>
@@ -618,11 +587,7 @@ export default function OrderReport() {
                                 const isSelected = orderFromId === item.order_from_id;
                                 const percent = summary?.total_orders ? Math.round((item.order_count / summary.total_orders) * 100) : 0;
                                 return (
-                                    <div 
-                                        key={item.order_from_id}
-                                        className={`compact-channel-chip ${isSelected ? 'active' : ''}`}
-                                        onClick={() => setOrderFromId(isSelected ? null : item.order_from_id)}
-                                    >
+                                    <div key={item.order_from_id} className={`compact-channel-chip ${isSelected ? 'active' : ''}`} onClick={() => setOrderFromId(isSelected ? null : item.order_from_id)}>
                                         <ShoppingOutlined style={{ color: '#1E50A2', fontSize: 14 }} />
                                         <span className="chip-name">{item.order_from_name}</span>
                                         <span className="chip-count">{item.order_count} Orders ({percent}%)</span>
@@ -639,9 +604,7 @@ export default function OrderReport() {
                                 const isPaid = item.paid_status === 'paid';
                                 const isSelected = paidStatusFilter === item.paid_status;
                                 return (
-                                    <div 
-                                        key={item.paid_status}
-                                        className={`compact-payment-chip ${isPaid ? 'paid' : 'unpaid'} ${isSelected ? 'active' : ''}`}
+                                    <div key={item.paid_status} className={`compact-payment-chip ${isPaid ? 'paid' : 'unpaid'} ${isSelected ? 'active' : ''}`}
                                         onClick={() => setPaidStatusFilter(isSelected ? null : item.paid_status)}
                                     >
                                         <Badge status={isPaid ? "success" : "error"} text={
@@ -660,27 +623,11 @@ export default function OrderReport() {
                 </Card>
             </div>
 
-            {/* Filter Toolbar */}
             <div className="filter-toolbar no-print">
                 <Space wrap size="middle" align="center">
-                    <Input 
-                        placeholder="Search Invoice, Customer, Phone, Courier, District..." 
-                        allowClear 
-                        value={localSearch}
-                        onChange={(e) => setLocalSearch(e.target.value)} 
-                        onPressEnter={handleSearch}
-                        className="search-input"
-                        prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
-                    />
+                    <Input placeholder="Search Invoice, Customer, Phone, Courier, District..." allowClear value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} onPressEnter={handleSearch} className="search-input" prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}/>
                     
-                    <Select 
-                        placeholder="Order Source"
-                        value={orderFromId} 
-                        style={{ width: 140 }} 
-                        onChange={setOrderFromId}
-                        allowClear
-                        suffixIcon={<ShoppingOutlined style={{ color: '#94a3b8' }} />}
-                    >
+                    <Select placeholder="Order Source" value={orderFromId} style={{ width: 140 }} onChange={setOrderFromId} allowClear suffixIcon={<ShoppingOutlined style={{ color: '#94a3b8' }} />}>
                         {orderFromList?.map(item => (
                             <Option key={item.id} value={item.id}>{item.name}</Option>
                         ))}
@@ -699,20 +646,12 @@ export default function OrderReport() {
                         ))}
                     </Select>
 
-                    <Select 
-                        placeholder="Payment Status"
-                        value={paidStatusFilter} 
-                        style={{ width: 140 }} 
-                        onChange={setPaidStatusFilter}
-                        allowClear
-                    >
+                    <Select placeholder="Payment Status" value={paidStatusFilter} style={{ width: 140 }} onChange={setPaidStatusFilter} allowClear>
                         <Option value="paid">Paid</Option>
                         <Option value="unpaid">Unpaid</Option>
                     </Select>
 
-                    <Select 
-                        value={dateFilter} 
-                        style={{ width: 140 }} 
+                    <Select value={dateFilter} style={{ width: 140 }} 
                         onChange={(val) => {
                             setDateFilter(val);
                             if (val !== "custom") setDateRange([null, null]);
