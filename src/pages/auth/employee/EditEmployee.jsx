@@ -1,5 +1,5 @@
 import { Breadcrumb, message, Select as AntSelect, Card, Row, Col, Input as AntInput, Button, Typography, Space, Divider, Form, Upload } from "antd";
-import { UserOutlined, PhoneOutlined, MailOutlined, LockOutlined, DollarCircleOutlined, TeamOutlined, AppstoreOutlined, CheckCircleOutlined, ArrowLeftOutlined, CameraOutlined, SaveOutlined } from "@ant-design/icons";
+import { UserOutlined, PhoneOutlined, MailOutlined, LockOutlined, TeamOutlined, AppstoreOutlined, CheckCircleOutlined, ArrowLeftOutlined, CameraOutlined, SaveOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getDatas, postData } from "../../../api/common/common";
@@ -124,7 +124,6 @@ export default function EditEmployee() {
                         username        : u.username,
                         email           : u.email,
                         phone_number    : u.phone_number,
-                        salary          : u.salary,
                         role_ids        : userRoles,
                         manager_id      : u.manager?.id,
                         user_category_id: u.category?.id,
@@ -154,7 +153,6 @@ export default function EditEmployee() {
         formData.append("username", values.username);
         formData.append("email", values.email || "");
         formData.append("phone_number", values.phone_number);
-        formData.append("salary", values.salary || "");
         
         if (values.password) {
             formData.append("password", values.password);
@@ -285,11 +283,6 @@ export default function EditEmployee() {
                                 <Col span={12}>
                                     <Form.Item name="role_ids" label={<Text strong style={{ color: '#475569' }}>User Roles</Text>} rules={[{ required: true, message: 'Please assign roles' }]}>
                                         <AntSelect mode="multiple" allowClear placeholder="Assign roles" style={{ width: '100%' }} size="large" options={roleOptions} />
-                                    </Form.Item>
-                                </Col>
-                                <Col span={12}>
-                                    <Form.Item name="salary" label={<Text strong style={{ color: '#475569' }}>Salary</Text>}>
-                                        <AntInput size="large" placeholder="0.00" prefix={<DollarCircleOutlined style={{ color: '#94a3b8' }} />} style={styles.input}/>
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>

@@ -1,5 +1,5 @@
 import { Breadcrumb, message, Select as AntSelect, Card, Row, Col, Input as AntInput, Button, Typography, Space, Divider, Form, Upload } from "antd";
-import { UserOutlined, PhoneOutlined, MailOutlined, LockOutlined, DollarCircleOutlined, TeamOutlined, AppstoreOutlined, CheckCircleOutlined, ArrowLeftOutlined, CameraOutlined, DeleteOutlined, SaveOutlined } from "@ant-design/icons";
+import { UserOutlined, PhoneOutlined, MailOutlined, LockOutlined, TeamOutlined, AppstoreOutlined, CheckCircleOutlined, ArrowLeftOutlined, CameraOutlined, DeleteOutlined, SaveOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useTitle from "../../../hooks/useTitle";
@@ -128,7 +128,6 @@ export default function AddEmployee() {
         formData.append("username", values.username);
         formData.append("email", values.email || "");
         formData.append("phone_number", values.phone_number);
-        formData.append("salary", values.salary || "");
         formData.append("password", values.password);
         
         if (values.role_ids) {
@@ -251,11 +250,6 @@ export default function AddEmployee() {
                                 <Col span={12}>
                                     <Form.Item name="role_ids" label={<Text strong style={{ color: '#475569' }}>User Roles</Text>} rules={[{ required: true, message: 'Please assign roles' }]}>
                                         <AntSelect mode="multiple" allowClear placeholder="Assign roles" style={{ width: '100%', borderRadius: '10px' }} size="large" options={roleOptions}/>
-                                    </Form.Item>
-                                </Col>
-                                <Col span={12}>
-                                    <Form.Item name="salary" label={<Text strong style={{ color: '#475569' }}>Salary</Text>}>
-                                        <AntInput size="large" placeholder="0.00" prefix={<DollarCircleOutlined style={{ color: '#94a3b8' }} />} style={styles.input} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={12}>
