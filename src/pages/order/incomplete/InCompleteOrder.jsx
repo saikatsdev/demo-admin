@@ -25,9 +25,7 @@ export default function InCompleteOrder() {
     const [isModalOpen, setIsModalOpen]             = useState(false);
     const [modalVisible, setModalVisible]           = useState(false);
     const [selectedPhone, setSelectedPhone]         = useState(null);
-    const [completeOrders, setCompleteOrders]       = useState([]);
     const [totalOrders, setTotalOrders]             = useState(0);
-    const [totalRevenue, setTotalRevenue]           = useState(0);
     const [selectedRowKeys, setSelectedRowKeys]     = useState([]);
     const [selectedOrders, setSelectedOrders]       = useState([]);
     const [csvLoader, setCsvLoader]                 = useState(false);
@@ -35,11 +33,12 @@ export default function InCompleteOrder() {
     const [currentPage, setCurrentPage]             = useState(1);
     const [pageSize, setPageSize]                   = useState(10);
     const [orderCounts, setOrderCounts]             = useState({ total: 0, pending: 0, approved: 0, canceled: 0 });
-    const [activeStatus, setActiveStatus]           = useState(1);
+    const [activeStatus, setActiveStatus]           = useState(null);
     const [activePeriod, setActivePeriod]           = useState("week");
     const [recentActivity, setRecentActivity]       = useState([]);
     const [abandonedProducts, setAbandonedProducts] = useState([]);
     const [statsSummary, setStatsSummary]           = useState(null);
+    const [reportSummary, setReportSummary]         = useState(null);
     const [statsLoading, setStatsLoading]           = useState(false);
 
     const [searchText, setSearchText]               = useState("");
@@ -79,17 +78,21 @@ export default function InCompleteOrder() {
 
             const res = await getDatas("/admin/incomplete-orders", params);
 
-            if (res && res?.success) {
-                setIncompleteOrders(res.result?.orders?.data || res.result?.orders || []);
-                setTotalOrders(res.result?.orders?.total || (res.result?.orders?.length || 0));
+            if (res && res?.success && res?.result) {
+                const ordersObj = res.result.orders;
+                const orderList = Array.isArray(ordersObj) ? ordersObj : (ordersObj?.data || []);
+                const total = ordersObj?.meta?.total ?? ordersObj?.total ?? res.result.summary?.total_orders ?? orderList.length;
 
-                const summary = res?.result?.summary;
+                setIncompleteOrders(orderList);
+                setTotalOrders(total);
+
+                const summary = res.result.summary;
                 if (summary) {
                     setOrderCounts({
-                        total: summary.total_orders || 0,
-                        pending: summary?.total_pending || 0,
-                        approved: summary?.total_approved || 0,
-                        canceled: summary?.total_cancelled || 0
+                        total: summary.total_orders ?? total,
+                        pending: summary.total_pending ?? 0,
+                        approved: summary.total_approved ?? 0,
+                        canceled: summary.total_cancelled ?? 0
                     });
                 }
             }
@@ -105,6 +108,26 @@ export default function InCompleteOrder() {
         fetchIncompleteOrders();
     }, [dateRange, activeStatus, searchText, currentPage, pageSize]);
 
+    useEffect(() => {
+        let isMounted = true;
+        const fetchReportSummary = async () => {
+            try {
+                const res = await getDatas("/admin/order/reports/incomplete");
+                if (res && res.success && res.result?.summary && isMounted) {
+                    setReportSummary(res.result.summary);
+                }
+            } catch (err) {
+                console.error("Failed to fetch report summary", err);
+            }
+        };
+
+        fetchReportSummary();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
     const filteredOrders = incompleteOrders.filter((order) => {
         if (!searchText) return true;
         const key = searchText.toLowerCase();
@@ -116,31 +139,6 @@ export default function InCompleteOrder() {
         );
     });
 
-    useEffect(() => {
-        let isMounted = true;
-
-        const getCompleteOrders = async () => {
-            const res = await getDatas("/admin/orders", { current_status_id: 7 });
-
-            if (res && res.success) {
-                if (isMounted) {
-                    const orders = res?.result?.data || [];
-                    setCompleteOrders(orders);
-                    setTotalOrders(res?.result?.orders_count || orders.length);
-                    const revenue = orders.reduce((sum, order) => sum + parseFloat(order.payable_price || 0), 0);
-                    setTotalRevenue(revenue);
-                }
-            }
-        };
-
-        getCompleteOrders();
-
-        return () => {
-            isMounted = false;
-        };
-    }, []);
-
-    const accuracyRate = totalOrders > 0 ? ((completeOrders?.length / totalOrders) * 100).toFixed(2) : 0;
     const formatCurrency = (amount) => `৳${Number(amount || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     const columns = [
@@ -486,7 +484,7 @@ export default function InCompleteOrder() {
         {
             key: "incomplete",
             label: "Total Incomplete Orders",
-            value: statsSummary?.total_incomplete_orders ?? (incompleteOrders?.length || 0),
+            value: statsSummary?.total_incomplete_orders ?? (orderCounts.total || totalOrders || 0),
             subtext: `Total Attempts: ${statsSummary?.total_attempts ?? 0}`,
             icon: <ShoppingCartOutlined />,
             colorClass: "io-badge--incomplete",
@@ -494,7 +492,7 @@ export default function InCompleteOrder() {
         {
             key: "recovered",
             label: "Total Converted Orders",
-            value: statsSummary?.total_converted_orders ?? (completeOrders?.length || 0),
+            value: statsSummary?.total_converted_orders ?? (orderCounts.approved || 0),
             subtext: `Attempt Conv: ${statsSummary?.conversion_rate_of_total_attempts ?? 0}%`,
             icon: <CheckCircleOutlined />,
             colorClass: "io-badge--recovered",
@@ -502,7 +500,7 @@ export default function InCompleteOrder() {
         {
             key: "rate",
             label: "Conversion Rate",
-            value: `${statsSummary?.conversion_rate ?? accuracyRate}%`,
+            value: statsSummary?.conversion_rate ? `${statsSummary.conversion_rate}%` : `${orderCounts.total > 0 ? ((orderCounts.approved / orderCounts.total) * 100).toFixed(1) : 0}%`,
             subtext: `Attempt Conv: ${statsSummary?.conversion_rate_of_total_attempts ?? 0}%`,
             icon: <ThunderboltOutlined />,
             colorClass: "io-badge--rate",
@@ -510,7 +508,7 @@ export default function InCompleteOrder() {
         {
             key: "revenue",
             label: "Converted Revenue",
-            value: formatCurrency(statsSummary?.converted_order_revenue ?? totalRevenue),
+            value: formatCurrency(statsSummary?.converted_order_revenue ?? 0),
             subtext: `Avg Order Val: ${formatCurrency(statsSummary?.average_converted_order_value ?? 0)}`,
             icon: <FireOutlined />,
             colorClass: "io-badge--revenue",
@@ -548,6 +546,7 @@ export default function InCompleteOrder() {
                 {/* Metric Summary Cards */}
                 <div className="no-print" style={{ marginBottom: 16 }}>
                     <Row gutter={[12, 12]}>
+                        {/* Card 1: Total Incomplete Orders */}
                         <Col xs={24} sm={12} md={6}>
                             <div className="mini-summary-card blue">
                                 <div className="mini-card-top">
@@ -557,17 +556,45 @@ export default function InCompleteOrder() {
                                     <div className="mini-card-info">
                                         <span className="mini-card-label">Total Incomplete Orders</span>
                                         <div className="mini-card-val">
-                                            {(incompleteOrders?.length || totalOrders || 0).toLocaleString()}
+                                            {(orderCounts.total || totalOrders || reportSummary?.total_incomplete_orders || 0).toLocaleString()}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="mini-card-footer">
                                     <span className="footer-pill">Pending {orderCounts.pending || 0}</span>
+                                    <span className="footer-pill green">Approved {orderCounts.approved || 0}</span>
                                     <span className="footer-pill red">Canceled {orderCounts.canceled || 0}</span>
                                 </div>
                             </div>
                         </Col>
 
+                        {/* Card 2: Pending Incomplete Orders */}
+                        <Col xs={24} sm={12} md={6}>
+                            <div className="mini-summary-card orange">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon orange">
+                                        <ClockCircleOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span className="mini-card-label">Pending Orders</span>
+                                            <span className="mini-badge-pill" style={{ background: '#fef3c7', color: '#d97706' }}>
+                                                {orderCounts.total > 0 ? ((orderCounts.pending / orderCounts.total) * 100).toFixed(1) : 0}% Pending
+                                            </span>
+                                        </div>
+                                        <div className="mini-card-val text-red">
+                                            {(orderCounts.pending || 0).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill">Awaiting Action</span>
+                                    <span className="footer-pill">Total {orderCounts.total || totalOrders || 0}</span>
+                                </div>
+                            </div>
+                        </Col>
+
+                        {/* Card 3: Approved / Converted Orders */}
                         <Col xs={24} sm={12} md={6}>
                             <div className="mini-summary-card green">
                                 <div className="mini-card-top">
@@ -576,56 +603,47 @@ export default function InCompleteOrder() {
                                     </div>
                                     <div className="mini-card-info">
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span className="mini-card-label">Recovered Orders</span>
-                                            <span className="mini-badge-pill">{accuracyRate}% Rate</span>
+                                            <span className="mini-card-label">Approved Orders</span>
+                                            <span className="mini-badge-pill">
+                                                {reportSummary?.conversion_rate ? `${reportSummary.conversion_rate}% Conv.` : `${orderCounts.total > 0 ? ((orderCounts.approved / orderCounts.total) * 100).toFixed(1) : 0}% Appr.`}
+                                            </span>
                                         </div>
                                         <div className="mini-card-val text-green">
-                                            {completeOrders?.length || 0}
+                                            {(orderCounts.approved || reportSummary?.total_converted_orders || 0).toLocaleString()}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="mini-card-footer">
-                                    <span className="footer-pill green">Success {completeOrders?.length || 0}</span>
-                                    <span className="footer-pill">Total {totalOrders || 0}</span>
+                                    <span className="footer-pill green">Success {orderCounts.approved || reportSummary?.total_converted_orders || 0}</span>
+                                    <span className="footer-pill">Attempts {reportSummary?.total_attempts || orderCounts.total || 0}</span>
                                 </div>
                             </div>
                         </Col>
 
+                        {/* Card 4: Recovered Revenue */}
                         <Col xs={24} sm={12} md={6}>
                             <div className="mini-summary-card purple">
                                 <div className="mini-card-top">
                                     <div className="mini-card-icon purple">
-                                        <ThunderboltOutlined />
-                                    </div>
-                                    <div className="mini-card-info">
-                                        <span className="mini-card-label">Recovery Accuracy</span>
-                                        <div className="mini-card-val">
-                                            {accuracyRate}%
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="mini-card-footer">
-                                    <span className="footer-pill">{completeOrders?.length || 0} Recovered</span>
-                                    <span className="footer-pill">Of {totalOrders || 0} Total</span>
-                                </div>
-                            </div>
-                        </Col>
-
-                        <Col xs={24} sm={12} md={6}>
-                            <div className="mini-summary-card orange">
-                                <div className="mini-card-top">
-                                    <div className="mini-card-icon orange">
                                         <FireOutlined />
                                     </div>
                                     <div className="mini-card-info">
-                                        <span className="mini-card-label">Recovered Revenue</span>
+                                        <span className="mini-card-label">
+                                            {reportSummary?.converted_order_revenue ? "Recovered Revenue" : "Canceled Orders"}
+                                        </span>
                                         <div className="mini-card-val text-green">
-                                            {formatCurrency(totalRevenue)}
+                                            {reportSummary?.converted_order_revenue 
+                                                ? formatCurrency(reportSummary.converted_order_revenue)
+                                                : (orderCounts.canceled || 0).toLocaleString()}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="mini-card-footer">
-                                    <span className="footer-pill green">Total {formatCurrency(totalRevenue)}</span>
+                                    {reportSummary?.average_converted_order_value ? (
+                                        <span className="footer-pill green">Avg Order {formatCurrency(reportSummary.average_converted_order_value)}</span>
+                                    ) : (
+                                        <span className="footer-pill red">Canceled {orderCounts.canceled || 0} Carts</span>
+                                    )}
                                 </div>
                             </div>
                         </Col>
@@ -655,7 +673,7 @@ export default function InCompleteOrder() {
                             allowClear
                             suffixIcon={<FilterOutlined style={{ color: '#94a3b8' }} />}
                         >
-                            <Option value={null}>All Statuses ({orderCounts.total || 0})</Option>
+                            <Option value={null}>All Statuses ({orderCounts.total || totalOrders || 0})</Option>
                             <Option value={1}>Pending ({orderCounts.pending || 0})</Option>
                             <Option value={3}>Approved ({orderCounts.approved || 0})</Option>
                             <Option value={8}>Canceled ({orderCounts.canceled || 0})</Option>
