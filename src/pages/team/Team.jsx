@@ -1,6 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
-import { Table, Typography, Divider, Row, Col, Card, Avatar, Tag, Space, Progress, Button, Tooltip, Badge,Select, Input, DatePicker, Statistic,} from "antd";
-import {UserOutlined,TeamOutlined,DollarOutlined,BarChartOutlined,ReloadOutlined,FireOutlined,ThunderboltOutlined,HistoryOutlined,ClockCircleOutlined,SearchOutlined,ArrowLeftOutlined,} from "@ant-design/icons";
+import { Table, Typography, Divider, Row, Col, Card, Avatar, Tag, Space, Progress, Button, Tooltip, Badge, Select, Input, DatePicker, Statistic } from "antd";
+import { 
+    UserOutlined, 
+    TeamOutlined, 
+    DollarOutlined, 
+    BarChartOutlined, 
+    ReloadOutlined, 
+    FireOutlined, 
+    ThunderboltOutlined, 
+    HistoryOutlined, 
+    ClockCircleOutlined, 
+    SearchOutlined, 
+    ArrowLeftOutlined,
+    MailOutlined,
+    IdcardOutlined,
+    CheckCircleOutlined
+} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -10,34 +25,13 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const FILTER_OPTIONS = [
-    { 
-        label: "All Time", 
-        value: "" 
-    },
-    { 
-        label: "Today", 
-        value: "today" 
-    },
-    { 
-        label: "Yesterday", 
-        value: "yesterday" 
-    },
-    { 
-        label: "This Week", 
-        value: "week" 
-    },
-    { 
-        label: "This Month", 
-        value: "month" 
-    },
-    { 
-        label: "This Year", 
-        value: "year" 
-    },
-    { 
-        label: "Custom Range", 
-        value: "custom" 
-    },
+    { label: "All Time", value: "" },
+    { label: "Today", value: "today" },
+    { label: "Yesterday", value: "yesterday" },
+    { label: "This Week", value: "week" },
+    { label: "This Month", value: "month" },
+    { label: "This Year", value: "year" },
+    { label: "Custom Range", value: "custom" },
 ];
 
 const formatMoney = (value) => {
@@ -64,6 +58,7 @@ export default function Team() {
     const [filter, setFilter]       = useState("");
     const [dateRange, setDateRange] = useState(null);
     const [searchKey, setSearchKey] = useState("");
+    const [pagination, setPagination] = useState({ current: 1, pageSize: 25 });
 
     const buildQuery = useCallback(() => {
         const params = new URLSearchParams();
@@ -101,19 +96,37 @@ export default function Team() {
 
     const columns = [
         {
-            title: "Employee",
+            title: "#",
+            key: "sl",
+            width: 55,
+            align: "center",
+            fixed: "left",
+            render: (_, __, index) => (
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b" }}>
+                    {(pagination.current - 1) * pagination.pageSize + index + 1}
+                </span>
+            ),
+        },
+        {
+            title: "Employee Identity",
             key: "identity",
             fixed: "left",
             width: 240,
             render: (_, record) => (
                 <div className="employee-cell">
-                    <Badge dot status={record.status === "active" ? "success" : "default"} offset={[-4, 36]}>
-                        <Avatar size={48} src={record.img_path || undefined} icon={<UserOutlined />} className="employee-avatar"/>
+                    <Badge dot status={record.attendance_today?.is_checked_in ? "success" : "default"} offset={[-4, 36]}>
+                        <Avatar size={44} src={record.img_path || undefined} icon={<UserOutlined />} className="employee-avatar"/>
                     </Badge>
                     <div className="employee-info">
-                        <Text strong className="employee-name" style={{textTransform:"capitalize"}}>
-                            {record.username}
-                        </Text>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Text strong className="employee-name" style={{ textTransform: "capitalize" }}>
+                                {record.username}
+                            </Text>
+                            <Text type="secondary" style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8' }}>
+                                #{record.id}
+                            </Text>
+                        </div>
+                        
                         <div className="employee-roles">
                             {record.roles?.map((role) => (
                                 <Tag key={role.id} color="blue" className="role-tag">
@@ -121,65 +134,30 @@ export default function Team() {
                                 </Tag>
                             ))}
                         </div>
+
+                        {record.email && (
+                            <Text type="secondary" style={{ fontSize: 11, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }} ellipsis={{ tooltip: record.email }}>
+                                <MailOutlined style={{ fontSize: 10 }} /> {record.email}
+                            </Text>
+                        )}
                         <Text type="secondary" className="employee-phone">{record.phone_number || "—"}</Text>
                     </div>
                 </div>
             ),
         },
         {
-            title: "Assigned Orders",
-            key: "assigned_total",
-            width: 120,
-            align: "center",
-            render: (_, record) => (
-                <Statistic value={record.assigned_metrics?.total_orders || 0} valueStyle={{ fontSize: 18, fontWeight: 700, color: "#1e293b" }}/>
-            ),
-        },
-        {
-            title: "Preparation",
-            key: "load",
-            width: 180,
-            render: (_, record) => {
-                const rate = Number(record.assigned_metrics?.preparation_rate || 0);
-                return (
-                    <div className="prep-cell">
-                        <div className="prep-head">
-                            <Text type="secondary">Prepared rate</Text>
-                            <Text strong>{rate}%</Text>
-                        </div>
-                        <Progress
-                            percent={rate}
-                            size="small"
-                            strokeColor={{ "0%": "#10b981", "100%": "#34d399" }}
-                            showInfo={false}
-                            trailColor="#f1f5f9"
-                        />
-                        <div className="prep-tags">
-                            <Tooltip title="Unprepared">
-                                <Tag color="volcano">{record.assigned_metrics?.unprepared_orders || 0} Unprepared</Tag>
-                            </Tooltip>
-
-                            <Tooltip title="Prepared">
-                                <Tag color="green">{record.assigned_metrics?.prepared_orders || 0} Prepared</Tag>
-                            </Tooltip>
-                        </div>
-                    </div>
-                );
-            },
-        },
-        {
-            title: "Attendance",
+            title: "Attendance & Shift",
             key: "attendance",
-            width: 180,
+            width: 175,
             render: (_, record) => {
                 const att = record.attendance_today || {};
                 return (
                     <div className="attendance-cell">
                         <div className="attendance-status">
                             <Badge status={att.is_checked_in ? "processing" : "default"} />
-                            <Text strong className={att.is_checked_in ? "text-success" : "text-muted"}>
+                            <Tag color={att.is_checked_in ? "green" : "default"} style={{ margin: 0, fontSize: 11, fontWeight: 600, borderRadius: 4 }}>
                                 {att.is_checked_in ? "Checked In" : "Not Checked In"}
-                            </Text>
+                            </Tag>
                         </div>
 
                         {att.check_in_at && (
@@ -203,138 +181,140 @@ export default function Team() {
             },
         },
         {
-            title: "Prepared Today / Month",
-            key: "velocity",
-            width: 170,
+            title: "Assigned Orders",
+            key: "assigned_total",
+            width: 130,
+            align: "center",
             render: (_, record) => (
-                <div className="velocity-cell">
-                    <Text strong className="velocity-today">
-                        <FireOutlined /> {record.prepared_metrics?.prepared_today || 0}{" "}
-                        <Text type="secondary">today</Text>
-                    </Text>
-                    <Text type="secondary">
-                        <HistoryOutlined /> {record.prepared_metrics?.prepared_this_month || 0} this month
-                    </Text>
-                    <Text type="secondary">
-                        Total prepared: {record.prepared_metrics?.total_orders || 0}
-                    </Text>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <Statistic 
+                        value={record.assigned_metrics?.total_orders || 0} 
+                        valueStyle={{ fontSize: 18, fontWeight: 700, color: "#1e293b", lineHeight: 1 }}
+                    />
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <Tag color="green" style={{ margin: 0, fontSize: 10, padding: '0 4px', borderRadius: 4 }}>
+                            {record.assigned_metrics?.prepared_orders || 0} Prep
+                        </Tag>
+                        <Tag color="volcano" style={{ margin: 0, fontSize: 10, padding: '0 4px', borderRadius: 4 }}>
+                            {record.assigned_metrics?.unprepared_orders || 0} Unprep
+                        </Tag>
+                    </div>
                 </div>
             ),
         },
         {
-            title: "Assigned Value",
-            key: "financial",
-            align: "right",
-            width: 150,
-            render: (_, record) => (
-                <div className="value-cell">
-                    <Text strong className="value-main">
-                        {formatMoney(record.assigned_metrics?.total_payable_price)}
-                    </Text>
-                    <Text type="secondary" className="value-sub">payable</Text>
-                    <Text type="secondary" className="value-sub">
-                        Net: {formatMoney(record.assigned_metrics?.total_net_order_price)}
-                    </Text>
-                </div>
-            ),
-        },
-    ];
+            title: "Assigned Order Statuses",
+            key: "order_statuses",
+            width: 240,
+            render: (_, record) => {
+                const statuses = record.assigned_metrics?.order_statuses || [];
+                if (!statuses.length) {
+                    return <Text type="secondary" style={{ fontSize: 11, fontStyle: 'italic' }}>No order status breakdown</Text>;
+                }
 
-    const expandedRowRender = (record) => (
-        <div className="expanded-panel">
-            <Row gutter={[16, 16]}>
-                <Col xs={24} md={8}>
-                    <Card size="small" bordered={false} title="Order Status (Assigned)">
-                        <div className="metric-list">
-                            {record.assigned_metrics?.order_statuses?.length ? (
-                                record.assigned_metrics.order_statuses.map((s) => (
-                                    <div className="metric-row" key={s.id}>
-                                        <Text type="secondary">
-                                            <span
-                                                style={{
-                                                    display: "inline-block",
-                                                    width: 10,
-                                                    height: 10,
-                                                    borderRadius: "50%",
-                                                    backgroundColor: s.bg_color,
-                                                    marginRight: 8,
-                                                }}
-                                            />
-                                            {s.name}
-                                        </Text>
-                                        <Tag color={s.bg_color} style={{ color: s.text_color, border: "none" }}>
-                                            {s.orders_count}
-                                        </Tag>
-                                    </div>
-                                ))
-                            ) : (
-                                <Text type="secondary">No status data</Text>
+                return (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, maxWidth: 230 }}>
+                        {statuses.map((s) => (
+                            <Tag
+                                key={s.id}
+                                style={{
+                                    margin: 0,
+                                    padding: '1px 7px',
+                                    borderRadius: 6,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    background: s.bg_color || '#e2e8f0',
+                                    color: s.text_color || '#334155',
+                                    border: 'none',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4
+                                }}
+                            >
+                                <span>{s.name}:</span>
+                                <span style={{ fontWeight: 800 }}>{s.orders_count}</span>
+                            </Tag>
+                        ))}
+                    </div>
+                );
+            },
+        },
+        {
+            title: "Preparation & Velocity",
+            key: "preparation_velocity",
+            width: 220,
+            render: (_, record) => {
+                const rate = Number(record.assigned_metrics?.preparation_rate || 0);
+                const prep = record.prepared_metrics || {};
+
+                return (
+                    <div className="prep-cell" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div className="prep-head" style={{ marginBottom: 2 }}>
+                            <Text type="secondary" style={{ fontSize: 11 }}>Prepared Rate</Text>
+                            <Text strong style={{ fontSize: 11, color: '#059669' }}>{rate}%</Text>
+                        </div>
+
+                        <Progress percent={rate} size="small" strokeColor={{ "0%": "#10b981", "100%": "#34d399" }} showInfo={false} trailColor="#f1f5f9"/>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 2 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                                <Text strong className="velocity-today" style={{ fontSize: 11 }}>
+                                    <FireOutlined /> {prep.prepared_today || 0} today
+                                </Text>
+                                <Text type="secondary" style={{ fontSize: 11 }}>
+                                    <HistoryOutlined /> {prep.prepared_this_month || 0} month
+                                </Text>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#64748b' }}>
+                                <span>Self Prepared: <b>{record.assigned_metrics?.self_prepared_orders || 0}</b></span>
+                                <span>Total Prepared: <b>{prep.total_orders || 0}</b></span>
+                            </div>
+                            {prep.last_prepared_at && (
+                                <Text type="secondary" style={{ fontSize: 10, fontStyle: 'italic', color: '#94a3b8' }}>
+                                    Last prep: {dayjs(prep.last_prepared_at).format("DD MMM, hh:mm A")}
+                                </Text>
                             )}
                         </div>
-                    </Card>
-                </Col>
+                    </div>
+                );
+            },
+        },
+        {
+            title: "Financial Summary",
+            key: "financial",
+            align: "right",
+            width: 200,
+            fixed: "right",
+            render: (_, record) => {
+                const assigned = record.assigned_metrics || {};
+                const prepared = record.prepared_metrics || {};
 
-                <Col xs={24} md={8}>
-                    <Card size="small" bordered={false} title="Preparation Details">
-                        <div className="metric-list">
-                            <div className="metric-row">
-                                <Text type="secondary">Self prepared</Text>
-                                <Text strong>{record.assigned_metrics?.self_prepared_orders || 0}</Text>
-                            </div>
-                            <div className="metric-row">
-                                <Text type="secondary">Total prepared (all)</Text>
-                                <Text strong>{record.prepared_metrics?.total_orders || 0}</Text>
-                            </div>
-                            <div className="metric-row">
-                                <Text type="secondary">Last prepared at</Text>
-                                <Text strong>
-                                    {record.prepared_metrics?.last_prepared_at
-                                        ? dayjs(record.prepared_metrics.last_prepared_at).format("DD MMM YYYY, hh:mm A")
-                                        : "N/A"}
-                                </Text>
-                            </div>
-                            <Divider style={{ margin: "8px 0" }} />
-                            <div className="metric-row">
-                                <Text type="secondary">Prepared payable</Text>
-                                <Text strong className="text-success">
-                                    {formatMoney(record.prepared_metrics?.total_payable_price)}
-                                </Text>
-                            </div>
-                            <div className="metric-row">
-                                <Text type="secondary">Prepared net</Text>
-                                <Text strong className="text-success">
-                                    {formatMoney(record.prepared_metrics?.total_net_order_price)}
-                                </Text>
-                            </div>
+                return (
+                    <div className="value-cell" style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-end' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <Text strong style={{ fontSize: 13, color: '#0f172a' }}>
+                                {formatMoney(assigned.total_payable_price)}
+                            </Text>
+                            <Text type="secondary" style={{ fontSize: 10 }}>
+                                Assigned Net: {formatMoney(assigned.total_net_order_price)}
+                            </Text>
                         </div>
-                    </Card>
-                </Col>
 
-                <Col xs={24} md={8}>
-                    <Card size="small" bordered={false} title="Account Info">
-                        <div className="metric-list">
-                            <div>
-                                <Text type="secondary" className="label-xs">Email</Text>
-                                <div><Text strong>{record.email || "—"}</Text></div>
-                            </div>
-                            <Divider style={{ margin: "8px 0" }} />
-                            <div>
-                                <Text type="secondary" className="label-xs">Employee ID</Text>
-                                <div><Text strong>#{record.id}</Text></div>
-                            </div>
-                            <Divider style={{ margin: "8px 0" }} />
-                            <div className="metric-row">
-                                <Text type="secondary">Attendance status</Text>
-                                <Tag color={record.attendance_today?.is_checked_in ? "green" : "default"}>
-                                    {record.attendance_today?.status || "absent"}
-                                </Tag>
-                            </div>
+                        <Divider style={{ margin: '4px 0', borderColor: '#e2e8f0' }} />
+
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <Text strong style={{ fontSize: 12, color: '#059669' }}>
+                                Prep: {formatMoney(prepared.total_payable_price)}
+                            </Text>
+                            <Text type="secondary" style={{ fontSize: 10, color: '#10b981' }}>
+                                Prep Net: {formatMoney(prepared.total_net_order_price)}
+                            </Text>
                         </div>
-                    </Card>
-                </Col>
-            </Row>
-        </div>
-    );
+                    </div>
+                );
+            },
+        },
+    ];
 
     return (
         <div className="teamWrapper">
@@ -345,7 +325,7 @@ export default function Team() {
                     </span>
                     <div>
                         <Title level={4} style={{ margin: 0 }}>Team Dashboard</Title>
-                        <Text type="secondary">Employee assigned & prepared order performance</Text>
+                        <Text type="secondary">Employee assigned & prepared order performance intelligence</Text>
                     </div>
                 </div>
                 <div className="team-page-actions">
@@ -491,13 +471,12 @@ export default function Team() {
                     columns={columns}
                     dataSource={employees}
                     loading={loading}
-                    scroll={{ x: 1100, y: "calc(100vh - 360px)" }}
-                    expandable={{
-                        expandedRowRender,
-                        rowExpandable: () => true,
-                    }}
+                    scroll={{ x: 1300, y: "calc(100vh - 360px)" }}
                     pagination={{
-                        pageSize: 25,
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: employees.length,
+                        onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
                         showSizeChanger: true,
                         pageSizeOptions: [10, 25, 50, 100],
                         showQuickJumper: true,
