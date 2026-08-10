@@ -1,17 +1,22 @@
-import {ArrowLeftOutlined,ShoppingCartOutlined,WhatsAppOutlined,CopyOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined,EditOutlined,SwapOutlined,ClockCircleOutlined,CloseCircleOutlined,UnorderedListOutlined} from "@ant-design/icons";
+import { ArrowLeftOutlined,ShoppingCartOutlined,WhatsAppOutlined,CopyOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined,EditOutlined,SwapOutlined,ClockCircleOutlined,CloseCircleOutlined,UnorderedListOutlined,SearchOutlined,FilterOutlined,CalendarOutlined,ReloadOutlined} from "@ant-design/icons";
 import * as XLSX from "xlsx";
-import {Input as AntInput,Breadcrumb,Button,message,DatePicker,Popconfirm,Space,Table,Modal,Tooltip,Image} from "antd";
+import { Input, Breadcrumb, Button, message, DatePicker, Popconfirm, Space, Table, Modal, Tooltip, Image, Select, Tag, Typography, Badge, Row, Col, Divider } from "antd";
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { Link, useNavigate } from "react-router-dom";
 import { deleteData, getDatas, postData } from "../../../api/common/common";
 import useTitle from "../../../hooks/useTitle";
+import "../../report/report.css";
 import "./css/incomplete-order.css";
 import DeliveryReportModal from "../../../components/order/DeliveryReportModal";
 
+const { Option } = Select;
+const { RangePicker } = DatePicker;
+const { Title, Text } = Typography;
+
 export default function InCompleteOrder() {
     // Hook
-    useTitle("All Incomplete Order");
+    useTitle("All Incomplete Orders");
 
     // State
     const [incompleteOrders, setIncompleteOrders]   = useState([]);
@@ -29,7 +34,7 @@ export default function InCompleteOrder() {
     const [dateRange, setDateRange]                 = useState(null);
     const [currentPage, setCurrentPage]             = useState(1);
     const [pageSize, setPageSize]                   = useState(10);
-    const [orderCounts, setOrderCounts]             = useState({total:0,pending:0,approved:0,canceled:0});
+    const [orderCounts, setOrderCounts]             = useState({ total: 0, pending: 0, approved: 0, canceled: 0 });
     const [activeStatus, setActiveStatus]           = useState(1);
     const [activePeriod, setActivePeriod]           = useState("week");
     const [recentActivity, setRecentActivity]       = useState([]);
@@ -63,10 +68,10 @@ export default function InCompleteOrder() {
 
             if (dateRange?.[0] && dateRange?.[1]) {
                 params.start_date = dayjs(dateRange[0]).format("YYYY-MM-DD");
-                params.end_date = dayjs(dayjs(dateRange[1])).format("YYYY-MM-DD");
+                params.end_date = dayjs(dateRange[1]).format("YYYY-MM-DD");
             }
 
-            if (activeStatus) {
+            if (activeStatus != null) {
                 params.status_id = activeStatus;
             }
 
@@ -79,15 +84,15 @@ export default function InCompleteOrder() {
                 const summary = res?.result?.summary;
                 if (summary) {
                     setOrderCounts({
-                        total: summary.total_orders,
-                        pending: summary?.total_pending,
-                        approved: summary?.total_approved,
-                        canceled: summary?.total_cancelled
+                        total: summary.total_orders || 0,
+                        pending: summary?.total_pending || 0,
+                        approved: summary?.total_approved || 0,
+                        canceled: summary?.total_cancelled || 0
                     });
                 }
             }
         } catch (err) {
-            console.log(err);
+            console.error(err);
             message.error("Error fetching incomplete orders");
         } finally {
             setLoading(false);
@@ -100,9 +105,7 @@ export default function InCompleteOrder() {
 
     const filteredOrders = incompleteOrders.filter((order) => {
         if (!searchText) return true;
-
         const key = searchText.toLowerCase();
-
         return (
             order?.invoice_number?.toLowerCase().includes(key) ||
             order?.phone_number?.toLowerCase().includes(key) ||
@@ -110,7 +113,6 @@ export default function InCompleteOrder() {
             order?.customer_name?.toLowerCase().includes(key)
         );
     });
-
 
     useEffect(() => {
         let isMounted = true;
@@ -121,13 +123,10 @@ export default function InCompleteOrder() {
             if (res && res.success) {
                 if (isMounted) {
                     const orders = res?.result?.data || [];
-
                     setCompleteOrders(orders);
-                    setTotalOrders(res?.result?.orders_count);
-
-                    const totalRevenue = orders.reduce((sum, order) => sum + parseFloat(order.payable_price || 0),0);
-                    
-                    setTotalRevenue(totalRevenue);
+                    setTotalOrders(res?.result?.orders_count || orders.length);
+                    const revenue = orders.reduce((sum, order) => sum + parseFloat(order.payable_price || 0), 0);
+                    setTotalRevenue(revenue);
                 }
             }
         };
@@ -140,11 +139,9 @@ export default function InCompleteOrder() {
     }, []);
 
     const accuracyRate = totalOrders > 0 ? ((completeOrders?.length / totalOrders) * 100).toFixed(2) : 0;
+    const formatCurrency = (amount) => `৳${Number(amount || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-    const formatCurrency = (amount) => `৳${Number(amount).toLocaleString("en-BD", {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-
-    const stats = 
-    [
+    const stats = [
         {
             key: "incomplete",
             label: "Total Incomplete Orders",
@@ -175,42 +172,45 @@ export default function InCompleteOrder() {
         },
     ];
 
-    const columns = 
-    [
+    const columns = [
         {
-            title: "SL",
+            title: "#",
             key: "sl",
-            width: 60,
-            render: (_, __, index) => (currentPage - 1) * pageSize + index + 1,
+            width: 55,
+            align: "center",
+            fixed: "left",
+            render: (_, __, index) => (
+                <span className="sl-badge">
+                    {(currentPage - 1) * pageSize + index + 1}
+                </span>
+            ),
         },
         {
             title: "Products",
             key: "products",
-            width: 360,
+            width: 320,
+            fixed: "left",
             render: (_, record) => {
-                if (!record?.items?.length) return "N/A";
+                if (!record?.items?.length) return <Text type="secondary">N/A</Text>;
 
                 return (
                     <div>
                         {record.items.map((item, index) => {
                             const product = item?.product;
-
-                            if (!product) return "N/A";
+                            if (!product) return null;
 
                             const variations = [item?.attribute_value_1, item?.attribute_value_2, item?.attribute_value_3].filter(val => val && typeof val === "string");
 
                             return (
                                 <div key={index} className="io-product-item">
-                                    <Image src={product?.image} alt={product?.name || "Product"} width={40} height={50} className="io-product-item__img" preview={{ mask: "Preview" }}/>
-
+                                    <Image src={product?.image} alt={product?.name || "Product"} width={38} height={46} className="io-product-item__img" preview={{ mask: "View" }} />
                                     <div>
-                                        <div className="io-product-item__name">
+                                        <Text strong className="io-product-item__name">
                                             {product?.name || "N/A"}
-                                        </div>
-
+                                        </Text>
                                         {variations.length > 0 && (
                                             <div className="io-product-item__variation">
-                                                Variation: {variations.join(" / ")}
+                                                Var: {variations.join(" / ")}
                                             </div>
                                         )}
                                     </div>
@@ -222,74 +222,82 @@ export default function InCompleteOrder() {
             }
         },
         {
-            title: "Name",
+            title: "Customer Name",
             dataIndex: "name",
             key: "name",
-            width:140,
+            width: 140,
             render: (name) => <span className="io-customer-name">{name || "N/A"}</span>,
         },
         {
             title: "Phone Number",
             dataIndex: "phone_number",
             key: "phone_number",
+            width: 220,
             render: (text) => (
                 <div className="io-phone-cell">
-                    <span className="io-phone-cell__number">{text}</span>
+                    <span className="io-phone-cell__number">{text || "N/A"}</span>
+                    {text && (
+                        <>
+                            <Tooltip title="Copy Phone Number">
+                                <CopyOutlined className="io-icon-btn io-icon-btn--copy" onClick={() => copyPhoneNo(text)}/>
+                            </Tooltip>
 
-                    <Tooltip title="Copy Phone Number.">
-                        <CopyOutlined className="io-icon-btn io-icon-btn--copy" onClick={() => copyPhoneNo(text)}/>
-                    </Tooltip>
+                            <Tooltip title="WhatsApp">
+                                <WhatsAppOutlined className="io-icon-btn io-icon-btn--whatsapp" onClick={() => openWhatsApp(text)}/>
+                            </Tooltip>
 
-                    <Tooltip title="WhatsApp">
-                        <WhatsAppOutlined className="io-icon-btn io-icon-btn--whatsapp" onClick={() => openWhatsApp(text)}/>
-                    </Tooltip>
-
-                    <Tooltip title="View delivery report">
-                        <InfoCircleOutlined className="io-icon-btn io-icon-btn--info" onClick={() => handleOpenModal(text)}/>
-                    </Tooltip>
+                            <Tooltip title="Delivery Report">
+                                <InfoCircleOutlined className="io-icon-btn io-icon-btn--info" onClick={() => handleOpenModal(text)}/>
+                            </Tooltip>
+                        </>
+                    )}
                 </div>
             ),
-            width:250
         },
         {
             title: "Address",
             dataIndex: "address",
             key: "address",
+            width: 180,
             render: (address) => <span className="io-address-cell">{address || "N/A"}</span>,
         },
         {
-            title: "Ip Address",
+            title: "IP Address",
             dataIndex: "ip_address",
             key: "ip_address",
+            width: 120,
             render: (ip) => <span className="io-meta-cell">{ip || "N/A"}</span>,
         },
         {
-            title: "Created_at",
+            title: "Created At",
             dataIndex: "created_at",
             key: "created_at",
+            width: 160,
             render: (created_at) => (
                 <span className="io-date-cell">
-                    {created_at ? dayjs(created_at).format("MMMM DD, YYYY hh:mm:ss A") : "N/A"}
+                    {created_at ? dayjs(created_at).format("DD MMM YYYY, hh:mm A") : "N/A"}
                 </span>
             ),
-            width:150
         },
         {
             title: "Status",
             key: "status",
+            width: 110,
+            align: "center",
             render: (_, record) => (
-                <span className="io-status-pill">
-                    {record.status?.name || "N/A"}
-                </span>
+                <Tag color={record.status?.name === 'Approved' ? 'success' : record.status?.name === 'Canceled' ? 'error' : 'processing'} style={{ margin: 0, borderRadius: 10, fontWeight: 700, fontSize: 11 }}>
+                    {record.status?.name || "Pending"}
+                </Tag>
             ),
         },
         {
             title: "Action",
             key: "operation",
-            width: 140,
+            width: 130,
             align: "center",
+            fixed: "right",
             render: (_, record) => (
-                <Space size={6}>
+                <Space size={4}>
                     <Tooltip title="Edit Order">
                         <Button size="small" type="text" className="io-action-btn io-action-btn--edit" icon={<EditOutlined />} onClick={() => onEdit(record.id)} />
                     </Tooltip>
@@ -310,32 +318,25 @@ export default function InCompleteOrder() {
 
     const copyPhoneNo = async (phoneNumber) => {
         if (!phoneNumber) return;
-
         try {
             await navigator.clipboard.writeText(phoneNumber);
-
             messageApi.open({
                 type: "success",
                 content: "Phone Number Copied",
             });
-
         } catch (err) {
-            console.log(err);
+            console.error(err);
             message.error("Failed to copy phone number");
         }
     };
 
     const openWhatsApp = (phone) => {
         if (!phone) return;
-
         let formattedPhone = phone.replace(/\D/g, "");
-
         if (!formattedPhone.startsWith("88")) {
             formattedPhone = "88" + formattedPhone;
         }
-
-        const whatsappUrl = `https://wa.me/${formattedPhone}`;
-        window.open(whatsappUrl, "_blank");
+        window.open(`https://wa.me/${formattedPhone}`, "_blank");
     };
 
     const handleOpenModal = (phoneNumber) => {
@@ -354,14 +355,11 @@ export default function InCompleteOrder() {
 
     const handleStatistics = async () => {
         setIsModalOpen(true);
-
         const res = await getDatas("/admin/incomplete/order/reports");
 
         if (res && res.success) {
             const data = res.result;
-
             setAbandonedProducts(data.products || []);
-
             setRecentActivity([
                 {
                     title: "Today",
@@ -384,11 +382,9 @@ export default function InCompleteOrder() {
 
     const handleOrder = async (record) => {
         setLoading(true);
-
         const res = await getDatas(`/admin/incomplete-orders/${record.id}`);
 
         if (res && res?.success) {
-
             const itemsWithVariations = res.result.items.map(item => {
                 const variations = [
                     item.attribute_value_1,
@@ -413,14 +409,12 @@ export default function InCompleteOrder() {
             };            
 
             setLoading(false);
-
             navigate("/order-add", { state: orderData });
         }
     };
 
     const onDelete = async (id) => {
         const res = await deleteData(`/admin/incomplete-orders/${id}`);
-        
         if (res && res?.success) {
             message.success(res?.msg || "Order moved to trash");
             fetchIncompleteOrders();
@@ -441,7 +435,6 @@ export default function InCompleteOrder() {
 
         try {
             const orderIds = selectedOrders.map(o => o.id);
-
             const res = await postData("/admin/incomplete-orders/bulk-delete", {
                 ids: orderIds,
             });
@@ -459,7 +452,6 @@ export default function InCompleteOrder() {
             } else {
                 message.error("Bulk delete failed.");
             }
-
         } catch (err) {
             message.error("Something went wrong!", err);
         }
@@ -481,14 +473,12 @@ export default function InCompleteOrder() {
 
         try {
             setCsvLoader(true);
-
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            await new Promise((resolve) => setTimeout(resolve, 300));
 
             const worksheet = XLSX.utils.json_to_sheet(incompleteOrders);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
-
-            XLSX.writeFile(workbook, "exported_data.csv");
+            XLSX.writeFile(workbook, `Incomplete_Orders_${dayjs().format('YYYY-MM-DD')}.csv`);
         } catch (error) {
             console.error("Export failed:", error);
         } finally {
@@ -496,92 +486,221 @@ export default function InCompleteOrder() {
         }
     };
 
-    const statusFilters = [
-        { key: null, label: "Total", count: orderCounts.total, icon: <UnorderedListOutlined /> },
-        { key: 1, label: "Pending", count: orderCounts.pending, icon: <ClockCircleOutlined /> },
-        { key: 3, label: "Approved", count: orderCounts.approved, icon: <CheckCircleOutlined /> },
-        { key: 8, label: "Canceled", count: orderCounts.canceled, icon: <CloseCircleOutlined />, danger: true },
-    ];
-
     return (
         <>
             {contextHolder}
             <div className="io-page">
-                <div className="pagehead">
-                    <div className="head-left">
-                        <h1 className="title">Incomplete Orders</h1>
-                        <p className="subtitle">Track abandoned carts and recover lost sales</p>
+                {/* Header Top Bar */}
+                <div className="topBar no-print flex-between">
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <Title level={4} style={{ margin: 0, color: '#0f172a', fontWeight: 700 }}>
+                                Incomplete Orders
+                            </Title>
+                            <Badge count={`${(orderCounts.total || totalOrders || 0).toLocaleString()} Orders`} style={{ backgroundColor: '#1c558b' }}/>
+                        </div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                            Track abandoned carts and recover lost sales
+                        </Text>
                     </div>
-                    <div className="head-actions">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> }, { title: "Incomplete Orders" }]}/>
                     </div>
                 </div>
 
-                <div className="io-toolbar">
-                    <AntInput.Search
-                        allowClear
-                        className="io-toolbar__search"
-                        placeholder="Search by Invoice / Phone / Name"
-                        onChange={(e) => { setSearchText(e.target.value); setCurrentPage(1); }}
-                    />
-                    <div className="io-toolbar__actions">
-                        <Button className="io-btn-ghost-brand" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-                            Back
-                        </Button>
-                    </div>
+                <Divider className="no-print" style={{ margin: '14px 0' }} />
+
+                {/* Metric Summary Cards */}
+                <div className="no-print" style={{ marginBottom: 16 }}>
+                    <Row gutter={[12, 12]}>
+                        <Col xs={24} sm={12} md={6}>
+                            <div className="mini-summary-card blue">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon blue">
+                                        <ShoppingCartOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Total Incomplete Orders</span>
+                                        <div className="mini-card-val">
+                                            {(incompleteOrders?.length || totalOrders || 0).toLocaleString()}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill">Pending {orderCounts.pending || 0}</span>
+                                    <span className="footer-pill red">Canceled {orderCounts.canceled || 0}</span>
+                                </div>
+                            </div>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={6}>
+                            <div className="mini-summary-card green">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon green">
+                                        <CheckCircleOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span className="mini-card-label">Recovered Orders</span>
+                                            <span className="mini-badge-pill">{accuracyRate}% Rate</span>
+                                        </div>
+                                        <div className="mini-card-val text-green">
+                                            {completeOrders?.length || 0}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill green">Success {completeOrders?.length || 0}</span>
+                                    <span className="footer-pill">Total {totalOrders || 0}</span>
+                                </div>
+                            </div>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={6}>
+                            <div className="mini-summary-card purple">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon purple">
+                                        <ThunderboltOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Recovery Accuracy</span>
+                                        <div className="mini-card-val">
+                                            {accuracyRate}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill">{completeOrders?.length || 0} Recovered</span>
+                                    <span className="footer-pill">Of {totalOrders || 0} Total</span>
+                                </div>
+                            </div>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={6}>
+                            <div className="mini-summary-card orange">
+                                <div className="mini-card-top">
+                                    <div className="mini-card-icon orange">
+                                        <FireOutlined />
+                                    </div>
+                                    <div className="mini-card-info">
+                                        <span className="mini-card-label">Recovered Revenue</span>
+                                        <div className="mini-card-val text-green">
+                                            {formatCurrency(totalRevenue)}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mini-card-footer">
+                                    <span className="footer-pill green">Total {formatCurrency(totalRevenue)}</span>
+                                </div>
+                            </div>
+                        </Col>
+                    </Row>
                 </div>
 
-                <div className="io-filters-row">
-                    <Space wrap>
-                        <DatePicker.RangePicker
-                            value={dateRange}
-                            onChange={(dates) => setDateRange(dates)}
-                            format="YYYY-MM-DD"
-                            placeholder={["Start Date", "End Date"]}
+                {/* SINGLE-LINE FILTER TOOLBAR */}
+                <div className="filter-toolbar no-print">
+                    <Space wrap size="middle" align="center">
+                        {/* Search Input */}
+                        <Input 
+                            placeholder="Search Invoice / Phone / Name..." 
+                            allowClear 
+                            value={searchText} 
+                            onChange={(e) => { setSearchText(e.target.value); setCurrentPage(1); }} 
+                            className="search-input" 
+                            style={{ width: 260 }}
+                            prefix={<SearchOutlined style={{ color: '#94a3b8' }} />}
                         />
-                        <Button onClick={() => setDateRange(null)}>Clear Dates</Button>
+
+                        {/* Status Select Filter */}
+                        <Select 
+                            placeholder="Filter Status" 
+                            value={activeStatus} 
+                            style={{ width: 160 }} 
+                            onChange={(val) => { setActiveStatus(val); setCurrentPage(1); }}
+                            allowClear
+                            suffixIcon={<FilterOutlined style={{ color: '#94a3b8' }} />}
+                        >
+                            <Option value={null}>All Statuses ({orderCounts.total || 0})</Option>
+                            <Option value={1}>Pending ({orderCounts.pending || 0})</Option>
+                            <Option value={3}>Approved ({orderCounts.approved || 0})</Option>
+                            <Option value={8}>Canceled ({orderCounts.canceled || 0})</Option>
+                        </Select>
+
+                        {/* Date Range Picker */}
+                        <RangePicker 
+                            value={dateRange} 
+                            onChange={(dates) => { setDateRange(dates); setCurrentPage(1); }} 
+                            allowClear 
+                            style={{ width: 240 }} 
+                        />
+
+                        {/* Reset / Clear Filters Button */}
+                        <Button 
+                            icon={<ReloadOutlined />} 
+                            onClick={() => {
+                                setSearchText("");
+                                setActiveStatus(null);
+                                setDateRange(null);
+                                setCurrentPage(1);
+                                setSelectedRowKeys([]);
+                                setSelectedOrders([]);
+                            }} 
+                            className="reset-btn"
+                        >
+                            Reset
+                        </Button>
                     </Space>
 
-                    <div className="io-bulk-actions">
-                        <Button icon={<DeleteOutlined />} danger disabled={selectedOrders?.length === 0} onClick={() => handleBulkDelete()}>
-                            Bulk Delete
+                    <Space size="middle" align="center" className="export-actions" wrap>
+                        {selectedRowKeys.length > 0 && (
+                            <Button 
+                                icon={<DeleteOutlined />} 
+                                danger 
+                                onClick={handleBulkDelete}
+                            >
+                                Bulk Delete ({selectedRowKeys.length})
+                            </Button>
+                        )}
+
+                        <Button 
+                            danger 
+                            icon={<DeleteOutlined />} 
+                            onClick={() => navigate("/incomplete/orders-trash")}
+                        >
+                            Show Trash
                         </Button>
 
-                        <Tooltip title="Show Trash">
-                            <Button danger icon={<DeleteOutlined />} onClick={() => navigate("/incomplete/orders-trash")}>
-                                Show Trash
-                            </Button>
-                        </Tooltip>
-
-                        <Button icon={<ExportOutlined />} onClick={handleExport}>
+                        <Button 
+                            type="primary" 
+                            icon={<ExportOutlined />} 
+                            onClick={handleExport} 
+                            className="btn-csv"
+                        >
                             {csvLoader ? "Exporting..." : "Export CSV"}
                         </Button>
 
-                        <Button className="io-btn-primary" icon={<BarChartOutlined />} onClick={handleStatistics}>
+                        <Button 
+                            type="primary" 
+                            icon={<BarChartOutlined />} 
+                            onClick={handleStatistics} 
+                            style={{ background: '#1c558b', borderColor: '#1c558b' }}
+                        >
                             Statistics
                         </Button>
-                    </div>
-                </div>
 
-                <div className="io-status-grid">
-                    {statusFilters.map(({ key, label, count, icon, danger }) => (
-                        <button
-                            key={String(key)}
-                            type="button"
-                            className={`io-status-card${activeStatus === key ? " io-status-card--active" : ""}${danger ? " io-status-card--danger" : ""}`}
-                            onClick={() => setActiveStatus(key)}
+                        <Button 
+                            icon={<ArrowLeftOutlined />} 
+                            onClick={() => window.history.back()} 
+                            className="back-btn"
                         >
-                            <div>
-                                <div className="io-status-card__label">{label}</div>
-                                <div className="io-status-card__value">{count ?? 0}</div>
-                            </div>
-                            <div className="io-status-card__icon">{icon}</div>
-                        </button>
-                    ))}
+                            Back
+                        </Button>
+                    </Space>
                 </div>
 
+                {/* Selection Bar */}
                 {selectedRowKeys.length > 0 && (
-                    <div className="io-selection-bar">
+                    <div className="io-selection-bar no-print">
                         <Space>
                             <span className="io-selection-bar__count">{selectedRowKeys.length} selected</span>
                             <span className="io-selection-bar__hint">Bulk actions apply to selected rows</span>
@@ -592,7 +711,8 @@ export default function InCompleteOrder() {
                     </div>
                 )}
 
-                <div className="io-table-card">
+                {/* Orders Table */}
+                <div className="printable order-table-container">
                     <Table
                         bordered
                         loading={loading}
@@ -600,25 +720,27 @@ export default function InCompleteOrder() {
                         dataSource={filteredOrders}
                         rowSelection={rowSelection}
                         rowKey="id"
-                        scroll={{ x: 1200 }}
+                        scroll={{ x: 1300 }}
                         pagination={{
                             current: currentPage,
                             pageSize: pageSize,
                             total: totalOrders,
                             showSizeChanger: true,
-                            pageSizeOptions: ["10", "20", "50", "100"],
+                            pageSizeOptions: ["10", "25", "50", "100"],
                             showQuickJumper: true,
                             onChange: (page, size) => {
                                 setCurrentPage(page);
                                 setPageSize(size);
                             },
                             showTotal: (total, range) =>
-                                `${range[0]}–${range[1]} of ${total} items`,
+                                `Showing ${range[0]}–${range[1]} of ${total} incomplete orders`,
                         }}
+                        className="order-intelligence-table"
                     />
                 </div>
             </div>
 
+            {/* Statistics Modal */}
             <Modal title="Incomplete Order Statistics" open={isModalOpen} onOk={() => setIsModalOpen(false)} onCancel={() => setIsModalOpen(false)} className="io-modal" width={1000}>
                 <div className="io-cards">
                     {stats.map((s) => (
@@ -640,7 +762,7 @@ export default function InCompleteOrder() {
                     <div className="activity-buttons">
                         <Button size="small" type={activePeriod === "week" ? "primary" : "default"} onClick={handleWeekClick}>Last 7 Days</Button>
                         <Button size="small" type={activePeriod === "month" ? "primary" : "default"} onClick={handleMonthClick}>
-                        Last 30 Days
+                            Last 30 Days
                         </Button>
                     </div>
 
@@ -678,5 +800,5 @@ export default function InCompleteOrder() {
 
             <DeliveryReportModal visible={modalVisible} phoneNumber={selectedPhone} onClose={handleCloseModal}/>
         </>
-    )
+    );
 }
