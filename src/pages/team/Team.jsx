@@ -1,21 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Table, Typography, Divider, Row, Col, Card, Avatar, Tag, Space, Progress, Button, Tooltip, Badge, Select, Input, DatePicker, Statistic } from "antd";
-import { 
-    UserOutlined, 
-    TeamOutlined, 
-    DollarOutlined, 
-    BarChartOutlined, 
-    ReloadOutlined, 
-    FireOutlined, 
-    ThunderboltOutlined, 
-    HistoryOutlined, 
-    ClockCircleOutlined, 
-    SearchOutlined, 
-    ArrowLeftOutlined,
-    MailOutlined,
-    IdcardOutlined,
-    CheckCircleOutlined
-} from "@ant-design/icons";
+import { Table, Typography, Divider, Row, Col, Card, Avatar, Tag, Space, Progress, Button, Tooltip, Badge, Select, Input, DatePicker, Statistic, Modal, Form, InputNumber } from "antd";
+import { UserOutlined, TeamOutlined, DollarOutlined, BarChartOutlined, ReloadOutlined, FireOutlined, ThunderboltOutlined, HistoryOutlined, ClockCircleOutlined, SearchOutlined, ArrowLeftOutlined,MailOutlined,EditOutlined} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -52,13 +37,18 @@ export default function Team() {
     useTitle("Team Dashboard");
 
     // States
-    const [loading, setLoading]     = useState(false);
-    const [summary, setSummary]     = useState(null);
-    const [employees, setEmployees] = useState([]);
-    const [filter, setFilter]       = useState("");
-    const [dateRange, setDateRange] = useState(null);
-    const [searchKey, setSearchKey] = useState("");
-    const [pagination, setPagination] = useState({ current: 1, pageSize: 25 });
+    const [loading, setLoading]           = useState(false);
+    const [summary, setSummary]           = useState(null);
+    const [employees, setEmployees]       = useState([]);
+    const [filter, setFilter]             = useState("");
+    const [dateRange, setDateRange]       = useState(null);
+    const [searchKey, setSearchKey]       = useState("");
+    const [pagination, setPagination]     = useState({ current: 1, pageSize: 25 });
+    
+    // Modal & Form state
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
+    const [form] = Form.useForm();
 
     const buildQuery = useCallback(() => {
         const params = new URLSearchParams();
@@ -94,9 +84,32 @@ export default function Team() {
         getTeamDashboard();
     }, [getTeamDashboard]);
 
-    const columns = [
+    const handleEditClick = (employee) => {
+        setSelectedEmployee(employee);
+        form.setFieldsValue({
+            salary: employee.salary || "",
+            commission_per_order: employee.commission_per_order || "",
+            present_address: employee.present_address || employee.address || "",
+            permanent_address: employee.permanent_address || "",
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveEdit = (values) => {
+        if (selectedEmployee) {
+            setEmployees((prev) =>
+                prev.map((emp) =>
+                    emp.id === selectedEmployee.id ? { ...emp, ...values } : emp
+                )
+            );
+        }
+        setIsEditModalOpen(false);
+    };
+
+    const columns = 
+    [
         {
-            title: "#",
+            title: "SL",
             key: "sl",
             width: 55,
             align: "center",
@@ -283,8 +296,7 @@ export default function Team() {
             title: "Financial Summary",
             key: "financial",
             align: "right",
-            width: 200,
-            fixed: "right",
+            width: 190,
             render: (_, record) => {
                 const assigned = record.assigned_metrics || {};
                 const prepared = record.prepared_metrics || {};
@@ -314,6 +326,28 @@ export default function Team() {
                 );
             },
         },
+        {
+            title: "Action",
+            key: "action",
+            align: "center",
+            width: 80,
+            fixed: "right",
+            render: (_, record) => (
+                <Tooltip title="Edit Employee Settings">
+                    <Button
+                        size="small"
+                        type="text"
+                        icon={<EditOutlined />}
+                        style={{
+                            color: '#1c558b',
+                            background: '#e8f1f8',
+                            borderRadius: 6
+                        }}
+                        onClick={() => handleEditClick(record)}
+                    />
+                </Tooltip>
+            ),
+        },
     ];
 
     return (
@@ -329,20 +363,11 @@ export default function Team() {
                     </div>
                 </div>
                 <div className="team-page-actions">
-                    <Button
-                        className="team-btn-ghost"
-                        icon={<ArrowLeftOutlined />}
-                        onClick={() => window.history.back()}
-                    >
+                    <Button className="team-btn-ghost" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                         Back
                     </Button>
-                    <Button
-                        className="team-btn-primary"
-                        type="primary"
-                        icon={<ReloadOutlined />}
-                        onClick={getTeamDashboard}
-                        loading={loading}
-                    >
+
+                    <Button className="team-btn-primary" type="primary" icon={<ReloadOutlined />} onClick={getTeamDashboard} loading={loading}>
                         Refresh
                     </Button>
                 </div>
@@ -367,36 +392,18 @@ export default function Team() {
                     {filter === "custom" && (
                         <Col xs={24} sm={12} md={8}>
                             <Text type="secondary" className="filter-label">Custom Range</Text>
-                            <RangePicker
-                                style={{ width: "100%" }}
-                                value={dateRange}
-                                onChange={setDateRange}
-                                format="YYYY-MM-DD"
-                            />
+                            <RangePicker style={{ width: "100%" }} value={dateRange} onChange={setDateRange} format="YYYY-MM-DD"/>
                         </Col>
                     )}
 
                     <Col xs={24} sm={12} md={filter === "custom" ? 6 : 10}>
                         <Text type="secondary" className="filter-label">Search Employee</Text>
-                        <Input
-                            allowClear
-                            prefix={<SearchOutlined />}
-                            placeholder="Username, email, phone..."
-                            value={searchKey}
-                            onChange={(e) => setSearchKey(e.target.value)}
-                            onPressEnter={getTeamDashboard}
-                        />
+                        <Input allowClear prefix={<SearchOutlined />} placeholder="Username, email, phone..." value={searchKey} onChange={(e) => setSearchKey(e.target.value)} onPressEnter={getTeamDashboard}/>
                     </Col>
 
                     <Col xs={24} sm={12} md={4}>
                         <Text type="secondary" className="filter-label">&nbsp;</Text>
-                        <Button
-                            className="team-btn-primary"
-                            type="primary"
-                            block
-                            onClick={getTeamDashboard}
-                            loading={loading}
-                        >
+                        <Button className="team-btn-primary" type="primary" block onClick={getTeamDashboard} loading={loading}>
                             Apply
                         </Button>
                     </Col>
@@ -471,7 +478,7 @@ export default function Team() {
                     columns={columns}
                     dataSource={employees}
                     loading={loading}
-                    scroll={{ x: 1300, y: "calc(100vh - 360px)" }}
+                    scroll={{ x: 1400, y: "calc(100vh - 360px)" }}
                     pagination={{
                         current: pagination.current,
                         pageSize: pagination.pageSize,
@@ -486,6 +493,58 @@ export default function Team() {
                     }}
                 />
             </div>
+
+            <Modal
+                title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Avatar src={selectedEmployee?.img_path} icon={<UserOutlined />} style={{ background: '#1c558b' }} />
+                        <div>
+                            <div style={{ fontWeight: 700, fontSize: 16, textTransform: 'capitalize' }}>
+                                Edit Employee Details
+                            </div>
+                            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 400 }}>
+                                {selectedEmployee?.username} (#{selectedEmployee?.id})
+                            </div>
+                        </div>
+                    </div>
+                }
+                open={isEditModalOpen}
+                onCancel={() => setIsEditModalOpen(false)}
+                footer={[
+                    <Button key="cancel" onClick={() => setIsEditModalOpen(false)}>
+                        Cancel
+                    </Button>,
+                    <Button key="save" type="primary" style={{ background: '#1c558b', borderColor: '#1c558b' }} onClick={() => form.submit()}>
+                        Save Changes
+                    </Button>
+                ]}
+                destroyOnClose
+            >
+                <Form form={form} layout="vertical" onFinish={handleSaveEdit} style={{ marginTop: 14 }}>
+                    <Row gutter={12}>
+                        <Col span={12}>
+                            <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>Monthly Salary</span>} name="salary">
+                                <InputNumber style={{ width: '100%', borderRadius: 8 }} prefix="৳" placeholder="Enter base salary (e.g. 25000)" min={0}
+                                    formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} parser={value => value.replace(/\$\s?|(,*)/g, '')}/>
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={12}>
+                            <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>Commission per Order</span>} name="commission_per_order">
+                                <InputNumber style={{ width: '100%', borderRadius: 8 }} prefix="৳" placeholder="Enter commission (e.g. 15)" min={0}/>
+                            </Form.Item>
+                        </Col>
+                    </Row>
+
+                    <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>Present Address</span>} name="present_address">
+                        <Input.TextArea rows={2} placeholder="Enter current present address..." style={{ borderRadius: 8 }}/>
+                    </Form.Item>
+
+                    <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>Permanent Address</span>} name="permanent_address">
+                        <Input.TextArea rows={2} placeholder="Enter permanent address..." style={{ borderRadius: 8 }}/>
+                    </Form.Item>
+                </Form>
+            </Modal>
         </div>
     );
 }
