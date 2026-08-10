@@ -355,7 +355,7 @@ export default function InCompleteOrder() {
 
     const handleStatistics = async () => {
         setIsModalOpen(true);
-        const res = await getDatas("/admin/incomplete/order/reports");
+        const res = await getDatas("/admin/order/reports/incomplete");
 
         if (res && res.success) {
             const data = res.result;
@@ -670,29 +670,15 @@ export default function InCompleteOrder() {
                             Show Trash
                         </Button>
 
-                        <Button 
-                            type="primary" 
-                            icon={<ExportOutlined />} 
-                            onClick={handleExport} 
-                            className="btn-csv"
-                        >
+                        <Button type="primary" icon={<ExportOutlined />} onClick={handleExport} className="btn-csv">
                             {csvLoader ? "Exporting..." : "Export CSV"}
                         </Button>
 
-                        <Button 
-                            type="primary" 
-                            icon={<BarChartOutlined />} 
-                            onClick={handleStatistics} 
-                            style={{ background: '#1c558b', borderColor: '#1c558b' }}
-                        >
+                        <Button type="primary" icon={<BarChartOutlined />} onClick={handleStatistics} style={{ background: '#1c558b', borderColor: '#1c558b' }}>
                             Statistics
                         </Button>
 
-                        <Button 
-                            icon={<ArrowLeftOutlined />} 
-                            onClick={() => window.history.back()} 
-                            className="back-btn"
-                        >
+                        <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} className="back-btn">
                             Back
                         </Button>
                     </Space>
