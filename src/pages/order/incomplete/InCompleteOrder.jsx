@@ -410,7 +410,7 @@ export default function InCompleteOrder() {
                 status       : record.status,
                 items        : itemsWithVariations,
                 is_incomplete: 1
-            };
+            };            
 
             setLoading(false);
 
