@@ -1,6 +1,6 @@
 import { ArrowLeftOutlined,ShoppingCartOutlined,WhatsAppOutlined,CopyOutlined,CheckCircleOutlined,DeleteOutlined,ThunderboltOutlined,FireOutlined,ExportOutlined,BarChartOutlined,InfoCircleOutlined,EditOutlined,SwapOutlined,ClockCircleOutlined,CloseCircleOutlined,UnorderedListOutlined,SearchOutlined,FilterOutlined,CalendarOutlined,ReloadOutlined} from "@ant-design/icons";
 import * as XLSX from "xlsx";
-import { Input, Breadcrumb, Button, message, DatePicker, Popconfirm, Space, Table, Modal, Tooltip, Image, Select, Tag, Typography, Badge, Row, Col, Divider } from "antd";
+import { Input, Breadcrumb, Button, message, DatePicker, Popconfirm, Space, Table, Modal, Tooltip, Image, Select, Tag, Typography, Badge, Row, Col, Divider, Spin } from "antd";
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { Link, useNavigate } from "react-router-dom";
@@ -39,6 +39,8 @@ export default function InCompleteOrder() {
     const [activePeriod, setActivePeriod]           = useState("week");
     const [recentActivity, setRecentActivity]       = useState([]);
     const [abandonedProducts, setAbandonedProducts] = useState([]);
+    const [statsSummary, setStatsSummary]           = useState(null);
+    const [statsLoading, setStatsLoading]           = useState(false);
 
     const [searchText, setSearchText]               = useState("");
 
@@ -140,37 +142,6 @@ export default function InCompleteOrder() {
 
     const accuracyRate = totalOrders > 0 ? ((completeOrders?.length / totalOrders) * 100).toFixed(2) : 0;
     const formatCurrency = (amount) => `৳${Number(amount || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-    const stats = [
-        {
-            key: "incomplete",
-            label: "Total Incomplete Orders",
-            value: incompleteOrders?.length || 0,
-            icon: <ShoppingCartOutlined />,
-            colorClass: "io-badge--incomplete",
-        },
-        {
-            key: "recovered",
-            label: "Successfully Recovered",
-            value: completeOrders?.length || 0,
-            icon: <CheckCircleOutlined />,
-            colorClass: "io-badge--recovered",
-        },
-        {
-            key: "rate",
-            label: "Recovery Rate",
-            value: `${accuracyRate}%`,
-            icon: <ThunderboltOutlined />,
-            colorClass: "io-badge--rate",
-        },
-        {
-            key: "revenue",
-            label: "Revenue Recovered",
-            value: formatCurrency(totalRevenue),
-            icon: <FireOutlined />,
-            colorClass: "io-badge--revenue",
-        },
-    ];
 
     const columns = [
         {
@@ -355,28 +326,53 @@ export default function InCompleteOrder() {
 
     const handleStatistics = async () => {
         setIsModalOpen(true);
-        const res = await getDatas("/admin/order/reports/incomplete");
+        setStatsLoading(true);
 
-        if (res && res.success) {
-            const data = res.result;
-            setAbandonedProducts(data.products || []);
-            setRecentActivity([
-                {
-                    title: "Today",
-                    new: data.today_orders,
-                    converted: data.today_converted_orders,
-                },
-                {
-                    title: "Yesterday",
-                    new: data.yesterday_orders,
-                    converted: data.yesterday_converted_orders,
-                },
-                {
-                    title: "Last 7 Days",
-                    new: data.this_week_orders,
-                    converted: data.this_week_converted_orders,
-                },
-            ]);
+        try {
+            let res = await getDatas("/admin/order/reports/incomplete");
+            if (!res || !res.success) {
+                res = await getDatas("/admin/incomplete/order/reports");
+            }
+
+            if (res && res.success && res.result) {
+                const data = res.result;
+                setStatsSummary(data.summary || null);
+                setAbandonedProducts(data.top_abandoned_products || data.products || []);
+
+                const pb = data.period_breakdown || {};
+
+                setRecentActivity([
+                    {
+                        title: "Today",
+                        new: data.today_orders ?? pb.today?.incomplete_orders ?? 0,
+                        converted: data.today_converted_orders ?? pb.today?.converted_orders ?? 0,
+                        revenue: pb.today?.converted_revenue ?? 0,
+                    },
+                    {
+                        title: "Yesterday",
+                        new: data.yesterday_orders ?? pb.yesterday?.incomplete_orders ?? 0,
+                        converted: data.yesterday_converted_orders ?? pb.yesterday?.converted_orders ?? 0,
+                        revenue: pb.yesterday?.converted_revenue ?? 0,
+                    },
+                    {
+                        title: "Last 7 Days (This Week)",
+                        new: data.this_week_orders ?? pb.this_week?.incomplete_orders ?? 0,
+                        converted: data.this_week_converted_orders ?? pb.this_week?.converted_orders ?? 0,
+                        revenue: pb.this_week?.converted_revenue ?? 0,
+                    },
+                    {
+                        title: "Last 30 Days (This Month)",
+                        new: data.this_month_orders ?? pb.this_month?.incomplete_orders ?? 0,
+                        converted: data.this_month_converted_orders ?? pb.this_month?.converted_orders ?? 0,
+                        revenue: pb.this_month?.converted_revenue ?? 0,
+                    },
+                ]);
+            }
+        } catch (err) {
+            console.error("Error fetching statistics:", err);
+            message.error("Failed to load statistics report");
+        } finally {
+            setStatsLoading(false);
         }
     };
 
@@ -485,6 +481,45 @@ export default function InCompleteOrder() {
             setCsvLoader(false);
         }
     };
+
+    const modalStatsList = [
+        {
+            key: "incomplete",
+            label: "Total Incomplete Orders",
+            value: statsSummary?.total_incomplete_orders ?? (incompleteOrders?.length || 0),
+            subtext: `Total Attempts: ${statsSummary?.total_attempts ?? 0}`,
+            icon: <ShoppingCartOutlined />,
+            colorClass: "io-badge--incomplete",
+        },
+        {
+            key: "recovered",
+            label: "Total Converted Orders",
+            value: statsSummary?.total_converted_orders ?? (completeOrders?.length || 0),
+            subtext: `Attempt Conv: ${statsSummary?.conversion_rate_of_total_attempts ?? 0}%`,
+            icon: <CheckCircleOutlined />,
+            colorClass: "io-badge--recovered",
+        },
+        {
+            key: "rate",
+            label: "Conversion Rate",
+            value: `${statsSummary?.conversion_rate ?? accuracyRate}%`,
+            subtext: `Attempt Conv: ${statsSummary?.conversion_rate_of_total_attempts ?? 0}%`,
+            icon: <ThunderboltOutlined />,
+            colorClass: "io-badge--rate",
+        },
+        {
+            key: "revenue",
+            label: "Converted Revenue",
+            value: formatCurrency(statsSummary?.converted_order_revenue ?? totalRevenue),
+            subtext: `Avg Order Val: ${formatCurrency(statsSummary?.average_converted_order_value ?? 0)}`,
+            icon: <FireOutlined />,
+            colorClass: "io-badge--revenue",
+        },
+    ];
+
+    const filteredRecentActivity = activePeriod === "week"
+        ? recentActivity.filter(a => a.title.includes("Today") || a.title.includes("Yesterday") || a.title.includes("7 Days"))
+        : recentActivity;
 
     return (
         <>
@@ -670,15 +705,29 @@ export default function InCompleteOrder() {
                             Show Trash
                         </Button>
 
-                        <Button type="primary" icon={<ExportOutlined />} onClick={handleExport} className="btn-csv">
+                        <Button 
+                            type="primary" 
+                            icon={<ExportOutlined />} 
+                            onClick={handleExport} 
+                            className="btn-csv"
+                        >
                             {csvLoader ? "Exporting..." : "Export CSV"}
                         </Button>
 
-                        <Button type="primary" icon={<BarChartOutlined />} onClick={handleStatistics} style={{ background: '#1c558b', borderColor: '#1c558b' }}>
+                        <Button 
+                            type="primary" 
+                            icon={<BarChartOutlined />} 
+                            onClick={handleStatistics} 
+                            style={{ background: '#1c558b', borderColor: '#1c558b' }}
+                        >
                             Statistics
                         </Button>
 
-                        <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()} className="back-btn">
+                        <Button 
+                            icon={<ArrowLeftOutlined />} 
+                            onClick={() => window.history.back()} 
+                            className="back-btn"
+                        >
                             Back
                         </Button>
                     </Space>
@@ -727,61 +776,114 @@ export default function InCompleteOrder() {
             </div>
 
             {/* Statistics Modal */}
-            <Modal title="Incomplete Order Statistics" open={isModalOpen} onOk={() => setIsModalOpen(false)} onCancel={() => setIsModalOpen(false)} className="io-modal" width={1000}>
-                <div className="io-cards">
-                    {stats.map((s) => (
-                        <div key={s.key} className="io-card">
-                            <div className={`io-badge ${s.colorClass}`}>{s.icon}</div>
-                            <div className="io-card-body">
-                                <div className="io-card-label">{s.label}</div>
-                                <div className="io-card-value">{s.value}</div>
+            <Modal 
+                title="Incomplete Order Statistics" 
+                open={isModalOpen} 
+                onOk={() => setIsModalOpen(false)} 
+                onCancel={() => setIsModalOpen(false)} 
+                className="io-modal" 
+                width={1000}
+                footer={[
+                    <Button key="close" type="primary" onClick={() => setIsModalOpen(false)}>
+                        Close
+                    </Button>
+                ]}
+            >
+                <Spin spinning={statsLoading}>
+                    {/* Summary Cards */}
+                    <div className="io-cards">
+                        {modalStatsList.map((s) => (
+                            <div key={s.key} className="io-card">
+                                <div className={`io-badge ${s.colorClass}`}>{s.icon}</div>
+                                <div className="io-card-body">
+                                    <div className="io-card-label">{s.label}</div>
+                                    <div className="io-card-value">{s.value}</div>
+                                    {s.subtext && (
+                                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                                            {s.subtext}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
+                        ))}
+                    </div>
+
+                    {/* Recent Activity Section */}
+                    <div className="recent-activity-container">
+                        <h4>
+                            <ThunderboltOutlined /> Recent Activity
+                        </h4>
+
+                        <div className="activity-buttons">
+                            <Button size="small" type={activePeriod === "week" ? "primary" : "default"} onClick={handleWeekClick}>
+                                Last 7 Days
+                            </Button>
+                            <Button size="small" type={activePeriod === "month" ? "primary" : "default"} onClick={handleMonthClick}>
+                                Last 30 Days
+                            </Button>
                         </div>
-                    ))}
-                </div>
 
-                <div className="recent-activity-container">
-                    <h4>
-                        <ThunderboltOutlined /> Recent Activity
-                    </h4>
-
-                    <div className="activity-buttons">
-                        <Button size="small" type={activePeriod === "week" ? "primary" : "default"} onClick={handleWeekClick}>Last 7 Days</Button>
-                        <Button size="small" type={activePeriod === "month" ? "primary" : "default"} onClick={handleMonthClick}>
-                            Last 30 Days
-                        </Button>
+                        <div className="activity-stats">
+                            {(filteredRecentActivity.length > 0 ? filteredRecentActivity : recentActivity).map((item, index) => (
+                                <div key={index} className="activity-card">
+                                    <p>{item.title}</p>
+                                    <p>
+                                        Incomplete: <span className="new">{item.new}</span>
+                                    </p>
+                                    <p>
+                                        Converted: <span className="converted">{item.converted}</span>
+                                    </p>
+                                    {item.revenue != null && item.revenue > 0 && (
+                                        <p style={{ fontSize: 11, color: '#059669', fontWeight: 600, marginTop: 4 }}>
+                                            Rev: ৳{Number(item.revenue).toLocaleString()}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
-                    <div className="activity-stats">
-                        {recentActivity.map((item, index) => (
-                            <div key={index} className="activity-card">
-                                <p>{item.title}</p>
-                                <p>
-                                    New: <span className="new">{item.new}</span>
-                                </p>
-                                <p>
-                                    Converted: <span className="converted">{item.converted}</span>
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                    {/* Top Abandoned Products Section */}
+                    <div className="abandoned-products-container mb-4" style={{ marginTop: 24 }}>
+                        <h4>
+                            <ShoppingCartOutlined /> Top Abandoned Products ({abandonedProducts.length})
+                        </h4>
 
-                <div className="abandoned-products-container mb-4">
-                    <h4>
-                        <ShoppingCartOutlined /> Top 10 Abandoned Products
-                    </h4>
-
-                    <div className="product-list">
-                        {abandonedProducts.map((product, index) => (
-                            <div key={index} className="product-item">
-                                <img src={product.img_path} alt={product.name} />
-                                <span>{product.name}</span>
-                                <span className="badge">{product.incomplete_order_count}</span>
-                            </div>
-                        ))}
+                        <div className="product-list">
+                            {abandonedProducts.map((product, index) => {
+                                const count = product.period_abandoned_count ?? product.total_abandoned_items ?? product.incomplete_order_count ?? 0;
+                                return (
+                                    <div key={product.id || index} className="product-item">
+                                        <img 
+                                            src={product.img_path} 
+                                            alt={product.name} 
+                                            style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover' }}
+                                        />
+                                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                                            <span style={{ fontWeight: 600, fontSize: 13, color: '#0f172a' }}>
+                                                {product.name}
+                                            </span>
+                                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11, color: '#64748b' }}>
+                                                <span>SKU: {product.sku || 'N/A'}</span>
+                                                {product.current_stock != null && (
+                                                    <>
+                                                        <span>•</span>
+                                                        <span>Stock: {product.current_stock}</span>
+                                                    </>
+                                                )}
+                                                <span>•</span>
+                                                <span>Price: ৳{Number(product.sell_price || product.mrp || 0).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                        <span className="badge" style={{ background: '#1c558b', color: '#fff', padding: '4px 10px', borderRadius: 12, fontWeight: 700, fontSize: 11 }}>
+                                            {count} Abandoned
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
+                </Spin>
             </Modal>
 
             <DeliveryReportModal visible={modalVisible} phoneNumber={selectedPhone} onClose={handleCloseModal}/>
