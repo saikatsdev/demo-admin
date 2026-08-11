@@ -191,7 +191,7 @@ export default function Order() {
                 setCurrentPage(res?.result?.orders?.meta?.current_page);
                 setPageSize(res?.result?.orders?.meta?.per_page || DEFAULT_ORDER_PAGE_SIZE);
         
-                const keysToCheck = ["paid_status", "order_from_id","start_date", "end_date","courier_id", "district_id","is_invoice_printed", "customer_type_id", "min_price", "max_price", "min_invoice", "max_invoice"];
+                const keysToCheck = ["paid_status", "order_from_id","start_date", "end_date","is_invoice_printed", "customer_type_id", "min_price", "max_price", "min_invoice", "max_invoice"];
                 const hasRelevantOverride = keysToCheck.some(key => key in overrides);
 
                 if (hasRelevantOverride && statusId && !("current_status_id" in overrides)) {
@@ -582,9 +582,11 @@ export default function Order() {
         setStatusId(null);
         setCancelReasonId("");
         setDistrictId("");
+        setSelectedDistrictId(null);
         setOrderTagId(null);
         setCourierId(null);
-        getOrders(1, {paid_status: null,current_status_id: null,cancel_reason_id: "",district_id: "",order_from_id: null,courier_id: null,customer_type_id:null});
+        setSelectedCourier(null);
+        getOrders(1, {paid_status: null,current_status_id: null,cancel_reason_id: "",district_id: null,order_from_id: null,courier_id: null,customer_type_id:null});
         setIsTrash(false);
     };
 
@@ -594,8 +596,11 @@ export default function Order() {
     };
 
     const getCourierWiseOrder = (id = "") => {
-        setCourierId(id);
-        getOrders(1, { courier_id: id, courier_status_id : null });
+        const activeCourier = courierId || selectedCourier;
+        const targetId = activeCourier === id ? null : id;
+        setCourierId(targetId);
+        setSelectedCourier(targetId);
+        getOrders(1, { courier_id: targetId, courier_status_id: null });
     };
 	
 	const getCourierStatusWiseOrder = (id = "") => {
@@ -604,8 +609,11 @@ export default function Order() {
     };
 
     const getDistrictWiseOrder = (id = "") => {
-        setDistrictId(id);
-        getOrders(1, { district_id: id });
+        const activeDistrict = districtId || selectedDistrictId;
+        const targetId = activeDistrict === id ? null : id;
+        setDistrictId(targetId);
+        setSelectedDistrictId(targetId);
+        getOrders(1, { district_id: targetId });
     };
 
     const resetInvoiceHoverData = () => {
@@ -1017,17 +1025,7 @@ export default function Order() {
         getCourierList();
     }, [statusId]);
 
-    useEffect(() => {
-        if (couriers?.length > 0) {
-            const defaultCourier = couriers.find(
-                (c) => c.is_default === "1"
-            );
 
-            if (defaultCourier) {
-                setCourierId(defaultCourier.id);
-            }
-        }
-    }, [couriers]);
 
     useEffect(() => {
         if (!scanEnabled) return;
@@ -2291,7 +2289,7 @@ export default function Order() {
 
                             <div className="filter-item">
                                 <label className="filter-label">Courier</label>
-                                <Select value={selectedCourier} onChange={(value) => {setSelectedCourier(value);getOrders(1, { courier_id: value });}} placeholder="Courier" style={{ width: 170, height: 40 }}
+                                <Select value={selectedCourier || courierId} onChange={(value) => {const val = value || null; setSelectedCourier(val); setCourierId(val); getOrders(1, { courier_id: val });}} placeholder="Courier" style={{ width: 170, height: 40 }}
                                 allowClear>
                                     {couriers?.map((item) => (
                                         <Option key={item.id} value={item.id}>
@@ -2303,7 +2301,7 @@ export default function Order() {
 
                             <div className="filter-item">
                                 <label className="filter-label">District</label>
-                                <Select value={selectedDistrictId} onChange={(value) => {setSelectedDistrictId(value); getOrders(1, { district_id: value });}} placeholder="District"
+                                <Select value={selectedDistrictId || districtId} onChange={(value) => {const val = value || null; setSelectedDistrictId(val); setDistrictId(val); getOrders(1, { district_id: val });}} placeholder="District"
                                 style={{ width: 170, height: 40 }} allowClear>
                                     {districtList?.map((item) => (
                                         <Option key={item.id} value={item.id}>
@@ -2405,9 +2403,9 @@ export default function Order() {
                                 </Tag>
                             )}
 
-                            {selectedCourier && (
-                                <Tag closable onClose={() => {setSelectedCourier(null);getOrders(1, { courier_id: null });}}>
-                                    Courier: {couriers?.find((c) => c.id === selectedCourier) ?.name || "N/A"}
+                            {(selectedCourier || courierId) && (
+                                <Tag closable onClose={() => {setSelectedCourier(null); setCourierId(null); getOrders(1, { courier_id: null });}}>
+                                    Courier: {couriers?.find((c) => c.id === (selectedCourier || courierId))?.name || courierList?.find((c) => c.id === (selectedCourier || courierId))?.name || "N/A"}
                                 </Tag>
                             )}
 
@@ -2488,7 +2486,7 @@ export default function Order() {
                             <span className={[9, 10, 11, 12].includes(statusId) ? "status-tags-child-active" : "status-tags-child"} data-tooltip={`BDT ${orderStatus?.filter((s) => [9, 10].includes(Number(s.status_id))).reduce((total, s) => total + Number(s.total_payable || 0), 0)}`} onClick={getReturnAndDamageOrder}>
                                 Return & Damage
                                 <span className={[9, 10, 11, 12].includes(statusId) ? "status-tags-child-child-active" : "status-tags-child-child"}>
-                                    {orderStatus?.filter((s) => [9, 10].includes(Number(s.status_id))).reduce((total, s) => Number(total) + Number(s.order_count), 0)}
+                                    {orderStatus?.filter((s) => [9, 10, 11, 12].includes(Number(s.status_id))).reduce((total, s) => Number(total) + Number(s.order_count), 0)}
                                 </span>
                             </span>
                         )}
@@ -2496,30 +2494,33 @@ export default function Order() {
 
                     {statusId === 4 && (
                         <div className="orders-substatus-row all-status-tags" style={isMobile ? {padding: "10px", border: "1px solid #cbcbcb", borderRadius: 8} : {}}>
-                            {courierList?.map((courier, index) => (
-                                <span className="order-status-courier" key={index} onClick={() => getCourierWiseOrder(courier?.id)} data-tooltip={`BDT ${courier?.total_amount}`}
-                                    style={{ border: courier?.id === courierId ? "1px solid #1c558b" : "1px solid #7eb8d4", backgroundColor: courier?.id === courierId ? "#1c558b" : "#3d8fb5",
-                                        color: "#fff",
-                                    }}
-                                    onMouseEnter={e => {
-                                        if (courier?.id !== courierId) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";
-                                    }}
-                                    onMouseLeave={e => {
-                                        if (courier?.id !== courierId) e.currentTarget.style.boxShadow = "none";
-                                    }}
-                                    >
+                            {courierList?.map((courier, index) => {
+                                const isSelected = courier?.id === (courierId || selectedCourier);
+                                return (
+                                    <span className="order-status-courier" key={index} onClick={() => getCourierWiseOrder(courier?.id)} data-tooltip={`BDT ${courier?.total_amount}`}
+                                        style={{ border: isSelected ? "1px solid #1c558b" : "1px solid #7eb8d4", backgroundColor: isSelected ? "#1c558b" : "#3d8fb5",
+                                            color: "#fff",
+                                        }}
+                                        onMouseEnter={e => {
+                                            if (!isSelected) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";
+                                        }}
+                                        onMouseLeave={e => {
+                                            if (!isSelected) e.currentTarget.style.boxShadow = "none";
+                                        }}
+                                        >
 
-                                    <span style={{ marginRight: 4, display: "flex", alignItems: "center" }}>
-                                        <ContainerOutlined style={{fontSize: 12,color: "#fff"}}/>
+                                        <span style={{ marginRight: 4, display: "flex", alignItems: "center" }}>
+                                            <ContainerOutlined style={{fontSize: 12,color: "#fff"}}/>
+                                        </span>
+
+                                        {courier?.name}
+
+                                        <span style={{ marginLeft: 6, fontWeight: "bold" }}>
+                                            {courier?.orders_count}
+                                        </span>
                                     </span>
-
-                                    {courier?.name}
-
-                                    <span style={{ marginLeft: 6, fontWeight: "bold" }}>
-                                        {courier?.orders_count}
-                                    </span>
-                                </span>
-                            ))}
+                                );
+                            })}
 
                             {orderStatus?.filter(status => Number(status.status_id) === 4).map((status, index) => (
                                 <span key={index} onClick={() => getCourierStatusWiseOrder(Number(13))} data-tooltip={`BDT ${status?.courier_pending_amount}`} className="order-status-partial" onMouseEnter={(e) => {e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";}} onMouseLeave={(e) => {e.currentTarget.style.boxShadow = "none";}}>
@@ -2552,26 +2553,29 @@ export default function Order() {
                                 </Tooltip>
                             ))}
 
-                            {districtWiseList?.map((district, index) => (
-                                <span className="order-status-district" key={index} onClick={() => getDistrictWiseOrder(district?.id)} data-tooltip={`BDT ${district?.total_amount}`}
-                                    style={{
-                                        border: "1px solid #7eb8d4",
-                                        backgroundColor: district?.id === districtId ? "#1c558b" : "#e8f4fa",
-                                        color: district?.id === districtId ? "#fff" : "#1c558b",
-                                    }}
-                                    onMouseEnter={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";}}
-                                    onMouseLeave={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "none";}}
-                                >
-                                    <span style={{marginRight: 4, display: "flex", alignItems: "center"}}>
-                                        <EnvironmentOutlined style={{fontSize: 12,color: district?.id === districtId ? "#fff" : "#1c558b"}}/>
-                                    </span>
+                            {districtWiseList?.map((district, index) => {
+                                const isSelected = district?.id === (districtId || selectedDistrictId);
+                                return (
+                                    <span className="order-status-district" key={index} onClick={() => getDistrictWiseOrder(district?.id)} data-tooltip={`BDT ${district?.total_amount}`}
+                                        style={{
+                                            border: "1px solid #7eb8d4",
+                                            backgroundColor: isSelected ? "#1c558b" : "#e8f4fa",
+                                            color: isSelected ? "#fff" : "#1c558b",
+                                        }}
+                                        onMouseEnter={e => {if(!isSelected) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";}}
+                                        onMouseLeave={e => {if(!isSelected) e.currentTarget.style.boxShadow = "none";}}
+                                    >
+                                        <span style={{marginRight: 4, display: "flex", alignItems: "center"}}>
+                                            <EnvironmentOutlined style={{fontSize: 12,color: isSelected ? "#fff" : "#1c558b"}}/>
+                                        </span>
 
-                                    {district?.name}
-                                    <span style={{marginLeft: 6, fontWeight: "bold"}}>
-                                        {district?.orders_count}
+                                        {district?.name}
+                                        <span style={{marginLeft: 6, fontWeight: "bold"}}>
+                                            {district?.orders_count}
+                                        </span>
                                     </span>
-                                </span>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
 
@@ -2615,27 +2619,30 @@ export default function Order() {
                                 ))
                             )}
 
-                            {districtWiseList?.map((district, index) => (
-                                <span className="order-status-district" key={index} onClick={() => getDistrictWiseOrder(district?.id)} data-tooltip={`BDT ${district?.total_amount}`}
-                                    style={{
-                                        border: "1px solid #7eb8d4",
-                                        backgroundColor: district?.id === districtId ? "#1c558b" : "#e8f4fa",
-                                        color: district?.id === districtId ? "#fff" : "#1c558b",
-                                    }}
-                                    onMouseEnter={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";}}
-                                    onMouseLeave={e => {if(district?.id !== districtId) e.currentTarget.style.boxShadow = "none";}}
-                                >
-                                    <span style={{marginRight: 4, display: "flex", alignItems: "center"}}>
-                                        <EnvironmentOutlined style={{fontSize: 12,color: district?.id === districtId ? "#fff" : "#1c558b"}}/>
-                                    </span>
+                            {districtWiseList?.map((district, index) => {
+                                const isSelected = district?.id === (districtId || selectedDistrictId);
+                                return (
+                                    <span className="order-status-district" key={index} onClick={() => getDistrictWiseOrder(district?.id)} data-tooltip={`BDT ${district?.total_amount}`}
+                                        style={{
+                                            border: "1px solid #7eb8d4",
+                                            backgroundColor: isSelected ? "#1c558b" : "#e8f4fa",
+                                            color: isSelected ? "#fff" : "#1c558b",
+                                        }}
+                                        onMouseEnter={e => {if(!isSelected) e.currentTarget.style.boxShadow = "0 2px 6px rgba(0,0,0,0.15)";}}
+                                        onMouseLeave={e => {if(!isSelected) e.currentTarget.style.boxShadow = "none";}}
+                                    >
+                                        <span style={{marginRight: 4, display: "flex", alignItems: "center"}}>
+                                            <EnvironmentOutlined style={{fontSize: 12,color: isSelected ? "#fff" : "#1c558b"}}/>
+                                        </span>
 
-                                    {district?.name}
+                                        {district?.name}
 
-                                    <span style={{marginLeft: 6, fontWeight: "bold"}}>
-                                        {district?.orders_count}
+                                        <span style={{marginLeft: 6, fontWeight: "bold"}}>
+                                            {district?.orders_count}
+                                        </span>
                                     </span>
-                                </span>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
 
