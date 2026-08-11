@@ -199,6 +199,7 @@ export default function SectionBanner() {
                                         hasMore={hasMore} 
                                         loadingMore={loadingMore} 
                                         fetchMore={() => fetchMedia(page + 1)}
+                                        onUploadSuccess={(newItems) => setGallery(prev => [...(Array.isArray(newItems) ? newItems : []), ...prev])}
                                     />
                                 </Form.Item>
                                 <Text type="secondary" size="small">
