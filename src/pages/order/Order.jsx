@@ -156,7 +156,8 @@ export default function Order() {
     const orderTagList  = useSelector((state) => state.orderFrom.list);
     const cancelReasons = useSelector((state) => state.cancelReason.list)
     const districtList  = useSelector((state) => state.districts.list);
-    const couriers        = useSelector((s) => s.courier.list);
+    const couriers      = useSelector((s) => s.courier.list);
+    const statuses      = useSelector((state) => state.status.list);
 
     const getOrders = async (page = 1, overrides = {}) => {
         setLoading(true);
@@ -3002,10 +3003,10 @@ export default function Order() {
             <Modal title="Change Your Order Status" loading={bulkLoading} open={handleselectedActionCurrentOrderStatusModal} onCancel={() => setHandleselectedActionCurrentOrderStatusModal(false)}
                 onOk={orderCurrentStatusUpdate} width={300}>
                 <Select value={orderCurrentStatus} onChange={(value) => setOrderCurrentStatus(value)} style={{ width: "100%", marginBottom: 16 }}>
-                    {orderStatus?.filter((status) => status.status_id !== 9 && status.status_id !== 10)
+                    {statuses?.filter((status) => status.id !== 9 && status.id !== 10)
                     .map((status, index) => (
-                        <Option key={index} value={status.status_id}>
-                            {status.status_name}
+                        <Option key={index} value={status.id}>
+                            {status.name}
                         </Option>
                     ))}
                 </Select>
