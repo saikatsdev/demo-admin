@@ -43,22 +43,24 @@ export default function Dashboard() {
     const customerLocationProduct = Number(settings?.customer_location_product);
 
     // Method
-    const getDashboardSummary = async () => {
+    const getDashboardSummary = useCallback(async () => {
+        if (!canSeeAdminWidgets) return;
         setLoading(true);
         try {
             const res = await getDatas("/admin/dashboard");
 
             if(res && res.success){
-				setDashboardSummary(res.result || {});
+                setDashboardSummary(res.result || {});
             }
         } catch (error) {
             console.log(error);
         }finally{
             setLoading(false);
         }
-    };
+    }, [canSeeAdminWidgets]);
     
     const getStatusData = useCallback(async () => {
+        if (!canSeeAdminWidgets) return;
         try {
             const res = await getDatas('/admin/statuses');
             if(res && res?.success){
@@ -67,9 +69,10 @@ export default function Dashboard() {
         } catch (error) {
             console.log(error);
         }
-    }, []);
+    }, [canSeeAdminWidgets]);
 
     const getPipelineData = useCallback(async (filter = "today", range = null) => {
+        if (!canSeeAdminWidgets) return;
         try {
             const params = { filter };
             if (filter === 'custom' && range && range[0] && range[1]) {
@@ -83,9 +86,10 @@ export default function Dashboard() {
         } catch (error) {
             console.log(error);
         }
-    }, []);
+    }, [canSeeAdminWidgets]);
 
     const getGraphData = useCallback(async (filter = "today", range = null) => {
+        if (!canSeeAdminWidgets) return;
         try {
             const params = { filter };
             if (filter === 'custom' && range && range[0] && range[1]) {
@@ -99,17 +103,14 @@ export default function Dashboard() {
         } catch (error) {
             console.log(error);
         }
-    }, []);
+    }, [canSeeAdminWidgets]);
 
     useEffect(() => {
         if (canSeeAdminWidgets) {
             getDashboardSummary();
+            getStatusData();
         }
-    }, [canSeeAdminWidgets]);
-
-    useEffect(() => {
-        getStatusData();
-    }, [getStatusData]);
+    }, [canSeeAdminWidgets, getDashboardSummary, getStatusData]);
 
 
     // New States

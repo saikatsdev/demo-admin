@@ -87,10 +87,10 @@ export default function Team() {
     const handleEditClick = (employee) => {
         setSelectedEmployee(employee);
         form.setFieldsValue({
-            salary: employee.salary || "",
+            salary              : employee.salary || "",
             commission_per_order: employee.commission_per_order || "",
-            present_address: employee.present_address || employee.address || "",
-            permanent_address: employee.permanent_address || "",
+            present_address     : employee.present_address || employee.address || "",
+            permanent_address   : employee.permanent_address || "",
         });
         setIsEditModalOpen(true);
     };
