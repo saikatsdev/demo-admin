@@ -3004,6 +3004,16 @@ export default function Order() {
                 onOk={orderCurrentStatusUpdate} width={300}>
                 <Select value={orderCurrentStatus} onChange={(value) => setOrderCurrentStatus(value)} style={{ width: "100%", marginBottom: 16 }}>
                     {statuses?.filter((status) => status.id !== 9 && status.id !== 10)
+                    .slice()
+                    .sort((a, b) => {
+                        const priority = [1, 2, 8];
+                        const indexA = priority.indexOf(a.id);
+                        const indexB = priority.indexOf(b.id);
+                        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                        if (indexA !== -1) return -1;
+                        if (indexB !== -1) return 1;
+                        return 0;
+                    })
                     .map((status, index) => (
                         <Option key={index} value={status.id}>
                             {status.name}

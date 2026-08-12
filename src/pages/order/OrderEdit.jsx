@@ -1,5 +1,5 @@
-import { ArrowLeftOutlined, CloseOutlined, DeleteOutlined, PhoneOutlined, InboxOutlined, LoadingOutlined, PlusOutlined, InfoCircleOutlined, HistoryOutlined, UserOutlined, ShoppingCartOutlined, CreditCardOutlined, MessageOutlined, CalendarOutlined, GlobalOutlined, CarOutlined, CheckCircleOutlined } from '@ant-design/icons'
-import { DatePicker, Breadcrumb, Button, Card, Col, Divider, Empty, Form, Grid, Image, Input, InputNumber, message, Popconfirm, Row, Select, Space, Spin, Table, Typography, Modal, Tag } from 'antd'
+import { ArrowLeftOutlined, CloseOutlined, DeleteOutlined, PhoneOutlined, InboxOutlined, LoadingOutlined, PlusOutlined, InfoCircleOutlined, HistoryOutlined, UserOutlined, ShoppingCartOutlined, CreditCardOutlined, GlobalOutlined, CarOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { Breadcrumb, Button, Card, Col, Divider, Empty, Form, Image, Input, InputNumber, message, Popconfirm, Row, Select, Space, Spin, Table, Typography, Modal, Tag } from 'antd'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { getDatas, postData } from '../../api/common/common'
@@ -818,7 +818,18 @@ const OrderEdit = () => {
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Order Status" required className="custom-form-item">
                                         <Select value={statusId} onChange={(v) => setStatusId(v)}>
-                                            {statuses?.map((s) => (
+                                            {statuses?.filter((status) => status.id !== 9 && status.id !== 10)
+                                            ?.slice()
+                                            ?.sort((a, b) => {
+                                                const priority = [1, 2, 8];
+                                                const indexA = priority.indexOf(a.id);
+                                                const indexB = priority.indexOf(b.id);
+                                                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                                                if (indexA !== -1) return -1;
+                                                if (indexB !== -1) return 1;
+                                                return 0;
+                                            })
+                                            ?.map((s) => (
                                                 <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
                                             ))}
                                         </Select>

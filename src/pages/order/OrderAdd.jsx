@@ -686,7 +686,18 @@ export default function OrderAdd() {
                                 <Col xs={24} md={8}>
                                     <Form.Item label="Order Status" required className="custom-form-item">
                                         <Select value={statusId} onChange={(value) => setStatusId(value)}>
-                                            {statuses?.map((status) => (
+                                            {statuses?.filter((status) => status.id !== 9 && status.id !== 10)
+                                            ?.slice()
+                                            ?.sort((a, b) => {
+                                                const priority = [1, 2, 8];
+                                                const indexA = priority.indexOf(a.id);
+                                                const indexB = priority.indexOf(b.id);
+                                                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                                                if (indexA !== -1) return -1;
+                                                if (indexB !== -1) return 1;
+                                                return 0;
+                                            })
+                                            ?.map((status) => (
                                                 <Select.Option key={status.id} value={status.id}>{status.name}</Select.Option>
                                             ))}
                                         </Select>
