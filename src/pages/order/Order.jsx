@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
-import {deleteData,getDatas,postData} from "../../api/common/common";
+import {deleteData,exportData,getDatas,postData} from "../../api/common/common";
 import useAxios from "../../hooks/useAxios";
 import useTitle from "../../hooks/useTitle";
 import "./Order.css";
@@ -133,6 +133,11 @@ export default function Order() {
     const [selectedDigitalOrderId, setSelectedDigitalOrderId]                                          = useState(null);
 	const [csvLoading, setCsvLoading]                                                                  = useState(false);
     const [showFilter, setShowFilter]                                                                  = useState(false);
+    const [exportModalOpen, setExportModalOpen]                                                        = useState(false);
+    const [exportStatusId, setExportStatusId]                                                          = useState("");
+    const [exportDatePreset, setExportDatePreset]                                                      = useState("");
+    const [customDateRange, setCustomDateRange]                                                        = useState([]);
+    const [exportLoading, setExportLoading]                                                            = useState(false);
 
     const activeFilterCount = [
         statusId,
@@ -928,20 +933,14 @@ export default function Order() {
     };
 
     const downloadExcel = async () => {
-        if (!selectedOrderIds.length) {
+        const selectedOrders = selectedOrderIds.length > 0
+            ? orders?.data?.filter((order) => selectedOrderIds.includes(order.id))
+            : orders?.data;
+
+        if (!selectedOrders || !selectedOrders.length) {
             messageApi.open({
                 type: "warning",
-                content: "Please select at least one order to download.",
-            });
-            return;
-        }
-    
-        const selectedOrders = orders?.data.filter((order) => selectedOrderIds.includes(order.id));
-    
-        if (!selectedOrders.length) {
-            messageApi.open({
-                type: "error",
-                content: "No matching orders found!",
+                content: "No orders available to download.",
             });
             return;
         }
@@ -1003,6 +1002,98 @@ export default function Order() {
         }
     };
 
+    const handleExportSubmit = async () => {
+        try {
+            setExportLoading(true);
+
+            const params = {};
+            if (exportStatusId !== null && exportStatusId !== undefined && exportStatusId !== "") {
+                params.status_id = exportStatusId;
+            }
+
+            let fromDate = "";
+            let toDate = "";
+
+            if (exportDatePreset === "today") {
+                fromDate = dayjs().format("YYYY-MM-DD");
+                toDate = dayjs().format("YYYY-MM-DD");
+            } else if (exportDatePreset === "yesterday") {
+                fromDate = dayjs().subtract(1, "day").format("YYYY-MM-DD");
+                toDate = dayjs().subtract(1, "day").format("YYYY-MM-DD");
+            } else if (exportDatePreset === "this_week") {
+                fromDate = dayjs().startOf("week").format("YYYY-MM-DD");
+                toDate = dayjs().endOf("week").format("YYYY-MM-DD");
+            } else if (exportDatePreset === "this_month") {
+                fromDate = dayjs().startOf("month").format("YYYY-MM-DD");
+                toDate = dayjs().endOf("month").format("YYYY-MM-DD");
+            } else if (exportDatePreset === "this_year") {
+                fromDate = dayjs().startOf("year").format("YYYY-MM-DD");
+                toDate = dayjs().endOf("year").format("YYYY-MM-DD");
+            } else if (exportDatePreset === "custom") {
+                if (customDateRange && customDateRange.length === 2 && customDateRange[0] && customDateRange[1]) {
+                    fromDate = dayjs(customDateRange[0]).format("YYYY-MM-DD");
+                    toDate = dayjs(customDateRange[1]).format("YYYY-MM-DD");
+                } else {
+                    message.warning("Please select a valid custom date range.");
+                    setExportLoading(false);
+                    return;
+                }
+            }
+
+            if (fromDate) params.from_date = fromDate;
+            if (toDate) params.to_date = toDate;
+
+            const response = await exportData("/admin/export", params, { responseType: "blob" });
+
+            if (response?.data instanceof Blob) {
+                if (response.data.type === "application/json") {
+                    const text = await response.data.text();
+                    const json = JSON.parse(text);
+                    if (json?.message || json?.msg) {
+                        message.error(json.message || json.msg);
+                    } else {
+                        message.error("Export failed!");
+                    }
+                } else {
+                    const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+                    const link = document.createElement("a");
+                    link.href = blobUrl;
+
+                    let fileName = `Order_Export_${dayjs().format("YYYY-MM-DD")}.csv`;
+                    const contentDisposition = response.headers?.["content-disposition"];
+                    if (contentDisposition) {
+                        const match = contentDisposition.match(/filename="?([^";]+)"?/);
+                        if (match && match[1]) fileName = match[1];
+                    }
+
+                    link.setAttribute("download", fileName);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(blobUrl);
+
+                    message.success("CSV Export downloaded successfully!");
+                    setExportModalOpen(false);
+                }
+            } else if (response?.data?.success || response?.success) {
+                const resData = response?.data || response;
+                if (resData.url) {
+                    window.open(resData.url, "_blank");
+                }
+                message.success("Export successful!");
+                setExportModalOpen(false);
+            } else {
+                message.success("Export request submitted!");
+                setExportModalOpen(false);
+            }
+        } catch (error) {
+            console.error("Export Error:", error);
+            message.error(error?.response?.data?.message || "Failed to export. Please try again.");
+        } finally {
+            setExportLoading(false);
+        }
+    };
+
     const connectPhone = (number) => {
         const phoneLink = `tel:${number}`;
         window.location.href = phoneLink;
@@ -1025,7 +1116,6 @@ export default function Order() {
         getDistrictWiseList();
         getCourierList();
     }, [statusId]);
-
 
 
     useEffect(() => {
@@ -2135,6 +2225,10 @@ export default function Order() {
                             </Spin>
                         )}
 
+                        <Button icon={<DownloadOutlined />} onClick={() => setExportModalOpen(true)}>
+                            Download CSV
+                        </Button>
+
                         {can("orders-create") && (
                             <Button type="primary" onClick={addOrder} icon={<PlusOutlined/>}>
                                 Add Order
@@ -3138,6 +3232,72 @@ export default function Order() {
             <CourierStatusModal open={isCourierModalOpen} onClose={() => setIsCourierModalOpen(false)} data={courierLogs}/>
 			
 			<DigitalSaleModal open={digitalModalOpen} onClose={closeDigitalModal} orderId={selectedDigitalOrderId}/>
+
+            <Modal
+                title="Export Orders CSV"
+                open={exportModalOpen}
+                onCancel={() => setExportModalOpen(false)}
+                onOk={handleExportSubmit}
+                confirmLoading={exportLoading}
+                okText="Export CSV"
+                cancelText="Cancel"
+                destroyOnClose
+                width={480}
+            >
+                <div style={{ paddingTop: 12 }}>
+                    <Form layout="vertical">
+                        <Form.Item label="Select Order Status">
+                            <Select
+                                value={exportStatusId}
+                                onChange={(value) => setExportStatusId(value)}
+                                placeholder="All Statuses"
+                                allowClear
+                                style={{ width: "100%" }}
+                            >
+                                <Option value="">All Statuses</Option>
+                                {(statuses?.length ? statuses : orderStatus)?.map((st) => (
+                                    <Option key={st.id || st.status_id} value={st.id || st.status_id}>
+                                        {st.name || st.status_name}
+                                    </Option>
+                                ))}
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item label="Date Range Option">
+                            <Select
+                                value={exportDatePreset}
+                                onChange={(value) => {
+                                    setExportDatePreset(value);
+                                    if (value !== "custom") {
+                                        setCustomDateRange([]);
+                                    }
+                                }}
+                                placeholder="Select Date Option"
+                                style={{ width: "100%" }}
+                            >
+                                <Option value="">All Time</Option>
+                                <Option value="today">Today</Option>
+                                <Option value="yesterday">Yesterday</Option>
+                                <Option value="this_week">This Week</Option>
+                                <Option value="this_month">This Month</Option>
+                                <Option value="this_year">This Year</Option>
+                                <Option value="custom">Custom Date Select</Option>
+                            </Select>
+                        </Form.Item>
+
+                        {exportDatePreset === "custom" && (
+                            <Form.Item label="Select Custom Date Range">
+                                <RangePicker
+                                    value={customDateRange}
+                                    onChange={(dates) => setCustomDateRange(dates || [])}
+                                    style={{ width: "100%" }}
+                                    format="YYYY-MM-DD"
+                                />
+                            </Form.Item>
+                        )}
+                    </Form>
+                </div>
+            </Modal>
         </>
     )
 }
