@@ -35,8 +35,7 @@ export default function FreeDelivery() {
         },
         {
             title: "Type",
-            dataIndex: "type",
-            key: "type"
+            render : (record) => record.price > 0 ? <Tag color="blue">Price</Tag> : <Tag color="green">Quantity</Tag>
         },
         {
             title: "Quantity",
