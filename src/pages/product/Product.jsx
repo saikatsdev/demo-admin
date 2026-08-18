@@ -1,4 +1,4 @@
-import {ArrowLeftOutlined,BarcodeOutlined,CopyOutlined,DeleteOutlined,DownloadOutlined,EditOutlined,ShoppingCartOutlined,EyeOutlined,FilterOutlined,FormOutlined,InfoCircleOutlined,PlusOutlined,ReloadOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,BarcodeOutlined,CopyOutlined,DeleteOutlined,DownloadOutlined,EditOutlined,ShoppingCartOutlined,EyeOutlined,FilterOutlined,FormOutlined,GlobalOutlined,InfoCircleOutlined,PlaySquareOutlined,PlusOutlined,ReloadOutlined} from "@ant-design/icons";
 import {Input as AntInput,Typography,Breadcrumb,Badge,Tabs,Button,Col,Card,DatePicker,Descriptions,Empty,Flex,InputNumber,Modal,Form,Row,Divider,Select,Space,Table,Tag,Tooltip,message,Spin} from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -56,6 +56,7 @@ export default function Product() {
     const [bulkStatusModal, setBulkStatusModal]           = useState(false);
     const [previewData, setPreviewData]                   = useState(null);
     const [previewImage, setPreviewImage]                 = useState("");
+    const [selectedPreviewImage, setSelectedPreviewImage] = useState("");
     const [bulkStatusValue, setBulkStatusValue]           = useState("");
     const [brandIds, setBrandIds]                         = useState([]);
     const [categoryIds, setCategoryIds]                   = useState([]);
@@ -519,14 +520,12 @@ export default function Product() {
     };
 
     const handlePreview = async (record) => {
-
         if (!record || !record.id) return;
     
         setPreviewModal(true);
-
         setPreviewData(record);
-
-        setSettingsData(settings.frontend_base_url || "http://localhost:3000/");
+        setSelectedPreviewImage(record.image || "/free.jpg");
+        setSettingsData(settings?.frontend_base_url || "http://localhost:3000/");
     };
 
 
@@ -1557,106 +1556,493 @@ export default function Product() {
             </div>
             </div>
 
-            <Modal title="Product Preview" open={previewModal} onCancel={() => setPreviewModal(false)} footer={null} width={900}>
+            <Modal title={null} open={previewModal} onCancel={() => setPreviewModal(false)} footer={null} width={950} centered className="product-preview-modal" destroyOnClose>
                 {loading ? (
-                    <Spin />
-                ) : (
-                    previewData && (
-                        <Row gutter={24}>
-                            <Col span={10}>
-                                <img src={previewData.image || "/free.jpg"} alt={previewData.name} style={{ width: "100%", borderRadius: 8 }}/>
-                                {previewData.images && previewData.images.length > 0 && (
-                                    <Row gutter={8} style={{ marginTop: 8 }}>
-                                        {previewData.images.map((img, idx) => (
-                                            <Col key={idx} span={6}>
-                                                <img src={img.image} alt={`variation-${idx}`} style={{ width: "100%", borderRadius: 4 }}/>
-                                            </Col>
-                                        ))}
-                                    </Row>
+                    <div style={{ textAlign: "center", padding: "60px 0" }}>
+                        <Spin size="large" />
+                        <div style={{ marginTop: 12, color: "#64748b" }}>Loading product details...</div>
+                    </div>
+                ) : previewData ? (
+                    <div className="preview-modal-wrapper" style={{ padding: "4px 0" }}>
+                        <div
+                            style={{
+                                display       : "flex",
+                                alignItems    : "center",
+                                justifyContent: "space-between",
+                                paddingBottom : 16,
+                                marginBottom  : 20,
+                                borderBottom  : "1px solid #f1f5f9",
+                            }}
+                        >
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                <div
+                                    style={{
+                                        width         : 44,
+                                        height        : 44,
+                                        borderRadius  : 12,
+                                        background    : "linear-gradient(135deg, #1677ff 0%, #0958d9 100%)",
+                                        display       : "flex",
+                                        alignItems    : "center",
+                                        justifyContent: "center",
+                                        color         : "#fff",
+                                        fontSize      : 20,
+                                        boxShadow     : "0 4px 12px rgba(22, 119, 255, 0.25)",
+                                    }}
+                                >
+                                    <EyeOutlined />
+                                </div>
+                                <div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                        <Title level={4} style={{ margin: 0, fontWeight: 700, color: "#0f172a" }}>
+                                            Product Quick View
+                                        </Title>
+                                        <Tag color="blue" style={{ borderRadius: 6, fontWeight: 600, fontSize: 11 }}>
+                                            ID: #{previewData.id}
+                                        </Tag>
+                                    </div>
+                                    <Text type="secondary" style={{ fontSize: 12, color: "#64748b" }}>
+                                        Detailed specification & live information
+                                    </Text>
+                                </div>
+                            </div>
+
+                            <Space size="small">
+                                {previewData.slug && (
+                                    <Button
+                                        type="primary"
+                                        icon={<GlobalOutlined />}
+                                        onClick={() =>
+                                            window.open(`${(settingsData || "").replace(/\/$/, "")}/product/${previewData.slug}`,"_blank")
+                                        }
+                                        style={{
+                                            borderRadius: 8,
+                                            fontWeight: 600,
+                                            background: "linear-gradient(135deg, #1677ff, #0958d9)",
+                                        }}
+                                    >
+                                        View in Store
+                                    </Button>
                                 )}
-                            </Col>
-            
-                            {/* Right: Product Info */}
-                            <Col span={14}>
-                                <h3 className="view-product-header">
-                                    <span className="product-name">{previewData.name}</span>
-                
-                                    {previewData.slug && (
-                                        <Button type="primary" size="small" icon={<EyeOutlined />} title="View Product" onClick={() => window.open(`${settingsData.replace(/\/$/, "")}/product/${previewData.slug}`,"_blank")}className="view-button">
-                                            View
-                                        </Button>
+                                <Button
+                                    icon={<EditOutlined />}
+                                    onClick={() => {
+                                        setPreviewModal(false);
+                                        handleEdit(previewData);
+                                    }}
+                                    style={{ borderRadius: 8, fontWeight: 600 }}
+                                >
+                                    Edit Product
+                                </Button>
+                            </Space>
+                        </div>
+
+                        {/* Main Content Grid */}
+                        <Row gutter={[24, 24]}>
+                            {/* Left Column: Gallery & Badges */}
+                            <Col xs={24} md={10}>
+                                <div style={{ position: "relative" }}>
+                                    {/* Main Image View */}
+                                    <div
+                                        className="preview-main-image-box"
+                                        style={{
+                                            width: "100%",
+                                            height: 320,
+                                            borderRadius: 14,
+                                            overflow: "hidden",
+                                            border: "1px solid #e2e8f0",
+                                            background: "#f8fafc",
+                                            position: "relative",
+                                            boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+                                            cursor: "pointer",
+                                        }}
+                                        onClick={() => handleImagePreview(selectedPreviewImage || previewData.image || "/free.jpg")}
+                                    >
+                                        <img
+                                            src={selectedPreviewImage || previewData.image || "/free.jpg"}
+                                            alt={previewData.name}
+                                            style={{
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "contain",
+                                                padding: 12,
+                                                transition: "transform 0.3s ease",
+                                            }}
+                                        />
+                                        {/* Hover Overlay */}
+                                        <div className="main-img-overlay">
+                                            <EyeOutlined style={{ color: "#fff", fontSize: 24 }} />
+                                            <span style={{ color: "#fff", fontSize: 12, fontWeight: 600, marginTop: 4 }}>
+                                                Click to Enlarge
+                                            </span>
+                                        </div>
+
+                                        {/* Floating Badges */}
+                                        <div style={{ position: "absolute", top: 12, left: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+                                            <Tag
+                                                color={previewData.status === "active" ? "#52c41a" : "#f5222d"}
+                                                style={{
+                                                    fontWeight: 700,
+                                                    borderRadius: 6,
+                                                    padding: "2px 8px",
+                                                    fontSize: 11,
+                                                    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                                                    margin: 0,
+                                                }}
+                                            >
+                                                {previewData.status === "active" ? "ACTIVE" : "INACTIVE"}
+                                            </Tag>
+                                            {previewData.is_combo === 1 && (
+                                                <Tag
+                                                    color="purple"
+                                                    style={{
+                                                        fontWeight: 700,
+                                                        borderRadius: 6,
+                                                        padding: "2px 8px",
+                                                        fontSize: 11,
+                                                        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                                                        margin: 0,
+                                                    }}
+                                                >
+                                                    COMBO PRODUCT
+                                                </Tag>
+                                            )}
+                                            {previewData.free_shipping && (
+                                                <Tag
+                                                    color="green"
+                                                    style={{
+                                                        fontWeight: 700,
+                                                        borderRadius: 6,
+                                                        padding: "2px 8px",
+                                                        fontSize: 11,
+                                                        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                                                        margin: 0,
+                                                    }}
+                                                >
+                                                    FREE SHIPPING
+                                                </Tag>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Gallery Thumbnails List */}
+                                    {((previewData.images && previewData.images.length > 0) || previewData.image) && (
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                gap: 8,
+                                                marginTop: 12,
+                                                overflowX: "auto",
+                                                paddingBottom: 4,
+                                            }}
+                                        >
+                                            {/* Main image thumbnail */}
+                                            {previewData.image && (
+                                                <div
+                                                    onClick={() => setSelectedPreviewImage(previewData.image)}
+                                                    style={{
+                                                        width: 56,
+                                                        height: 56,
+                                                        borderRadius: 8,
+                                                        overflow: "hidden",
+                                                        border: (selectedPreviewImage || previewData.image) === previewData.image ? "2px solid #1677ff" : "1px solid #cbd5e1",
+                                                        cursor: "pointer",
+                                                        flexShrink: 0,
+                                                        padding: 2,
+                                                        background: "#fff",
+                                                        transition: "all 0.2s ease",
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={previewData.image}
+                                                        alt="Thumbnail main"
+                                                        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 6 }}
+                                                    />
+                                                </div>
+                                            )}
+                                            {/* Extra gallery images */}
+                                            {previewData.images?.map((imgObj, idx) => {
+                                                const imgUrl = typeof imgObj === "string" ? imgObj : imgObj?.image;
+                                                if (!imgUrl) return null;
+                                                const isSelected = selectedPreviewImage === imgUrl;
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        onClick={() => setSelectedPreviewImage(imgUrl)}
+                                                        style={{
+                                                            width: 56,
+                                                            height: 56,
+                                                            borderRadius: 8,
+                                                            overflow: "hidden",
+                                                            border: isSelected ? "2px solid #1677ff" : "1px solid #cbd5e1",
+                                                            cursor: "pointer",
+                                                            flexShrink: 0,
+                                                            padding: 2,
+                                                            background: "#fff",
+                                                            transition: "all 0.2s ease",
+                                                        }}
+                                                    >
+                                                        <img
+                                                            src={imgUrl}
+                                                            alt={`Thumbnail ${idx}`}
+                                                            style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 6 }}
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     )}
-                                </h3>
-            
-                                <p>
-                                    <strong>SKU:</strong> {previewData.sku || "N/A"}
-                                </p>
-            
-                                <p>
-                                    <strong>Status:</strong>{" "}
-                                        <Tag color={previewData.status === "active" ? "green" : "red"} style={{ marginLeft: 8 }}>
-                                        {previewData.status === "active" ? "Active" : "Inactive"}
-                                    </Tag>
-                                </p>
-            
-                                {previewData.categories.length > 0 && (
-                                    <p>
-                                        <strong>Category:</strong> {previewData.categories.map(item => item.name).join(", ")}
-                                    </p>
-                                )}
+                                </div>
+                            </Col>
 
-                                {previewData.sub_categories.length > 0 && (
-                                    <p>
-                                        <strong>Sub Category:</strong> {previewData.sub_categories.map(item => item.name).join(", ")}
-                                    </p>
-                                )}
+                            {/* Right Column: Key Details & Metrics */}
+                            <Col xs={24} md={14}>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                                    {/* Title & SKU */}
+                                    <div>
+                                        <Title level={3} style={{ margin: 0, fontWeight: 700, color: "#0f172a", lineHeight: 1.3 }}>
+                                            {previewData.name}
+                                        </Title>
+                                        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12, marginTop: 8 }}>
+                                            {previewData.sku && (
+                                                <span style={{ fontSize: 13, color: "#475569", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                                    <BarcodeOutlined style={{ color: "#64748b" }} />
+                                                    SKU: <Text code style={{ margin: 0 }}>{previewData.sku}</Text>
+                                                </span>
+                                            )}
+                                            {previewData.brand?.name && (
+                                                <Tag color="volcano" style={{ borderRadius: 6, fontWeight: 600, margin: 0 }}>
+                                                    Brand: {previewData.brand.name}
+                                                </Tag>
+                                            )}
+                                        </div>
 
-                                {previewData.sub_sub_categories.length > 0 && (
-                                    <p>
-                                        <strong>Sub Sub Category:</strong> {previewData.sub_sub_categories.map(item => item.name).join(", ")}
-                                    </p>
-                                )}
+                                        {/* Category Hierarchy pill list */}
+                                        {((previewData.categories && previewData.categories.length > 0) ||
+                                          (previewData.sub_categories && previewData.sub_categories.length > 0) ||
+                                          (previewData.sub_sub_categories && previewData.sub_sub_categories.length > 0)) && (
+                                            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 10 }}>
+                                                <Text type="secondary" style={{ fontSize: 12, fontWeight: 600 }}>Taxonomy:</Text>
+                                                {previewData.categories?.map((c) => (
+                                                    <Tag key={c.id} color="blue" style={{ borderRadius: 6, margin: 0 }}>{c.name}</Tag>
+                                                ))}
+                                                {previewData.sub_categories?.map((sc) => (
+                                                    <Tag key={sc.id} color="cyan" style={{ borderRadius: 6, margin: 0 }}>› {sc.name}</Tag>
+                                                ))}
+                                                {previewData.sub_sub_categories?.map((ssc) => (
+                                                    <Tag key={ssc.id} color="geekblue" style={{ borderRadius: 6, margin: 0 }}>› {ssc.name}</Tag>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
 
-                                {previewData.brand_id && (
-                                    <p>
-                                        <strong>Brand:</strong> {previewData.brand.name}
-                                    </p>
-                                )}
-            
-                                {previewData.variation_price_range.min_price > 0 ? (
-                                    <p style={{ fontSize: 18, fontWeight: 600, color: "#27ae60" }}>
-                                        {previewData.variation_price_range.min_price} Tk -{" "}
-                                        {previewData.variation_price_range.max_price} Tk
-                                    </p>
-                                ) : (
-                                   <p style={{ fontSize: 18, fontWeight: 600, color: "#27ae60" }}>
-                                        {previewData.sell_price} Tk 
-                                    </p> 
-                                )}
-            
-                                {previewData.short_description && (
-                                    <div style={{ marginTop: 16 }}>
-                                        <h4>Short Description:</h4>
-                                        <div dangerouslySetInnerHTML={{__html: previewData.short_description}} style={{ maxHeight: 200, overflowY: "auto" }}/>
+                                    {/* Commercial Pricing Card */}
+                                    <div
+                                        style={{
+                                            background: "linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%)",
+                                            padding: 16,
+                                            borderRadius: 12,
+                                            border: "1px solid #bae0ff",
+                                            boxShadow: "0 2px 8px rgba(22,119,255,0.06)",
+                                        }}
+                                    >
+                                        <Text type="secondary" style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, color: "#1677ff" }}>
+                                            Pricing & Commercials
+                                        </Text>
+
+                                        {previewData.variation_price_range?.min_price && Number(previewData.variation_price_range.min_price) > 0 ? (
+                                            <div style={{ marginTop: 6 }}>
+                                                <div style={{ fontSize: 22, fontWeight: 800, color: "#0958d9" }}>
+                                                    ৳{Number(previewData.variation_price_range.min_price).toLocaleString()} — ৳{Number(previewData.variation_price_range.max_price).toLocaleString()}
+                                                </div>
+                                                <Text type="secondary" style={{ fontSize: 12 }}>Includes variant pricing configuration</Text>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 6, flexWrap: "wrap", gap: 12 }}>
+                                                <div>
+                                                    {Number(previewData.mrp) > 0 && Number(previewData.mrp) > Number(previewData.sell_price) && (
+                                                        <div style={{ fontSize: 13, color: "#94a3b8" }}>
+                                                            MRP: <Text delete style={{ color: "#94a3b8" }}>৳{Number(previewData.mrp).toLocaleString()}</Text>
+                                                        </div>
+                                                    )}
+                                                    {Number(previewData.offer_price) > 0 && Number(previewData.offer_price) !== Number(previewData.sell_price) && (
+                                                        <div style={{ fontSize: 12, color: "#d97706", fontWeight: 600 }}>
+                                                            Special Offer: ৳{Number(previewData.offer_price).toLocaleString()}
+                                                        </div>
+                                                    )}
+                                                    <div style={{ fontSize: 24, fontWeight: 800, color: "#0958d9", lineHeight: 1.2 }}>
+                                                        ৳{Number(previewData.sell_price || previewData.mrp || 0).toLocaleString()}
+                                                    </div>
+                                                </div>
+
+                                                {(Number(previewData.discount) > 0 || Number(previewData.offer_percent) > 0) && (
+                                                    <Tag color="error" style={{ fontSize: 12, fontWeight: 800, padding: "4px 10px", borderRadius: 8, border: "none" }}>
+                                                        {previewData.discount || previewData.offer_percent}% DISCOUNT
+                                                    </Tag>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-            
-                                {previewData.description && (
-                                    <div style={{ marginTop: 16 }}>
-                                        <h4>Description:</h4>
-                                        <div dangerouslySetInnerHTML={{__html: previewData.description}} style={{ maxHeight: 200, overflowY: "auto" }}/>
+
+                                    {/* Stock & Quantity Grid */}
+                                    <div
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+                                            gap: 10,
+                                            background: "#fafafa",
+                                            padding: 12,
+                                            borderRadius: 12,
+                                            border: "1px solid #f0f0f0",
+                                        }}
+                                    >
+                                        <div style={{ background: "#fff", padding: "8px 12px", borderRadius: 8, border: "1px solid #f0f0f0" }}>
+                                            <Text type="secondary" style={{ fontSize: 11, display: "block" }}>Stock Status</Text>
+                                            <div style={{ fontSize: 16, fontWeight: 700, color: Number(previewData.current_stock) > 0 ? "#52c41a" : "#ff4d4f" }}>
+                                                {previewData.current_stock ?? 0} <span style={{ fontSize: 11, fontWeight: 500 }}>units</span>
+                                            </div>
+                                        </div>
+                                        <div style={{ background: "#fff", padding: "8px 12px", borderRadius: 8, border: "1px solid #f0f0f0" }}>
+                                            <Text type="secondary" style={{ fontSize: 11, display: "block" }}>Purchased Qty</Text>
+                                            <div style={{ fontSize: 16, fontWeight: 700, color: "#1e293b" }}>
+                                                {previewData.total_purchase_qty ?? 0}
+                                            </div>
+                                        </div>
+                                        <div style={{ background: "#fff", padding: "8px 12px", borderRadius: 8, border: "1px solid #f0f0f0" }}>
+                                            <Text type="secondary" style={{ fontSize: 11, display: "block" }}>Total Sold</Text>
+                                            <div style={{ fontSize: 16, fontWeight: 700, color: "#1677ff" }}>
+                                                {previewData.total_sell_qty ?? 0}
+                                            </div>
+                                        </div>
+                                        <div style={{ background: "#fff", padding: "8px 12px", borderRadius: 8, border: "1px solid #f0f0f0" }}>
+                                            <Text type="secondary" style={{ fontSize: 11, display: "block" }}>Min Order Qty</Text>
+                                            <div style={{ fontSize: 16, fontWeight: 700, color: "#475569" }}>
+                                                {previewData.minimum_qty ?? 1}
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
-            
-                                {previewData.variations?.data?.length > 0 && (
-                                    <div style={{ marginTop: 16 }}>
-                                        <Table columns={columns} dataSource={previewData.variations.data} rowKey="id" pagination={false} size="small"/>
-                                    </div>
-                                )}
+                                </div>
                             </Col>
                         </Row>
-                    )
-                )}
+
+                        {/* Bottom Content Tabs: Descriptions, Variations, SEO */}
+                        <div style={{ marginTop: 20 }}>
+                            <Tabs
+                                defaultActiveKey="description"
+                                type="card"
+                                items={[
+                                    {
+                                        key: "description",
+                                        label: "Description & Details",
+                                        children: (
+                                            <div style={{ padding: "12px 4px" }}>
+                                                {previewData.short_description && (
+                                                    <div style={{ marginBottom: 16, background: "#f8fafc", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                                                        <Text strong style={{ fontSize: 13, color: "#334155", display: "block", marginBottom: 4 }}>
+                                                            Short Description:
+                                                        </Text>
+                                                        <div
+                                                            dangerouslySetInnerHTML={{ __html: previewData.short_description }}
+                                                            style={{ fontSize: 13, color: "#475569", lineHeight: 1.6 }}
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                {previewData.description ? (
+                                                    <div>
+                                                        <Text strong style={{ fontSize: 13, color: "#334155", display: "block", marginBottom: 6 }}>
+                                                            Full Description:
+                                                        </Text>
+                                                        <div
+                                                            dangerouslySetInnerHTML={{ __html: previewData.description }}
+                                                            style={{
+                                                                fontSize: 13,
+                                                                color: "#334155",
+                                                                lineHeight: 1.6,
+                                                                maxHeight: 260,
+                                                                overflowY: "auto",
+                                                                paddingRight: 6,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <Empty description="No full description available for this product." image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                                                )}
+                                            </div>
+                                        ),
+                                    },
+                                    (Array.isArray(previewData.variations) ? previewData.variations : previewData.variations?.data)?.length > 0
+                                        ? {
+                                              key: "variations",
+                                              label: `Variations (${(Array.isArray(previewData.variations) ? previewData.variations : previewData.variations?.data).length})`,
+                                              children: (
+                                                  <div style={{ padding: "12px 0" }}>
+                                                      <Table
+                                                          columns={[
+                                                              { title: "Variant", dataIndex: "name", key: "name", render: (t, r) => t || r.title || r.attributes?.map(a => a.value).join(" / ") || "Variant" },
+                                                              { title: "SKU", dataIndex: "sku", key: "sku", render: (s) => s ? <Text code>{s}</Text> : "—" },
+                                                              { title: "Price", key: "price", render: (_, r) => <Text strong style={{ color: "#1677ff" }}>৳{r.sell_price || r.price || "—"}</Text> },
+                                                              { title: "Stock", dataIndex: "current_stock", key: "stock", render: (st) => <Tag color={Number(st) > 0 ? "success" : "error"}>{st ?? 0}</Tag> },
+                                                          ]}
+                                                          dataSource={Array.isArray(previewData.variations) ? previewData.variations : previewData.variations?.data}
+                                                          rowKey="id"
+                                                          pagination={false}
+                                                          size="small"
+                                                          bordered
+                                                      />
+                                                  </div>
+                                              ),
+                                          }
+                                        : null,
+                                    (previewData.meta_title || previewData.meta_keywords || previewData.meta_description || previewData.video_url)
+                                        ? {
+                                              key: "seo",
+                                              label: "SEO & Media",
+                                              children: (
+                                                  <div style={{ padding: "12px 4px", display: "flex", flexDirection: "column", gap: 10 }}>
+                                                      {previewData.video_url && (
+                                                          <div style={{ marginBottom: 6 }}>
+                                                              <Text strong style={{ fontSize: 13 }}>Product Video: </Text>
+                                                              <Button
+                                                                  type="link"
+                                                                  icon={<PlaySquareOutlined />}
+                                                                  onClick={() => window.open(previewData.video_url, "_blank")}
+                                                                  style={{ padding: 0 }}
+                                                              >
+                                                                  Watch Video
+                                                              </Button>
+                                                          </div>
+                                                      )}
+                                                      {previewData.meta_title && (
+                                                          <div>
+                                                              <Text type="secondary" style={{ fontSize: 11, display: "block" }}>Meta Title</Text>
+                                                              <Text strong style={{ fontSize: 13 }}>{previewData.meta_title}</Text>
+                                                          </div>
+                                                      )}
+                                                      {previewData.meta_keywords && (
+                                                          <div>
+                                                              <Text type="secondary" style={{ fontSize: 11, display: "block" }}>Meta Keywords</Text>
+                                                              <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 2 }}>
+                                                                  {previewData.meta_keywords.split(",").map((kw, i) => (
+                                                                      <Tag key={i} color="default" style={{ fontSize: 11 }}>{kw.trim()}</Tag>
+                                                                  ))}
+                                                              </div>
+                                                          </div>
+                                                      )}
+                                                      {previewData.meta_description && (
+                                                          <div>
+                                                              <Text type="secondary" style={{ fontSize: 11, display: "block" }}>Meta Description</Text>
+                                                              <Text style={{ fontSize: 12, color: "#475569" }}>{previewData.meta_description}</Text>
+                                                          </div>
+                                                      )}
+                                                  </div>
+                                              ),
+                                          }
+                                        : null,
+                                ].filter(Boolean)}
+                            />
+                        </div>
+                    </div>
+                ) : null}
             </Modal>
 
             <Modal title="Image Preview" open={imagePreviewModal} onCancel={() => setImagePreviewModal(false)} footer={null}>
