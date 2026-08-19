@@ -81,7 +81,6 @@ import FacebookMeta from "./pages/product/catelog/FacebookMeta";
 
 // Meta Module
 import MetaAdsReport from "./pages/meta/MetaAdsReport";
-import CampaignProduct from "./pages/meta/CampaignProduct";
 import MetaAdAccount from "./pages/meta/MetaAdAccount";
 // Meta Module
 
@@ -293,7 +292,6 @@ function App() {
 
                     {/* Meta Module */}
                     <Route path="/meta-ads-report" element={<MetaAdsReport />} />
-                    <Route path="/campaign-products" element={<CampaignProduct />} />
                     <Route path="/meta-ad-account" element={<MetaAdAccount />} />
                     {/* Meta Module */}
 
@@ -319,7 +317,6 @@ function App() {
                     <Route path="/server-tracker" element={<ServerTracker />} />
                     <Route path="/google-analytical" element={<GoogleAnalytic />} />
                     <Route path="/facebook/meta/pixel" element={<FacebookMeta />} />
-                    <Route path="/campaign-products" element={<CampaignProduct />} />
 
                     <Route path="/pusher/settings" element={<Pusher />} />
 

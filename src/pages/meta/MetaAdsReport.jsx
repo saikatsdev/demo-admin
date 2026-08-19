@@ -10,7 +10,6 @@ import AccountLimit from './components/AccountLimit';
 import AccountExpense from './components/AccountExpense';
 import OrderAnalysis from './components/OrderAnalysis';
 import './MetaAdsReport.css';
-import HourlyAnalysis from './components/HourlyAnalysis';
 
 const { Title } = Typography;
 
@@ -163,13 +162,6 @@ const MetaAdsReport = () => {
                             label: 'Order Analysis', 
                             children: (
                                 <OrderAnalysis/>
-                            )
-                        },
-                        { 
-                            key: 'hourly', 
-                            label: 'Hourly Analysis', 
-                            children: (
-                                <HourlyAnalysis/>
                             )
                         },
                     ]}
