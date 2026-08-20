@@ -756,7 +756,7 @@ export default function ProductEdit() {
             if (res?.success) {
                 messageApi.open({
                     type: "success",
-                    content: "Product updated successfully!",
+                    content: status === 'draft' ? "Product store as Draft" : "Product updated successfully!",
                 });
                 
                 navigate(productReturnUrl);
@@ -822,367 +822,343 @@ export default function ProductEdit() {
         <div style={{ background: '#f4f7fe', minHeight: '100vh', paddingBottom: '40px' }}>
             {contextHolder}
             
-                <div style={{
-                    background: '#fff',
-                    padding: '16px 24px',
-                    borderBottom: '1px solid #e2e8f0',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: 24
-                }}>
-                    <Space size="middle">
-                        <Button 
-                            icon={<ArrowLeftOutlined />} 
-                            onClick={() => navigate(productReturnUrl)} 
-                            style={{ border: 'none', background: '#f1f5f9', borderRadius: '8px' }}
-                        />
-                        <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <Title level={4} style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>Edit Product</Title>
-                                <Tag color="blue" style={{ borderRadius: '4px', fontWeight: 600 }}>ID: {productId}</Tag>
-                            </div>
-                            <Permalink slug={slug} setSlug={setSlug} productId={productId} settings={settings}/>
+            <div style={{
+                background: '#fff',
+                padding: '16px 24px',
+                borderBottom: '1px solid #e2e8f0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 24
+            }}>
+                <Space size="middle">
+                    <Button 
+                        icon={<ArrowLeftOutlined />} 
+                        onClick={() => navigate(productReturnUrl)} 
+                        style={{ border: 'none', background: '#f1f5f9', borderRadius: '8px' }}
+                    />
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <Title level={4} style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#1e293b' }}>Edit Product</Title>
+                            <Tag color="blue" style={{ borderRadius: '4px', fontWeight: 600 }}>ID: {productId}</Tag>
                         </div>
-                    </Space>
-                    <Space>
-                        <Button 
-                            icon={<CloseOutlined />} 
-                            onClick={() => navigate(productReturnUrl)}
-                            style={{ borderRadius: '8px' }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button 
-                            type="primary" 
-                            icon={<SaveOutlined />}
-                            onClick={handleSubmit} 
-                            loading={loading} 
-                            disabled={isInvalidOffer}
-                            style={{ 
-                                borderRadius: '8px', 
-                                background: '#2563eb', 
-                                height: '40px', 
-                                padding: '0 24px',
-                                fontWeight: 600,
-                                boxShadow: '0 4px 10px rgba(37, 99, 235, 0.2)'
-                            }}
-                        >
-                            Update Product
-                        </Button>
-                    </Space>
-                </div>
+                        <Permalink slug={slug} setSlug={setSlug} productId={productId} settings={settings}/>
+                    </div>
+                </Space>
+                <Space>
+                    <Button icon={<CloseOutlined />} onClick={() => navigate(productReturnUrl)} style={{ borderRadius: '8px' }}>
+                        Cancel
+                    </Button>
 
-                <div style={{ padding: '0 24px' }}>
-                    <Row gutter={[24, 24]}>
-                        <Col xs={24} lg={16}>
-                            <Space direction="vertical" size={24} style={{ width: '100%' }}>
-                                {/* General Information */}
-                                <Card 
-                                    title={<Space><InfoCircleOutlined style={{ color: '#3b82f6' }} />General Information</Space>}
-                                    variant="borderless"
-                                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
-                                >
-                                    <Form layout="vertical">
-                                        <Row gutter={20}>
-                                            <Col span={24}>
-                                                <Form.Item label={<Text strong style={{ color: '#475569' }}>Product Name</Text>} required>
-                                                    <Input 
-                                                        size="large"
-                                                        value={title} 
-                                                        onChange={(e) => setTitle(e.target.value)} 
-                                                        placeholder="Enter product name" 
-                                                        status={errors?.name ? "error" : ""}
-                                                        style={{ borderRadius: '8px' }}
-                                                    />
-                                                    {errors?.name && (
-                                                        <div style={{ color: "#ef4444", marginTop: 4, fontSize: '12px' }}>
-                                                            {errors.name.map((error, index) => (
-                                                                <div key={index}>{error}</div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </Form.Item>
-                                            </Col>
-                        
-                                            <Col span={8}>
-                                                <Form.Item label="Brand">
-                                                    <Select 
-                                                        size="large"
-                                                        placeholder="Select Brand" 
-                                                        value={brandId || undefined} 
-                                                        onChange={setBrandId} 
-                                                        options={(brands|| []).map((b) => ({label: b.name,value: b.id,}))}
-                                                        style={{ borderRadius: '8px' }}
-                                                    />
-                                                </Form.Item>
-                                            </Col>
-        
-                                            <Col span={8}>
-                                                <Form.Item label="Status">
-                                                    <Select 
-                                                        size="large"
-                                                        placeholder="Select Status" 
-                                                        value={status || undefined} 
-                                                        onChange={setStatus} 
-                                                        options={[{ label: "Active", value: "active" },{ label: "Inactive", value: "inactive" },]}
-                                                    />
-                                                </Form.Item>
-                                            </Col>
-        
-                                            <Col span={8}>
-                                                <Form.Item label="Product Type">
-                                                    <Select size="large" placeholder="Select Type" value={productTypeId || undefined} onChange={setProductTypeId} options={(productTypes || []).map((t) => ({label: t.name,value: t.id,}))}/>
-                                                </Form.Item>
-                                            </Col>
+                    <Button type="primary" icon={<SaveOutlined />} onClick={handleSubmit} loading={loading} disabled={isInvalidOffer}>
+                        Update Product
+                    </Button>
+                </Space>
+            </div>
 
-                                            {isComboProduct && (
-                                                <Col span={24}>
-                                                    <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: 16 }}>
-                                                        <Text strong style={{ display: 'block', marginBottom: 12, color: '#334155' }}>
-                                                            <AppstoreOutlined style={{ marginRight: 6 }} />Combo Products
-                                                        </Text>
-                                                        <Select
-                                                            showSearch
-                                                            size="large"
-                                                            placeholder="Search and select products for combo..."
-                                                            value={undefined}
-                                                            onSearch={setComboSearchQuery}
-                                                            onChange={(value) => {
-                                                                const product = comboSearchResults.find(p => p.id === value);
-                                                                if (product && !comboProducts.find(p => p.id === product.id)) {
-                                                                    setComboProducts(prev => [...prev, product]);
-                                                                }
-                                                                setComboSearchQuery("");
-                                                            }}
-                                                            filterOption={false}
-                                                            loading={comboSearchLoading}
-                                                            notFoundContent={comboSearchQuery ? "No products found" : "Type to search..."}
-                                                            options={comboSearchResults
-                                                                .filter(p => !comboProducts.find(cp => cp.id === p.id))
-                                                                .map(p => ({
-                                                                    label: p.name,
-                                                                    value: p.id,
-                                                                    product: p,
-                                                                }))}
-                                                            optionRender={(option) => (
-                                                                <Space size={10}>
-                                                                    {option.data.product?.image && (
-                                                                        <img src={option.data.product.image} alt="" style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover' }} />
-                                                                    )}
-                                                                    <span>{option.data.product?.name}</span>
-                                                                </Space>
-                                                            )}
-                                                            style={{ width: '100%', borderRadius: 8 }}
-                                                        />
-                                                        {comboProducts.length > 0 && (
-                                                            <div style={{ marginTop: 12 }}>
-                                                                <Divider orientation="left" style={{ fontSize: 12, margin: '8px 0', color: '#64748b' }}>
-                                                                    Selected Products ({comboProducts.length})
-                                                                </Divider>
-                                                                <Row gutter={[8, 8]}>
-                                                                    {comboProducts.map(product => (
-                                                                        <Col key={product.id} xs={24} sm={12}>
-                                                                            <Card
-                                                                                size="small"
-                                                                                style={{ borderRadius: 8, background: '#fff' }}
-                                                                            >
-                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
-                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                                                                                        {product.image && (
-                                                                                            <img
-                                                                                                src={product.image}
-                                                                                                alt=""
-                                                                                                style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
-                                                                                            />
-                                                                                        )}
-                                                                                        <div style={{ minWidth: 0 }}>
-                                                                                            <Text strong style={{ fontSize: 13, display: 'block', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</Text>
-                                                                                            <Text type="secondary" style={{ fontSize: 11 }}>৳{product.sell_price || product.mrp || "N/A"}</Text>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <Button
-                                                                                        type="text"
-                                                                                        danger
-                                                                                        size="small"
-                                                                                        icon={<DeleteOutlined />}
-                                                                                        onClick={() => setComboProducts(prev => prev.filter(p => p.id !== product.id))}
-                                                                                        style={{ flexShrink: 0 }}
-                                                                                    />
-                                                                                </div>
-                                                                            </Card>
-                                                                        </Col>
-                                                                    ))}
-                                                                </Row>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </Col>
-                                            )}
-                        
-                                            <Col span={8}>
-                                                <Form.Item label="Sold Quantity">
-                                                    <Input size="large" value={soldQty} onChange={(e) => setSoldQty(e.target.value)} placeholder="0"/>
-                                                </Form.Item>
-                                            </Col>
-                        
-                                            <Col span={8}>
-                                                <Form.Item label="Free Shipping">
-                                                    <Select size="large" value={isFreeShipping} onChange={setIsFreeShipping} options={[{ label: "No", value: "0" },{ label: "Yes", value: "1" },]}/>
-                                                </Form.Item>
-                                            </Col>
-        
-                                            <Col span={8}>
-                                                <Form.Item label="Stock Quantity">
-                                                    <Input size="large" placeholder="0" value={currentStock} onChange={(e) => setCurrentStock(e.target.value)}/>
-                                                </Form.Item>
-                                            </Col>
-        
-                                            <Col span={8}>
-                                                <Form.Item label="Min. Order Qty" required>
-                                                    <Input size="large" placeholder="1" value={minimumQuantity} onChange={(e) => setMinimumQuantity(e.target.value)}/>
-                                                </Form.Item>
-                                            </Col>
-        
-                                            <Col span={8}>
-                                                <Form.Item label="Product SKU">
-                                                    <Input size="large" prefix={<BarcodeOutlined style={{ color: '#94a3b8' }} />} value={sku} onChange={(e) => setSku(e.target.value)}/>
-                                                </Form.Item>
-                                            </Col>
-        
-                                            <Col span={8}>
-                                                <Form.Item label="Video URL">
-                                                    <Input size="large" placeholder="YouTube/Vimeo link" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)}/>
-                                                </Form.Item>
-                                            </Col>
-                        
-                                            <Col span={24}>
-                                                <Form.Item label="Short Description">
-                                                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-                                                        <ReactQuill theme="snow" value={shortDescription} onChange={setShortDescription} placeholder="Write a brief overview..." modules={modules} style={{ height: "200px", border: 'none' }}/>
-                                                    </div>
-                                                    <div style={{ height: '45px' }}></div>
-                                                </Form.Item>
-                                            </Col>
-                        
-                                            <Col span={24}>
-                                                <Form.Item label="Full Description">
-                                                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-                                                        <ReactQuill theme="snow" value={description} onChange={setDescription} placeholder="Detailed product specifications..." modules={modules} style={{ height: "350px", border: 'none' }}/>
-                                                    </div>
-                                                    <div style={{ height: '45px' }}></div>
-                                                </Form.Item>
-                                            </Col>
-                                        </Row>
-                                    </Form>
-                                </Card>
-
-                                {/* Media Section */}
-                                <Card 
-                                    title={<Space><PlusOutlined style={{ color: '#3b82f6' }} />Product Media</Space>}
-                                    variant="borderless"
-                                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
-                                >
-                                    <Row gutter={[20, 20]}>
-                                        <Col xs={24} md={10}>
-                                            <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', height: '100%' }}>
-                                                <Text strong style={{ display: "block", marginBottom: 12, fontSize: '14px' }}>
-                                                    Main Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
-                                                </Text>
-                                                <ProductImagePicker name="image" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(gallaryPage + 1)} onChange={handleImageChange} onUploadSuccess={(newImages) => { setGallery(prev => [...(Array.isArray(newImages) ? newImages : []), ...prev]);}} initialValue={thumbnailPreview}/>
-                                                {errors?.image && (
-                                                    <div style={{ color: "#ef4444", marginTop: 8, fontSize: '12px' }}>
-                                                        {errors.image.map((error, index) => (
+            <div style={{ padding: '0 24px' }}>
+                <Row gutter={[24, 24]}>
+                    <Col xs={24} lg={16}>
+                        <Space direction="vertical" size={24} style={{ width: '100%' }}>
+                            {/* General Information */}
+                            <Card 
+                                title={<Space><InfoCircleOutlined style={{ color: '#3b82f6' }} />General Information</Space>}
+                                variant="borderless"
+                                style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                            >
+                                <Form layout="vertical">
+                                    <Row gutter={20}>
+                                        <Col span={24}>
+                                            <Form.Item label={<Text strong style={{ color: '#475569' }}>Product Name</Text>} required>
+                                                <Input 
+                                                    size="large"
+                                                    value={title} 
+                                                    onChange={(e) => setTitle(e.target.value)} 
+                                                    placeholder="Enter product name" 
+                                                    status={errors?.name ? "error" : ""}
+                                                    style={{ borderRadius: '8px' }}
+                                                />
+                                                {errors?.name && (
+                                                    <div style={{ color: "#ef4444", marginTop: 4, fontSize: '12px' }}>
+                                                        {errors.name.map((error, index) => (
                                                             <div key={index}>{error}</div>
                                                         ))}
                                                     </div>
                                                 )}
-                                            </div>
+                                            </Form.Item>
                                         </Col>
-                                        <Col xs={24} md={14}>
-                                            <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', height: '100%' }}>
-                                                <Text strong style={{ display: "block", marginBottom: 12, fontSize: '14px' }}>
-                                                    Product Gallery
-                                                </Text>
-                                                <ProductGalleryPicker gallery={gallery} hasMore={hasMore} fetchMore={() => fetchMedia(gallaryPage + 1)} loadingMore={loadingMore} onChange={handleGalleryImageFileChange} onUploadSuccess={(newImages) => { setGallery(prev => [...(Array.isArray(newImages) ? newImages : []), ...prev]); }} initialValues={imagePreview}/>
-                                            </div>
+                    
+                                        <Col span={8}>
+                                            <Form.Item label="Brand">
+                                                <Select 
+                                                    size="large"
+                                                    placeholder="Select Brand" 
+                                                    value={brandId || undefined} 
+                                                    onChange={setBrandId} 
+                                                    options={(brands|| []).map((b) => ({label: b.name,value: b.id,}))}
+                                                    style={{ borderRadius: '8px' }}
+                                                />
+                                            </Form.Item>
+                                        </Col>
+    
+                                        <Col span={8}>
+                                            <Form.Item label="Status">
+                                                <Select size="large" placeholder="Select Status" value={status || undefined} onChange={setStatus} 
+                                                    options={[{ label: "Draft", value: "draft" },{ label: "Active", value: "active" },{ label: "Inactive", value: "inactive" },]}
+                                                />
+                                            </Form.Item>
+                                        </Col>
+    
+                                        <Col span={8}>
+                                            <Form.Item label="Product Type">
+                                                <Select size="large" placeholder="Select Type" value={productTypeId || undefined} onChange={setProductTypeId} options={(productTypes || []).map((t) => ({label: t.name,value: t.id,}))}/>
+                                            </Form.Item>
+                                        </Col>
+
+                                        {isComboProduct && (
+                                            <Col span={24}>
+                                                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: 16 }}>
+                                                    <Text strong style={{ display: 'block', marginBottom: 12, color: '#334155' }}>
+                                                        <AppstoreOutlined style={{ marginRight: 6 }} />Combo Products
+                                                    </Text>
+                                                    <Select
+                                                        showSearch
+                                                        size="large"
+                                                        placeholder="Search and select products for combo..."
+                                                        value={undefined}
+                                                        onSearch={setComboSearchQuery}
+                                                        onChange={(value) => {
+                                                            const product = comboSearchResults.find(p => p.id === value);
+                                                            if (product && !comboProducts.find(p => p.id === product.id)) {
+                                                                setComboProducts(prev => [...prev, product]);
+                                                            }
+                                                            setComboSearchQuery("");
+                                                        }}
+                                                        filterOption={false}
+                                                        loading={comboSearchLoading}
+                                                        notFoundContent={comboSearchQuery ? "No products found" : "Type to search..."}
+                                                        options={comboSearchResults
+                                                            .filter(p => !comboProducts.find(cp => cp.id === p.id))
+                                                            .map(p => ({
+                                                                label: p.name,
+                                                                value: p.id,
+                                                                product: p,
+                                                            }))}
+                                                        optionRender={(option) => (
+                                                            <Space size={10}>
+                                                                {option.data.product?.image && (
+                                                                    <img src={option.data.product.image} alt="" style={{ width: 32, height: 32, borderRadius: 4, objectFit: 'cover' }} />
+                                                                )}
+                                                                <span>{option.data.product?.name}</span>
+                                                            </Space>
+                                                        )}
+                                                        style={{ width: '100%', borderRadius: 8 }}
+                                                    />
+                                                    {comboProducts.length > 0 && (
+                                                        <div style={{ marginTop: 12 }}>
+                                                            <Divider orientation="left" style={{ fontSize: 12, margin: '8px 0', color: '#64748b' }}>
+                                                                Selected Products ({comboProducts.length})
+                                                            </Divider>
+                                                            <Row gutter={[8, 8]}>
+                                                                {comboProducts.map(product => (
+                                                                    <Col key={product.id} xs={24} sm={12}>
+                                                                        <Card
+                                                                            size="small"
+                                                                            style={{ borderRadius: 8, background: '#fff' }}
+                                                                        >
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                                                                                    {product.image && (
+                                                                                        <img
+                                                                                            src={product.image}
+                                                                                            alt=""
+                                                                                            style={{ width: 40, height: 40, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
+                                                                                        />
+                                                                                    )}
+                                                                                    <div style={{ minWidth: 0 }}>
+                                                                                        <Text strong style={{ fontSize: 13, display: 'block', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.name}</Text>
+                                                                                        <Text type="secondary" style={{ fontSize: 11 }}>৳{product.sell_price || product.mrp || "N/A"}</Text>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <Button
+                                                                                    type="text"
+                                                                                    danger
+                                                                                    size="small"
+                                                                                    icon={<DeleteOutlined />}
+                                                                                    onClick={() => setComboProducts(prev => prev.filter(p => p.id !== product.id))}
+                                                                                    style={{ flexShrink: 0 }}
+                                                                                />
+                                                                            </div>
+                                                                        </Card>
+                                                                    </Col>
+                                                                ))}
+                                                            </Row>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </Col>
+                                        )}
+                    
+                                        <Col span={8}>
+                                            <Form.Item label="Sold Quantity">
+                                                <Input size="large" value={soldQty} onChange={(e) => setSoldQty(e.target.value)} placeholder="0"/>
+                                            </Form.Item>
+                                        </Col>
+                    
+                                        <Col span={8}>
+                                            <Form.Item label="Free Shipping">
+                                                <Select size="large" value={isFreeShipping} onChange={setIsFreeShipping} options={[{ label: "No", value: "0" },{ label: "Yes", value: "1" },]}/>
+                                            </Form.Item>
+                                        </Col>
+    
+                                        <Col span={8}>
+                                            <Form.Item label="Stock Quantity">
+                                                <Input size="large" placeholder="0" value={currentStock} onChange={(e) => setCurrentStock(e.target.value)}/>
+                                            </Form.Item>
+                                        </Col>
+    
+                                        <Col span={8}>
+                                            <Form.Item label="Min. Order Qty" required>
+                                                <Input size="large" placeholder="1" value={minimumQuantity} onChange={(e) => setMinimumQuantity(e.target.value)}/>
+                                            </Form.Item>
+                                        </Col>
+    
+                                        <Col span={8}>
+                                            <Form.Item label="Product SKU">
+                                                <Input size="large" prefix={<BarcodeOutlined style={{ color: '#94a3b8' }} />} value={sku} onChange={(e) => setSku(e.target.value)}/>
+                                            </Form.Item>
+                                        </Col>
+    
+                                        <Col span={8}>
+                                            <Form.Item label="Video URL">
+                                                <Input size="large" placeholder="YouTube/Vimeo link" value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)}/>
+                                            </Form.Item>
+                                        </Col>
+                    
+                                        <Col span={24}>
+                                            <Form.Item label="Short Description">
+                                                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                                                    <ReactQuill theme="snow" value={shortDescription} onChange={setShortDescription} placeholder="Write a brief overview..." modules={modules} style={{ height: "200px", border: 'none' }}/>
+                                                </div>
+                                                <div style={{ height: '45px' }}></div>
+                                            </Form.Item>
+                                        </Col>
+                    
+                                        <Col span={24}>
+                                            <Form.Item label="Full Description">
+                                                <div style={{ border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                                                    <ReactQuill theme="snow" value={description} onChange={setDescription} placeholder="Detailed product specifications..." modules={modules} style={{ height: "350px", border: 'none' }}/>
+                                                </div>
+                                                <div style={{ height: '45px' }}></div>
+                                            </Form.Item>
                                         </Col>
                                     </Row>
-                                </Card>
-                            </Space>
-                        </Col>
+                                </Form>
+                            </Card>
 
-                        <Col xs={24} lg={8}>
-                            <Space direction="vertical" size={24} style={{ width: '100%' }}>
-                                {/* Categories Section */}
-                                <Card 
-                                    title={<Space><AppstoreOutlined style={{ color: '#3b82f6' }} />Categorization</Space>}
-                                    variant="borderless"
-                                    style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
-                                >
-                                    <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '10px' }}>
-                                        <Checkbox.Group style={{ width: "100%" }} value={categoryIds} onChange={(checkedValues) => setCategoryIds(checkedValues)}>
-                                            {categories?.map(category => (
-                                                <div key={category.id} style={{ marginBottom: 16, background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
-                                                    <Checkbox value={`cat-${category.id}`}>
-                                                        <Text strong style={{ fontSize: '14px', color: '#1e293b' }}>{category.name}</Text>
-                                                    </Checkbox>
-                                                    
-                                                    <div style={{ marginLeft: 24, marginTop: 10, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                        {category.sub_categories?.map(sub => (
-                                                            <div key={sub.id}>
-                                                                <Checkbox value={`sub-${sub.id}`}>
-                                                                    <Text style={{ fontSize: '13px' }}>{sub.name}</Text>
-                                                                </Checkbox>
-                                                                
-                                                                <div style={{ marginLeft: 24, marginTop: 6, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                                    {sub.sub_sub_categories?.map(subsub => (
-                                                                        <Checkbox key={subsub.id} value={`subsub-${subsub.id}`}>
-                                                                            <Text type="secondary" style={{ fontSize: '12px' }}>{subsub.name}</Text>
-                                                                        </Checkbox>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </Checkbox.Group>
-                                    </div>
-                                </Card>
-                            </Space>
-                        </Col>
-                    </Row>
-
-                    {/* Pricing & Variation Section */}
-                    <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
-                        <Col span={24}>
+                            {/* Media Section */}
                             <Card 
-                                id="pricing-design-a" 
-                                title={<Space><DollarOutlined style={{ color: '#3b82f6' }} />Pricing & Variations</Space>}
+                                title={<Space><PlusOutlined style={{ color: '#3b82f6' }} />Product Media</Space>}
                                 variant="borderless"
                                 style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
-                                extra={
-                                    <Space>
-                                        <Button type="default" icon={<PlusOutlined />} onClick={addVariationField} style={{ borderRadius: '6px' }}>
-                                            Add Single
-                                        </Button>
-                                        <Button type="primary" icon={<RocketOutlined />} onClick={() => setVariationMultiplyModal(true)} style={{ borderRadius: '6px', background: '#0ea5e9' }}>
-                                            Variation Wizard
-                                        </Button>
-                                    </Space>
-                                }
                             >
-                                <Row justify="space-between" style={{ marginBottom: 16 }}>
-                                    <Col>
-                                        {dynamicInputs.length > 0 && (
-                                            <Button danger ghost icon={<DeleteOutlined />} disabled={selectedVariationRows.length === 0} onClick={handleBulkDeleteVariations} style={{ borderRadius: '6px' }}>
-                                                Bulk Delete ({selectedVariationRows.length})
-                                            </Button>
-                                        )}
+                                <Row gutter={[20, 20]}>
+                                    <Col xs={24} md={10}>
+                                        <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', height: '100%' }}>
+                                            <Text strong style={{ display: "block", marginBottom: 12, fontSize: '14px' }}>
+                                                Main Thumbnail <span style={{ color: "#ff4d4f" }}>*</span>
+                                            </Text>
+                                            <ProductImagePicker name="image" gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(gallaryPage + 1)} onChange={handleImageChange} onUploadSuccess={(newImages) => { setGallery(prev => [...(Array.isArray(newImages) ? newImages : []), ...prev]);}} initialValue={thumbnailPreview}/>
+                                            {errors?.image && (
+                                                <div style={{ color: "#ef4444", marginTop: 8, fontSize: '12px' }}>
+                                                    {errors.image.map((error, index) => (
+                                                        <div key={index}>{error}</div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </Col>
+                                    <Col xs={24} md={14}>
+                                        <div className="media-picker-card" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #e2e8f0', height: '100%' }}>
+                                            <Text strong style={{ display: "block", marginBottom: 12, fontSize: '14px' }}>
+                                                Product Gallery
+                                            </Text>
+                                            <ProductGalleryPicker gallery={gallery} hasMore={hasMore} fetchMore={() => fetchMedia(gallaryPage + 1)} loadingMore={loadingMore} onChange={handleGalleryImageFileChange} onUploadSuccess={(newImages) => { setGallery(prev => [...(Array.isArray(newImages) ? newImages : []), ...prev]); }} initialValues={imagePreview}/>
+                                        </div>
                                     </Col>
                                 </Row>
-            
+                            </Card>
+                        </Space>
+                    </Col>
+
+                    <Col xs={24} lg={8}>
+                        <Space direction="vertical" size={24} style={{ width: '100%' }}>
+                            {/* Categories Section */}
+                            <Card 
+                                title={<Space><AppstoreOutlined style={{ color: '#3b82f6' }} />Categorization</Space>}
+                                variant="borderless"
+                                style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                            >
+                                <div style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '10px' }}>
+                                    <Checkbox.Group style={{ width: "100%" }} value={categoryIds} onChange={(checkedValues) => setCategoryIds(checkedValues)}>
+                                        {categories?.map(category => (
+                                            <div key={category.id} style={{ marginBottom: 16, background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+                                                <Checkbox value={`cat-${category.id}`}>
+                                                    <Text strong style={{ fontSize: '14px', color: '#1e293b' }}>{category.name}</Text>
+                                                </Checkbox>
+                                                
+                                                <div style={{ marginLeft: 24, marginTop: 10, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {category.sub_categories?.map(sub => (
+                                                        <div key={sub.id}>
+                                                            <Checkbox value={`sub-${sub.id}`}>
+                                                                <Text style={{ fontSize: '13px' }}>{sub.name}</Text>
+                                                            </Checkbox>
+                                                            
+                                                            <div style={{ marginLeft: 24, marginTop: 6, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                {sub.sub_sub_categories?.map(subsub => (
+                                                                    <Checkbox key={subsub.id} value={`subsub-${subsub.id}`}>
+                                                                        <Text type="secondary" style={{ fontSize: '12px' }}>{subsub.name}</Text>
+                                                                    </Checkbox>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </Checkbox.Group>
+                                </div>
+                            </Card>
+                        </Space>
+                    </Col>
+                </Row>
+
+                {/* Pricing & Variation Section */}
+                <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
+                    <Col span={24}>
+                        <Card id="pricing-design-a" title={<Space><DollarOutlined style={{ color: '#3b82f6' }} />Pricing & Variations</Space>} variant="borderless"
+                            style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                            extra={
+                                <Space>
+                                    <Button type="default" icon={<PlusOutlined />} onClick={addVariationField} style={{ borderRadius: '6px' }}>
+                                        Add Single
+                                    </Button>
+                                    <Button type="primary" icon={<RocketOutlined />} onClick={() => setVariationMultiplyModal(true)} style={{ borderRadius: '6px', background: '#0ea5e9' }}>
+                                        Variation Wizard
+                                    </Button>
+                                </Space>
+                            }
+                            >
+                            <Row justify="space-between" style={{ marginBottom: 16 }}>
+                                <Col>
+                                    {dynamicInputs.length > 0 && (
+                                        <Button danger ghost icon={<DeleteOutlined />} disabled={selectedVariationRows.length === 0} onClick={handleBulkDeleteVariations} style={{ borderRadius: '6px' }}>
+                                            Bulk Delete ({selectedVariationRows.length})
+                                        </Button>
+                                    )}
+                                </Col>
+                            </Row>
+        
                             {dynamicInputs.length > 0 ? (
                                 <div style={{ overflowX: "auto" }}>
                                     <Table bordered pagination={false} scroll={{ x: true }} dataSource={dynamicInputs.map((_, index) => ({key: index,index}))}
@@ -1385,38 +1361,38 @@ export default function ProductEdit() {
                         </Card>
                     </Col>
                 </Row>
-            
+        
                 {/* SEO Information */}
-                    <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
-                        <Col span={24}>
-                            <Card 
-                                title={<Space><GlobalOutlined style={{ color: '#3b82f6' }} />SEO & Search Discovery</Space>}
-                                variant="borderless"
-                                style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
-                            >
-                                <Form layout="vertical">
-                                    <Row gutter={20}>
-                                        <Col xs={24} md={12}>
-                                            <Form.Item label="Meta Title">
-                                                <Input size="large" placeholder="Enter SEO Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)}/>
-                                            </Form.Item>
-                                        </Col>
-                                        <Col xs={24} md={12}>
-                                            <Form.Item label="Meta Keywords">
-                                                <Input size="large" placeholder="e.g. fashion, summer, dress" value={metaKeywords} onChange={(e) => setMetaKeywords(e.target.value)}/>
-                                            </Form.Item>
-                                        </Col>
-                                        <Col span={24}>
-                                            <Form.Item label="Meta Description">
-                                                <Input.TextArea rows={4} placeholder="Enter a search-friendly description..." value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)}/>
-                                            </Form.Item>
-                                        </Col>
-                                    </Row>
-                                </Form>
-                            </Card>
-                        </Col>
-                    </Row>
-                </div>
+                <Row gutter={[24, 24]} style={{ marginTop: '24px' }}>
+                    <Col span={24}>
+                        <Card 
+                            title={<Space><GlobalOutlined style={{ color: '#3b82f6' }} />SEO & Search Discovery</Space>}
+                            variant="borderless"
+                            style={{ borderRadius: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}
+                        >
+                            <Form layout="vertical">
+                                <Row gutter={20}>
+                                    <Col xs={24} md={12}>
+                                        <Form.Item label="Meta Title">
+                                            <Input size="large" placeholder="Enter SEO Title" value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)}/>
+                                        </Form.Item>
+                                    </Col>
+                                    <Col xs={24} md={12}>
+                                        <Form.Item label="Meta Keywords">
+                                            <Input size="large" placeholder="e.g. fashion, summer, dress" value={metaKeywords} onChange={(e) => setMetaKeywords(e.target.value)}/>
+                                        </Form.Item>
+                                    </Col>
+                                    <Col span={24}>
+                                        <Form.Item label="Meta Description">
+                                            <Input.TextArea rows={4} placeholder="Enter a search-friendly description..." value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)}/>
+                                        </Form.Item>
+                                    </Col>
+                                </Row>
+                            </Form>
+                        </Card>
+                    </Col>
+                </Row>
+            </div>
         
             <Modal title="Please Choose Your Variations" open={variationMultiplyModal} onCancel={() => setVariationMultiplyModal(false)} onOk={handleVariationMultiplySubmit} okText="Submit" width={800}>
                 <Form layout="vertical">

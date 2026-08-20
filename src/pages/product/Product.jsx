@@ -49,6 +49,7 @@ export default function Product() {
     const [isActionShow, setIsActionShow]                 = useState(false);
     const [filtersOpen, setFiltersOpen]                   = useState(false);
     const [activeCount, setActiveCount]                   = useState(0);
+    const [draftCount, setDraftCount]                     = useState(0);
     const [inactiveCount, setInactiveCount]               = useState(0);
     const [activeTab, setActiveTab]                       = useState("active");
     const [previewModal, setPreviewModal]                 = useState(false);
@@ -221,17 +222,15 @@ export default function Product() {
             render: (_, record) => (
                 <div className="product-identity-card">
                     <div className="status-sku-header">
-                        <Tag 
-                            color={record.status === "active" ? "#f6ffed" : "#fff1f0"} 
-                            style={{ 
-                                color: record.status === "active" ? "#52c41a" : "#f5222d", 
-                                borderColor: record.status === "active" ? "#b7eb8f" : "#ffa39e",
+                        <Tag color={record.status === "active" ? "#f6ffed" : record.status === "draft" ? "#fffbe6" : "#fff1f0"}
+                            style={{color: record.status === "active" ? "#52c41a" : record.status === "draft" ? "#d48806" : "#f5222d",
+                                borderColor: record.status === "active" ? "#b7eb8f" : record.status === "draft" ? "#ffe58f" : "#ffa39e",
                                 fontWeight: 700,
-                                borderRadius: '4px',
-                                fontSize: '10px'
+                                borderRadius: "4px",
+                                fontSize: "10px",
                             }}
                         >
-                            {record.status === "active" ? "ACTIVE" : "INACTIVE"}
+                            {record.status === "active" ? "ACTIVE" : record.status === "draft" ? "DRAFT" : "INACTIVE"}
                         </Tag>
                         {record.sku && (
                             <span className="sku-text">
@@ -851,6 +850,7 @@ export default function Product() {
                 const allProducts = res?.result?.data || [];
         
                 setActiveCount(res?.result?.totalActiveCount || 0);
+                setDraftCount(res?.result?.totalDraftCount || 0);
                 setInactiveCount(res?.result?.totalInactiveCount || 0);
         
                 setProducts(allProducts);
@@ -1096,6 +1096,14 @@ export default function Product() {
                                         ),
                                     },
                                     {
+                                        key: "draft",
+                                        label: (
+                                            <span>
+                                                Draft <strong>({draftCount})</strong>
+                                            </span>
+                                        ),
+                                    },
+                                    {
                                         key: "inactive",
                                         label: (
                                             <span>
@@ -1215,6 +1223,7 @@ export default function Product() {
                 
                                     <Select value={productStatus} onChange={handleStatusChange} placeholder="Select Status" style={{ width: 150 }}>
                                         <Option value="active">Active</Option>
+                                        <Option value="draft">Draft</Option>
                                         <Option value="inactive">Inactive</Option>
                                     </Select>
                 
@@ -1973,7 +1982,7 @@ export default function Product() {
                                     (Array.isArray(previewData.variations) ? previewData.variations : previewData.variations?.data)?.length > 0
                                         ? {
                                               key: "variations",
-                                              label: `Variations (${(Array.isArray(previewData.variations) ? previewData.variations : previewData.variations?.data).length})`,
+                                              label: `Variations (${(Array.isArray(previewData.variations) ? previewData.variations : previewData.variations?.data ?? []).length})`,
                                               children: (
                                                   <div style={{ padding: "12px 0" }}>
                                                       <Table

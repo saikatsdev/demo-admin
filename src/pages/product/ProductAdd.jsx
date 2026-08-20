@@ -528,10 +528,7 @@ export default function ProductAdd() {
                     const slot = attributeSlotMap[attr.attribute_id];
 
                     if (slot) {
-                        formData.append(
-                        `variations[${i}][attribute_value_id_${slot}]`,
-                        attr.id
-                        );
+                        formData.append(`variations[${i}][attribute_value_id_${slot}]`,attr.id);
                     }
                 });
             }
@@ -586,7 +583,7 @@ export default function ProductAdd() {
             if (res && res?.success) {
                 messageApi.open({
                     type: "success",
-                    content: res.msg,
+                    content: status === 'draft' ? "Product Store as Draft" : res.msg,
                 });
                 
                 setTimeout(() => {
@@ -680,28 +677,11 @@ export default function ProductAdd() {
                         </div>
                     </Space>
                     <Space>
-                        <Button 
-                            icon={<CloseOutlined />} 
-                            onClick={() => window.history.back()}
-                            style={{ borderRadius: '8px' }}
-                        >
+                        <Button icon={<CloseOutlined />} onClick={() => window.history.back()} style={{ borderRadius: '8px' }}>
                             Cancel
                         </Button>
-                        <Button 
-                            type="primary" 
-                            icon={<SaveOutlined />}
-                            onClick={handleSubmit} 
-                            loading={loading} 
-                            disabled={isInvalidOffer}
-                            style={{ 
-                                borderRadius: '8px', 
-                                background: '#2563eb', 
-                                height: '40px', 
-                                padding: '0 24px',
-                                fontWeight: 600,
-                                boxShadow: '0 4px 10px rgba(37, 99, 235, 0.2)'
-                            }}
-                        >
+                        
+                        <Button type="primary" icon={<SaveOutlined />} onClick={handleSubmit} loading={loading} disabled={isInvalidOffer}>
                             Save Product
                         </Button>
                     </Space>
@@ -780,12 +760,8 @@ export default function ProductAdd() {
         
                                             <Col span={8}>
                                                 <Form.Item label="Status">
-                                                    <Select 
-                                                        size="large"
-                                                        placeholder="Select Status" 
-                                                        value={status || undefined} 
-                                                        onChange={setStatus} 
-                                                        options={[{ label: "Active", value: "active" },{ label: "Inactive", value: "inactive" },]}
+                                                    <Select size="large" placeholder="Select Status" value={status || undefined} onChange={setStatus} 
+                                                        options={[{ label: "Draft", value: "draft" },{ label: "Active", value: "active" },{ label: "Inactive", value: "inactive" },]}
                                                     />
                                                 </Form.Item>
                                             </Col>
