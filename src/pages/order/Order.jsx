@@ -1,4 +1,4 @@
-import {CopyOutlined,DeleteFilled,DeleteOutlined,WalletOutlined,ReloadOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined,FilterOutlined} from "@ant-design/icons";
+import {CopyOutlined,DeleteFilled,DeleteOutlined,WalletOutlined,ReloadOutlined,DownloadOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,FileTextOutlined ,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined,FilterOutlined} from "@ant-design/icons";
 import {Badge,Button,Col,DatePicker,Dropdown,Form,Input,InputNumber,message,Modal,Popover,Row,Select,Space,Spin,Table,Tag,Tooltip} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
@@ -2192,6 +2192,10 @@ export default function Order() {
         const whatsappUrl = `https://wa.me/${formattedPhone}`;
         window.open(whatsappUrl, "_blank");
     };
+
+    const handleReport = () => {
+        navigate("/report");
+    }
                                                     
     return (
         <>
@@ -2229,6 +2233,10 @@ export default function Order() {
                             Download CSV
                         </Button>
 
+                        <Button icon={<FileTextOutlined  />} onClick={() => handleReport(true)}>
+                            Report
+                        </Button>
+
                         {can("orders-create") && (
                             <Button type="primary" onClick={addOrder} icon={<PlusOutlined/>}>
                                 Add Order
@@ -2242,24 +2250,16 @@ export default function Order() {
                         >
                             {showFilter ? "Hide Filter" : "Filter"}
                             {activeFilterCount > 0 && (
-                                <Badge
-                                    count={activeFilterCount}
-                                    size="small"
-                                    style={{ backgroundColor: showFilter ? "#ffffff" : "#1677ff", color: showFilter ? "#1677ff" : "#ffffff", marginLeft: 6 }}
-                                />
+                                <Badge count={activeFilterCount} size="small" style={{ backgroundColor: showFilter ? "#ffffff" : "#1677ff", color: showFilter ? "#1677ff" : "#ffffff", marginLeft: 6 }}/>
                             )}
                         </Button>
 
                         <Button danger icon={<DeleteOutlined />} onClick={handleTrashClick}>Trash</Button>
 
-                        <Button
-                            className="orders-refresh-btn"
-                            icon={<ReloadOutlined />}
-                            onClick={() => getOrders(currentPage)}
-                        >
+                        <Button className="orders-refresh-btn" icon={<ReloadOutlined />} onClick={() => getOrders(currentPage)}>
                             Refresh
                         </Button>
-
+ ``
                         <Button onClick={isTrash ? backOrders : backPage} icon={<ArrowLeftOutlined />}>
                             Back
                         </Button>

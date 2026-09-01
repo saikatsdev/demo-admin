@@ -13,18 +13,28 @@ export default function OrderByStatus({statuses, onFilterChange}) {
     const [dateRange, setDateRange]       = useState(null);
 
     useEffect(() => {
-        if (onFilterChange) {
-            onFilterChange(activeFilter, dateRange);
+        if (!onFilterChange) return;
+
+        if (activeFilter === 'custom') {
+            if (!dateRange?.[0] || !dateRange?.[1]) {
+                return;
+            }
         }
+
+        onFilterChange(activeFilter, dateRange);
     }, [activeFilter, dateRange, onFilterChange]);
 
     const handleFilterChange = (val) => {
         setActiveFilter(val);
-    }
+
+        if (val !== 'custom') {
+            setDateRange(null);
+        }
+    };
 
     const handleDateRangeChange = (values) => {
         setDateRange(values);
-    }
+    };
 
     return (
         <>
@@ -41,10 +51,10 @@ export default function OrderByStatus({statuses, onFilterChange}) {
                             onChange={handleDateRangeChange}
                             style={{
                                 borderRadius: "6px",
-                                border: "1px solid var(--border-md)",
-                                background: "var(--bg-card)",
-                                height: "32px",
-                                fontSize: "12px"
+                                border      : "1px solid var(--border-md)",
+                                background  : "var(--bg-card)",
+                                height      : "32px",
+                                fontSize    : "12px"
                             }}
                             placeholder={['Start', 'End']}
                         />

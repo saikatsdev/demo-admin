@@ -182,6 +182,7 @@ import CrossSell from "./pages/product/crosssell/CrossSell";
 import AddCrossSell from "./pages/product/crosssell/AddCrossSell";
 import EditCrossSell from "./pages/product/crosssell/EditCrossSell";
 import IncompleteOrderReport from "./pages/report/IncompleteOrderReport";
+import CourierEntryReport from "./pages/order/CourierEntryReport";
 
 function App() {
     const dispatch         = useDispatch();
@@ -279,6 +280,8 @@ function App() {
                     <Route path="/add/down-sell" element={<AddDownSell />} />
 
                     <Route path="/product/trash" element={<ProductTrash/>}/>
+
+                    <Route path="/report" element={<CourierEntryReport/>}/>
 
                     <Route path="/edit/downsell/:id" element={<EditDownSell />} />
 
