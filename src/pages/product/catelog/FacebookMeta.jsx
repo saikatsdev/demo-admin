@@ -15,14 +15,16 @@ export default function FacebookMeta() {
     // Variables
     const [pixelForm]      = Form.useForm();
     const [conversionForm] = Form.useForm();
+    const [domainForm]     = Form.useForm();
     const [eventForm]      = Form.useForm();
 
     // State
-    const [messageApi, contextHolder]     = message.useMessage();
-    const [showForm, setShowForm]         = useState(false);
-    const [loading, setLoading]           = useState(false);
-    const [apiLoading, setApiLoading]     = useState(false);
-    const [eventLoading, setEventLoading] = useState(false);
+    const [messageApi, contextHolder]       = message.useMessage();
+    const [showForm, setShowForm]           = useState(false);
+    const [loading, setLoading]             = useState(false);
+    const [apiLoading, setApiLoading]       = useState(false);
+    const [eventLoading, setEventLoading]   = useState(false);
+    const [domainLoading, setDomainLoading] = useState(false);
 
     useEffect(() => {
         const getAllTolls = async () => {
@@ -37,6 +39,10 @@ export default function FacebookMeta() {
 
                 conversionForm.setFieldsValue({
                     pixel_api_token: tool.pixel_api_token
+                });
+
+                domainForm.setFieldsValue({
+                    domain_verification_code: tool.domain_verification_code
                 });
 
                 eventForm.setFieldsValue({
@@ -101,6 +107,34 @@ export default function FacebookMeta() {
             console.error(error);
         }finally{
             setApiLoading(false);
+        }
+    };
+
+    const handleDomainSubmit = async (values) => {
+        const formData = new FormData();
+        formData.append("domain_verification_code", values.domain_verification_code);
+        formData.append("_method", "PUT");
+
+        try {
+            setDomainLoading(true);
+
+            const res = await postData("/admin/marketing-tools/domain", formData);
+
+            if (res && res?.success) {
+                messageApi.open({
+                    type: "success",
+                    content: res.msg,
+                });
+            }else{
+                messageApi.open({
+                    type: "error",
+                    content: "Something Went Wrong",
+                });
+            }
+        } catch (error) {
+            console.error(error);
+        }finally{
+            setDomainLoading(false);
         }
     };
 
@@ -298,10 +332,29 @@ export default function FacebookMeta() {
                                     </Form>
                                 </div>
 
+                                {/* Facebook Domain Verification Code */}
+                                <div style={{ background: '#f0f2f5', padding: 20, borderRadius: 12 }}>
+                                    <Title level={5} style={{ marginTop: 0, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <ApiOutlined style={{ color: '#1877F2' }} /> Domain Verification Code
+                                    </Title>
+                                    <Form form={domainForm} layout="vertical" onFinish={handleDomainSubmit}>
+                                        <Form.Item name="domain_verification_code" label={<Text strong>Domain Verification Code</Text>} tooltip="Your domain verification code from Meta"
+                                            rules={[{ required: true, message: 'Domain verification code is required' }]}
+                                        >
+                                            <AntInput placeholder="Enter Domain Verification Code" size="large" />
+                                        </Form.Item>
+                                        <Form.Item style={{ textAlign: "right", marginBottom: 0 }}>
+                                            <Button type="primary" htmlType="submit" loading={domainLoading} style={{ backgroundColor: '#1877F2' }}>
+                                                Update Verification Code
+                                            </Button>
+                                        </Form.Item>
+                                    </Form>
+                                </div>
+
                                 {/* Test Event Form */}
                                 <div style={{ background: '#f0f2f5', padding: 20, borderRadius: 12 }}>
                                     <Title level={5} style={{ marginTop: 0, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                        <ThunderboltOutlined style={{ color: '#1877F2' }} /> Debugging
+                                        <ThunderboltOutlined style={{ color: '#1877F2' }} /> Test Event Code                            
                                     </Title>
                                     <Form form={eventForm} layout="vertical" onFinish={handleEventSubmit}>
                                         <Form.Item 
