@@ -44,10 +44,10 @@ export default function CourierEntryReport() {
             render: (record) => (
                 <Space direction="vertical" size={2}>
                     <Text copyable={{ text: record.invoice_number }} strong style={{ color: '#1677ff', fontSize: '15px' }}>
-                        {record.invoice_number}
+                        {record.invoice_number ?? record.order.invoice_number}
                     </Text>
                     <Text type="secondary" style={{ fontSize: '12px' }}>
-                        Date: {record.order_date?.split(' ')[0]}
+                        Entry Date: {record.entry_at?.split(' ')[0]}
                     </Text>
                     {record.entry_by && (
                         <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -221,7 +221,7 @@ export default function CourierEntryReport() {
             <Card 
                 bordered={false} 
                 className="criclebox tablespace mb-24"
-                title="Courier Entries List"
+                title={<span>Courier Entries List <Tag color="blue" style={{ marginLeft: 8 }}>{total}</Tag></span>}
                 extra={
                     <Space wrap>
                         {selectedOrderIds.length > 0 && (
