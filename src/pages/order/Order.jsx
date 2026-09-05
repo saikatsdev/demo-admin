@@ -1482,8 +1482,6 @@ export default function Order() {
             render: (id, record) => {
                 const printedStatus = Number(record?.is_invoice_printed ?? 1);
                 const products = record?.products ?? [];
-				
-				const isPayment = !!record?.transaction?.payment_id;
         
                 return(
                     <div>
@@ -1602,39 +1600,89 @@ export default function Order() {
                             <img src={previewSrc} className="order_invoice_columns_img" style={{ top: pos.y, left: pos.x }}/>
                         )}
 						
-						{isPayment && (
-                            <div style={{ marginTop: 8 }}>
-                                <Tag
-                                    onClick={() => openDigitalProductInfo(record.id)}
-                                    style={{
-                                        cursor       : "pointer",
-                                        background   : "linear-gradient(135deg, #52c41a, #73d13d)",
-                                        color        : "#fff",
-                                        border       : "none",
-                                        borderRadius : 20,
-                                        padding      : "4px 16px",
-                                        fontSize     : 13,
-                                        fontWeight   : 600,
-                                        boxShadow    : "0 2px 8px rgba(82, 196, 26, 0.35)",
-                                        transition   : "all 0.3s ease",
-                                        display      : "inline-flex",
-                                        alignItems   : "center",
-                                        gap          : 6,
-                                        letterSpacing: 0.3,
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.boxShadow = "0 4px 14px rgba(82, 196, 26, 0.5)";
-                                        e.currentTarget.style.transform = "translateY(-1px)";
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.boxShadow = "0 2px 8px rgba(82, 196, 26, 0.35)";
-                                        e.currentTarget.style.transform = "translateY(0)";
+						{record.utm_source ? (() => {
+                            const source = record.utm_source.toLowerCase();
+                            let icon = <LinkOutlined />;
+                            let color = "default";
+                            let bgColor = "#f5f5f5";
+                            let borderColor = "#d9d9d9";
+                            let textColor = "#595959";
+
+                            if (source.includes("facebook") || source.includes("fb")) {
+                                icon = <FacebookOutlined />;
+                                color = "blue";
+                                bgColor = "#e6f7ff";
+                                borderColor = "#91d5ff";
+                                textColor = "#1890ff";
+                            } else if (source.includes("instagram") || source.includes("ig")) {
+                                icon = <InstagramOutlined />;
+                                color = "magenta";
+                                bgColor = "#fff0f6";
+                                borderColor = "#ffadd2";
+                                textColor = "#eb2f96";
+                            } else if (source.includes("tiktok")) {
+                                icon = <TikTokOutlined />;
+                                bgColor = "#f0f0f0";
+                                borderColor = "#000000";
+                                textColor = "#000000";
+                            } else if (source.includes("google")) {
+                                icon = <GoogleOutlined />;
+                                color = "red";
+                                bgColor = "#fff1f0";
+                                borderColor = "#ffa39e";
+                                textColor = "#f5222d";
+                            } else if (source.includes("youtube") || source.includes("yt")) {
+                                icon = <YoutubeOutlined />;
+                                color = "red";
+                                bgColor = "#fff1f0";
+                                borderColor = "#ffa39e";
+                                textColor = "#f5222d";
+                            } else if (source.includes("website") || source.includes("web")) {
+                                icon = <GlobalOutlined />;
+                                color = "cyan";
+                                bgColor = "#e6fffb";
+                                borderColor = "#87e8de";
+                                textColor = "#13c2c2";
+                            }
+
+                            return (
+                                <Tooltip title="UTM Source">
+                                    <Tag
+                                        icon={icon}
+                                        style={{
+                                            marginTop: 8,
+                                            padding: "2px 10px",
+                                            borderRadius: "12px",
+                                            background: bgColor,
+                                            borderColor: borderColor,
+                                            color: textColor,
+                                            fontWeight: 500,
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "4px",
+                                            textTransform: "capitalize",
+                                            boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+                                        }}
+                                    >
+                                        {record.utm_source}
+                                    </Tag>
+                                </Tooltip>
+                            );
+                        })() : (
+                            <Tooltip title="UTM Source">
+                                <Tag 
+                                    style={{ 
+                                        marginTop: 8,
+                                        padding: "2px 10px",
+                                        borderRadius: "12px",
+                                        color: "#8c8c8c",
+                                        background: "#fafafa",
+                                        borderColor: "#f0f0f0"
                                     }}
                                 >
-                                    <WalletOutlined style={{ fontSize: 14 }} />
-                                    View Payment
+                                    N/A
                                 </Tag>
-                            </div>
+                            </Tooltip>
                         )}
                     </div>
                 );

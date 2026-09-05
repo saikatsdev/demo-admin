@@ -6,6 +6,96 @@ import useTitle from '../../hooks/useTitle';
 import { LogIn, Lock, Phone, Eye, EyeOff, Shield } from 'lucide-react';
 import './auth.css';
 
+const BearAvatar = ({ focusedField, passwordVisible, phoneLength }) => {
+    const isCoveringEyes = focusedField === 'password' && !passwordVisible;
+    const isPeeking = focusedField === 'password' && passwordVisible;
+    
+    let pupilX = 0;
+    let pupilY = 0;
+    
+    if (focusedField === 'phone') {
+        const progress = Math.min(phoneLength, 12) / 12; 
+        pupilX = -6 + (progress * 12); 
+        pupilY = 4; 
+    } else if (focusedField === 'password') {
+        pupilX = isPeeking ? -4 : 0; 
+        pupilY = -2; 
+    } else if (focusedField === 'otp') {
+        pupilX = 0;
+        pupilY = 4;
+    }
+
+    return (
+        <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            marginTop: '-90px',
+            marginBottom: '20px',
+            height: '120px', 
+            alignItems: 'flex-end',
+            position: 'relative',
+            zIndex: 1,
+            pointerEvents: 'none'
+        }}>
+            <svg width="140" height="140" viewBox="0 0 200 200" style={{ overflow: 'visible' }}>
+                {/* Ears */}
+                <circle cx="55" cy="55" r="22" fill="#cbd5e1" />
+                <circle cx="55" cy="55" r="10" fill="#f8fafc" />
+                <circle cx="145" cy="55" r="22" fill="#cbd5e1" />
+                <circle cx="145" cy="55" r="10" fill="#f8fafc" />
+                
+                {/* Face */}
+                <circle cx="100" cy="110" r="65" fill="#e2e8f0" />
+                
+                {/* Eye Whites */}
+                <circle cx="75" cy="95" r="12" fill="#ffffff" />
+                <circle cx="125" cy="95" r="12" fill="#ffffff" />
+                
+                {/* Pupils */}
+                <g style={{ transition: 'transform 0.15s ease-out', transform: `translate(${pupilX}px, ${pupilY}px)` }}>
+                    <circle cx="75" cy="95" r="5" fill="#0f172a" />
+                    <circle cx="125" cy="95" r="5" fill="#0f172a" />
+                </g>
+                
+                {/* Snout */}
+                <ellipse cx="100" cy="130" rx="30" ry="20" fill="#f8fafc" />
+                
+                {/* Nose */}
+                <ellipse cx="100" cy="122" rx="10" ry="6" fill="#0f172a" />
+                
+                {/* Mouth */}
+                <path d="M 92 135 Q 100 142 108 135" fill="transparent" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" />
+
+                {/* Left Arm */}
+                <g style={{ 
+                    transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transformOrigin: '20px 200px',
+                    transform: isCoveringEyes 
+                        ? 'translate(45px, -85px) rotate(15deg)' 
+                        : isPeeking 
+                            ? 'translate(10px, -20px) rotate(-10deg)' 
+                            : 'translate(0px, 0px) rotate(0deg)'
+                }}>
+                    <circle cx="30" cy="190" r="20" fill="#cbd5e1" />
+                    <ellipse cx="30" cy="190" rx="12" ry="16" fill="#f8fafc" />
+                </g>
+
+                {/* Right Arm */}
+                <g style={{ 
+                    transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transformOrigin: '180px 200px',
+                    transform: isCoveringEyes || isPeeking 
+                        ? 'translate(-45px, -85px) rotate(-15deg)' 
+                        : 'translate(0px, 0px) rotate(0deg)'
+                }}>
+                    <circle cx="170" cy="190" r="20" fill="#cbd5e1" />
+                    <ellipse cx="170" cy="190" rx="12" ry="16" fill="#f8fafc" />
+                </g>
+            </svg>
+        </div>
+    );
+};
+
 export default function Login() {
     useTitle("Admin Login");
 
@@ -19,6 +109,7 @@ export default function Login() {
     const [showOtp, setShowOtp]           = useState(false);
     const [loading, setLoading]           = useState(false);
     const [errors, setErrors]             = useState({ phone: '', password: '', otp: '' });
+    const [focusedField, setFocusedField] = useState(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -111,6 +202,11 @@ export default function Login() {
         <div className="auth-layout">
             <main className="form-wrap" aria-labelledby="login-title">
                 <form className="auth-card" onSubmit={handleSubmit} noValidate>
+                    <BearAvatar 
+                        focusedField={focusedField} 
+                        passwordVisible={showPassword} 
+                        phoneLength={phone.length} 
+                    />
                     <div className="auth-head">
                         <div className="brand">
                             <LogIn size={32} className="logo" />
@@ -137,6 +233,8 @@ export default function Login() {
                             placeholder="01000000000"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
+                            onFocus={() => setFocusedField('phone')}
+                            onBlur={() => setFocusedField(null)}
                             required
                         />
                         {errors.phone && <div className="error-message">{errors.phone}</div>}
@@ -158,6 +256,8 @@ export default function Login() {
                                 placeholder="••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                onFocus={() => setFocusedField('password')}
+                                onBlur={() => setFocusedField(null)}
                                 required
                             />
                             <button
@@ -199,6 +299,8 @@ export default function Login() {
                                 placeholder="Enter Login OTP"
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value)}
+                                onFocus={() => setFocusedField('otp')}
+                                onBlur={() => setFocusedField(null)}
                                 required
                                 autoFocus
                             />
