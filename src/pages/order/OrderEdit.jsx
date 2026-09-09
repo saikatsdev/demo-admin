@@ -250,11 +250,12 @@ const OrderEdit = () => {
 
     useEffect(() => {
         const delay = setTimeout(() => {
+            if (productInfo && searchQuery === productInfo.name) return;
             searchProduct();
         }, 200);
 
         return () => clearTimeout(delay);
-    }, [searchQuery]);
+    }, [searchQuery, productInfo]);
 
     const getAttributeList = async () => {
         const res = await getDatas('/admin/attributes/list')
@@ -404,6 +405,7 @@ const OrderEdit = () => {
         setCartItems((prev) => [...prev, newItem]);
 
         setSearchQuery('');
+        setHiddenSearchProducts(true);
         setQuantity(1);
         setVariationId(null);
         setProductInfo(null);
@@ -925,7 +927,11 @@ const OrderEdit = () => {
                                     <Col flex="auto">
                                         <Form.Item label="Search Products" className="custom-form-item" style={{ marginBottom: 0 }}>
                                             <div style={{ position: 'relative' }}>
-                                                <Input size="large" placeholder="Search to add more products..." value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value); searchProduct();}} prefix={<InboxOutlined style={{ color: '#94a3b8' }} />} className="custom-input"/>
+                                                <Input size="large" placeholder="Search to add more products..." value={searchQuery} onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setSearchQuery(val);
+                                                    if (!val) setHiddenSearchProducts(true);
+                                                }} prefix={<InboxOutlined style={{ color: '#94a3b8' }} />} className="custom-input"/>
                                                 {loading && 
                                                     <div style={{position: 'absolute', right: 12, top: 12}}>
                                                         <Spin size="small" />

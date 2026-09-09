@@ -6,6 +6,7 @@ import Barcode from "react-barcode";
 import { getDatas } from "../../api/common/common";
 import { useAppSettings } from "../../contexts/useAppSettings";
 import useTitle from "../../hooks/useTitle";
+import { Facebook, Mail, Globe, MapPin, Scissors } from "lucide-react";
 import "./css/multi.css";
 
 const isDataURL = (s) => /^data:/i.test(s || "");
@@ -93,190 +94,190 @@ const getToday = () => new Date().toLocaleDateString("en-GB");
 const BC = "#555555ff";
 
 const InvoiceA4 = ({ order, settings }) => {
-    const totalPriceInWords = `${numberToWords(Number(order?.payable_price) || 0)} Taka`;
-    const formattedDate = getToday();
+    const formattedDateString = useMemo(() => {
+        return new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    }, []);
 
-    const deliveryCharge  = Number(order?.delivery_charge || 0);
+    const payablePrice    = Number(order?.payable_price || 0);
     const advancedPayment = Number(order?.advance_payment || 0);
+    const finalPayable    = advancedPayment > 0 ? payablePrice - advancedPayment : payablePrice;
     const specialDiscount = Number(order?.special_discount || 0);
 
     const subTotal = order?.details?.reduce((sum, item) => {
-        const price = Number(item?.product?.sell_price || 0);
+        const price = Number(item?.sell_price || 0);
         const qty = Number(item?.quantity || 0);
         return sum + price * qty;
-    }, 0) || 0;
+    }, 0);
 
-    const finalPayable = subTotal + deliveryCharge - specialDiscount - advancedPayment;
+    const deliveryFee = Number(order?.delivery_charge || 0);
+    const grandTotal = subTotal - specialDiscount + deliveryFee;
+
+    const details = order?.details || [];
 
     return (
-        <div className="invoice-a4 invoice-section">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
-                <div style={{ display: "flex", alignItems: "flex-start" }}>
-                    {!!settings.logo && <img src={settings.logo} alt="Logo" style={{ width: 80 }} data-invoice-logo="1" />}
-                    <div style={{ marginLeft: "16px", fontSize: "14px", lineHeight: 1.35 }}>
-                        <p style={{ marginBottom: "5px" }}>{settings.address}</p>
-                        <p style={{ marginBottom: "5px" }}>Contact: {settings.phone_number}</p>
-                        <p style={{ marginBottom: 0 }}>Email: {settings.footer_email}</p>
+        <div className="invoice-a4 invoice-section invoice-wrapper-to-capture" style={{ margin: 0, padding: 0, fontFamily: '"Lato", sans-serif', color: "#333", fontSize: "14px", backgroundColor: "#fff" }}>
+            <div className="printable invoice-page-a4" style={{ padding: "40px 40px 10px 40px", border: "none", maxWidth: "800px", margin: "0 auto", background: "white", color: "#222" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+                    <div style={{ width: "120px" }}>
+                        {settings?.header_logo ? (
+                            <img src={settings.header_logo} alt="Logo" style={{ width: "90px", height: "90px", borderRadius: "50%", objectFit: "cover" }} data-invoice-logo="1" />
+                        ) : (
+                            <div style={{ width: "90px", height: "90px", borderRadius: "50%", background: "#ccc" }}></div>
+                        )}
+                    </div>
+                    
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                        <h2 style={{ margin: 0, fontSize: "28px", fontWeight: "700", color: "#111" }}>{settings?.title || "Shutki Dotcom"}</h2>
+                        <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "#333" }}>An online shop of various dried fishes of fresh water and sea.</p>
+                    </div>
+                    
+                    <div style={{ width: "120px" }}></div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px", fontSize: "14px", lineHeight: "1.5" }}>
+                    <div>
+                        <p style={{ margin: 0, fontWeight: "600", color: "#111" }}>Bill To:</p>
+                        <p style={{ margin: 0, fontWeight: "700", fontSize: "15px", color: "#111", textTransform: 'capitalize' }}>{order?.customer_name}</p>
+                        <p style={{ margin: 0 }}>{order?.phone_number}</p>
+                        <p style={{ margin: 0, maxWidth: "300px" }}>{order?.address_details}</p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                        <p style={{ margin: 0, color: "#111" }}>Invoice No: <span style={{ fontWeight: "700" }}>{order?.invoice_number}</span></p>
+                        <p style={{ margin: 0, color: "#111" }}>Delivery Partner: <span style={{ fontWeight: "600" }}>{order?.delivery_partner || "Pathao"}</span></p>
+                        <p style={{ margin: 0, color: "#111" }}>Date: <span style={{ fontWeight: "600" }}>{formattedDateString}</span></p>
                     </div>
                 </div>
 
-                <div>
-                    <table style={{ borderCollapse: "collapse", width: "auto", minWidth: 250, fontWeight: 600, fontSize: 14 }}>
-                        <tbody>
-                            <tr>
-                                <td style={{ border: `1px solid ${BC}`, padding: 5 }}>Invoice No:</td>
-                                <td style={{ border: `1px solid ${BC}`, padding: 5 }}>{order?.invoice_number}</td>
-                            </tr>
-                            <tr>
-                                <td style={{ border: `1px solid ${BC}`, padding: 5 }}>Date:</td>
-                                <td style={{ border: `1px solid ${BC}`, padding: 5 }}>{formattedDate}</td>
-                            </tr>
-                            <tr>
-                                <td style={{ border: `1px solid ${BC}`, padding: 5 }}>Order No:</td>
-                                <td style={{ border: `1px solid ${BC}`, padding: 5 }}>{order?.id}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    {order?.id ? (
-                        <div style={{ textAlign: "center", marginTop: 10 }}>
-                            <Barcode value={String(order.invoice_number)} format="CODE128" displayValue={false} height={40} width={3} margin={0} background="#fff" lineColor="#000" />
-                            <small style={{ color: "#6c757d", display: "block" }}>{order?.invoice_number}</small>
-                        </div>
-                    ) : null}
-                </div>
-            </div>
-
-            <h5 style={{ textAlign: "center", fontWeight: "bold", margin: "0 0 12px" }}>INVOICE</h5>
-
-            <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: 15, tableLayout: "fixed" }}>
-                <colgroup>
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "80%" }} />
-                </colgroup>
-
-                <tbody>
-                    <tr>
-                        <td style={{ fontWeight: 600, border: `1px solid ${BC}`, padding: 8 }}> Name:</td>
-                        <td style={{ border: `1px solid ${BC}`, padding: 8 }}>{order?.customer_name}</td>
-                    </tr>
-
-                    <tr>
-                        <td style={{ fontWeight: 600, border: `1px solid ${BC}`, padding: 8 }}>Phone:</td>
-                        <td style={{ border: `1px solid ${BC}`, padding: 8 }}>{order?.phone_number}</td>
-                    </tr>
-
-                    <tr>
-                        <td style={{ fontWeight: 600, border: `1px solid ${BC}`, padding: 8 }}>Address:</td>
-                        <td style={{ border: `1px solid ${BC}`, padding: 8 }}>{order?.address_details}</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
-                <colgroup>
-                    <col style={{ width: "6%" }} />
-                    <col style={{ width: "10%" }} />
-                    <col style={{ width: "30%" }} />
-                    <col style={{ width: "12%" }} />
-                    <col style={{ width: "8%" }} />
-                    <col style={{ width: "20%" }} />
-                    <col style={{ width: "14%" }} />
-                </colgroup>
-
-                <thead>
-                    <tr>
-                        {["Sl#", "Image", "Product Description", "SKU","Qty", "Unit Price", "Total"].map((h, i) => (
-                            <th key={i} style={{ border: `1px solid ${BC}`, padding: "8px 10px", fontSize: 13, background: "#f5f5f5", textAlign: "center" }}>
-                                {h}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {(order?.details || []).map((item, idx) => (
-                        <tr key={idx}>
-                            <td style={{ border: `1px solid ${BC}`, textAlign: "center", padding: 8 }}>{idx + 1}</td>
-
-                            <td style={{ border:"1px solid #555555ff", textAlign:"center", padding:"6px 10px" }}>
-                                <img className="a4-invoice-image" src={item?.product?.img_path} alt={item?.product?.name || "Product Image"}/>
-                            </td>
-
-                            <td style={{ border: `1px solid ${BC}`, padding: 8, lineHeight: 1.35 }}>
-                                {item?.product?.name}
-
-                                {item?.attribute_value_1 && 
-                                    <small style={{ display: "block", color: "#6c757d" }}>
-                                        [{item?.attribute_value_1?.attribute?.name}: {item?.attribute_value_1?.value}]
-                                    </small>}
-                                {item?.attribute_value_2 && 
-                                    <small style={{ display: "block", color: "#6c757d" }}>
-                                        [{item?.attribute_value_2?.attribute?.name}: {item?.attribute_value_2?.value}]
-                                    </small>}
-
-                                {item?.attribute_value_3 && 
-                                    <small style={{ display: "block", color: "#6c757d" }}>
-                                        [{item?.attribute_value_3?.attribute?.name}: {item?.attribute_value_3?.value}]
-                                    </small>}
-                            </td>
-
-                            <td style={{ border: `1px solid ${BC}`, textAlign: "center", fontSize:13 }}>{item?.product?.sku || "N/A"}</td>
-
-                            <td style={{ border: `1px solid ${BC}`, textAlign: "center" }}>{item?.quantity}</td>
-
-                            <td style={{ border: `1px solid ${BC}`, textAlign: "right", paddingRight: 10 }}>{item?.product?.sell_price} Tk</td>
-
-                            <td style={{ border: `1px solid ${BC}`, textAlign: "right", paddingRight: 10 }}>
-                                {(Number(item?.product?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk
-                            </td>
+                <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "0px", textAlign: "left", fontSize: "13px" }}>
+                    <thead>
+                        <tr style={{ borderBottom: "1px solid #ddd" }}>
+                            <th style={{ padding: "8px 4px", width: "5%", fontWeight: "600", color: "#111" }}>SL</th>
+                            <th style={{ padding: "8px 4px", width: "40%", fontWeight: "600", color: "#111" }}>Item Name</th>
+                            <th style={{ padding: "8px 4px", width: "15%", textAlign: "center", fontWeight: "600", color: "#111" }}>Weight</th>
+                            <th style={{ padding: "8px 4px", width: "15%", textAlign: "center", fontWeight: "600", color: "#111" }}>Unit Price (BDT)</th>
+                            <th style={{ padding: "8px 4px", width: "10%", textAlign: "center", fontWeight: "600", color: "#111" }}>Qty</th>
+                            <th style={{ padding: "8px 4px", width: "15%", textAlign: "right", fontWeight: "600", color: "#111" }}>Amount (BDT)</th>
                         </tr>
-                    ))}
+                    </thead>
+                    <tbody>
+                        {Array.from({ length: 8 }).map((_, i) => {
+                            const item = details[i];
+                            const isLast = i === 7;
+                            return (
+                                <tr key={i} style={{ borderBottom: isLast ? "1px solid #ddd" : "none", height: "32px" }}>
+                                    <td style={{ padding: "4px" }}>{i + 1}</td>
+                                    <td style={{ padding: "4px" }}>{item ? item.product?.name : ""}</td>
+                                    <td style={{ padding: "4px", textAlign: "center" }}>{item ? item.attribute_value_1?.value || "" : ""}</td>
+                                    <td style={{ padding: "4px", textAlign: "center" }}>{item ? Number(item.sell_price).toFixed(2) : ""}</td>
+                                    <td style={{ padding: "4px", textAlign: "center" }}>{item ? item.quantity : ""}</td>
+                                    <td style={{ padding: "4px", textAlign: "right" }}>{item ? (Number(item.sell_price) * Number(item.quantity)).toFixed(2) : ""}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
 
-                    <tr>
-                        <td colSpan="5" className="t-empty"></td>
-                        <td style={{ border: `1px solid ${BC}`, textAlign: "right", fontWeight: 600, paddingRight: 10 }}>Sub Total</td>
-                        <td style={{ border: `1px solid ${BC}`, textAlign: "right", paddingRight: 10 }}>{subTotal.toFixed(2)} Tk</td>
-                    </tr>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "15px" }}>
+                    <div style={{ width: "45%", fontSize: "12px", color: "#444", marginTop: "10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
+                            <Facebook size={14} style={{ marginRight: "10px", flexShrink: 0 }} />
+                            <span>{"https://www.facebook.com/shutkidotcom"}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
+                            <Mail size={14} style={{ marginRight: "10px", flexShrink: 0 }} />
+                            <span>{settings?.footer_email || "shutki.info@gmail.com"}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", marginBottom: "6px" }}>
+                            <Globe size={14} style={{ marginRight: "10px", flexShrink: 0 }} />
+                            <span>{"https://shutki.com.bd/"}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "flex-start", marginBottom: "6px" }}>
+                            <MapPin size={14} style={{ marginRight: "10px", marginTop: "2px", flexShrink: 0 }} />
+                            <span>{settings?.address || "44/4, Mugda Bishoroad, Atish Diponkor Road (3rd floor), Dhaka - 1214"}</span>
+                        </div>
+                    </div>
 
-                    {specialDiscount > 0 && (
-                       <tr>
-                            <td colSpan="5" className="t-empty"></td>
-                            <td style={{ border: `1px solid ${BC}`, textAlign: "right", fontWeight: 600, paddingRight: 10 }}>Special Discount</td>
-                            <td style={{ border: `1px solid ${BC}`, textAlign: "right", paddingRight: 10 }}>{specialDiscount.toFixed(2)} Tk</td>
-                        </tr> 
-                    )}
-
-                    <tr>
-                        <td colSpan="5" className="t-empty"></td>
-                        <td style={{ border: `1px solid ${BC}`, textAlign: "right", fontWeight: 600, paddingRight: 10 }}>Delivery Charge</td>
-                        <td style={{ border: `1px solid ${BC}`, textAlign: "right", paddingRight: 10 }}>{order?.delivery_charge} Tk</td>
-                    </tr>
-
-                    <tr>
-                        <td colSpan="5" className="t-empty"></td>
-                        <td style={{ border: `1px solid ${BC}`, textAlign: "right", fontWeight: 600, paddingRight: 10 }}>Payable Amount</td>
-                        <td style={{ border: `1px solid ${BC}`, textAlign: "right", paddingRight: 10 }}>{finalPayable.toFixed(2)} Tk</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div style={{ fontWeight: 600, marginTop: 15 }}>
-                In Words: {totalPriceInWords}
-            </div>
-
-            <hr style={{ border: 0, borderTop: `1px solid ${BC}`, margin: "10px 0" }} />
-
-            <div style={{ textAlign: "center", marginTop: 12 }}>
-                <div style={{ fontWeight:600, fontSize:11, textAlign:"start", }}>
-                    Customer Note: {order?.note }
+                    <div style={{ width: "45%", fontSize: "13px" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                            <tbody>
+                                <tr>
+                                    <td style={{ padding: "5px 10px", textAlign: "right", color: "#555" }}>Sub Total</td>
+                                    <td style={{ padding: "5px 10px", textAlign: "right", width: "100px", color: "#111" }}>{subTotal.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: "5px 10px", textAlign: "right", color: "#555" }}>Discount</td>
+                                    <td style={{ padding: "5px 10px", textAlign: "right", color: "#111" }}>- {specialDiscount.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: "5px 10px", textAlign: "right", color: "#555" }}>Delivery Fee</td>
+                                    <td style={{ padding: "5px 10px", textAlign: "right", color: "#111" }}>{deliveryFee.toFixed(2)}</td>
+                                </tr>
+                                <tr style={{ backgroundColor: "#e8e8e8" }}>
+                                    <td style={{ padding: "5px 10px", textAlign: "right", fontWeight: "600", color: "#111" }}>Grand Total</td>
+                                    <td style={{ padding: "5px 10px", textAlign: "right", fontWeight: "600", color: "#111" }}>{grandTotal.toFixed(2)}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: "5px 10px", textAlign: "right", color: "#555" }}>Payment</td>
+                                    <td style={{ padding: "5px 10px", textAlign: "right", color: "#111" }}>{advancedPayment.toFixed(2)}</td>
+                                </tr>
+                                <tr style={{ backgroundColor: "#222", color: "#fff" }}>
+                                    <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: "600" }}>Due Amount</td>
+                                    <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: "600" }}>{finalPayable.toFixed(2)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div style={{ fontWeight:600, fontSize:11, textAlign:"start" }}>
-                    Company Note: {settings?.invoice_text || "প্রোডাক্ট হাতে পেয়ে কুরিয়ার ম্যানের সামনে চেক করে নিন। কোনো সমস্যা থাকলে সাথে সাথে আমাদের কল সেন্টারে জানান।"}
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "40px", fontSize: "13px" }}>
+                    <div style={{ color: "#111" }}>Hotline <span style={{ fontWeight: "600" }}>{settings?.phone_number || "+8801886046042"}</span></div>
+                    <div style={{ color: "#111" }}>Bkash/Nagad <span style={{ fontWeight: "600" }}>{"01851557805"}</span></div>
+                    <div style={{ fontWeight: "600", color: "#111" }}>শুঁটকি ডিপ ফ্রিজে সংরক্ষণ করতে হবে।</div>
                 </div>
 
-                <h6 style={{ fontWeight: "bold", margin: 0 }}>Thank you for choosing us</h6>
-                <p style={{ margin: 0 }}>{settings.title}</p>
+                <div style={{ backgroundColor: "#eaeaea", textAlign: "center", padding: "12px", marginTop: "20px", fontWeight: "600", fontSize: "14px", color: "#111" }}>
+                    দেশজুড়ে ক্যাশ অন হোম ডেলিভারি: রকমারি চাপা, নোনা ইলিশ, বালাচাও, সিদল, দেশি ও সামুদ্রিক শুঁটকি
+                </div>
+
+                <div style={{ marginTop: "50px", marginBottom: "50px", borderBottom: "1px dashed #777", position: "relative" }}>
+                    <Scissors size={20} style={{ position: "absolute", right: "-5px", top: "-10px", background: "white", padding: "0 2px", color: "#555" }} />
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "25px" }}>
+                    <div style={{ width: "90px" }}>
+                        {settings?.header_logo ? (
+                            <img src={settings.header_logo} alt="Logo" style={{ width: "65px", height: "65px", borderRadius: "50%", objectFit: "cover" }} data-invoice-logo="1" />
+                        ) : (
+                            <div style={{ width: "65px", height: "65px", borderRadius: "50%", background: "#ccc" }}></div>
+                        )}
+                    </div>
+                    
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                        <h2 style={{ margin: 0, fontSize: "22px", fontWeight: "700", color: "#111" }}>{settings?.title || "Shutki Dotcom"}</h2>
+                        <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "#333" }}>An online shop of various dried fishes of fresh water and sea.</p>
+                    </div>
+                    
+                    <div style={{ width: "90px" }}></div>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", fontSize: "14px", lineHeight: "1.5" }}>
+                    <div>
+                        <p style={{ margin: 0, fontWeight: "600", color: "#111" }}>Bill To:</p>
+                        <p style={{ margin: 0, fontWeight: "700", fontSize: "15px", color: "#111", textTransform: 'capitalize' }}>{order?.customer_name}</p>
+                        <p style={{ margin: 0 }}>{order?.phone_number}</p>
+                        <p style={{ margin: 0, maxWidth: "300px" }}>{order?.address_details}</p>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                        <p style={{ margin: 0, color: "#111" }}>Invoice No: <span style={{ fontWeight: "700" }}>{order?.invoice_number}</span></p>
+                        <p style={{ margin: 0, color: "#111" }}>Delivery Partner: <span style={{ fontWeight: "600" }}>{order?.delivery_partner || "Pathao"}</span></p>
+                        <p style={{ margin: 0, color: "#111" }}>Date: <span style={{ fontWeight: "600" }}>{formattedDateString}</span></p>
+                        <div style={{ backgroundColor: "#222", color: "#fff", padding: "8px 20px", fontWeight: "600", marginTop: "12px", display: "inline-block" }}>
+                            Due Amount: BDT {finalPayable.toFixed(2)}
+                        </div>
+                        <p style={{ margin: "12px 0 0 0", fontWeight: "600", color: "#111" }}>Contact: {settings?.phone_number || "+8801886046042"}</p>
+                    </div>
+                </div>
+
             </div>
         </div>
     );
@@ -286,17 +287,16 @@ const InvoiceA5 = ({ order, settings }) => {
     const totalPriceInWords = `${numberToWords(Number(order?.payable_price) || 0)} Taka`;
     const formattedDate = getToday();
 
-    const deliveryCharge  = Number(order?.delivery_charge || 0);
+    const payablePrice    = Number(order?.payable_price || 0);
     const advancedPayment = Number(order?.advance_payment || 0);
+    const finalPayable    = advancedPayment > 0 ? payablePrice - advancedPayment : payablePrice;
     const specialDiscount = Number(order?.special_discount || 0);
 
     const subTotal = order?.details?.reduce((sum, item) => {
-        const price = Number(item?.product?.sell_price || 0);
+        const price = Number(item?.sell_price || 0);
         const qty = Number(item?.quantity || 0);
         return sum + price * qty;
-    }, 0) || 0;
-
-    const finalPayable = subTotal + deliveryCharge - specialDiscount - advancedPayment;
+    }, 0);
 
     return (
         <div className="invoice-a5 invoice-section">
@@ -401,10 +401,10 @@ const InvoiceA5 = ({ order, settings }) => {
 
                             <td style={{ border: `1px solid ${BC}`, textAlign: "center", fontSize: 11 }}>{item?.quantity}</td>
 
-                            <td style={{ border: `1px solid ${BC}`, textAlign: "right", fontSize: 11, paddingRight: 10 }}>{item?.product?.sell_price} Tk</td>
+                            <td style={{ border: `1px solid ${BC}`, textAlign: "right", fontSize: 11, paddingRight: 10 }}>{item?.sell_price} Tk</td>
 
                             <td style={{ border: `1px solid ${BC}`, textAlign: "right", fontSize: 11, paddingRight: 10 }}>
-                                {(Number(item?.product?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk
+                                {(Number(item?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk
                             </td>
                         </tr>
                     ))}
@@ -463,17 +463,16 @@ const InvoiceA5 = ({ order, settings }) => {
 const InvoicePos = ({ order, settings }) => {
     const formattedDate = getToday();
 
-    const deliveryCharge  = Number(order?.delivery_charge || 0);
+    const payablePrice    = Number(order?.payable_price || 0);
     const advancedPayment = Number(order?.advance_payment || 0);
+    const finalPayable    = advancedPayment > 0 ? payablePrice - advancedPayment : payablePrice;
     const specialDiscount = Number(order?.special_discount || 0);
 
     const subTotal = order?.details?.reduce((sum, item) => {
-        const price = Number(item?.product?.sell_price || 0);
+        const price = Number(item?.sell_price || 0);
         const qty = Number(item?.quantity || 0);
         return sum + price * qty;
-    }, 0) || 0;
-
-    const finalPayable = subTotal + deliveryCharge - specialDiscount - advancedPayment;
+    }, 0);
 
     return (
         <div className="invoice-pos invoice-section">
@@ -546,7 +545,7 @@ const InvoicePos = ({ order, settings }) => {
                                 {item?.attribute_value_3 && <div style={{ fontSize: 10 }}>[{item?.attribute_value_3?.attribute?.name}: {item?.attribute_value_3?.value}]</div>}
                             </td>
                             <td style={{ textAlign: "right" }}>{item?.quantity}</td>
-                            <td style={{ textAlign: "right" }}>{(Number(item?.product?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk</td>
+                            <td style={{ textAlign: "right" }}>{(Number(item?.sell_price) || 0) * (Number(item?.quantity) || 0)} Tk</td>
                         </tr>
                     ))}
                 </tbody>

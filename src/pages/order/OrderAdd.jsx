@@ -213,10 +213,11 @@ export default function OrderAdd() {
 
     useEffect(() => {
         const delay = setTimeout(() => {
+            if (productInfo && searchQuery === productInfo.name) return;
             searchProduct();
         }, 200);
         return () => clearTimeout(delay);
-    }, [searchQuery]);
+    }, [searchQuery, productInfo]);
 
     const getAttributeList = async () => {
         const res = await getDatas('/admin/attributes')
@@ -334,6 +335,7 @@ export default function OrderAdd() {
                     }
                     setCartItems((prev) => [...prev, newItem])
                     setSearchQuery('')
+                    setHiddenSearchProducts(true)
                     setQuantity(1)
                     setVariationId(null)
                     setProductInfo(null)
@@ -355,6 +357,7 @@ export default function OrderAdd() {
                 }
                 setCartItems((prev) => [...prev, newItem])
                 setSearchQuery('')
+                setHiddenSearchProducts(true)
                 setQuantity(1)
                 setProductInfo(null)
                 setSearchError('')
@@ -779,7 +782,11 @@ export default function OrderAdd() {
                                     <Col flex="auto">
                                         <Form.Item label="Search Products" className="custom-form-item" style={{ marginBottom: 0 }}>
                                             <div style={{ position: 'relative' }}>
-                                                <Input size="large" placeholder="Search by name, SKU or barcode..." value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value); searchProduct();}} prefix={<InboxOutlined style={{ color: '#94a3b8' }} />} className="custom-input"/>
+                                                <Input size="large" placeholder="Search by name, SKU or barcode..." value={searchQuery} onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setSearchQuery(val);
+                                                    if (!val) setHiddenSearchProducts(true);
+                                                }} prefix={<InboxOutlined style={{ color: '#94a3b8' }} />} className="custom-input"/>
                                                 {loading && <div style={{position: 'absolute', right: 12, top: 12}}><Spin size="small" /></div>}
                                                 {!hiddenSearchProducts && (
                                                     <Card className="product-search-dropdown" size="small" style={{position: 'absolute', top: '105%', left: 0, right: 0, zIndex: 1000, boxShadow: '0 10px 25px rgba(0,0,0,0.1)', borderRadius: '12px', maxHeight: '400px', overflow: 'auto'}}>
