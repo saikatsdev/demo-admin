@@ -15,6 +15,7 @@ import TopHeader from "../../components/settings/TopHeader";
 import useTitle from "../../hooks/useTitle";
 import { useSelector } from "react-redux";
 import DashboardSetting from "../../components/settings/DashboardSetting";
+import GetTracked from "../../components/settings/GetTracked";
 
 export default function Settings() {
     // Hook
@@ -105,41 +106,45 @@ export default function Settings() {
 
                     <div className="body-content">
                         {activeIndex === 0 && (
-                            <DashboardSetting formatText={formatText}/>
+                            <GetTracked formatText={formatText}/>
                         )}
 
                         {activeIndex === 1 && (
-                            <GeneralSetting formatText={formatText}/>
+                            <DashboardSetting formatText={formatText}/>
                         )}
 
                         {activeIndex === 2 && (
-                            <Logo formatText={formatText}/>
+                            <GeneralSetting formatText={formatText}/>
                         )}
 
                         {activeIndex === 3 && (
-                            <ProductSetting formatText={formatText}/>
+                            <Logo formatText={formatText}/>
                         )}
 
                         {activeIndex === 4 && (
-                            <HeaderFooter formatText={formatText}/>
+                            <ProductSetting formatText={formatText}/>
                         )}
 
                         {activeIndex === 5 && (
-                            <TopHeader formatText={formatText}/>
+                            <HeaderFooter formatText={formatText}/>
                         )}
 
                         {activeIndex === 6 && (
-                            <FrontendTheme formatText={formatText}/>
+                            <TopHeader formatText={formatText}/>
                         )}
 
                         {activeIndex === 7 && (
+                            <FrontendTheme formatText={formatText}/>
+                        )}
+
+                        {activeIndex === 8 && (
                             <CheckoutSetting formatText={formatText}/>
                         )}
 
                         {user.phone_number === "01700000017" && (
                             <>
-                                {activeIndex === 8 && <SettingCategory />}
-                                {activeIndex === 9 && <AllSettings />}
+                                {activeIndex === 9 && <SettingCategory />}
+                                {activeIndex === 10 && <AllSettings />}
                             </>
                         )}
                     </div>
