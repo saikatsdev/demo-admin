@@ -92,8 +92,8 @@ export default function Settings() {
 
                 {user.phone_number === "01700000017" && (
                     <>
-                        <button className={activeIndex === 8 ? 'active' : ''} onClick={() => handleIndex(8)}>Setting Category</button>
-                        <button className={activeIndex === 9 ? 'active' : ''} onClick={() => handleIndex(9)}>All Settings</button>
+                        <button className={activeIndex === 9 ? 'active' : ''} onClick={() => handleIndex(9)}>Setting Category</button>
+                        <button className={activeIndex === 10 ? 'active' : ''} onClick={() => handleIndex(10)}>All Settings</button>
                     </>
                 )}
             </div>
