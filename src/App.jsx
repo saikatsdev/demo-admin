@@ -183,6 +183,7 @@ import AddCrossSell from "./pages/product/crosssell/AddCrossSell";
 import EditCrossSell from "./pages/product/crosssell/EditCrossSell";
 import IncompleteOrderReport from "./pages/report/IncompleteOrderReport";
 import CourierEntryReport from "./pages/order/CourierEntryReport";
+import JobType from "./pages/auth/JobType";
 
 function App() {
     const dispatch         = useDispatch();
@@ -237,6 +238,7 @@ function App() {
                     <Route path="/roles" element={<Role />} />
                     <Route path="/customer" element={<Customer />} />
                     <Route path="/edit/employee/password/:id" element={<UpdatePassword />} />
+                    <Route path="/job/type" element={<JobType />} />
 
                     <Route path="/management" element={<Management />} />
                     <Route path="/add/management" element={<AddManagement />} />

@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,PhoneOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined, CloseCircleOutlined, FlagOutlined} from '@ant-design/icons';
+import {WhatsAppOutlined, CopyOutlined, SwapOutlined, ArrowLeftOutlined, UserOutlined,InfoCircleOutlined, ReloadOutlined, EyeOutlined, EditOutlined, ShoppingOutlined,TeamOutlined, CalendarOutlined, ClockCircleOutlined, FireOutlined,CheckCircleOutlined, ExclamationCircleOutlined, PhoneFilled, HistoryOutlined, UserSwitchOutlined, CloseCircleOutlined, FlagOutlined} from '@ant-design/icons';
 import {Input as AntInput, Breadcrumb, Table, Button, Space, message, Modal,DatePicker, Tooltip, Tag, Select, Card, Avatar, Typography, Spin, Badge} from "antd";
 import useTitle from "../../../hooks/useTitle";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { useCallback, useEffect, useState } from "react";
 import { getDatas, postData } from "../../../api/common/common";
+import CustomerProfileModal from "../../../components/order/CustomerProfileModal";
 import { useRole } from "../../../hooks/useRole";
 import TeamDashboardModal from "../../../components/order/TeamDashboardModal";
 
@@ -146,6 +147,7 @@ export default function FollowupSell() {
 
     // filter state
     const [search, setSearch]               = useState("");
+    const [profileCustomer, setProfileCustomer] = useState(null);
     const [filterStep, setFilterStep]       = useState(null);
     const [filterStatus, setFilterStatus]   = useState('active');
     const [filterPriority, setFilterPriority] = useState(null);
@@ -223,6 +225,16 @@ export default function FollowupSell() {
                                 <span style={{ fontSize: 12, color: "#595959" }}>{phone}</span>
                                 {phone !== "N/A" && (
                                     <>
+                                        <Button
+                                            type="text"
+                                            size="small"
+                                            aria-label={`View customer profile for ${name}`}
+                                            title="View customer profile"
+                                            icon={<InfoCircleOutlined />}
+                                            style={{ color: "#1677ff", width: 24, minWidth: 24, height: 24 }}
+                                            onMouseEnter={() => { if (!profileCustomer) setProfileCustomer({ phone_number: phone, customer_name: record.customer_name || record.order?.customer_name || "" }); }}
+                                            onClick={() => { if (!profileCustomer) setProfileCustomer({ phone_number: phone, customer_name: record.customer_name || record.order?.customer_name || "" }); }}
+                                        />
                                         <Tooltip title="Copy">
                                             <CopyOutlined
                                                 style={{ fontSize: 12, color: "#1677ff", cursor: "pointer" }}
@@ -1029,6 +1041,7 @@ export default function FollowupSell() {
     return (
         <>
             {contextHolder}
+            {profileCustomer && <CustomerProfileModal key={profileCustomer.phone_number} customer={profileCustomer} onClose={() => setProfileCustomer(null)} />}
 
             <div className="pagehead">
                 <div className="head-left">

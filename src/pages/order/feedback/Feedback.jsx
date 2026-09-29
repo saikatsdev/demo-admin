@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled, ShoppingCartOutlined, ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, ClearOutlined, ReloadOutlined, MinusCircleOutlined } from '@ant-design/icons'
+import {EditOutlined,WhatsAppOutlined,CopyOutlined,ArrowLeftOutlined, StarFilled, ShoppingCartOutlined, InfoCircleOutlined,ClockCircleOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, ClearOutlined, ReloadOutlined, MinusCircleOutlined } from '@ant-design/icons'
 import {Input as AntInput, Breadcrumb, Table, Button, Space, message,Modal,DatePicker,Tooltip, Divider,Tag, Select, Radio, Drawer, Row, Col, Typography, Card, Image, Form, Timeline, Empty} from "antd";
 import useTitle from "../../../hooks/useTitle";
+import CustomerProfileModal from "../../../components/order/CustomerProfileModal";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { getDatas, postData } from "../../../api/common/common";
@@ -28,15 +29,16 @@ export default function Feedback() {
     const [feedbacks, setFeedbacks]                                 = useState([]);
 
     // Filters State
-    const [keyword, setKeyword]             = useState("");
-    const [assignedEmp, setAssignedEmp]     = useState(null);
-    const [deliveredDate, setDeliveredDate] = useState(null);
-    const [quickFilter, setQuickFilter]     = useState("all");
-    const [employeeList, setEmployeeList]   = useState([]);
+    const [keyword, setKeyword]                   = useState("");
+    const [assignedEmp, setAssignedEmp]           = useState(null);
+    const [deliveredDate, setDeliveredDate]       = useState(null);
+    const [quickFilter, setQuickFilter]           = useState("all");
+    const [employeeList, setEmployeeList]         = useState([]);
     const [customerTypeList, setCustomerTypeList] = useState([]);
-    const [customerType, setCustomerType]   = useState(null);
-    const [summary, setSummary]             = useState({});
-    const [summaryFilter, setSummaryFilter] = useState("total_orders");
+    const [customerType, setCustomerType]         = useState(null);
+    const [summary, setSummary]                   = useState({});
+    const [summaryFilter, setSummaryFilter]       = useState("total_orders");
+    const [profileCustomer, setProfileCustomer]   = useState(null);
 
     const copyPhoneNo = (phone) => {
         navigator.clipboard.writeText(phone);
@@ -125,6 +127,16 @@ export default function Feedback() {
                             <span style={{ fontSize: "13px", color: "#595959" }}>{phone}</span>
                             {phone !== "N/A" && (
                                 <>
+                                    <Button
+                                        type="text"
+                                        size="small"
+                                        aria-label={`View customer profile for ${name}`}
+                                        title="View customer profile"
+                                        icon={<InfoCircleOutlined />}
+                                        style={{ color: "#1677ff", width: 24, minWidth: 24, height: 24 }}
+                                        onMouseEnter={() => { if (!profileCustomer) setProfileCustomer(record); }}
+                                        onClick={() => { if (!profileCustomer) setProfileCustomer(record); }}
+                                    />
                                     <Tooltip title="Copy Phone">
                                         <CopyOutlined style={{ fontSize: 13, color: "#1677ff", cursor: "pointer" }} onClick={() => copyPhoneNo(phone)}/>
                                     </Tooltip>
@@ -893,6 +905,8 @@ export default function Feedback() {
                     )}
                 </div>
             </Modal>
+
+            {profileCustomer && <CustomerProfileModal key={profileCustomer.phone_number} customer={profileCustomer} onClose={() => setProfileCustomer(null)} />}
 
             <Modal title={`Update Status for Order #${selectedOrder?.order_id || selectedOrder?.id}`} open={isStatusModalOpen} onCancel={() => setIsStatusModalOpen(false)} onOk={submitStatus} loading={statusLoader}>
                 <Select  value={newStatus} onChange={(value) => setNewStatus(value)} style={{ width: 200 }}>

@@ -1,4 +1,4 @@
-import {CopyOutlined,DeleteFilled,DeleteOutlined,LinkOutlined,ReloadOutlined,DownloadOutlined,GoogleOutlined,YoutubeOutlined,FacebookOutlined,InstagramOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,FileTextOutlined ,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined,FilterOutlined} from "@ant-design/icons";
+import {CopyOutlined,DeleteFilled,DeleteOutlined,LinkOutlined,ReloadOutlined,DownloadOutlined,GoogleOutlined,YoutubeOutlined,FacebookOutlined,IdcardOutlined,InstagramOutlined,EditOutlined,EyeOutlined,InboxOutlined,InfoCircleOutlined,LoadingOutlined,LockOutlined,PhoneOutlined,PlusOutlined,PrinterOutlined,SearchOutlined,EnvironmentOutlined,WhatsAppOutlined,FileTextOutlined ,ExclamationCircleOutlined,ContainerOutlined,ArrowLeftOutlined,HistoryOutlined,StopOutlined,RollbackOutlined,FilterOutlined} from "@ant-design/icons";
 import {Badge,Button,Col,DatePicker,Dropdown,Form,Input,InputNumber,message,Modal,Popover,Row,Select,Space,Spin,Table,Tag,Tooltip} from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
@@ -9,7 +9,7 @@ import {deleteData,exportData,getDatas,postData} from "../../api/common/common";
 import useAxios from "../../hooks/useAxios";
 import useTitle from "../../hooks/useTitle";
 import "./Order.css";
-
+import CustomerProfileModal from "../../components/order/CustomerProfileModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import OrderHistoryModal from "../../components/order/OrderHistoryModal";
@@ -18,7 +18,6 @@ import CourierInfo from "../../components/order/CourierInfo";
 import { cachedFetch } from "../../utils/cacheApi";
 import { useSelector } from "react-redux";
 import CourierStatusModal from "../../components/order/CourierStatusModal";
-import DigitalSaleModal from "../../components/order/DigitalSaleModal";
 import { usePermission } from "../../hooks/usePermission";
 import { useRole } from "../../hooks/useRole";
 
@@ -47,97 +46,96 @@ export default function Order() {
     const [form] = Form.useForm();
 
     // State
-    const [messageApi, contextHolder]                                                                  = message.useMessage();
-    const [searchQuery, setSearchQuery]                                                                = useState("");
-    const [statusId, setStatusId]                                                                      = useState(null);
-    const [orderStatus, setOrderStatus]                                                                = useState([]);
-    const [loading, setLoading]                                                                        = useState(false);
-    const [isPaid, setIsPaid]                                                                          = useState(null);
-    const [orders, setOrders]                                                                          = useState(null);
-    const [orderTagId, setOrderTagId]                                                                  = useState(null);
-    const [districtId, setDistrictId]                                                                  = useState("");
-    const [cancelReasonId, setCancelReasonId]                                                          = useState("");
-    const [selectedOrderIds, setSelectedOrderIds]                                                      = useState([]);
-    const [isActionShow, setIsActionShow]                                                              = useState(false);
-    const [isAllOrders, setIsAllOrders]                                                                = useState(true);
-    const [selectedAction, setSelectedAction]                                                          = useState("");
-    const [orderPaidOrUnpaidStatus, setOrderPaidOrUnpaidStatus]                                        = useState("");
-    const [orderCurrentStatus, setOrderCurrentStatus]                                                  = useState("");
-    const [orderAssign, setOrderAssign]                                                                = useState("");
-    const [printInvoice, setPrintInvoice]                                                              = useState("");
-    const [users, setUsers]                                                                            = useState([]);
-    const [orderWiseProducts, setOrderWiseProducts]                                                    = useState("");
-    const [returnAndDamageOrderStatus, setReturnAndDamageOrderStatus]                                  = useState("");
-    const [returnAndDamageOrderType, setReturnAndDamageOrderType]                                      = useState("");
-    const [returnAndDamageOrderReason, setReturnAndDamageOrderReason]                                  = useState("");
-    const [orderId, setOrderId]                                                                        = useState("");
-    const [pickingList, setPickingList]                                                                = useState("");
-    const [curierDeliveryReports, setCurierDeliveryReports]                                            = useState({});
-    const [selectedCourier, setSelectedCourier]                                                        = useState(null);
-    const [minPrice, setMinPrice]                                                                      = useState(null);
-    const [maxPrice, setMaxPrice]                                                                      = useState(null);
-    const [minInvoice, setMinInvoice]                                                                  = useState();
-    const [maxInvoice, setMaxInvoice]                                                                  = useState();
-    const [startDate, setStartDate]                                                                    = useState();
-    const [endDate, setEndDate]                                                                        = useState();
-    const [errors, setErrors]                                                                          = useState("");
-    const [duplicateOrder, setDuplicateOrder]                                                          = useState(0);
-    const [isMobile, setIsMobile]                                                                      = useState(false);
-    const [invoiceNumber, setInvoiceNumber]                                                            = useState("");
-    const [courierData, setCourierData]                                                                = useState([]);
-    const [courierDataTableShow, setCourierDataTableShow]                                              = useState(false);
-    const [localOrderSummary,setLocalOrderSummary]                                                     = useState({});
-    const [websiteAdminBaseUrl, setWebsiteAdminBaseUrl]                                                = useState("");
-    const [isTrash, setIsTrash]                                                                        = useState(false);
-    const [lockedInfo, setLockedInfo]                                                                  = useState("");
-    const [courierList, setCourierList]                                                                = useState([]);
-    const [districtWiseList, setDistrictWiseList]                                                      = useState([]);
-    const [selectedDistrictId, setSelectedDistrictId]                                                  = useState(null);
-    const [employeeList, setEmployeeList]                                                              = useState([]);
-    const [employeeId, setEmployeeId]                                                                  = useState(null);
-    const [invoiceStatus, setInvoiceStatus]                                                            = useState(null);
-    const [customerTypeList, setCustomerTypeList]                                                      = useState([]);
-    const [selectedCustomerTypeId, setSelectedCustomerTypeId]                                          = useState(null);
-    const [courierId, setCourierId]                                                                    = useState(null);
-    const [courierStatusId, setCourierStatusId]                                                        = useState(null);
-    const scanEnabled                                                                                  = true;
-    const scanBufferRef                                                                                = useRef("");
-    const scanTimerRef                                                                                 = useRef(null);
-    const [previewSrc, setPreviewSrc]                                                                  = useState(null);
-    const [pos, setPos]                                                                                = useState({ x: 0, y: 0 });
-    const [handleselectedActionChangeStatusModal,setHandleselectedActionChangeStatusModal]             = useState(false);
-    const [handleselectedActionCurrentOrderStatusModal,setHandleselectedActionCurrentOrderStatusModal] = useState(false);
-    const [handleselectedActionOrderAssignModal,setHandleselectedActionOrderAssignModal]               = useState(false);
-    const [handleselectedActionPrintInvoiceModal,setHandleselectedActionPrintInvoiceModal]             = useState(false);
-    const [handleReturnAndDamageModal, setHandleReturnAndDamageModal]                                  = useState(false);
-    const [handlePickingListModal, setHandlePickingListModal]                                          = useState(false);
-    const [largeModal, setLargeModal]                                                                  = useState(false);
-    const [previewOpen, setPreviewOpen]                                                                = useState(false);
-    const [previewOrder, setPreviewOrder]                                                              = useState(null);
-    const [previewItems, setPreviewItems]                                                              = useState([]);
-    const [totalOrder, setTotalOrder]                                                                  = useState(0);
-    const [currentPage, setCurrentPage]                                                                = useState(1);
-    const [historyModalOpen, setHistoryModalOpen]                                                      = useState(false);
-    const [selectedOrderId, setSelectedOrderId]                                                        = useState(null);
-    const [isNoteModalOpen, setIsNoteModalOpen]                                                        = useState(false);
-    const [isNotesModalOpen, setIsNotesModalOpen]                                                      = useState(false);
-    const [loadingNotes, setLoadingNotes]                                                              = useState(false);
-    const [notes, setNotes]                                                                            = useState([]);
-    const [editingNoteId, setEditingNoteId]                                                            = useState(null);
-    const [noteLoader, setNoteLoader]                                                                  = useState(false);
-    const [isCourierModalOpen, setIsCourierModalOpen]                                                  = useState(false);
-    const [courierLogs, setCourierLogs]                                                                = useState([]);
-    const [pageSize, setPageSize]                                                                      = useState(DEFAULT_ORDER_PAGE_SIZE);
-    const [bulkLoading, setBulLoading]                                                                 = useState(false);
-    const [digitalModalOpen, setDigitalModalOpen]                                                      = useState(false);
-    const [selectedDigitalOrderId, setSelectedDigitalOrderId]                                          = useState(null);
-	const [csvLoading, setCsvLoading]                                                                  = useState(false);
-    const [showFilter, setShowFilter]                                                                  = useState(false);
-    const [exportModalOpen, setExportModalOpen]                                                        = useState(false);
-    const [exportStatusId, setExportStatusId]                                                          = useState("");
-    const [exportDatePreset, setExportDatePreset]                                                      = useState("");
-    const [customDateRange, setCustomDateRange]                                                        = useState([]);
-    const [exportLoading, setExportLoading]                                                            = useState(false);
+ const [messageApi, contextHolder]                                                                  = message.useMessage();
+ const [searchQuery, setSearchQuery]                                                                = useState("");
+ const [profileCustomer, setProfileCustomer]                                                        = useState(null);
+ const [statusId, setStatusId]                                                                      = useState(null);
+ const [orderStatus, setOrderStatus]                                                                = useState([]);
+ const [loading, setLoading]                                                                        = useState(false);
+ const [isPaid, setIsPaid]                                                                          = useState(null);
+ const [orders, setOrders]                                                                          = useState(null);
+ const [orderTagId, setOrderTagId]                                                                  = useState(null);
+ const [districtId, setDistrictId]                                                                  = useState("");
+ const [cancelReasonId, setCancelReasonId]                                                          = useState("");
+ const [selectedOrderIds, setSelectedOrderIds]                                                      = useState([]);
+ const [isActionShow, setIsActionShow]                                                              = useState(false);
+ const [isAllOrders, setIsAllOrders]                                                                = useState(true);
+ const [selectedAction, setSelectedAction]                                                          = useState("");
+ const [orderPaidOrUnpaidStatus, setOrderPaidOrUnpaidStatus]                                        = useState("");
+ const [orderCurrentStatus, setOrderCurrentStatus]                                                  = useState("");
+ const [orderAssign, setOrderAssign]                                                                = useState("");
+ const [printInvoice, setPrintInvoice]                                                              = useState("");
+ const [users, setUsers]                                                                            = useState([]);
+ const [orderWiseProducts, setOrderWiseProducts]                                                    = useState("");
+ const [returnAndDamageOrderStatus, setReturnAndDamageOrderStatus]                                  = useState("");
+ const [returnAndDamageOrderType, setReturnAndDamageOrderType]                                      = useState("");
+ const [returnAndDamageOrderReason, setReturnAndDamageOrderReason]                                  = useState("");
+ const [orderId, setOrderId]                                                                        = useState("");
+ const [pickingList, setPickingList]                                                                = useState("");
+ const [curierDeliveryReports, setCurierDeliveryReports]                                            = useState({});
+ const [selectedCourier, setSelectedCourier]                                                        = useState(null);
+ const [minPrice, setMinPrice]                                                                      = useState(null);
+ const [maxPrice, setMaxPrice]                                                                      = useState(null);
+ const [minInvoice, setMinInvoice]                                                                  = useState();
+ const [maxInvoice, setMaxInvoice]                                                                  = useState();
+ const [startDate, setStartDate]                                                                    = useState();
+ const [endDate, setEndDate]                                                                        = useState();
+ const [errors, setErrors]                                                                          = useState("");
+ const [duplicateOrder, setDuplicateOrder]                                                          = useState(0);
+ const [isMobile, setIsMobile]                                                                      = useState(false);
+ const [invoiceNumber, setInvoiceNumber]                                                            = useState("");
+ const [courierData, setCourierData]                                                                = useState([]);
+ const [courierDataTableShow, setCourierDataTableShow]                                              = useState(false);
+ const [localOrderSummary,setLocalOrderSummary]                                                     = useState({});
+ const [websiteAdminBaseUrl, setWebsiteAdminBaseUrl]                                                = useState("");
+ const [isTrash, setIsTrash]                                                                        = useState(false);
+ const [lockedInfo, setLockedInfo]                                                                  = useState("");
+ const [courierList, setCourierList]                                                                = useState([]);
+ const [districtWiseList, setDistrictWiseList]                                                      = useState([]);
+ const [selectedDistrictId, setSelectedDistrictId]                                                  = useState(null);
+ const [employeeList, setEmployeeList]                                                              = useState([]);
+ const [employeeId, setEmployeeId]                                                                  = useState(null);
+ const [invoiceStatus, setInvoiceStatus]                                                            = useState(null);
+ const [customerTypeList, setCustomerTypeList]                                                      = useState([]);
+ const [selectedCustomerTypeId, setSelectedCustomerTypeId]                                          = useState(null);
+ const [courierId, setCourierId]                                                                    = useState(null);
+ const [courierStatusId, setCourierStatusId]                                                        = useState(null);
+ const scanEnabled                                                                                  = true;
+ const scanBufferRef                                                                                = useRef("");
+ const scanTimerRef                                                                                 = useRef(null);
+ const [previewSrc, setPreviewSrc]                                                                  = useState(null);
+ const [pos, setPos]                                                                                = useState({ x: 0, y: 0 });
+ const [handleselectedActionChangeStatusModal,setHandleselectedActionChangeStatusModal]             = useState(false);
+ const [handleselectedActionCurrentOrderStatusModal,setHandleselectedActionCurrentOrderStatusModal] = useState(false);
+ const [handleselectedActionOrderAssignModal,setHandleselectedActionOrderAssignModal]               = useState(false);
+ const [handleselectedActionPrintInvoiceModal,setHandleselectedActionPrintInvoiceModal]             = useState(false);
+ const [handleReturnAndDamageModal, setHandleReturnAndDamageModal]                                  = useState(false);
+ const [handlePickingListModal, setHandlePickingListModal]                                          = useState(false);
+ const [largeModal, setLargeModal]                                                                  = useState(false);
+ const [previewOpen, setPreviewOpen]                                                                = useState(false);
+ const [previewOrder, setPreviewOrder]                                                              = useState(null);
+ const [previewItems, setPreviewItems]                                                              = useState([]);
+ const [totalOrder, setTotalOrder]                                                                  = useState(0);
+ const [currentPage, setCurrentPage]                                                                = useState(1);
+ const [historyModalOpen, setHistoryModalOpen]                                                      = useState(false);
+ const [selectedOrderId, setSelectedOrderId]                                                        = useState(null);
+ const [isNoteModalOpen, setIsNoteModalOpen]                                                        = useState(false);
+ const [isNotesModalOpen, setIsNotesModalOpen]                                                      = useState(false);
+ const [loadingNotes, setLoadingNotes]                                                              = useState(false);
+ const [notes, setNotes]                                                                            = useState([]);
+ const [editingNoteId, setEditingNoteId]                                                            = useState(null);
+ const [noteLoader, setNoteLoader]                                                                  = useState(false);
+ const [isCourierModalOpen, setIsCourierModalOpen]                                                  = useState(false);
+ const [courierLogs, setCourierLogs]                                                                = useState([]);
+ const [pageSize, setPageSize]                                                                      = useState(DEFAULT_ORDER_PAGE_SIZE);
+ const [bulkLoading, setBulLoading]                                                                 = useState(false);
+ const [csvLoading, setCsvLoading]                                                                  = useState(false);
+ const [showFilter, setShowFilter]                                                                  = useState(false);
+ const [exportModalOpen, setExportModalOpen]                                                        = useState(false);
+ const [exportStatusId, setExportStatusId]                                                          = useState("");
+ const [exportDatePreset, setExportDatePreset]                                                      = useState("");
+ const [customDateRange, setCustomDateRange]                                                        = useState([]);
+ const [exportLoading, setExportLoading]                                                            = useState(false);
 
     const activeFilterCount = [
         statusId,
@@ -1582,17 +1580,22 @@ export default function Order() {
                         
                         <div style={{marginTop: 6,display: "flex",gap: 4,flexWrap: "wrap"}}>
                             {products.map((p, index) => (
-                                <img key={index} src={p.img_path} alt=""
-                                    onMouseEnter={(e) => {const rect = e.target.getBoundingClientRect();
-                                    setPos({
-                                        x: rect.right + 10,
-                                        y: rect.top - 50,
-                                    });
-                                    setPreviewSrc(p.img_path);
-                                    }}
-                                    onMouseLeave={() => setPreviewSrc(null)}
-                                    style={{width: 40,height: 40,borderRadius: "50%",objectFit: "fill",border: "1px solid #f0f0f0",cursor: "pointer",}}
-                                />
+                                <div key={index} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", background: "#f8f9fa", borderRadius: 6, border: "1px solid #e8e8e8", maxWidth: "100%", boxSizing: "border-box" }}>
+                                    <img src={p.img_path} alt="Product Image"
+                                        onMouseEnter={(e) => {
+                                            const rect = e.target.getBoundingClientRect();
+                                            setPos({ x: rect.right + 10, y: rect.top - 50 });
+                                            setPreviewSrc(p.img_path);
+                                        }}
+                                        onMouseLeave={() => setPreviewSrc(null)}
+                                        style={{width: 36, height: 36, borderRadius: 4, objectFit: "cover", border: "1px solid #f0f0f0", cursor: "pointer", flexShrink: 0}}
+                                    />
+                                    <Tooltip title={p.name}>
+                                        <div style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontSize: 13, fontWeight: 500, color: "#333" }}>
+                                            {p.name}
+                                        </div>
+                                    </Tooltip>
+                                </div>
                             ))}
                         </div>
                 
@@ -1696,6 +1699,19 @@ export default function Order() {
             render: (name, record) => (
                 <div>
                     <Button type="default" size="small" icon={<HistoryOutlined />} onClick={() => handleHistoryClick(record.id)}></Button>
+
+                    {record.phone_number && (
+                        <Button
+                            type="default"
+                            size="small"
+                            icon={<IdcardOutlined />}
+                            aria-label={`View customer profile for ${name || record.phone_number}`}
+                            title="Customer Profile"
+                            style={{ marginLeft: 8, color: "#1677ff" }}
+                            onMouseEnter={() => { if (!profileCustomer) setProfileCustomer(record); }}
+                            onClick={() => { if (!profileCustomer) setProfileCustomer(record); }}
+                        />
+                    )}
         
                     <div style={{ fontWeight: 600, color: "#1C558B" }}>{name}</div>
         
@@ -2072,16 +2088,6 @@ export default function Order() {
         form.resetFields();
         setIsNoteModalOpen(true);
     };
-	
-	const openDigitalProductInfo = (orderId) => {
-        setSelectedDigitalOrderId(orderId);
-        setDigitalModalOpen(true);
-    };
-
-    const closeDigitalModal = () => {
-        setDigitalModalOpen(false);
-        setSelectedOrderId(null);
-    };
 
     const openEditNoteModal = (noteRecord) => {
         setSelectedOrderId(noteRecord.order_id);
@@ -2248,6 +2254,7 @@ export default function Order() {
     return (
         <>
             {contextHolder}
+            {profileCustomer && <CustomerProfileModal key={profileCustomer.phone_number} customer={profileCustomer} onClose={() => setProfileCustomer(null)} />}
 
             <div className="orders-page">
                 <div className="orders-page-header">
@@ -3279,8 +3286,6 @@ export default function Order() {
 
             <CourierStatusModal open={isCourierModalOpen} onClose={() => setIsCourierModalOpen(false)} data={courierLogs}/>
 			
-			<DigitalSaleModal open={digitalModalOpen} onClose={closeDigitalModal} orderId={selectedDigitalOrderId}/>
-
             <Modal
                 title="Export Orders CSV"
                 open={exportModalOpen}
