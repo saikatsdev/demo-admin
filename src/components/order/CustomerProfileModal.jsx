@@ -8,18 +8,18 @@ const dateValue = (value) => value && dayjs(value).isValid() ? dayjs(value) : nu
 const showDate = (value) => dateValue(value)?.format("DD MMM YYYY") || "Not provided";
 
 export default function CustomerProfileModal({ customer, onClose }) {
-    const [profile, setProfile] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [loadError, setLoadError] = useState("");
-    const [editing, setEditing] = useState(false);
-    const [saving, setSaving] = useState(false);
-    const [saveError, setSaveError] = useState("");
-    const [jobTypes, setJobTypes] = useState([]);
+    const [profile, setProfile]         = useState(null);
+    const [loading, setLoading]         = useState(true);
+    const [loadError, setLoadError]     = useState("");
+    const [editing, setEditing]         = useState(false);
+    const [saving, setSaving]           = useState(false);
+    const [saveError, setSaveError]     = useState("");
+    const [jobTypes, setJobTypes]       = useState([]);
     const [jobsLoading, setJobsLoading] = useState(true);
-    const [jobsError, setJobsError] = useState("");
-    const [reload, setReload] = useState(0);
-    const [form] = Form.useForm();
-    const [messageApi, contextHolder] = message.useMessage();
+    const [jobsError, setJobsError]     = useState("");
+    const [reload, setReload]           = useState(0);
+    const [form]                        = Form.useForm();
+    const [messageApi, contextHolder]   = message.useMessage();
 
     useEffect(() => {
         let cancelled = false;
@@ -68,15 +68,15 @@ export default function CustomerProfileModal({ customer, onClose }) {
     const openForm = () => {
         form.resetFields();
         form.setFieldsValue({
-            phone_number: customer.phone_number,
-            customer_name: profile?.customer_name ?? customer.customer_name ?? "",
-            job_type_id: profile?.job_type_id == null ? undefined : Number(profile.job_type_id),
-            home_address: profile?.home_address ?? "",
-            office_address: profile?.office_address ?? "",
-            date_of_birth: dateValue(profile?.date_of_birth),
+            phone_number    : customer.phone_number,
+            customer_name   : profile?.customer_name ?? customer.customer_name ?? "",
+            job_type_id     : profile?.job_type_id == null ? undefined              : Number(profile.job_type_id),
+            home_address    : profile?.home_address ?? "",
+            office_address  : profile?.office_address ?? "",
+            date_of_birth   : dateValue(profile?.date_of_birth),
             anniversary_date: dateValue(profile?.anniversary_date),
-            marital_status: profile?.marital_status ?? "unmarried",
-            children_count: Number(profile?.children_count ?? 0),
+            marital_status  : profile?.marital_status ?? "unmarried",
+            children_count  : Number(profile?.children_count ?? 0),
         });
         setSaveError("");
         setEditing(true);
@@ -87,18 +87,19 @@ export default function CustomerProfileModal({ customer, onClose }) {
         setSaving(true);
         setSaveError("");
         const payload = {
-            phone_number: customer.phone_number,
-            customer_name: values.customer_name.trim(),
-            job_type_id: values.job_type_id ?? null,
-            home_address: values.home_address?.trim() || null,
-            office_address: values.office_address?.trim() || null,
-            date_of_birth: values.date_of_birth?.format("YYYY-MM-DD") || null,
+            phone_number    : customer.phone_number,
+            customer_name   : values.customer_name.trim(),
+            job_type_id     : values.job_type_id ?? null,
+            home_address    : values.home_address?.trim() || null,
+            office_address  : values.office_address?.trim() || null,
+            date_of_birth   : values.date_of_birth?.format("YYYY-MM-DD") || null,
             anniversary_date: values.anniversary_date?.format("YYYY-MM-DD") || null,
-            marital_status: values.marital_status ?? "unmarried",
-            children_count: values.children_count ?? 0,
+            marital_status  : values.marital_status ?? "unmarried",
+            children_count  : values.children_count ?? 0,
         };
         try {
             const res = await postData("/admin/customer-profiles", payload);
+
             if (!res?.success) {
                 setSaveError(res?.message || res?.msg || "Unable to save the profile. Please try again.");
                 if (res?.errors) form.setFields(Object.keys(payload).filter((name) => res.errors[name]).map((name) => ({
@@ -167,15 +168,59 @@ export default function CustomerProfileModal({ customer, onClose }) {
                 {jobsError && <Alert type="error" showIcon message={jobsError} action={<Button onClick={retry}>Retry</Button>} style={{ marginBottom: 16 }} />}
                 <Form form={form} layout="vertical" onFinish={save} disabled={saving}>
                     <Row gutter={16}>
-                        <Col xs={24} sm={12}><Form.Item name="phone_number" label="Phone Number"><Input readOnly /></Form.Item></Col>
-                        <Col xs={24} sm={12}><Form.Item name="customer_name" label="Customer Name" rules={[{ required: true, whitespace: true, message: "Please enter the customer name." }]}><Input placeholder="Enter customer name" /></Form.Item></Col>
-                        <Col xs={24} sm={12}><Form.Item name="job_type_id" label="Job Type"><Select allowClear showSearch optionFilterProp="label" placeholder="Select job type" loading={jobsLoading} options={jobTypes.map((job) => ({ value: Number(job.id), label: job.name }))} /></Form.Item></Col>
-                        <Col xs={24} sm={12}><Form.Item name="marital_status" label="Marital Status" rules={[{ required: true }]}><Select options={["unmarried", "married", "divorced", "widows"].map((value) => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) }))} /></Form.Item></Col>
-                        <Col xs={24} sm={12}><Form.Item name="date_of_birth" label="Date of Birth"><DatePicker format="DD-MM-YYYY" style={{ width: "100%" }} /></Form.Item></Col>
-                        <Col xs={24} sm={12}><Form.Item name="anniversary_date" label="Anniversary Date"><DatePicker format="DD-MM-YYYY" style={{ width: "100%" }} /></Form.Item></Col>
-                        <Col xs={24} sm={12}><Form.Item name="children_count" label="Children Count" rules={[{ type: "integer", min: 0, message: "Enter a whole number of 0 or more." }]}><InputNumber min={0} precision={0} style={{ width: "100%" }} /></Form.Item></Col>
-                        <Col span={24}><Form.Item name="home_address" label="Home Address"><Input.TextArea rows={2} placeholder="Enter home address" /></Form.Item></Col>
-                        <Col span={24}><Form.Item name="office_address" label="Office Address"><Input.TextArea rows={2} placeholder="Enter office address" /></Form.Item></Col>
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="phone_number" label="Phone Number">
+                                <Input readOnly />
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="customer_name" label="Customer Name" rules={[{ required: true, whitespace: true, message: "Please enter the customer name." }]}>
+                                <Input placeholder="Enter customer name" />
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="job_type_id" label="Job Type">
+                                <Select allowClear showSearch optionFilterProp="label" placeholder="Select job type" loading={jobsLoading} options={jobTypes.map((job) => ({ value: Number(job.id), label: job.name }))} />
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="marital_status" label="Marital Status" rules={[{ required: true }]}>
+                                <Select options={["unmarried", "married", "divorced", "widows"].map((value) => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) }))} />
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="date_of_birth" label="Date of Birth">
+                                <DatePicker format="DD-MM-YYYY" style={{ width: "100%" }} />
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="anniversary_date" label="Anniversary Date">
+                                <DatePicker format="DD-MM-YYYY" style={{ width: "100%" }} />
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="children_count" label="Children Count" rules={[{ type: "integer", min: 0, message: "Enter a whole number of 0 or more." }]}>
+                                <InputNumber min={0} precision={0} style={{ width: "100%" }} />
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={24}>
+                            <Form.Item name="home_address" label="Home Address">
+                                <Input.TextArea rows={2} placeholder="Enter home address" />
+                            </Form.Item>
+                        </Col>
+
+                        <Col span={24}>
+                            <Form.Item name="office_address" label="Office Address">
+                                <Input.TextArea rows={2} placeholder="Enter office address" />
+                            </Form.Item>
+                        </Col>
                     </Row>
                 </Form>
             </div>

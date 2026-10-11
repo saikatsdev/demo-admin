@@ -663,7 +663,11 @@ export default function ProductAdd() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: 24
+                marginBottom: 24,
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)'
             }}>
                     <Space size="middle">
                         <Button 

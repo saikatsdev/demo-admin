@@ -1,4 +1,4 @@
-import {ArrowLeftOutlined,SearchOutlined,MailOutlined,CalendarOutlined,EditOutlined,ShoppingOutlined,WalletOutlined,CheckCircleOutlined,TeamOutlined,UserAddOutlined,WhatsAppOutlined,CopyOutlined,DownloadOutlined,CloseCircleOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,SearchOutlined,MailOutlined,CalendarOutlined,EditOutlined,ShoppingOutlined,WalletOutlined,CheckCircleOutlined,TeamOutlined,UserAddOutlined,WhatsAppOutlined,CopyOutlined,DownloadOutlined,CloseCircleOutlined,CrownOutlined,StarOutlined,SafetyCertificateOutlined} from "@ant-design/icons";
 import { Input as AntInput, Breadcrumb, Button, Space, Table, Tooltip, Typography, Card, Modal,Select,DatePicker,Row, InputNumber,Form, Col, message } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -10,6 +10,12 @@ import "./Customer.css";
 const { Title, Text } = Typography;
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100, 150, 200, 250, 300];
+const CUSTOMER_TYPE_IDS = {
+    new: 1,
+    regular: 2,
+    vip: 3,
+    elite: 4,
+};
 
 const getRowKey = (record) => record.phone_number || record.last_order_id || record.customer_name;
 
@@ -400,8 +406,14 @@ export default function Customer() {
             setLoading(true);
 
             let url = `/admin/customers?page=${page}&paginate_size=${limit}`;
-            if (search) url += `&search=${search}`;
-            if (type && type !== "all") url += `&type=${type}`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+
+            const customerTypeId = CUSTOMER_TYPE_IDS[type];
+            if (customerTypeId) {
+                url += `&customer_type_id=${customerTypeId}`;
+            } else if (type && type !== "all") {
+                url += `&type=${encodeURIComponent(type)}`;
+            }
 
             const res = await getDatas(url);
 
@@ -424,14 +436,20 @@ export default function Customer() {
         }, 500);
 
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [searchTerm, activeFilter]);
 
-    useEffect(() => {
-        if (!searchTerm) {
-            setSelectedRowKeys([]);
-            fetchUsers(1, pageSize, "", activeFilter);
-        }
-    }, [activeFilter]);
+    const overviewCards = [
+        { key: "all", label: "Total Customers", value: customerSummary?.total_customers, meta: "Audience Base", icon: <TeamOutlined />, color: "#1c558b", soft: "#e8f1f8" },
+        { key: "current_month", label: "Current Month", value: customerSummary?.current_month_customers, meta: "Joined This Month", icon: <CalendarOutlined />, color: "#0891b2", soft: "#ecfeff", filterable: false },
+        { key: "active", label: "Active Customers", value: customerSummary?.active_customers, meta: "Currently Active", icon: <CheckCircleOutlined />, color: "#059669", soft: "#ecfdf5" },
+    ];
+
+    const customerTypeCards = [
+        { key: "new", label: "New Customers", value: customerSummary?.new_customers, meta: "New Segment", icon: <UserAddOutlined />, color: "#2563eb", soft: "#eff6ff" },
+        { key: "regular", label: "Regular Customers", value: customerSummary?.regular_customers, meta: "Returning Buyers", icon: <SafetyCertificateOutlined />, color: "#7c3aed", soft: "#f5f3ff" },
+        { key: "vip", label: "VIP Customers", value: customerSummary?.vip_customers, meta: "High Value", icon: <StarOutlined />, color: "#d97706", soft: "#fffbeb" },
+        { key: "elite", label: "Elite Customers", value: customerSummary?.elite_customers, meta: "Top Tier", icon: <CrownOutlined />, color: "#db2777", soft: "#fdf2f8" },
+    ];
 
     return (
         <div className="cus-page">
@@ -469,53 +487,64 @@ export default function Customer() {
                 </div>
             </div>
 
-            <Row gutter={[16, 16]} className="cus-stats">
-                <Col xs={24} md={8}>
-                    <Card
-                        className={`cus-stat-card ${activeFilter === "all" ? "is-active" : ""}`}
-                        onClick={() => setActiveFilter("all")}
-                        styles={{ body: { padding: "18px 20px" } }}
-                    >
-                        <div className="cus-stat-label">Total Customers</div>
-                        <Title level={2} className="cus-stat-value">
-                            {Number(customerSummary?.total_customers) || 0}
-                        </Title>
-                        <span className="cus-stat-meta">
-                            <TeamOutlined /> Audience Base
-                        </span>
-                    </Card>
-                </Col>
-                <Col xs={24} md={8}>
-                    <Card
-                        className={`cus-stat-card ${activeFilter === "new" ? "is-active" : ""}`}
-                        onClick={() => setActiveFilter("new")}
-                        styles={{ body: { padding: "18px 20px" } }}
-                    >
-                        <div className="cus-stat-label">New Customers</div>
-                        <Title level={2} className="cus-stat-value" style={{ color: activeFilter === "new" ? undefined : "#1c558b" }}>
-                            {Number(customerSummary?.current_month_customers) || 0}
-                        </Title>
-                        <span className="cus-stat-meta">
-                            <UserAddOutlined /> Recent Orders
-                        </span>
-                    </Card>
-                </Col>
-                <Col xs={24} md={8}>
-                    <Card
-                        className={`cus-stat-card ${activeFilter === "active" ? "is-active-green" : ""}`}
-                        onClick={() => setActiveFilter("active")}
-                        styles={{ body: { padding: "18px 20px" } }}
-                    >
-                        <div className="cus-stat-label">Active Customers</div>
-                        <Title level={2} className="cus-stat-value" style={{ color: activeFilter === "active" ? undefined : "#059669" }}>
-                            {Number(customerSummary?.active_customers) || 0}
-                        </Title>
-                        <span className="cus-stat-meta" style={{ color: activeFilter === "active" ? undefined : "#059669" }}>
-                            <CheckCircleOutlined /> Active
-                        </span>
-                    </Card>
-                </Col>
-            </Row>
+            <div className="cus-stats cus-stats--overview">
+                {overviewCards.map((card) => {
+                    const isFilterable = card.filterable !== false;
+                    const isActive = isFilterable && activeFilter === card.key;
+
+                    return (
+                        <Card
+                            key={card.key}
+                            className={`cus-stat-card ${isActive ? "is-active" : ""} ${isFilterable ? "is-filterable" : ""}`}
+                            onClick={isFilterable ? () => setActiveFilter(card.key) : undefined}
+                            styles={{ body: { padding: "12px 14px" } }}
+                            style={{ "--stat-color": card.color, "--stat-soft": card.soft }}
+                        >
+                            <div className="cus-stat-topline">
+                                <div className="cus-stat-label">{card.label}</div>
+                                <span className="cus-stat-icon">{card.icon}</span>
+                            </div>
+                            <Title level={2} className="cus-stat-value">
+                                {(Number(card.value) || 0).toLocaleString()}
+                            </Title>
+                            <span className="cus-stat-meta">{card.meta}</span>
+                        </Card>
+                    );
+                })}
+            </div>
+
+            <div className="cus-type-section">
+                <div className="cus-section-heading">
+                    <div>
+                        <h2>Customer Types</h2>
+                        <p>Customers grouped by their purchase profile</p>
+                    </div>
+                </div>
+                <div className="cus-stats cus-stats--types">
+                    {customerTypeCards.map((card) => {
+                        const isActive = activeFilter === card.key;
+
+                        return (
+                            <Card
+                                key={card.key}
+                                className={`cus-stat-card is-filterable ${isActive ? "is-active" : ""}`}
+                                onClick={() => setActiveFilter(card.key)}
+                                styles={{ body: { padding: "12px 14px" } }}
+                                style={{ "--stat-color": card.color, "--stat-soft": card.soft }}
+                            >
+                                <div className="cus-stat-topline">
+                                    <div className="cus-stat-label">{card.label}</div>
+                                    <span className="cus-stat-icon">{card.icon}</span>
+                                </div>
+                                <Title level={2} className="cus-stat-value">
+                                    {(Number(card.value) || 0).toLocaleString()}
+                                </Title>
+                                <span className="cus-stat-meta">{card.meta}</span>
+                            </Card>
+                        );
+                    })}
+                </div>
+            </div>
 
             <div className="cus-toolbar">
                 <h3 className="cus-toolbar__title">Customer Base</h3>

@@ -100,7 +100,13 @@ export default function ProductImagePicker({ initialValue, gallery = [], fetchMo
         img.onload = function () {
             const width = img.width;
             const height = img.height;
-            onChange?.({ file: null, width, height, galleryPath: item.original_path });
+            onChange?.({
+                file: null,
+                width,
+                height,
+                galleryPath: item.original_path,
+                previewUrl: item.img_path,
+            });
         };
 
         img.src = item.img_path;

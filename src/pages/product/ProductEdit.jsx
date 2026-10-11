@@ -279,10 +279,10 @@ export default function ProductEdit() {
             const p = productData;
 
             setDynamicInputs(Array(p.variations.length).fill(""));
-            setVariationBuyPrice(p.variations.map((v) => v.buy_price || ""));
-            setVariationRegularPrice(p.variations.map((v) => v.mrp || ""));
-            setVariationOfferPrice(p.variations.map((v) => v.offer_price || ""));
-            setItemCurrentStock(p.variations.map((v) => v.current_stock || ""));
+            setVariationBuyPrice(p.variations.map((v) => v.buy_price ?? ""));
+            setVariationRegularPrice(p.variations.map((v) => v.mrp ?? ""));
+            setVariationOfferPrice(p.variations.map((v) => v.offer_price ?? ""));
+            setItemCurrentStock(p.variations.map((v) => v.current_stock ?? ""));
             setIsDefault(p.variations.map((v) => v.is_default || 0));
             setVariationDescription(p.variations.map((v) => v.description || ""));
             setColorImagePreview(p.variations.map((v) => v.image || null));
@@ -390,6 +390,7 @@ export default function ProductEdit() {
         setVariationDescription((prev) => ["", ...prev]);
         setColorImages((prev) => [null, ...prev]);
         setColorImagePreview((prev) => [null, ...prev]);
+        setVariationIds((prev) => [null, ...prev]);
 
         setBuyPrice("");
         setRegularPrice("");
@@ -412,6 +413,7 @@ export default function ProductEdit() {
         setVariationDescription((prev) => prev.filter((_, i) => i !== index));
         setSelectedAttributeId((prev) => prev.filter((_, i) => i !== index));
         setAttributes((prev) => prev.filter((_, i) => i !== index));
+        setVariationIds((prev) => prev.filter((_, i) => i !== index));
 
         if (dynamicInputs.length === 1) {
         // This will be the last variation being removed
@@ -458,6 +460,7 @@ export default function ProductEdit() {
             setVariationDescription((prev) => prev.filter((_, i) => i !== index));
             setSelectedAttributeId((prev) => prev.filter((_, i) => i !== index));
             setAttributes((prev) => prev.filter((_, i) => i !== index));
+            setVariationIds((prev) => prev.filter((_, i) => i !== index));
         });
 
         setSelectedVariationRows([]);
@@ -499,7 +502,7 @@ export default function ProductEdit() {
 
         newPreview[index] = data.file
             ? URL.createObjectURL(data.file)
-            : data.galleryPath;
+            : data.previewUrl || data.galleryPath;
 
         setColorImages(newImages);
         setColorImagePreview(newPreview);
@@ -571,6 +574,7 @@ export default function ProductEdit() {
             setVariationDescription((prev) => ["", ...prev]);
             setColorImages((prev) => [null, ...prev]);
             setColorImagePreview((prev) => [null, ...prev]);
+            setVariationIds((prev) => [null, ...prev]);
         
             setSelectedAttributeId((prev) => [
                 combo.map((c) => c.attribute_id),
@@ -696,28 +700,11 @@ export default function ProductEdit() {
                 });
             }
 
-            variationBuyPrice.forEach((val, i) => {
-                if (val !== undefined && val !== "") {
-                    formData.append(`variations[${i}][buy_price]`, val || "0");
-                }
-            });
-
-            variationRegularPrice.forEach((val, i) => {
-                if (val !== undefined && val !== "") {
-                    formData.append(`variations[${i}][mrp]`, val || "0");
-                }
-            });
-
-            variationOfferPrice.forEach((val, i) => {
-                if (val !== undefined && val !== "") {
-                    formData.append(`variations[${i}][offer_price]`, val || "0");
-                }
-            });
-
-            itemCurrentStock.forEach((val, i) => {
-                if (val !== undefined && val !== "") {
-                    formData.append(`variations[${i}][current_stock]`, val || "1");
-                }
+            dynamicInputs.forEach((_, i) => {
+                formData.append(`variations[${i}][buy_price]`, variationBuyPrice[i] ?? "0");
+                formData.append(`variations[${i}][mrp]`, variationRegularPrice[i] ?? "0");
+                formData.append(`variations[${i}][offer_price]`, variationOfferPrice[i] ?? "0");
+                formData.append(`variations[${i}][current_stock]`, itemCurrentStock[i] ?? "0");
             });
 
             isDefault.forEach((val, i) => {
@@ -829,7 +816,11 @@ export default function ProductEdit() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: 24
+                marginBottom: 24,
+                position: 'sticky',
+                top: 0,
+                zIndex: 100,
+                boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)'
             }}>
                 <Space size="middle">
                     <Button 
@@ -1254,7 +1245,7 @@ export default function ProductEdit() {
                                             width: 150,
                                             render: (_, record) => (
                                                 <Space direction="vertical" style={{ width: "100%" }}>
-                                                    <ProductImagePicker gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(gallaryPage + 1)} onChange={(data) => handleColorImageChange(data, record.index)} onUploadSuccess={(newImages) => { setGallery(prev => [...(Array.isArray(newImages) ? newImages : []), ...prev]); }}/>
+                                                    <ProductImagePicker initialValue={colorImagePreview[record.index]} gallery={gallery} hasMore={hasMore} loadingMore={loadingMore} fetchMore={() => fetchMedia(gallaryPage + 1)} onChange={(data) => handleColorImageChange(data, record.index)} onUploadSuccess={(newImages) => { setGallery(prev => [...(Array.isArray(newImages) ? newImages : []), ...prev]); }}/>
 
                                                     {colorImagePreview[record.index] && (
                                                         <div style={{ position: "relative", display: "inline-block" }}>
