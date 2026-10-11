@@ -77,6 +77,8 @@ export default function CustomerProfileModal({ customer, onClose }) {
             anniversary_date: dateValue(profile?.anniversary_date),
             marital_status  : profile?.marital_status ?? "unmarried",
             children_count  : Number(profile?.children_count ?? 0),
+            son             : Number(profile?.son ?? 0),
+            daughter        : Number(profile?.daughter ?? 0),
         });
         setSaveError("");
         setEditing(true);
@@ -96,6 +98,8 @@ export default function CustomerProfileModal({ customer, onClose }) {
             anniversary_date: values.anniversary_date?.format("YYYY-MM-DD") || null,
             marital_status  : values.marital_status ?? "unmarried",
             children_count  : values.children_count ?? 0,
+            son             : values.son ?? 0,
+            daughter        : values.daughter ?? 0,
         };
         try {
             const res = await postData("/admin/customer-profiles", payload);
@@ -156,7 +160,9 @@ export default function CustomerProfileModal({ customer, onClose }) {
                         { key: "marital", label: "Marital Status", children: <span style={{ textTransform: "capitalize" }}>{profile.marital_status || "Not provided"}</span> },
                         { key: "birth", label: "Date of Birth", children: showDate(profile.date_of_birth) },
                         { key: "anniversary", label: "Anniversary Date", children: showDate(profile.anniversary_date) },
-                        { key: "children", label: "Children", children: profile.children_count ?? 0, span: 2 },
+                        { key: "children", label: "Children", children: profile.children_count ?? 0 },
+                        { key: "son", label: "Son", children: profile.son ?? 0 },
+                        { key: "daughter", label: "Daughter", children: profile.daughter ?? 0 },
                         { key: "home", label: "Home Address", children: profile.home_address || "Not provided", span: 2 },
                         { key: "office", label: "Office Address", children: profile.office_address || "Not provided", span: 2 },
                     ]} />
@@ -206,6 +212,18 @@ export default function CustomerProfileModal({ customer, onClose }) {
 
                         <Col xs={24} sm={12}>
                             <Form.Item name="children_count" label="Children Count" rules={[{ type: "integer", min: 0, message: "Enter a whole number of 0 or more." }]}>
+                                <InputNumber min={0} precision={0} style={{ width: "100%" }} />
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="son" label="Son" rules={[{ type: "integer", min: 0, message: "Enter a whole number of 0 or more." }]}>
+                                <InputNumber min={0} precision={0} style={{ width: "100%" }} />
+                            </Form.Item>
+                        </Col>
+
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="daughter" label="Daughter" rules={[{ type: "integer", min: 0, message: "Enter a whole number of 0 or more." }]}>
                                 <InputNumber min={0} precision={0} style={{ width: "100%" }} />
                             </Form.Item>
                         </Col>

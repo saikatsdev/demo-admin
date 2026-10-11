@@ -303,6 +303,8 @@ export default function Customer() {
                 anniversary_date: parseDate(profile.anniversary_date),
                 marital_status  : profile.marital_status ?? "unmarried",
                 children_count  : Number(profile.children_count ?? 0),
+                son             : Number(profile.son ?? 0),
+                daughter        : Number(profile.daughter ?? 0),
             });
             setProfileError("");
             setProfileOpen(true);
@@ -329,6 +331,8 @@ export default function Customer() {
                 anniversary_date: values.anniversary_date?.format("YYYY-MM-DD") || null,
                 marital_status  : values.marital_status ?? "unmarried",
                 children_count  : values.children_count ?? 0,
+                son             : values.son ?? 0,
+                daughter        : values.daughter ?? 0,
             };
             const res = await postData("/admin/customer-profiles", payload);
             if (!res?.success) {
@@ -663,6 +667,16 @@ export default function Customer() {
                         </Col>
                         <Col xs={24} sm={12}>
                             <Form.Item name="children_count" label="Children Count" rules={[{ type: "integer", min: 0, message: "Enter a whole number of 0 or more." }]}>
+                                <InputNumber min={0} precision={0} style={{ width: "100%" }} />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="son" label="Son" rules={[{ type: "integer", min: 0, message: "Enter a whole number of 0 or more." }]}>
+                                <InputNumber min={0} precision={0} style={{ width: "100%" }} />
+                            </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                            <Form.Item name="daughter" label="Daughter" rules={[{ type: "integer", min: 0, message: "Enter a whole number of 0 or more." }]}>
                                 <InputNumber min={0} precision={0} style={{ width: "100%" }} />
                             </Form.Item>
                         </Col>

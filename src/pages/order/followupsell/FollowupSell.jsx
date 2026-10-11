@@ -139,47 +139,42 @@ export default function FollowupSell() {
     const isAdminOrSuperAdmin = hasAnyRole(["admin", "superadmin"]);
 
     // core state
-    const [followUpOrders, setFollowUpOrders] = useState([]);
-    const [loading, setLoading]               = useState(false);
-    const [pagination, setPagination]         = useState({ current: 1, pageSize: 25, total: 0 });
-    const [summary, setSummary]               = useState(() => normalizeFollowupSummary({}));
-    const [messageApi, contextHolder]         = message.useMessage();
-
-    // filter state
-    const [search, setSearch]               = useState("");
-    const [profileCustomer, setProfileCustomer] = useState(null);
-    const [filterStep, setFilterStep]       = useState(null);
-    const [filterStatus, setFilterStatus]   = useState('active');
-    const [filterPriority, setFilterPriority] = useState(null);
-    const [filterAssign, setFilterAssign]     = useState("assigned");
-    const [dateRange, setDateRange]         = useState(null);
-    const [summaryKey, setSummaryKey]       = useState("all");
-    const [customerType, setCustomerType]   = useState(null);
-    const [customerTypeList, setCustomerTypeList] = useState([]);
-
-    // assign selection (Non Assign mode)
-    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
-    const [assignModalOpen, setAssignModalOpen] = useState(false);
-    const [employees, setEmployees]             = useState([]);
-    const [employeeLoading, setEmployeeLoading] = useState(false);
-    const [selectedEmployee, setSelectedEmployee] = useState(null);
-    const [assignLoading, setAssignLoading]     = useState(false);
-    const [teamDashboardOpen, setTeamDashboardOpen] = useState(false);
+    const [followUpOrders, setFollowUpOrders]             = useState([]);
+    const [loading, setLoading]                           = useState(false);
+    const [pagination, setPagination]                     = useState({ current: 1, pageSize: 25, total: 0 });
+    const [summary, setSummary]                           = useState(() => normalizeFollowupSummary({}));
+    const [messageApi, contextHolder]                     = message.useMessage();
+    const [search, setSearch]                             = useState("");
+    const [profileCustomer, setProfileCustomer]           = useState(null);
+    const [filterStep, setFilterStep]                     = useState(null);
+    const [filterStatus, setFilterStatus]                 = useState('active');
+    const [filterPriority, setFilterPriority]             = useState(null);
+    const [filterAssign, setFilterAssign]                 = useState("assigned");
+    const [dateRange, setDateRange]                       = useState(null);
+    const [summaryKey, setSummaryKey]                     = useState("all");
+    const [customerType, setCustomerType]                 = useState(null);
+    const [customerTypeList, setCustomerTypeList]         = useState([]);
+    const [selectedRowKeys, setSelectedRowKeys]           = useState([]);
+    const [assignModalOpen, setAssignModalOpen]           = useState(false);
+    const [employees, setEmployees]                       = useState([]);
+    const [employeeLoading, setEmployeeLoading]           = useState(false);
+    const [selectedEmployee, setSelectedEmployee]         = useState(null);
+    const [assignLoading, setAssignLoading]               = useState(false);
+    const [teamDashboardOpen, setTeamDashboardOpen]       = useState(false);
     const [selectedTeamEmployee, setSelectedTeamEmployee] = useState(null);
+    const [editRecord, setEditRecord]                     = useState(null);
+    const [followupDate, setFollowupDate]                 = useState(null);
+    const [stepValue, setStepValue]                       = useState(null);
+    const [statusValue, setStatusValue]                   = useState(null);
+    const [callStatusValue, setCallStatusValue]           = useState(null);
+    const [closeReasonValue, setCloseReasonValue]         = useState("");
+    const [noteValue, setNoteValue]                       = useState("");
+    const [saveLoading, setSaveLoading]                   = useState(false);
+    const [detailRecord, setDetailRecord]                 = useState(null);
+    const [detailLoading, setDetailLoading]               = useState(false);
 
-    // modal state
-    const [editRecord, setEditRecord]       = useState(null);
-    const [followupDate, setFollowupDate]   = useState(null);
-    const [stepValue, setStepValue]         = useState(null);
-    const [statusValue, setStatusValue]     = useState(null);
-    const [callStatusValue, setCallStatusValue] = useState(null);
-    const [closeReasonValue, setCloseReasonValue] = useState("");
-    const [noteValue, setNoteValue]         = useState("");
-    const [saveLoading, setSaveLoading]     = useState(false);
-    const [detailRecord, setDetailRecord]   = useState(null);
-    const [detailLoading, setDetailLoading] = useState(false);
-
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key: "sl",
