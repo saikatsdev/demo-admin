@@ -42,6 +42,7 @@ const Sidebar = ({ onMenuSelect }) => {
         canAny('leave-requests-read', 'leave-approvals-read') && { label: "Leave Management", path: "/hrm/leaves" },
         can('departments-read') && { label: "Departments", path: "/hrm/departments" },
         can('designations-read') && { label: "Designations", path: "/hrm/designations" },
+        can('employment-types-read') && { label: "Employment Types", path: "/hrm/employment-types" },
         canAny('shifts-read', 'holidays-read') && { label: "Shifts & Holidays", path: "/hrm/shifts-holidays" },
         canAny('payroll-read', 'self-payslips-read') && { label: "Payroll", path: "/hrm/payroll" },
         can('performance-read') && { label: "Performance", path: "/hrm/performance" },

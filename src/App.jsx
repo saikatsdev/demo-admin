@@ -187,6 +187,7 @@ import JobType from "./pages/auth/JobType";
 import HrmModulePlaceholder from "./pages/hrm/HrmModulePlaceholder";
 import Department from "./pages/team/department/Department";
 import Designation from "./pages/team/designation/Designation";
+import EmployeeType from "./pages/team/employee-type/EmployeeType";
 
 function App() {
     const dispatch         = useDispatch();
@@ -315,6 +316,8 @@ function App() {
                     <Route path="/hrm/departments" element={<Department/>} />
 
                     <Route path="/hrm/designations" element={<Designation/>} />
+
+                    <Route path="/hrm/employment-types" element={<EmployeeType/>} />
                     
                     <Route path="/hrm/shifts-holidays" element={<HrmModulePlaceholder title="Shifts and Holidays" description="Configure work shifts, grace periods, weekly offs, holiday calendars, and employee shift assignments." />} />
                     <Route path="/hrm/payroll" element={<HrmModulePlaceholder title="Payroll" description="Prepare salary structures, earnings, deductions, payroll periods, approvals, payments, and employee payslips." />} />
