@@ -340,16 +340,19 @@ export default function Designation() {
                                 <Input placeholder="e.g. SR-EXEC" maxLength={100} />
                             </Form.Item>
                         </Col>
+                        
                         <Col xs={24} md={12}>
                             <Form.Item name="name" label="Designation Name" rules={[{ required: true, whitespace: true, message: "Designation name is required" }]}>
                                 <Input placeholder="e.g. Senior Executive" maxLength={255} />
                             </Form.Item>
                         </Col>
+
                         <Col xs={24} md={12}>
                             <Form.Item name="department_id" label="Department">
                                 <Select allowClear showSearch optionFilterProp="label" placeholder="Select department" options={departmentOptions} />
                             </Form.Item>
                         </Col>
+                        
                         <Col xs={24} md={12}>
                             <Form.Item name="status" label="Status" rules={[{ required: true, message: "Status is required" }]}>
                                 <Select options={[

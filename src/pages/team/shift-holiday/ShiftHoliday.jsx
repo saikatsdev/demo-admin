@@ -168,8 +168,10 @@ export default function ShiftHoliday() {
         };
 
         setSubmitting(true);
+
         try {
             const url = editingItem ? `${endpoint}/${editingItem.id}` : endpoint;
+
             const response = editingItem ? await putData(url, payload) : await postData(url, payload);
 
             if (!response?.success) {
@@ -219,30 +221,120 @@ export default function ShiftHoliday() {
         ),
     };
 
-    const shiftColumns = [
-        { title: "SL", width: 65, render: (_, __, index) => ((pagination.current - 1) * pagination.pageSize) + index + 1 },
-        {
-            title: "Work Shift", key: "shift", width: 240,
-            render: (_, record) => <Space><Avatar shape="square" icon={<ClockCircleOutlined />} style={{ background: "#e6f4ff", color: "#1677ff" }} /><div><Text strong>{record.name}</Text><div><Text type="secondary">{record.code}</Text></div></div></Space>,
+    const shiftColumns = 
+    [
+        { 
+            title: "SL", 
+            width: 65, 
+            render: (_, __, index) => ((pagination.current - 1) * pagination.pageSize) + index + 1 
         },
-        { title: "Start Time", dataIndex: "start_time", width: 135, render: formatTime },
-        { title: "End Time", dataIndex: "end_time", width: 135, render: formatTime },
-        { title: "Grace", dataIndex: "grace_minutes", width: 110, render: (value) => `${value || 0} min` },
-        { title: "Break", dataIndex: "break_minutes", width: 110, render: (value) => `${value || 0} min` },
-        { title: "Status", dataIndex: "status", width: 110, render: (value) => <Tag color={value === "active" ? "green" : value === "draft" ? "gold" : "default"}>{value}</Tag> },
+        {
+            title: "Work Shift", 
+            key: "shift", 
+            width: 240,
+            render: (_, record) => 
+            <Space>
+                <Avatar shape="square" icon={<ClockCircleOutlined />} style={{ background: "#e6f4ff", color: "#1677ff" }} />
+                <div>
+                    <Text strong>
+                        {record.name}
+                    </Text>
+                    <div>
+                        <Text type="secondary">
+                            {record.code}
+                        </Text>
+                    </div>
+                </div>
+            </Space>,
+        },
+        { 
+            title: "Start Time", 
+            dataIndex: "start_time", 
+            width: 135, render: formatTime 
+        },
+        { 
+            title: "End Time", 
+            dataIndex: "end_time", 
+            width: 135, render: formatTime 
+        },
+        { 
+            title: "Grace", 
+            dataIndex: "grace_minutes", 
+            width: 110, 
+            render: (value) => `${value || 0} min` 
+        },
+        { 
+            title: "Break", 
+            dataIndex: "break_minutes", 
+            width: 110, 
+            render: (value) => `${value || 0} min` 
+        },
+        { 
+            title: "Status", 
+            dataIndex: "status", 
+            width: 110, 
+            render: (value) => 
+            <Tag color={value === "active" ? "green" : value === "draft" ? "gold" : "default"} style={{textTransform:"capitalize"}}>
+                {value}
+            </Tag> 
+        },
         actionColumn,
     ].filter(Boolean);
 
-    const holidayColumns = [
-        { title: "SL", width: 65, render: (_, __, index) => ((pagination.current - 1) * pagination.pageSize) + index + 1 },
-        {
-            title: "Holiday", key: "holiday", width: 250,
-            render: (_, record) => <Space><Avatar shape="square" icon={<CalendarOutlined />} style={{ background: "#fff1f0", color: "#cf1322" }} /><div><Text strong>{record.name}</Text><div><Text type="secondary" style={{ textTransform: "capitalize" }}>{record.type}</Text></div></div></Space>,
+    const holidayColumns = 
+    [
+        { 
+            title: "SL", 
+            width: 65, 
+            render: (_, __, index) => ((pagination.current - 1) * pagination.pageSize) + index + 1 
         },
-        { title: "Start Date", dataIndex: "start_date", width: 140, render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "End Date", dataIndex: "end_date", width: 140, render: (value) => dayjs(value).format("DD MMM YYYY") },
-        { title: "Description", dataIndex: "description", ellipsis: true, render: (value) => value || <Text type="secondary">—</Text> },
-        { title: "Status", dataIndex: "status", width: 110, render: (value) => <Tag color={value === "active" ? "green" : value === "draft" ? "gold" : "default"}>{value}</Tag> },
+        {
+            title: "Holiday", 
+            key: "holiday",
+            width: 250,
+            render: (_, record) => 
+            <Space>
+                <Avatar shape="square" icon={<CalendarOutlined />} style={{ background: "#fff1f0", color: "#cf1322" }} />
+                <div>
+                    <Text strong>
+                        {record.name}
+                    </Text>
+
+                    <div>
+                        <Text type="secondary" style={{ textTransform: "capitalize" }}>
+                            {record.type}
+                        </Text>
+                    </div>
+                </div>
+            </Space>,
+        },
+        { 
+            title: "Start Date", 
+            dataIndex: "start_date", 
+            width: 140, 
+            render: (value) => dayjs(value).format("DD MMM YYYY") 
+        },
+        { 
+            title: "End Date", 
+            dataIndex: "end_date", 
+            width: 140, 
+            render: (value) => dayjs(value).format("DD MMM YYYY") 
+        },
+        { 
+            title: "Description", 
+            dataIndex: "description", 
+            ellipsis: true, 
+            render: (value) => value || <Text type="secondary">—</Text> 
+        },
+        { 
+            title: "Status", 
+            dataIndex: "status", 
+            width: 110, 
+            render: (value) => 
+            <Tag color={value === "active" ? "green" : value === "draft" ? "gold" : "default"} style={{textTransform: "capitalize"}}>
+                {value}
+            </Tag> 
+        },
         actionColumn,
     ].filter(Boolean);
 
@@ -250,8 +342,15 @@ export default function ShiftHoliday() {
         <>
             {contextHolder}
             <div className="pagehead">
-                <div className="head-left"><h1 className="title">Shifts & Holidays</h1></div>
-                <div className="head-actions"><Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> }, { title: "HRM" }, { title: "Shifts & Holidays" }]} /></div>
+                <div className="head-left">
+                    <h1 className="title">
+                        Shifts & Holidays
+                    </h1>
+                </div>
+                
+                <div className="head-actions">
+                    <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> }, { title: "HRM" }, { title: "Shifts & Holidays" }]} />
+                </div>
             </div>
 
             <Card styles={{ body: { padding: 18 } }}>
@@ -261,9 +360,15 @@ export default function ShiftHoliday() {
                     <Col xs={24} xl={17}>
                         <Space wrap>
                             <Input allowClear prefix={<SearchOutlined />} placeholder={`Search ${isShift ? "work shifts" : "holidays"}`} value={query} onChange={(event) => setQuery(event.target.value)} style={{ width: 280 }} />
-                            {!isShift && <Select allowClear placeholder="All holiday types" value={holidayType} onChange={setHolidayType} style={{ width: 170 }} options={[{ value: "public", label: "Public" }, { value: "company", label: "Company" }, { value: "optional", label: "Optional" }]} />}
+
+                            {!isShift && 
+                            <Select allowClear placeholder="All holiday types" value={holidayType} onChange={setHolidayType} style={{ width: 170 }} options={[{ value: "public", label: "Public" }, { value: "company", label: "Company" }, { value: "optional", label: "Optional" }]} />}
+
                             <Select allowClear placeholder="All statuses" value={status} onChange={setStatus} style={{ width: 145 }} options={statusOptions} />
-                            <Tooltip title="Refresh"><Button icon={<ReloadOutlined />} loading={loading} onClick={fetchItems} /></Tooltip>
+
+                            <Tooltip title="Refresh">
+                                <Button icon={<ReloadOutlined />} loading={loading} onClick={fetchItems} />
+                            </Tooltip>
                         </Space>
                     </Col>
                     <Col xs={24} xl={7} style={{ textAlign: "right" }}>
@@ -274,28 +379,96 @@ export default function ShiftHoliday() {
                     </Col>
                 </Row>
 
-                <Table rowKey="id" bordered loading={loading} columns={isShift ? shiftColumns : holidayColumns} dataSource={items} scroll={{ x: 1000 }} pagination={{ current: pagination.current, pageSize: pagination.pageSize, total: pagination.total, showSizeChanger: true, showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`, onChange: (current, pageSize) => setPagination((previous) => ({ ...previous, current, pageSize })) }} />
+                <Table rowKey="id" bordered loading={loading} columns={isShift ? shiftColumns : holidayColumns} 
+                dataSource={items} 
+                scroll={{ x: 1000 }} 
+                pagination={{ 
+                    current        : pagination.current,
+                    pageSize       : pagination.pageSize,
+                    total          : pagination.total,
+                    showSizeChanger: true,
+                    showTotal      : (total, range) => `${range[0]}-${range[1]} of ${total}`,
+                    onChange       : (current, pageSize) => setPagination((previous) => ({ ...previous, current, pageSize }))
+                }} />
             </Card>
 
             <Modal destroyOnHidden open={modalOpen} title={`${editingItem ? "Edit" : "Create"} ${isShift ? "Work Shift" : "Holiday"}`} okText={editingItem ? "Update" : "Create"} confirmLoading={submitting} onOk={handleSubmit} onCancel={closeModal} width={760}>
                 <Form form={form} layout="vertical" requiredMark="optional" style={{ marginTop: 20 }}>
                     {isShift ? (
                         <Row gutter={16}>
-                            <Col xs={24} md={12}><Form.Item name="code" label="Shift Code" rules={[{ required: true, whitespace: true }]}><Input placeholder="e.g. GENERAL" maxLength={100} /></Form.Item></Col>
-                            <Col xs={24} md={12}><Form.Item name="name" label="Shift Name" rules={[{ required: true, whitespace: true }]}><Input placeholder="e.g. General Shift" maxLength={255} /></Form.Item></Col>
-                            <Col xs={24} md={12}><Form.Item name="start_time" label="Start Time" rules={[{ required: true }]}><TimePicker format="hh:mm A" style={{ width: "100%" }} /></Form.Item></Col>
-                            <Col xs={24} md={12}><Form.Item name="end_time" label="End Time" rules={[{ required: true }]}><TimePicker format="hh:mm A" style={{ width: "100%" }} /></Form.Item></Col>
-                            <Col xs={24} md={8}><Form.Item name="grace_minutes" label="Grace Minutes" rules={[{ required: true }]}><InputNumber min={0} max={1440} style={{ width: "100%" }} /></Form.Item></Col>
-                            <Col xs={24} md={8}><Form.Item name="break_minutes" label="Break Minutes" rules={[{ required: true }]}><InputNumber min={0} max={1440} style={{ width: "100%" }} /></Form.Item></Col>
-                            <Col xs={24} md={8}><Form.Item name="status" label="Status" rules={[{ required: true }]}><Select options={statusOptions} /></Form.Item></Col>
+                            <Col xs={24} md={12}>
+                                <Form.Item name="code" label="Shift Code" rules={[{ required: true, whitespace: true }]}>
+                                    <Input placeholder="e.g. GENERAL" maxLength={100} />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24} md={12}>
+                                <Form.Item name="name" label="Shift Name" rules={[{ required: true, whitespace: true }]}>
+                                    <Input placeholder="e.g. General Shift" maxLength={255} />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24} md={12}>
+                                <Form.Item name="start_time" label="Start Time" rules={[{ required: true }]}>
+                                    <TimePicker format="hh:mm A" style={{ width: "100%" }} />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24} md={12}>
+                                <Form.Item name="end_time" label="End Time" rules={[{ required: true }]}>
+                                    <TimePicker format="hh:mm A" style={{ width: "100%" }} />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24} md={8}>
+                                <Form.Item name="grace_minutes" label="Grace Minutes" rules={[{ required: true }]}>
+                                    <InputNumber min={0} max={1440} style={{ width: "100%" }} />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24} md={8}>
+                                <Form.Item name="break_minutes" label="Break Minutes" rules={[{ required: true }]}>
+                                    <InputNumber min={0} max={1440} style={{ width: "100%" }} />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24} md={8}>
+                                <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+                                    <Select options={statusOptions} />
+                                </Form.Item>
+                            </Col>
                         </Row>
                     ) : (
                         <Row gutter={16}>
-                            <Col xs={24} md={12}><Form.Item name="name" label="Holiday Name" rules={[{ required: true, whitespace: true }]}><Input placeholder="e.g. Eid Holiday" maxLength={255} /></Form.Item></Col>
-                            <Col xs={24} md={12}><Form.Item name="type" label="Holiday Type" rules={[{ required: true }]}><Select options={[{ value: "public", label: "Public" }, { value: "company", label: "Company" }, { value: "optional", label: "Optional" }]} /></Form.Item></Col>
-                            <Col xs={24}><Form.Item name="date_range" label="Holiday Date Range" rules={[{ required: true }]}><RangePicker format="DD MMM YYYY" style={{ width: "100%" }} /></Form.Item></Col>
-                            <Col xs={24}><Form.Item name="description" label="Description"><TextArea rows={3} maxLength={1000} showCount /></Form.Item></Col>
-                            <Col xs={24} md={12}><Form.Item name="status" label="Status" rules={[{ required: true }]}><Select options={statusOptions} /></Form.Item></Col>
+                            <Col xs={24} md={12}>
+                                <Form.Item name="name" label="Holiday Name" rules={[{ required: true, whitespace: true }]}>
+                                    <Input placeholder="e.g. Eid Holiday" maxLength={255} />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24} md={12}>
+                                <Form.Item name="type" label="Holiday Type" rules={[{ required: true }]}>
+                                    <Select options={[{ value: "public", label: "Public" }, { value: "company", label: "Company" }, { value: "optional", label: "Optional" }]} />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24}>
+                                <Form.Item name="date_range" label="Holiday Date Range" rules={[{ required: true }]}>
+                                    <RangePicker format="DD MMM YYYY" style={{ width: "100%" }} />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24}>
+                                <Form.Item name="description" label="Description">
+                                    <TextArea rows={3} maxLength={1000} showCount />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24} md={12}>
+                                <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+                                    <Select options={statusOptions} />
+                                </Form.Item>
+                            </Col>
                         </Row>
                     )}
                 </Form>

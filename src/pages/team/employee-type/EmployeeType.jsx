@@ -17,19 +17,18 @@ const getResponseMessage = (response, fallback) => {
 export default function EmployeeType() {
     useTitle("All Employment Types");
 
-    const { can }                     = usePermission();
-    const [form]                      = Form.useForm();
-    const [messageApi, contextHolder] = message.useMessage();
-
-    const [employmentTypes, setEmploymentTypes]       = useState([]);
-    const [loading, setLoading]                       = useState(false);
-    const [submitting, setSubmitting]                 = useState(false);
-    const [isModalOpen, setIsModalOpen]               = useState(false);
+    const { can }                                           = usePermission();
+    const [form]                                            = Form.useForm();
+    const [messageApi, contextHolder]                       = message.useMessage();
+    const [employmentTypes, setEmploymentTypes]             = useState([]);
+    const [loading, setLoading]                             = useState(false);
+    const [submitting, setSubmitting]                       = useState(false);
+    const [isModalOpen, setIsModalOpen]                     = useState(false);
     const [editingEmploymentType, setEditingEmploymentType] = useState(null);
-    const [query, setQuery]                           = useState("");
-    const [debouncedQuery, setDebouncedQuery]         = useState("");
-    const [status, setStatus]                         = useState();
-    const [pagination, setPagination]                 = useState({ current: 1, pageSize: 20, total: 0 });
+    const [query, setQuery]                                 = useState("");
+    const [debouncedQuery, setDebouncedQuery]               = useState("");
+    const [status, setStatus]                               = useState();
+    const [pagination, setPagination]                       = useState({ current: 1, pageSize: 20, total: 0 });
 
     const canCreate = can("employment-types-create");
     const canUpdate = can("employment-types-update");

@@ -111,11 +111,11 @@ export default function Department() {
     const openEdit = (department) => {
         setEditingDepartment(department);
         form.setFieldsValue({
-            code: department.code,
-            name: department.name,
-            parent_id: department.parent_id || undefined,
+            code        : department.code,
+            name        : department.name,
+            parent_id   : department.parent_id || undefined,
             head_user_id: department.head_user_id || undefined,
-            status: department.status,
+            status      : department.status,
         });
         setIsModalOpen(true);
     };
@@ -130,18 +130,16 @@ export default function Department() {
     const handleSubmit = async () => {
         const values = await form.validateFields();
         const payload = {
-            code: values.code.trim(),
-            name: values.name.trim(),
-            parent_id: values.parent_id || null,
+            code        : values.code.trim(),
+            name        : values.name.trim(),
+            parent_id   : values.parent_id || null,
             head_user_id: values.head_user_id || null,
-            status: values.status,
+            status      : values.status,
         };
 
         setSubmitting(true);
         try {
-            const response = editingDepartment
-                ? await putData(`/admin/departments/${editingDepartment.id}`, payload)
-                : await postData("/admin/departments", payload);
+            const response = editingDepartment ? await putData(`/admin/departments/${editingDepartment.id}`, payload) : await postData("/admin/departments", payload);
 
             if (!response?.success) {
                 messageApi.error(getResponseMessage(response, "Unable to save department"));
@@ -173,7 +171,8 @@ export default function Department() {
         }
     };
 
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             width: 70,
@@ -344,21 +343,25 @@ export default function Department() {
                                 <Input placeholder="e.g. SALES" maxLength={100} />
                             </Form.Item>
                         </Col>
+
                         <Col xs={24} md={12}>
                             <Form.Item name="name" label="Department Name" rules={[{ required: true, whitespace: true, message: "Department name is required" }]}>
                                 <Input placeholder="e.g. Sales" maxLength={255} />
                             </Form.Item>
                         </Col>
+
                         <Col xs={24} md={12}>
                             <Form.Item name="parent_id" label="Parent Department">
                                 <Select allowClear showSearch optionFilterProp="label" placeholder="Select parent department" options={parentOptions} />
                             </Form.Item>
                         </Col>
+
                         <Col xs={24} md={12}>
                             <Form.Item name="head_user_id" label="Department Head">
                                 <Select allowClear showSearch optionFilterProp="label" placeholder="Select department head" options={headOptions} />
                             </Form.Item>
                         </Col>
+                        
                         <Col xs={24} md={12}>
                             <Form.Item name="status" label="Status" rules={[{ required: true, message: "Status is required" }]}>
                                 <Select options={[
