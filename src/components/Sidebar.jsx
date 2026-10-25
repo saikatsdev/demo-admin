@@ -15,6 +15,7 @@ const Sidebar = ({ onMenuSelect }) => {
     const {settings} = useAppSettings();
 
     const can = (permission) => permissions?.includes(permission);
+    const canAny = (...requiredPermissions) => requiredPermissions.some(can);
 
     const { hasAnyRole } = useRole();
         
@@ -34,14 +35,21 @@ const Sidebar = ({ onMenuSelect }) => {
         can('meta-ad-account-read') && { label: "Meta Ad Account", path: "/meta-ad-account" },
     ].filter(Boolean);
 
-    const teamSubmenus = [
-        can('teams-read') && { label: "Teams", path: "/teams" },
-        can('orders-team-list-read') && { label: "Team Attendance", path: "/team/attendance" },
+    const hrmSubmenus = [
+        can('hrm-dashboard-read') && { label: "HRM Dashboard", path: "/teams" },
+        can('employees-read') && { label: "Employees", path: "/employee" },
+        canAny('attendance-read', 'attendance-self-read') && { label: "Attendance", path: "/team/attendance" },
+        canAny('leave-requests-read', 'leave-approvals-read') && { label: "Leave Management", path: "/hrm/leaves" },
+        can('departments-read') && { label: "Departments", path: "/hrm/departments" },
+        can('designations-read') && { label: "Designations", path: "/hrm/designations" },
+        canAny('shifts-read', 'holidays-read') && { label: "Shifts & Holidays", path: "/hrm/shifts-holidays" },
+        canAny('payroll-read', 'self-payslips-read') && { label: "Payroll", path: "/hrm/payroll" },
+        can('performance-read') && { label: "Performance", path: "/hrm/performance" },
         can('orders-team-list-read') && { label: "Prepared Order List", path: "/prepared/list" },
         can('orders-team-list-read') && { label: "Unprepare Order List", path: "/unprepared/list" },
         can('orders-team-list-read') && { label: "Assign Order List", path: "/assign-by-list" },
         can('orders-team-list-read') && { label: "Unassign Order List", path: "/unassign/list" },
-        can('orders-team-settings-read') && { label: "Team Settings", path: "/team-settings" },
+        canAny('hr-settings-read', 'orders-team-settings-read') && { label: "HR Settings", path: "/team-settings" },
     ].filter(Boolean);
 
     const productSubmenus = [
@@ -172,10 +180,10 @@ const Sidebar = ({ onMenuSelect }) => {
             submenus: metaAdsSubmenus
         },
 
-        teamSubmenus.length > 0 && {
-            title: "Team Management",
+        hrmSubmenus.length > 0 && {
+            title: "HRM",
             icon: <TeamOutlined />,
-            submenus: teamSubmenus
+            submenus: hrmSubmenus
         },
 
         mediaMenu,

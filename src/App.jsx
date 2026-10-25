@@ -184,6 +184,8 @@ import EditCrossSell from "./pages/product/crosssell/EditCrossSell";
 import IncompleteOrderReport from "./pages/report/IncompleteOrderReport";
 import CourierEntryReport from "./pages/order/CourierEntryReport";
 import JobType from "./pages/auth/JobType";
+import HrmModulePlaceholder from "./pages/hrm/HrmModulePlaceholder";
+import Department from "./pages/team/department/Department";
 
 function App() {
     const dispatch         = useDispatch();
@@ -306,6 +308,15 @@ function App() {
                     <Route path="/team/attendance/edit/:id" element={<EditAttendance />} />
 
                     <Route path="/team-settings" element={<TeamSetting/>}/>
+
+                    <Route path="/hrm/leaves" element={<HrmModulePlaceholder title="Leave Management" description="Manage leave types, employee balances, requests, approvals, cancellations, and the team leave calendar." />} />
+
+                    <Route path="/hrm/departments" element={<Department/>} />
+
+                    <Route path="/hrm/designations" element={<HrmModulePlaceholder title="Designations" description="Manage employee designations, grades, department relationships, and designation status." />} />
+                    <Route path="/hrm/shifts-holidays" element={<HrmModulePlaceholder title="Shifts and Holidays" description="Configure work shifts, grace periods, weekly offs, holiday calendars, and employee shift assignments." />} />
+                    <Route path="/hrm/payroll" element={<HrmModulePlaceholder title="Payroll" description="Prepare salary structures, earnings, deductions, payroll periods, approvals, payments, and employee payslips." />} />
+                    <Route path="/hrm/performance" element={<HrmModulePlaceholder title="Performance" description="Set employee targets, combine ecommerce performance metrics, run review cycles, and record manager ratings." />} />
 
                     <Route path="/prepared/list" element={<PrepareOrderList/>} />
                     <Route path="/unprepared/list" element={<UnpreparedOrderList/>} />
