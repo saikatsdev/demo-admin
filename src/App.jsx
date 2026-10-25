@@ -189,6 +189,8 @@ import Department from "./pages/team/department/Department";
 import Designation from "./pages/team/designation/Designation";
 import EmployeeType from "./pages/team/employee-type/EmployeeType";
 import ShiftHoliday from "./pages/team/shift-holiday/ShiftHoliday";
+import EmployeeHrmProfile from "./pages/auth/employee/EmployeeHrmProfile";
+import HrmEmployee from "./pages/team/employee/HrmEmployee";
 
 function App() {
     const dispatch         = useDispatch();
@@ -252,6 +254,8 @@ function App() {
                     <Route path="/employee" element={<Employee />} />
                     <Route path="/add/employee" element={<AddEmployee />} />
                     <Route path="/edit/employee/:id" element={<EditEmployee />} />
+                    <Route path="/hrm/employees" element={<HrmEmployee />} />
+                    <Route path="/hrm/employees/:id/profile" element={<EmployeeHrmProfile />} />
 
                     <Route path="/system/user-management" element={<Profile />} />
 

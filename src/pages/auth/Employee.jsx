@@ -9,7 +9,7 @@ import { usePermission } from "../../hooks/usePermission";
 
 const { Title, Text } = Typography;
 
-export default function Employee() {
+export default function Employee({ renderLeadingAction = null }) {
     // Hook
     useTitle("Employees");
 
@@ -80,7 +80,8 @@ export default function Employee() {
     };
 
     // Table Columns
-    const columns = [
+    const columns = 
+    [
         {
             title: "SL",
             key: "sl",
@@ -250,11 +251,12 @@ export default function Employee() {
         {
             title: "Action",
             key: "operation",
-            width: 160,
+            width: renderLeadingAction ? 210 : 160,
             fixed: 'right',
             align: 'center',
             render: (_, record) => (
                 <Space>
+                    {renderLeadingAction?.(record)}
                     <Tooltip title="Edit Employee">
                         <Button 
                             icon={<EditOutlined />} 

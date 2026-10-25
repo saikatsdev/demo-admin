@@ -37,7 +37,7 @@ const Sidebar = ({ onMenuSelect }) => {
 
     const hrmSubmenus = [
         can('hrm-dashboard-read') && { label: "HRM Dashboard", path: "/teams" },
-        can('employees-read') && { label: "Employees", path: "/employee" },
+        can('employees-read') && { label: "Employees", path: "/hrm/employees" },
         canAny('attendance-read', 'attendance-self-read') && { label: "Attendance", path: "/team/attendance" },
         canAny('leave-requests-read', 'leave-approvals-read') && { label: "Leave Management", path: "/hrm/leaves" },
         can('departments-read') && { label: "Departments", path: "/hrm/departments" },

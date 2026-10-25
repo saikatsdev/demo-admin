@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Table, Typography, Divider, Row, Col, Card, Avatar, Tag, Space, Progress, Button, Tooltip, Badge, Select, Input, DatePicker, Statistic, Modal, Form, InputNumber } from "antd";
-import { UserOutlined, TeamOutlined, DollarOutlined, BarChartOutlined, ReloadOutlined, FireOutlined, ThunderboltOutlined, HistoryOutlined, ClockCircleOutlined, SearchOutlined, ArrowLeftOutlined,MailOutlined,EditOutlined} from "@ant-design/icons";
+import { Table, Typography, Divider, Row, Col, Card, Avatar, Tag, Space, Progress, Button, Tooltip, Badge, Select, Input, DatePicker, Statistic, Modal, Form, InputNumber, Empty, Pagination, Segmented } from "antd";
+import { UserOutlined, TeamOutlined, DollarOutlined, BarChartOutlined, ReloadOutlined, FireOutlined, ThunderboltOutlined, HistoryOutlined, ClockCircleOutlined, SearchOutlined, ArrowLeftOutlined,MailOutlined,EditOutlined, AppstoreOutlined, UnorderedListOutlined, CheckCircleFilled} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -34,7 +34,7 @@ const formatMinutes = (minutes) => {
 
 export default function Team() {
     // Hook
-    useTitle("Team Dashboard");
+    useTitle("HRM Dashboard");
 
     // States
     const [loading, setLoading]           = useState(false);
@@ -43,7 +43,8 @@ export default function Team() {
     const [filter, setFilter]             = useState("");
     const [dateRange, setDateRange]       = useState(null);
     const [searchKey, setSearchKey]       = useState("");
-    const [pagination, setPagination]     = useState({ current: 1, pageSize: 25 });
+    const [pagination, setPagination]     = useState({ current: 1, pageSize: 12 });
+    const [viewMode, setViewMode]         = useState("cards");
     
     // Modal & Form state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -183,11 +184,7 @@ export default function Team() {
                         )}
                         
                         <Text type="secondary" className="attendance-time">
-                            Working: {att.is_checked_out
-                                ? formatMinutes(att.working_minutes)
-                                : att.check_in_at
-                                    ? formatMinutes(dayjs().diff(dayjs(att.check_in_at), "minute"))
-                                    : formatMinutes(att.working_minutes)}
+                            Working: {att.is_checked_out ? formatMinutes(att.working_minutes) : att.check_in_at ? formatMinutes(dayjs().diff(dayjs(att.check_in_at), "minute")) : formatMinutes(att.working_minutes)}
                         </Text>
                     </div>
                 );
@@ -350,6 +347,11 @@ export default function Team() {
         },
     ];
 
+    const visibleEmployees = employees.slice(
+        (pagination.current - 1) * pagination.pageSize,
+        pagination.current * pagination.pageSize
+    );
+
     return (
         <div className="teamWrapper">
             <div className="topBar no-print">
@@ -358,8 +360,8 @@ export default function Team() {
                         <TeamOutlined />
                     </span>
                     <div>
-                        <Title level={4} style={{ margin: 0 }}>Team Dashboard</Title>
-                        <Text type="secondary">Employee assigned & prepared order performance intelligence</Text>
+                        <Title level={4} style={{ margin: 0 }}>HRM Dashboard</Title>
+                        <Text type="secondary">Monitor workforce attendance, workload and operational performance</Text>
                     </div>
                 </div>
                 <div className="team-page-actions">
@@ -468,30 +470,184 @@ export default function Team() {
                 </div>
             )}
 
-            <div className="tableSection">
-                <div className="tableSection__head">
-                    <span>Team Performance</span>
-                    <Text type="secondary">{employees.length} employees</Text>
+            <div className="performance-section">
+                <div className="performance-section__head">
+                    <div>
+                        <Title level={5} style={{ margin: 0 }}>Employee Performance</Title>
+                        <Text type="secondary">Attendance, workload and preparation efficiency at a glance</Text>
+                    </div>
+                    <div className="performance-section__tools">
+                        <Tag className="employee-count-tag">{employees.length} employees</Tag>
+                        <Segmented
+                            value={viewMode}
+                            onChange={setViewMode}
+                            options={[
+                                { label: "Cards", value: "cards", icon: <AppstoreOutlined /> },
+                                { label: "Detailed Table", value: "table", icon: <UnorderedListOutlined /> },
+                            ]}
+                        />
+                    </div>
                 </div>
-                <Table
-                    rowKey="id"
-                    columns={columns}
-                    dataSource={employees}
-                    loading={loading}
-                    scroll={{ x: 1400, y: "calc(100vh - 360px)" }}
-                    pagination={{
-                        current: pagination.current,
-                        pageSize: pagination.pageSize,
-                        total: employees.length,
-                        onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
-                        showSizeChanger: true,
-                        pageSizeOptions: [10, 25, 50, 100],
-                        showQuickJumper: true,
-                        showTotal: (total) => `${total} employees`,
-                        size: "small",
-                        className: "custom-pagination",
-                    }}
-                />
+
+                {viewMode === "cards" ? (
+                    <div className="employee-card-area">
+                        {visibleEmployees.length ? (
+                            <Row gutter={[16, 16]}>
+                                {visibleEmployees.map((employee) => {
+                                    const attendance = employee.attendance_today || {};
+                                    const assigned = employee.assigned_metrics || {};
+                                    const prepared = employee.prepared_metrics || {};
+                                    const preparationRate = Number(assigned.preparation_rate || 0);
+
+                                    return (
+                                        <Col xs={24} md={12} xl={8} xxl={6} key={employee.id}>
+                                            <Card bordered={false} className="employee-performance-card">
+                                                <div className="employee-card__header">
+                                                    <div className="employee-card__identity">
+                                                        <Badge dot status={attendance.is_checked_in ? "success" : "default"} offset={[-3, 42]}>
+                                                            <Avatar size={50} src={employee.img_path || undefined} icon={<UserOutlined />} />
+                                                        </Badge>
+                                                        <div className="employee-card__name-block">
+                                                            <Text strong ellipsis={{ tooltip: employee.username }}>{employee.username}</Text>
+                                                            <span>{employee.phone_number || employee.email || `Employee #${employee.id}`}</span>
+                                                        </div>
+                                                    </div>
+                                                    <Tooltip title="Edit Employee Settings">
+                                                        <Button type="text" className="employee-card__edit" icon={<EditOutlined />} onClick={() => handleEditClick(employee)} />
+                                                    </Tooltip>
+                                                </div>
+
+                                                <div className="employee-card__meta">
+                                                    <div className={`attendance-pill ${attendance.is_checked_in ? "is-online" : ""}`}>
+                                                        {attendance.is_checked_in ? <CheckCircleFilled /> : <ClockCircleOutlined />}
+                                                        {attendance.is_checked_in ? "Checked In" : "Not Checked In"}
+                                                    </div>
+                                                    <div className="employee-card__roles">
+                                                        {employee.roles?.slice(0, 2).map((role) => <Tag key={role.id}>{role.display_name || role.name}</Tag>)}
+                                                    </div>
+                                                </div>
+
+                                                <div className="employee-card__metrics">
+                                                    <div>
+                                                        <span>
+                                                            Assigned
+                                                        </span>
+
+                                                        <strong>
+                                                            {assigned.total_orders || 0}
+                                                        </strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <span>
+                                                            Prepared
+                                                        </span>
+
+                                                        <strong>
+                                                            {assigned.prepared_orders || 0}
+                                                        </strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <span>
+                                                            Today
+                                                        </span>
+
+                                                        <strong>
+                                                            {prepared.prepared_today || 0}
+                                                        </strong>
+                                                    </div>
+                                                </div>
+
+                                                <div className="employee-card__progress">
+                                                    <div>
+                                                        <Text type="secondary">
+                                                            Preparation efficiency
+                                                        </Text>
+
+                                                        <Text strong>
+                                                            {preparationRate}%
+                                                        </Text>
+                                                    </div>
+
+                                                    <Progress percent={preparationRate} showInfo={false} strokeColor={{ "0%": "#2563eb", "100%": "#14b8a6" }} trailColor="#eaf0f6" />
+                                                </div>
+
+                                                <div className="employee-card__footer">
+                                                    <div>
+                                                        <span>
+                                                            Working time
+                                                        </span>
+
+                                                        <strong>
+                                                            {attendance.check_in_at && !attendance.is_checked_out ? formatMinutes(dayjs().diff(dayjs(attendance.check_in_at), "minute")) : formatMinutes(attendance.working_minutes)}
+                                                        </strong>
+                                                    </div>
+
+                                                    <div>
+                                                        <span>
+                                                            Assigned value
+                                                        </span>
+                                                        
+                                                        <strong>
+                                                            {formatMoney(assigned.total_payable_price)}
+                                                        </strong>
+                                                    </div>
+                                                </div>
+
+                                                {!!assigned.order_statuses?.length && (
+                                                    <div className="employee-card__statuses">
+                                                        {assigned.order_statuses.slice(0, 4).map((status) => (
+                                                            <Tag key={status.id} style={{ background: status.bg_color || "#eef2f7", color: status.text_color || "#475569" }}>
+                                                                {status.name} <b>{status.orders_count}</b>
+                                                            </Tag>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </Card>
+                                        </Col>
+                                    );
+                                })}
+                            </Row>
+                        ) : <Empty description="No employee performance found" />}
+
+                        {employees.length > 0 && (
+                            <div className="employee-card-pagination">
+                                <Pagination
+                                    current={pagination.current}
+                                    pageSize={pagination.pageSize}
+                                    total={employees.length}
+                                    onChange={(current, pageSize) => setPagination({ current, pageSize })}
+                                    showSizeChanger
+                                    pageSizeOptions={[12, 24, 48, 96]}
+                                    showTotal={(total) => `${total} employees`}
+                                />
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="tableSection tableSection--embedded">
+                        <Table
+                            rowKey="id"
+                            columns={columns}
+                            dataSource={employees}
+                            loading={loading}
+                            scroll={{ x: 1400, y: "calc(100vh - 360px)" }}
+                            pagination={{
+                                current: pagination.current,
+                                pageSize: pagination.pageSize,
+                                total: employees.length,
+                                onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
+                                showSizeChanger: true,
+                                pageSizeOptions: [12, 24, 48, 96],
+                                showQuickJumper: true,
+                                showTotal: (total) => `${total} employees`,
+                                size: "small",
+                                className: "custom-pagination",
+                            }}
+                        />
+                    </div>
+                )}
             </div>
 
             <Modal
