@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getDatas, postData } from "../../../../api/common/common";
 import useTitle from "../../../../hooks/useTitle";
 import { Breadcrumb, Button, Col, DatePicker, Input, message, Modal, Row, Select, Table, Tooltip } from "antd";
-import {ArrowLeftOutlined,CloseCircleOutlined,EnvironmentOutlined,EyeOutlined,SearchOutlined,UserSwitchOutlined,ShoppingOutlined} from "@ant-design/icons";
+import {ArrowLeftOutlined,CloseCircleOutlined,CopyOutlined,CrownOutlined,EnvironmentOutlined,EyeOutlined,SearchOutlined,StarOutlined,UserAddOutlined,UserSwitchOutlined,ShoppingOutlined,TeamOutlined,WhatsAppOutlined} from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import dayjs from "dayjs";
 import "./OrderList.css";
@@ -23,6 +23,12 @@ export default function OrderList() {
     useTitle("UnAssign Order List");
 
     const [orders, setOrders] = useState([]);
+    const [customerTypeCounts, setCustomerTypeCounts] = useState({
+        new: 0,
+        regular: 0,
+        vip: 0,
+        premiumVip: 0,
+    });
     const [loading, setLoading] = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
     const [pagination, setPagination] = useState({
@@ -33,6 +39,9 @@ export default function OrderList() {
     const [selectedRowKeys, setSelectedRowKeys]   = useState([]);
     const [searchKey, setSearchKey]               = useState("");
     const [dateRange, setDateRange]               = useState(null);
+    const [customerTypes, setCustomerTypes]       = useState([]);
+    const [customerTypesLoading, setCustomerTypesLoading] = useState(false);
+    const [customerTypeId, setCustomerTypeId]     = useState(null);
     const [assignModalOpen, setAssignModalOpen]   = useState(false);
     const [employees, setEmployees]               = useState([]);
     const [employeeLoading, setEmployeeLoading]   = useState(false);
@@ -52,7 +61,46 @@ export default function OrderList() {
         setPreviewOrder(null);
     };
 
-    const columns = [
+    const getWhatsAppNumber = (phoneNumber) => {
+        const digits = String(phoneNumber || "").replace(/\D/g, "");
+        if (digits.startsWith("880")) return digits;
+        if (digits.startsWith("0")) return `88${digits}`;
+        if (digits.startsWith("1")) return `880${digits}`;
+        return digits;
+    };
+
+    const openWhatsApp = (phoneNumber) => {
+        const whatsappNumber = getWhatsAppNumber(phoneNumber);
+        if (!whatsappNumber) return;
+        window.open(`https://wa.me/${whatsappNumber}`, "_blank", "noopener,noreferrer");
+    };
+
+    const copyPhoneNumber = async (phoneNumber) => {
+        if (!phoneNumber) return;
+
+        try {
+            const value = String(phoneNumber);
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(value);
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = value;
+                textArea.style.position = "fixed";
+                textArea.style.opacity = "0";
+                document.body.appendChild(textArea);
+                textArea.select();
+                const copied = document.execCommand("copy");
+                document.body.removeChild(textArea);
+                if (!copied) throw new Error("Copy command failed");
+            }
+            messageApi.success("Phone number copied");
+        } catch {
+            messageApi.error("Could not copy phone number");
+        }
+    };
+
+    const columns = 
+    [
         {
             title: "SL",
             key: "sl",
@@ -74,9 +122,7 @@ export default function OrderList() {
                 <div className="ual-invoice">
                     <span className="ual-invoice__no">{record.invoice_number || "—"}</span>
                     <span className="ual-invoice__date">
-                        {record.created_at
-                            ? dayjs(record.created_at).format("DD MMM YYYY, hh:mm A")
-                            : "—"}
+                        {record.created_at ? dayjs(record.created_at).format("DD MMM YYYY, hh:mm A") : "—"}
                     </span>
                 </div>
             ),
@@ -85,25 +131,65 @@ export default function OrderList() {
             title: "Customer",
             key: "customer",
             width: 240,
-            render: (_, record) => (
-                <div className="ual-customer">
-                    <span className="ual-customer__name">{record.customer_name || "—"}</span>
-                    <span className="ual-customer__phone">{record.phone_number || "—"}</span>
-                    <div className="ual-customer__meta">
-                        {record.district?.name && (
-                            <span className="ual-customer__district">
-                                <EnvironmentOutlined style={{ fontSize: 10 }} />
-                                {record.district.name}
+            render: (_, record) => {
+                const customerType = record.customer_type?.name || record.customer_type;
+                const customerTypeClass = String(customerType || "")
+                    .trim()
+                    .toLowerCase()
+                    .replace(/\s+/g, "-");
+
+                return (
+                    <div className="ual-customer">
+                        <span className="ual-customer__name">{record.customer_name || "—"}</span>
+                        <div className="ual-customer__phone-row">
+                            <span className="ual-customer__phone">{record.phone_number || "—"}</span>
+                            {record.phone_number && (
+                                <span className="ual-customer__phone-actions">
+                                    <Tooltip title="Open in WhatsApp">
+                                        <Button
+                                            type="text"
+                                            size="small"
+                                            className="ual-phone-action ual-phone-action--whatsapp"
+                                            icon={<WhatsAppOutlined />}
+                                            aria-label={`Open WhatsApp for ${record.phone_number}`}
+                                            onClick={() => openWhatsApp(record.phone_number)}
+                                        />
+                                    </Tooltip>
+                                    <Tooltip title="Copy phone number">
+                                        <Button
+                                            type="text"
+                                            size="small"
+                                            className="ual-phone-action ual-phone-action--copy"
+                                            icon={<CopyOutlined />}
+                                            aria-label={`Copy phone number ${record.phone_number}`}
+                                            onClick={() => copyPhoneNumber(record.phone_number)}
+                                        />
+                                    </Tooltip>
+                                </span>
+                            )}
+                        </div>
+                        {customerType && (
+                            <span className={`ual-customer-type ual-customer-type--${customerTypeClass}`}>
+                                <span className="ual-customer-type__dot" aria-hidden />
+                                {customerType}
                             </span>
                         )}
-                        {record.address_details && (
-                            <Tooltip title={record.address_details}>
-                                <span className="ual-customer__address">{record.address_details}</span>
-                            </Tooltip>
-                        )}
+                        <div className="ual-customer__meta">
+                            {record.district?.name && (
+                                <span className="ual-customer__district">
+                                    <EnvironmentOutlined style={{ fontSize: 10 }} />
+                                    {record.district.name}
+                                </span>
+                            )}
+                            {record.address_details && (
+                                <Tooltip title={record.address_details}>
+                                    <span className="ual-customer__address">{record.address_details}</span>
+                                </Tooltip>
+                            )}
+                        </div>
                     </div>
-                </div>
-            ),
+                );
+            },
         },
         {
             title: "Pricing",
@@ -153,10 +239,7 @@ export default function OrderList() {
             render: (_, record) => {
                 const payable = parseAmount(record.payable_price);
                 const advance = parseAmount(record.advance_payment);
-                const due =
-                    record.due !== undefined && record.due !== null
-                        ? parseAmount(record.due)
-                        : Math.max(payable - advance, 0);
+                const due     = record.due !== undefined && record.due !== null ? parseAmount(record.due) : Math.max(payable - advance, 0);
 
                 return (
                     <div className="ual-finance">
@@ -243,12 +326,7 @@ export default function OrderList() {
             align: "center",
             render: (_, record) => (
                 <Tooltip title="View order">
-                    <Button
-                        type="text"
-                        className="ual-view-btn"
-                        icon={<EyeOutlined />}
-                        onClick={() => openPreview(record)}
-                    />
+                    <Button type="text" className="ual-view-btn" icon={<EyeOutlined />} onClick={() => openPreview(record)}/>
                 </Tooltip>
             ),
         },
@@ -266,16 +344,59 @@ export default function OrderList() {
             if (filters.search_key) params.search_key = filters.search_key;
             if (filters.from_date) params.from_date = filters.from_date;
             if (filters.to_date) params.to_date = filters.to_date;
+            if (filters.customer_type_id) params.customer_type_id = filters.customer_type_id;
 
             const res = await getDatas("/admin/followup/list", params);
 
             if (res && res?.success) {
-                const meta = res?.result?.meta || {};
-                setOrders(res?.result?.data || []);
+                const result = res?.result || {};
+                const meta = result.meta || {};
+                const orderData = result.data || [];
+                const groupedCounts = result.customer_type_counts || result.customer_types_count || result.customer_type_count;
+                const counts = { new: 0, regular: 0, vip: 0, premiumVip: 0 };
+
+                if (
+                    result.new_customers !== undefined ||
+                    result.regular_customers !== undefined ||
+                    result.vip_customers !== undefined ||
+                    result.premium_vip_customers !== undefined
+                ) {
+                    counts.new = Number(result.new_customers || 0);
+                    counts.regular = Number(result.regular_customers || 0);
+                    counts.vip = Number(result.vip_customers || 0);
+                    counts.premiumVip = Number(result.premium_vip_customers || 0);
+                } else if (Array.isArray(groupedCounts)) {
+                    groupedCounts.forEach((item) => {
+                        const type = String(item?.name || item?.customer_type || "").trim().toLowerCase();
+                        const countKey = type === "premium vip" ? "premiumVip" : type;
+                        if (Object.prototype.hasOwnProperty.call(counts, countKey)) {
+                            counts[countKey] = Number(item?.count ?? item?.orders_count ?? 0);
+                        }
+                    });
+                } else if (groupedCounts && typeof groupedCounts === "object") {
+                    counts.new = Number(groupedCounts.new ?? groupedCounts.new_count ?? 0);
+                    counts.regular = Number(groupedCounts.regular ?? groupedCounts.regular_count ?? 0);
+                    counts.vip = Number(groupedCounts.vip ?? groupedCounts.vip_count ?? 0);
+                    counts.premiumVip = Number(
+                        groupedCounts.premiumVip ??
+                        groupedCounts.premium_vip ??
+                        groupedCounts.premium_vip_count ??
+                        0
+                    );
+                } else {
+                    orderData.forEach((order) => {
+                        const type = String(order?.customer_type?.name || order?.customer_type || "").trim().toLowerCase();
+                        const countKey = type === "premium vip" ? "premiumVip" : type;
+                        if (Object.prototype.hasOwnProperty.call(counts, countKey)) counts[countKey] += 1;
+                    });
+                }
+
+                setOrders(orderData);
+                setCustomerTypeCounts(counts);
                 setPagination({
                     current: meta.current_page || page,
                     pageSize: meta.per_page || pageSize,
-                    total: meta.total || 0,
+                    total: meta.total ?? result.orders_count ?? orderData.length,
                 });
             }
         } catch (error) {
@@ -290,6 +411,7 @@ export default function OrderList() {
         if (searchKey.trim()) filters.search_key = searchKey.trim();
         if (dateRange && dateRange[0]) filters.from_date = dateRange[0].format("YYYY-MM-DD");
         if (dateRange && dateRange[1]) filters.to_date = dateRange[1].format("YYYY-MM-DD");
+        if (customerTypeId) filters.customer_type_id = customerTypeId;
         return filters;
     };
 
@@ -300,6 +422,7 @@ export default function OrderList() {
     const handleReset = () => {
         setSearchKey("");
         setDateRange(null);
+        setCustomerTypeId(null);
         getOrders(1, pagination.pageSize, {});
     };
 
@@ -319,6 +442,20 @@ export default function OrderList() {
             console.log(error);
         } finally {
             setEmployeeLoading(false);
+        }
+    };
+
+    const fetchCustomerTypes = async () => {
+        try {
+            setCustomerTypesLoading(true);
+            const res = await getDatas("/admin/customer-types/list");
+            if (res?.success) {
+                setCustomerTypes(Array.isArray(res.result) ? res.result : res?.result?.data || []);
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setCustomerTypesLoading(false);
         }
     };
 
@@ -372,6 +509,7 @@ export default function OrderList() {
 
     useEffect(() => {
         getOrders(pagination.current, pagination.pageSize);
+        fetchCustomerTypes();
     }, []);
 
     return (
@@ -407,6 +545,38 @@ export default function OrderList() {
                         </p>
                     </div>
                 </article>
+                <article className="ual-stat-card ual-stat-card--new">
+                    <div className="ual-stat-card__icon" aria-hidden><UserAddOutlined /></div>
+                    <div className="ual-stat-card__content">
+                        <p className="ual-stat-card__label">New Customers</p>
+                        <p className="ual-stat-card__value">{loading ? "—" : customerTypeCounts.new.toLocaleString()}</p>
+                        <p className="ual-stat-card__meta">Orders from new customers</p>
+                    </div>
+                </article>
+                <article className="ual-stat-card ual-stat-card--regular">
+                    <div className="ual-stat-card__icon" aria-hidden><TeamOutlined /></div>
+                    <div className="ual-stat-card__content">
+                        <p className="ual-stat-card__label">Regular Customers</p>
+                        <p className="ual-stat-card__value">{loading ? "—" : customerTypeCounts.regular.toLocaleString()}</p>
+                        <p className="ual-stat-card__meta">Orders from regular customers</p>
+                    </div>
+                </article>
+                <article className="ual-stat-card ual-stat-card--vip">
+                    <div className="ual-stat-card__icon" aria-hidden><CrownOutlined /></div>
+                    <div className="ual-stat-card__content">
+                        <p className="ual-stat-card__label">VIP Customers</p>
+                        <p className="ual-stat-card__value">{loading ? "—" : customerTypeCounts.vip.toLocaleString()}</p>
+                        <p className="ual-stat-card__meta">Orders from VIP customers</p>
+                    </div>
+                </article>
+                <article className="ual-stat-card ual-stat-card--premium-vip">
+                    <div className="ual-stat-card__icon" aria-hidden><StarOutlined /></div>
+                    <div className="ual-stat-card__content">
+                        <p className="ual-stat-card__label">Premium VIP</p>
+                        <p className="ual-stat-card__value">{loading ? "—" : customerTypeCounts.premiumVip.toLocaleString()}</p>
+                        <p className="ual-stat-card__meta">Orders from premium VIP customers</p>
+                    </div>
+                </article>
             </div>
 
             <div className="ual-toolbar">
@@ -420,23 +590,32 @@ export default function OrderList() {
                         allowClear
                         style={{ width: 280 }}
                     />
-                    <DatePicker.RangePicker
-                        value={dateRange}
-                        onChange={setDateRange}
-                        format="DD MMM YYYY"
-                        style={{ width: 280 }}
+
+                    <DatePicker.RangePicker value={dateRange} onChange={setDateRange} format="DD MMM YYYY" style={{ width: 280 }}/>
+
+                    <Select
+                        allowClear
+                        showSearch
+                        placeholder="Customer type"
+                        value={customerTypeId}
+                        onChange={setCustomerTypeId}
+                        loading={customerTypesLoading}
+                        optionFilterProp="label"
+                        style={{ width: 180 }}
+                        options={customerTypes.map((type) => ({
+                            value: type.id,
+                            label: type.name,
+                        }))}
                     />
+
                     <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
                         Search
                     </Button>
+
                     <Button onClick={handleReset}>Reset</Button>
                 </div>
 
-                <Button
-                    className="ual-toolbar__back"
-                    icon={<ArrowLeftOutlined />}
-                    onClick={() => window.history.back()}
-                >
+                <Button className="ual-toolbar__back" icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
                     Back
                 </Button>
             </div>
@@ -450,22 +629,11 @@ export default function OrderList() {
                                 ? `${selectedRowKeys.length} orders ready to assign`
                                 : "1 order ready to assign"}
                         </span>
-                        <Button
-                            type="primary"
-                            size="middle"
-                            icon={<UserSwitchOutlined />}
-                            onClick={handleAssignOpen}
-                        >
+                        <Button type="primary" size="middle" icon={<UserSwitchOutlined />} onClick={handleAssignOpen}>
                             Assign to Employee
                         </Button>
                     </div>
-                    <Button
-                        type="link"
-                        size="small"
-                        icon={<CloseCircleOutlined />}
-                        onClick={() => setSelectedRowKeys([])}
-                        style={{ color: "#1c558b", padding: 0 }}
-                    >
+                    <Button type="link" size="small" icon={<CloseCircleOutlined />} onClick={() => setSelectedRowKeys([])} style={{ color: "#1c558b", padding: 0 }}>
                         Clear selection
                     </Button>
                 </div>
