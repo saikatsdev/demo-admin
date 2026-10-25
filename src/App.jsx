@@ -188,6 +188,7 @@ import HrmModulePlaceholder from "./pages/hrm/HrmModulePlaceholder";
 import Department from "./pages/team/department/Department";
 import Designation from "./pages/team/designation/Designation";
 import EmployeeType from "./pages/team/employee-type/EmployeeType";
+import ShiftHoliday from "./pages/team/shift-holiday/ShiftHoliday";
 
 function App() {
     const dispatch         = useDispatch();
@@ -319,7 +320,8 @@ function App() {
 
                     <Route path="/hrm/employment-types" element={<EmployeeType/>} />
                     
-                    <Route path="/hrm/shifts-holidays" element={<HrmModulePlaceholder title="Shifts and Holidays" description="Configure work shifts, grace periods, weekly offs, holiday calendars, and employee shift assignments." />} />
+                    <Route path="/hrm/shifts-holidays" element={<ShiftHoliday/>} />
+                    
                     <Route path="/hrm/payroll" element={<HrmModulePlaceholder title="Payroll" description="Prepare salary structures, earnings, deductions, payroll periods, approvals, payments, and employee payslips." />} />
                     <Route path="/hrm/performance" element={<HrmModulePlaceholder title="Performance" description="Set employee targets, combine ecommerce performance metrics, run review cycles, and record manager ratings." />} />
 
