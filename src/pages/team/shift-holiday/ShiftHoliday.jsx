@@ -1,5 +1,5 @@
 import {ArrowLeftOutlined,CalendarOutlined,ClockCircleOutlined,DeleteOutlined,EditOutlined,PlusOutlined,ReloadOutlined,SearchOutlined} from "@ant-design/icons";
-import {Avatar,Breadcrumb,Button,Card,Col,DatePicker,Form,Input,InputNumber,message,Modal,Popconfirm,Row,Select,Space,Table,Tabs,Tag,TimePicker,Tooltip,Typography} from "antd";
+import {Avatar,Breadcrumb,Button,Card,Checkbox,Col,DatePicker,Form,Input,InputNumber,message,Modal,Popconfirm,Row,Select,Space,Table,Tabs,Tag,TimePicker,Tooltip,Typography} from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -15,6 +15,16 @@ const statusOptions = [
     { value: "active", label: "Active" },
     { value: "inactive", label: "Inactive" },
     { value: "draft", label: "Draft" },
+];
+
+const weekDays = [
+    { value: "sunday", label: "Sunday" },
+    { value: "monday", label: "Monday" },
+    { value: "tuesday", label: "Tuesday" },
+    { value: "wednesday", label: "Wednesday" },
+    { value: "thursday", label: "Thursday" },
+    { value: "friday", label: "Friday" },
+    { value: "saturday", label: "Saturday" },
 ];
 
 const getResponseMessage = (response, fallback) => {
@@ -39,23 +49,22 @@ export default function ShiftHoliday() {
         canReadHolidays && { key: "holidays", label: "Holidays", icon: <CalendarOutlined /> },
     ].filter(Boolean), [canReadHolidays, canReadShifts]);
 
-    const [activeTab, setActiveTab] = useState(availableTabs[0]?.key || "shifts");
-    const [items, setItems] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [editingItem, setEditingItem] = useState(null);
-    const [query, setQuery] = useState("");
+    const [activeTab, setActiveTab]           = useState(availableTabs[0]?.key || "shifts");
+    const [items, setItems]                   = useState([]);
+    const [loading, setLoading]               = useState(false);
+    const [submitting, setSubmitting]         = useState(false);
+    const [modalOpen, setModalOpen]           = useState(false);
+    const [editingItem, setEditingItem]       = useState(null);
+    const [query, setQuery]                   = useState("");
     const [debouncedQuery, setDebouncedQuery] = useState("");
-    const [status, setStatus] = useState();
-    const [holidayType, setHolidayType] = useState();
-    const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 });
-
-    const isShift = activeTab === "shifts";
-    const endpoint = isShift ? "/admin/work-shifts" : "/admin/holidays";
-    const canCreate = can(isShift ? "shifts-create" : "holidays-create");
-    const canUpdate = can(isShift ? "shifts-update" : "holidays-update");
-    const canDelete = can(isShift ? "shifts-delete" : "holidays-delete");
+    const [status, setStatus]                 = useState();
+    const [holidayType, setHolidayType]       = useState();
+    const [pagination, setPagination]         = useState({ current: 1, pageSize: 20, total: 0 });
+    const isShift                             = activeTab === "shifts";
+    const endpoint                            = isShift ? "/admin/work-shifts" : "/admin/holidays";
+    const canCreate                           = can(isShift ? "shifts-create" : "holidays-create");
+    const canUpdate                           = can(isShift ? "shifts-update" : "holidays-update");
+    const canDelete                           = can(isShift ? "shifts-delete" : "holidays-delete");
 
     useEffect(() => {
         const timeoutId = window.setTimeout(() => setDebouncedQuery(query.trim()), 400);
@@ -114,9 +123,7 @@ export default function ShiftHoliday() {
     const openCreate = () => {
         setEditingItem(null);
         form.resetFields();
-        form.setFieldsValue(isShift
-            ? { grace_minutes: 0, break_minutes: 0, status: "active" }
-            : { type: "company", status: "active" });
+        form.setFieldsValue(isShift ? { grace_minutes: 0, break_minutes: 0, weekly_off_days: ["friday"], status: "active" } : { type: "company", status: "active" });
         setModalOpen(true);
     };
 
@@ -130,6 +137,9 @@ export default function ShiftHoliday() {
             end_time     : parseTime(item.end_time),
             grace_minutes: item.grace_minutes,
             break_minutes: item.break_minutes,
+            weekly_off_days: (item.days || [])
+                .filter((day) => !day.is_working_day)
+                .map((day) => day.day_of_week),
             status       : item.status,
         } : {
             name       : item.name,
@@ -150,6 +160,7 @@ export default function ShiftHoliday() {
 
     const handleSubmit = async () => {
         const values = await form.validateFields();
+        const selectedOffDays = values.weekly_off_days || [];
         const payload = isShift ? {
             code         : values.code.trim(),
             name         : values.name.trim(),
@@ -157,6 +168,17 @@ export default function ShiftHoliday() {
             end_time     : values.end_time.format("HH:mm"),
             grace_minutes: values.grace_minutes ?? 0,
             break_minutes: values.break_minutes ?? 0,
+            days: weekDays.map(({ value }) => {
+                const existingDay = editingItem?.days?.find((day) => day.day_of_week === value);
+
+                return {
+                    day_of_week   : value,
+                    is_working_day: !selectedOffDays.includes(value),
+                    start_time    : existingDay?.start_time?.slice(0, 5) || null,
+                    end_time      : existingDay?.end_time?.slice(0, 5) || null,
+                    break_minutes : existingDay?.break_minutes ?? null,
+                };
+            }),
             status       : values.status,
         } : {
             name       : values.name.trim(),
@@ -268,6 +290,24 @@ export default function ShiftHoliday() {
             dataIndex: "break_minutes", 
             width: 110, 
             render: (value) => `${value || 0} min` 
+        },
+        {
+            title: "Weekly Off",
+            key: "weekly_off",
+            width: 190,
+            render: (_, record) => {
+                const offDays = (record.days || []).filter((day) => !day.is_working_day);
+
+                return offDays.length ? (
+                    <Space size={[4, 4]} wrap>
+                        {offDays.map((day) => (
+                            <Tag key={day.day_of_week} color="red" style={{ textTransform: "capitalize", margin: 0 }}>
+                                {day.day_of_week}
+                            </Tag>
+                        ))}
+                    </Space>
+                ) : <Text type="secondary">No weekly off</Text>;
+            },
         },
         { 
             title: "Status", 
@@ -381,7 +421,7 @@ export default function ShiftHoliday() {
 
                 <Table rowKey="id" bordered loading={loading} columns={isShift ? shiftColumns : holidayColumns} 
                 dataSource={items} 
-                scroll={{ x: 1000 }} 
+                scroll={{ x: 1190 }}
                 pagination={{ 
                     current        : pagination.current,
                     pageSize       : pagination.pageSize,
@@ -435,6 +475,24 @@ export default function ShiftHoliday() {
                             <Col xs={24} md={8}>
                                 <Form.Item name="status" label="Status" rules={[{ required: true }]}>
                                     <Select options={statusOptions} />
+                                </Form.Item>
+                            </Col>
+
+                            <Col xs={24}>
+                                <Form.Item
+                                    name="weekly_off_days"
+                                    label="Weekly Off Days"
+                                    extra="Select one or more regular weekly holidays for this shift."
+                                >
+                                    <Checkbox.Group style={{ width: "100%" }}>
+                                        <Row gutter={[8, 8]}>
+                                            {weekDays.map((day) => (
+                                                <Col xs={12} sm={8} md={6} key={day.value}>
+                                                    <Checkbox value={day.value}>{day.label}</Checkbox>
+                                                </Col>
+                                            ))}
+                                        </Row>
+                                    </Checkbox.Group>
                                 </Form.Item>
                             </Col>
                         </Row>
