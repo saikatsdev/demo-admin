@@ -18,14 +18,25 @@ import OrderAndProduct from "../components/dashboard/OrderAndProduct.jsx";
 import LocationAndProduct from "../components/dashboard/LocationAndProduct.jsx";
 
 export default function Dashboard() {
-    // Hook
-    useTitle("Admin Dashboard");
+    const { hasAnyRole } = useRole();
+    const canSeeAdminDashboard = hasAnyRole(["superadmin", "admin"]);
+    useTitle(canSeeAdminDashboard ? "Admin Dashboard" : "Employee Dashboard");
+
+    if (!canSeeAdminDashboard) {
+        return (
+            <div className="dashboard-two-container">
+                <EmployeeDashboard />
+            </div>
+        );
+    }
+
+    return <AdminDashboard />;
+}
+
+function AdminDashboard() {
 
     const { settings } = useAppSettings();
-
-    const { hasAnyRole } = useRole();
-    
-    const canSeeAdminWidgets = hasAnyRole(["superadmin", "admin"]);
+    const canSeeAdminWidgets = true;
 
     // State
     const [dashboardSummary, setDashboardSummary] = useState({});
