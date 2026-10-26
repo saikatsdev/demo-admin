@@ -191,6 +191,7 @@ import EmployeeType from "./pages/team/employee-type/EmployeeType";
 import ShiftHoliday from "./pages/team/shift-holiday/ShiftHoliday";
 import EmployeeHrmProfile from "./pages/auth/employee/EmployeeHrmProfile";
 import HrmEmployee from "./pages/team/employee/HrmEmployee";
+import Leave from "./pages/team/leave/Leave";
 
 function App() {
     const dispatch         = useDispatch();
@@ -316,7 +317,7 @@ function App() {
 
                     <Route path="/team-settings" element={<TeamSetting/>}/>
 
-                    <Route path="/hrm/leaves" element={<HrmModulePlaceholder title="Leave Management" description="Manage leave types, employee balances, requests, approvals, cancellations, and the team leave calendar." />} />
+                    <Route path="/hrm/leaves" element={<Leave/>} />
 
                     <Route path="/hrm/departments" element={<Department/>} />
 

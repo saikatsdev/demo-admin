@@ -1,0 +1,25 @@
+.leave-page { padding-bottom: 28px; }
+.leave-stats { margin-bottom: 16px; }
+.leave-stat { position: relative; overflow: hidden; border: 0; border-radius: 14px; box-shadow: 0 5px 18px rgba(15, 23, 42, .06); }
+.leave-stat::before { position: absolute; inset: 0 auto 0 0; width: 4px; content: ""; }
+.leave-stat--0::before { background: #1677ff; }
+.leave-stat--1::before { background: #faad14; }
+.leave-stat--2::before { background: #52c41a; }
+.leave-stat--3::before { background: #ff4d4f; }
+.leave-stat .ant-statistic-title { color: #64748b; font-weight: 600; }
+.leave-stat .ant-statistic-content { color: #0f172a; font-size: 26px; font-weight: 750; }
+.leave-main { border: 0; border-radius: 14px; box-shadow: 0 5px 20px rgba(15, 23, 42, .06); }
+.leave-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 18px; }
+.leave-type-icon { background: #eaf4ff; color: #1677ff; }
+.leave-capitalize { text-transform: capitalize; }
+.leave-approve { color: #389e0d; }
+.leave-person { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; padding: 16px; border: 1px solid #dbeafe; border-radius: 13px; background: linear-gradient(135deg, #eff6ff, #fff); }
+.leave-person .ant-avatar { background: #1677ff; }
+.leave-person h4 { margin: 0; }
+.leave-person > .ant-tag { margin-left: auto; text-transform: capitalize; }
+.leave-detail-actions { display: flex; justify-content: flex-end; margin-top: 18px; }
+@media (max-width: 768px) {
+  .leave-toolbar { align-items: flex-start; flex-direction: column; }
+  .leave-person { align-items: flex-start; flex-wrap: wrap; }
+  .leave-person > .ant-tag { margin-left: 0; }
+}
