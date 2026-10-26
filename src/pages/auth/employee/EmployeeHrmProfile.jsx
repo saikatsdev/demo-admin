@@ -1,5 +1,5 @@
 import {ArrowLeftOutlined,BankOutlined,CalendarOutlined,CheckCircleFilled,ClockCircleOutlined,DeleteOutlined,EditOutlined,FileTextOutlined,IdcardOutlined,MailOutlined,PhoneOutlined,PlusOutlined,SaveOutlined,TeamOutlined,UploadOutlined,UserOutlined} from "@ant-design/icons";
-import {Avatar,Breadcrumb,Button,Card,Col,DatePicker,Empty,Form,Input,message,Modal,Popconfirm,Row,Select,Space,Spin,Switch,Table,Tabs,Tag,Typography,Upload} from "antd";
+import {Avatar,Breadcrumb,Button,Card,Col,DatePicker,Empty,Form,Input,InputNumber,message,Modal,Popconfirm,Row,Select,Space,Spin,Switch,Table,Tabs,Tag,Typography,Upload} from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -34,6 +34,7 @@ export default function EmployeeHrmProfile() {
     const [contactModal, setContactModal]       = useState(false);
     const [editingDocument, setEditingDocument] = useState(null);
     const [editingContact, setEditingContact]   = useState(null);
+    const selectedDepartmentId                  = Form.useWatch("department_id", profileForm);
     
     useTitle(employee ? `${employee.username} - HR Profile` : "Employee HR Profile");
 
@@ -45,11 +46,12 @@ export default function EmployeeHrmProfile() {
 
     const fillProfileForm = useCallback((data) => {
         profileForm.setFieldsValue({
-            employee_code     : data?.employee_code,
             department_id     : data?.department_id,
             designation_id    : data?.designation_id,
             employment_type_id: data?.employment_type_id,
             work_shift_id     : data?.work_shift_id,
+            basic_salary      : Number(data?.basic_salary || 0),
+            salary_type       : data?.salary_type || "monthly",
             official_email    : data?.official_email,
             joining_date      : dateValue(data?.joining_date),
             confirmation_date : dateValue(data?.confirmation_date),
@@ -96,7 +98,13 @@ export default function EmployeeHrmProfile() {
                 ]);
                 if (!active) return;
                 const map = (response) => (response?.result?.data || []).map((item) => ({ value: item.id, label: `${item.name}${item.code ? ` (${item.code})` : ""}` }));
-                setOptions({ departments: map(departments), designations: map(designations), employmentTypes: map(employmentTypes), workShifts: map(workShifts) });
+                const designationOptions = (designations?.result?.data || []).map((item) => ({
+                    value       : item.id,
+                    label       : `${item.name}${item.code ? ` (${item.code})` : ""}`,
+                    departmentId: Number(item.department_id),
+                }));
+
+                setOptions({ departments: map(departments), designations: designationOptions, employmentTypes: map(employmentTypes), workShifts: map(workShifts) });
             } finally {
                 if (active) setOptionsLoading(false);
             }
@@ -144,11 +152,12 @@ export default function EmployeeHrmProfile() {
         setSaving(true);
         const payload = {
             user_id           : Number(id),
-            employee_code     : values.employee_code.trim(),
             department_id     : values.department_id || null,
             designation_id    : values.designation_id || null,
             employment_type_id: values.employment_type_id || null,
             work_shift_id     : values.work_shift_id || null,
+            basic_salary      : Number(values.basic_salary || 0),
+            salary_type       : values.salary_type || "monthly",
             official_email    : values.official_email?.trim() || null,
             joining_date      : values.joining_date?.format("YYYY-MM-DD") || null,
             confirmation_date : values.confirmation_date?.format("YYYY-MM-DD") || null,
@@ -236,6 +245,21 @@ export default function EmployeeHrmProfile() {
         if (!response?.success) return messageApi.error(responseMessage(response, "Unable to save emergency contact"));
 
         setContactModal(false); await loadContacts(); messageApi.success(response.msg);
+    };
+
+    const designationOptions = selectedDepartmentId
+        ? options.designations.filter((designation) => designation.departmentId === Number(selectedDepartmentId))
+        : [];
+
+    const handleDepartmentChange = (departmentId) => {
+        const designationId = profileForm.getFieldValue("designation_id");
+        const belongsToDepartment = options.designations.some((designation) => (
+            designation.value === designationId && designation.departmentId === Number(departmentId)
+        ));
+
+        if (!belongsToDepartment) {
+            profileForm.setFieldValue("designation_id", null);
+        }
     };
 
     const overviewTab = (
@@ -328,6 +352,16 @@ export default function EmployeeHrmProfile() {
                                         {profile.work_shift?.name || "—"}
                                     </strong>
                                 </div>
+
+                                <div>
+                                    <span>Basic Salary</span>
+                                    <strong>৳{Number(profile.basic_salary || 0).toLocaleString("en-BD", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                                </div>
+
+                                <div>
+                                    <span>Salary Type</span>
+                                    <strong className="capitalize">{profile.salary_type || "monthly"}</strong>
+                                </div>
                             </div>
                         </Card>
                     </Col>
@@ -359,6 +393,7 @@ export default function EmployeeHrmProfile() {
                                     <span>
                                         Termination Date
                                     </span>
+
                                     <strong>
                                         {profile.termination_date ? dayjs(profile.termination_date).format("DD MMM YYYY") : "—"}
                                     </strong>
@@ -368,6 +403,7 @@ export default function EmployeeHrmProfile() {
                                     <span>
                                         Account Activity
                                     </span>
+
                                     <strong>
                                         {employee?.active ? "Online / Active" : "Offline"}
                                     </strong>
@@ -461,6 +497,98 @@ export default function EmployeeHrmProfile() {
                             </div>
                         </Card>
                     </Col>
+
+                    <Col xs={24}>
+                        <Card className="employee-detail-card employee-overview-list-card" title={<span><FileTextOutlined /> Employee Documents</span>}
+                            extra={<Tag color="blue">{documents.length} Documents</Tag>}
+                        >
+                            {documents.length ? (
+                                <div className="employee-overview-documents">
+                                    {documents.map((document) => (
+                                        <div className="employee-overview-document" key={document.id}>
+                                            <div className="employee-overview-document__icon">
+                                                <FileTextOutlined />
+                                            </div>
+
+                                            <div className="employee-overview-document__content">
+                                                <strong>
+                                                    {document.document_type}
+                                                </strong>
+
+                                                <span>
+                                                    {document.document_number || "No document number"}
+                                                </span>
+                                            </div>
+
+                                            <div className="employee-overview-document__dates">
+                                                <span>
+                                                    Issued: {document.issue_date ? dayjs(document.issue_date).format("DD MMM YYYY") : "—"}
+                                                </span>
+
+                                                <span>
+                                                    Expires: {document.expiry_date ? dayjs(document.expiry_date).format("DD MMM YYYY") : "—"}
+                                                </span>
+                                            </div>
+
+                                            <Tag color={document.status === "active" ? "green" : "default"} className="capitalize">{document.status}</Tag>
+                                            {document.file_url ? (
+                                                <Button size="small" href={document.file_url} target="_blank">
+                                                    View File
+                                                </Button>
+                                            ) : (
+                                                <Text type="secondary">No file</Text>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No employee documents added" />}
+                        </Card>
+                    </Col>
+
+                    <Col xs={24}>
+                        <Card
+                            className="employee-detail-card employee-overview-list-card"
+                            title={<span><TeamOutlined /> Emergency Contacts</span>}
+                            extra={<Tag color="cyan">{contacts.length} Contacts</Tag>}
+                        >
+                            {contacts.length ? (
+                                <Row gutter={[12, 12]}>
+                                    {contacts.map((contact) => (
+                                        <Col xs={24} md={12} xl={8} key={contact.id}>
+                                            <div className={`employee-overview-contact ${contact.is_primary ? "is-primary" : ""}`}>
+                                                <Avatar icon={<UserOutlined />} />
+                                                <div className="employee-overview-contact__content">
+                                                    <div>
+                                                        <strong>{contact.name}</strong>
+                                                        {contact.is_primary && <Tag color="blue">Primary</Tag>}
+                                                    </div>
+
+                                                    <span className="capitalize">
+                                                        {contact.relationship}
+                                                    </span>
+
+                                                    <a href={`tel:${contact.phone_number}`}><PhoneOutlined />
+                                                        {contact.phone_number}
+                                                    </a>
+
+                                                    {contact.alternate_phone &&
+                                                        <span>
+                                                            Alt: {contact.alternate_phone}
+                                                        </span>
+                                                    }
+                                                    {contact.address &&
+                                                        <Text type="secondary" ellipsis={{ tooltip: contact.address }}>
+                                                            {contact.address}
+                                                        </Text>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </Col>
+                                    ))}
+                                </Row>
+                            ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No emergency contacts added" />}
+                        </Card>
+                    </Col>
                 </Row>
             )}
         </div>
@@ -470,12 +598,6 @@ export default function EmployeeHrmProfile() {
         <Form form={profileForm} layout="vertical" onFinish={saveProfile} requiredMark="optional">
             <Row gutter={16}>
                 <Col xs={24} md={12}>
-                    <Form.Item name="employee_code" label="Employee Code" rules={[{ required: true }]}>
-                        <Input placeholder="EMP-0001" />
-                    </Form.Item>
-                </Col>
-
-                <Col xs={24} md={12}>
                     <Form.Item name="official_email" label="Official Email">
                         <Input />
                     </Form.Item>
@@ -483,13 +605,27 @@ export default function EmployeeHrmProfile() {
 
                 <Col xs={24} md={12}>
                     <Form.Item name="department_id" label="Department">
-                        <Select allowClear showSearch optionFilterProp="label" options={options.departments} />
+                        <Select
+                            allowClear
+                            showSearch
+                            optionFilterProp="label"
+                            options={options.departments}
+                            placeholder="Select department"
+                            onChange={handleDepartmentChange}
+                        />
                     </Form.Item>
                 </Col>
 
                 <Col xs={24} md={12}>
                     <Form.Item name="designation_id" label="Designation">
-                        <Select allowClear showSearch optionFilterProp="label" options={options.designations} />
+                        <Select
+                            allowClear
+                            showSearch
+                            optionFilterProp="label"
+                            options={designationOptions}
+                            disabled={!selectedDepartmentId}
+                            placeholder={selectedDepartmentId ? "Select designation" : "Select department first"}
+                        />
                     </Form.Item>
                 </Col>
 
@@ -502,6 +638,39 @@ export default function EmployeeHrmProfile() {
                 <Col xs={24} md={12}>
                     <Form.Item name="work_shift_id" label="Work Shift">
                         <Select allowClear options={options.workShifts} />
+                    </Form.Item>
+                </Col>
+
+                <Col xs={24} md={12}>
+                    <Form.Item
+                        name="basic_salary"
+                        label="Basic Salary"
+                        rules={[{ required: true, message: "Please enter basic salary" }]}
+                    >
+                        <InputNumber
+                            min={0}
+                            max={9999999999.99}
+                            precision={2}
+                            prefix="৳"
+                            placeholder="Enter basic salary"
+                            style={{ width: "100%" }}
+                            formatter={(value) => value ? `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : ""}
+                            parser={(value) => value?.replace(/,/g, "") || ""}
+                        />
+                    </Form.Item>
+                </Col>
+
+                <Col xs={24} md={12}>
+                    <Form.Item
+                        name="salary_type"
+                        label="Salary Type"
+                        rules={[{ required: true, message: "Please select salary type" }]}
+                    >
+                        <Select options={[
+                            { value: "monthly", label: "Monthly" },
+                            { value: "daily", label: "Daily" },
+                            { value: "hourly", label: "Hourly" },
+                        ]} />
                     </Form.Item>
                 </Col>
 
