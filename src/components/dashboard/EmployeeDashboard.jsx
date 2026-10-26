@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "antd";
-import { UserOutlined, ShoppingCartOutlined, CheckCircleOutlined, HourglassOutlined, InboxOutlined, ArrowRightOutlined } from "@ant-design/icons";
+import { UserOutlined, ShoppingCartOutlined, CheckCircleOutlined, HourglassOutlined, InboxOutlined, ArrowRightOutlined, CalendarOutlined } from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import "./css/EmployeeDashboard.css";
 import AttendanceWorkspace from "./AttendanceWorkspace";
@@ -146,6 +146,13 @@ export default function EmployeeDashboard() {
                         <span className="ed-unverifiedBadge">Unverified Account</span>
                     )}
                     <span className={`ed-pill ed-pill--status-${safeStatus}`}>{statusLabel}</span>
+                    <Button
+                        className="ed-view-profile-btn"
+                        icon={<CalendarOutlined />}
+                        onClick={() => navigate("/hrm/my-leaves")}
+                    >
+                        My Leave
+                    </Button>
                     <Button
                         className="ed-view-profile-btn"
                         icon={<UserOutlined />}
