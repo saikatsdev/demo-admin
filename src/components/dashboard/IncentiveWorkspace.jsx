@@ -60,7 +60,8 @@ export default function IncentiveWorkspace() {
             </Card>
         );
 
-    const cards = [
+    const cards = 
+    [
         {
             title: "Basic Salary",
             value: summary?.basic_salary,

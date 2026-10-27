@@ -155,7 +155,7 @@ export default function Payroll() {
         {
             title: "Status",
             dataIndex: "status",
-            render: (value) => <Tag color={statusColor[value]}>{value}</Tag>,
+            render: (value) => <Tag style={{textTransform: "capitalize"}} color={statusColor[value]}>{value}</Tag>,
         },
         {
             title: "Action",
@@ -226,7 +226,7 @@ export default function Payroll() {
         {
             title: "Status",
             dataIndex: "status",
-            render: (value) => <Tag color={statusColor[value]}>{value}</Tag>,
+            render: (value) => <Tag style={{textTransform: "capitalize"}} color={statusColor[value]}>{value}</Tag>,
         },
         {
             title: "Action",
@@ -234,9 +234,7 @@ export default function Payroll() {
             render: (_, record) =>
                 record.status === "pending" &&
                 can(
-                    activeTab === "commissions"
-                        ? "sales-commissions-update"
-                        : "packaging-work-update",
+                    activeTab === "commissions" ? "sales-commissions-update" : "packaging-work-update",
                 ) ? (
                     <Space>
                         <Button
@@ -386,12 +384,9 @@ export default function Payroll() {
                                 )
                             }
                         </Form.Item>
+
                         <Col xs={24} md={12}>
-                            <Form.Item
-                                name="calculation_type"
-                                label="Calculation type"
-                                rules={[{ required: true }]}
-                            >
+                            <Form.Item name="calculation_type" label="Calculation type" rules={[{ required: true }]}>
                                 <Select
                                     options={[
                                         { value: "fixed", label: "Fixed amount" },
@@ -401,25 +396,25 @@ export default function Payroll() {
                                 />
                             </Form.Item>
                         </Col>
+
                         <Col xs={24} md={12}>
                             <Form.Item name="rate" label="Rate" rules={[{ required: true }]}>
                                 <InputNumber min={0} precision={2} style={{ width: "100%" }} />
                             </Form.Item>
                         </Col>
+
                         <Col xs={24} md={12}>
-                            <Form.Item
-                                name="effective_from"
-                                label="Effective from"
-                                rules={[{ required: true }]}
-                            >
+                            <Form.Item name="effective_from" label="Effective from" rules={[{ required: true }]}>
                                 <DatePicker style={{ width: "100%" }} />
                             </Form.Item>
                         </Col>
+
                         <Col xs={24} md={12}>
                             <Form.Item name="effective_to" label="Effective to">
                                 <DatePicker style={{ width: "100%" }} />
                             </Form.Item>
                         </Col>
+                        
                         <Col span={24}>
                             <Form.Item name="status" label="Status" rules={[{ required: true }]}>
                                 <Select

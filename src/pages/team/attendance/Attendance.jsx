@@ -1,291 +1,578 @@
-import { useEffect, useState } from "react";
-import useTitle from "../../../hooks/useTitle";
-import { deleteData, getDatas } from "../../../api/common/common";
-import { Table, Tag, Card, Typography, Space, Breadcrumb, Input, DatePicker, Button, Tooltip, message,Badge, Select, Popconfirm } from "antd";
-import {SearchOutlined, CalendarOutlined, ClockCircleOutlined, EditOutlined, DeleteOutlined, FilterOutlined, FileExcelOutlined, ReloadOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import {
+    ArrowLeftOutlined,
+    CalendarOutlined,
+    CheckCircleOutlined,
+    ClockCircleOutlined,
+    CloseCircleOutlined,
+    CopyOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    FieldTimeOutlined,
+    FilterOutlined,
+    MailOutlined,
+    PhoneOutlined,
+    ReloadOutlined,
+    SearchOutlined,
+    UserOutlined,
+    WhatsAppOutlined,
+} from "@ant-design/icons";
+import {
+    Avatar,
+    Breadcrumb,
+    Button,
+    Card,
+    Col,
+    DatePicker,
+    Empty,
+    Input,
+    Popconfirm,
+    Row,
+    Select,
+    Space,
+    Table,
+    Tag,
+    Tooltip,
+    Typography,
+    message,
+} from "antd";
 import dayjs from "dayjs";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { deleteData, getDatas } from "../../../api/common/common";
+import { usePermission } from "../../../hooks/usePermission";
+import useTitle from "../../../hooks/useTitle";
+import "./Attendance.css";
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { RangePicker } = DatePicker;
 
-function Attendance() {
-    // Hook
-    useTitle("Attendance Log");
-    const navigate = useNavigate();
+const EMPTY_FILTERS = { search: "", status: null, dateRange: null };
+const STATUS_META = {
+    present   : { label: "Present", color: "success" },
+    late      : { label: "Late", color: "warning" },
+    absent    : { label: "Absent", color: "error" },
+    half_day  : { label: "Half Day", color: "processing" },
+    on_leave  : { label: "On Leave", color: "purple" },
+    holiday   : { label: "Holiday", color: "cyan" },
+    weekly_off: { label: "Weekly Off", color: "default" },
+};
 
-    // States
-    const [loading, setLoading]       = useState(false);
-    const [data, setData]             = useState([]);
-    const [pagination, setPagination] = useState({current: 1, paginate_size: 20, total: 0});
-    const [params, setParams]         = useState({search: "", date_range: null,status: null,});
+const formatMinutes = (value) => {
+    const minutes = Number(value || 0);
+    if (!minutes) return "—";
+    const hours = Math.floor(minutes / 60);
+    const remainder = minutes % 60;
+    return hours ? `${hours}h ${remainder}m` : `${remainder}m`;
+};
 
-    // Functions
-    const fetchAttendance = async (page = 1, pageSize = 20) => {
-        setLoading(true);
-        try {
-            const res = await getDatas("/admin/attendance", {
-                page,
-                paginate_size: pageSize,
-                search       : params.search,
-                status       : params.status,
-                start_date   : params.date_range?.[0]?.format("YYYY-MM-DD"),
-                end_date     : params.date_range?.[1]?.format("YYYY-MM-DD"),
-            });
-            
-            if (res?.success) {
-                setData(res.result.data);
+const time = (value) => (value ? dayjs(value).format("hh:mm A") : "—");
+
+export default function Attendance() {
+    useTitle("Attendance Management");
+    const navigate                            = useNavigate();
+    const { can }                             = usePermission();
+    const [messageApi, contextHolder]         = message.useMessage();
+    const [loading, setLoading]               = useState(false);
+    const [data, setData]                     = useState([]);
+    const [filters, setFilters]               = useState(EMPTY_FILTERS);
+    const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
+    const [summary, setSummary] = useState({
+        present: 0,
+        late: 0,
+        absent: 0,
+        half_day: 0,
+    });
+    const [pagination, setPagination] = useState({
+        current: 1,
+        pageSize: 20,
+        total: 0,
+    });
+
+    const requestParams = (filterState, extra = {}) => ({
+        search: filterState.search || undefined,
+        start_date: filterState.dateRange?.[0]?.format("YYYY-MM-DD"),
+        end_date: filterState.dateRange?.[1]?.format("YYYY-MM-DD"),
+        ...extra,
+    });
+
+    const fetchAttendance = useCallback(
+        async (page = 1, pageSize = 20, filterState = EMPTY_FILTERS) => {
+            setLoading(true);
+
+            const statuses = ["present", "late", "absent", "half_day"];
+            const [response, ...counts] = await Promise.all([
+                getDatas(
+                    "/admin/attendance",
+                    requestParams(filterState, {
+                        page,
+                        paginate_size: pageSize,
+                        status: filterState.status || undefined,
+                    })
+                ),
+                ...statuses.map((status) =>
+                    getDatas(
+                        "/admin/attendance",
+                        requestParams(filterState, {
+                            page: 1,
+                            paginate_size: 1,
+                            status,
+                        })
+                    )
+                ),
+            ]);
+
+            if (response?.success) {
+                setData(response.result?.data || []);
                 setPagination({
-                    current      : res.result.current_page,
-                    paginate_size: res.result.per_page,
-                    total        : res.result.total,
+                    current: Number(response.result?.current_page || page),
+                    pageSize: Number(response.result?.per_page || pageSize),
+                    total: Number(response.result?.total || 0),
                 });
+                setSummary(
+                    Object.fromEntries(
+                        statuses.map((status, index) => [
+                            status,
+                            Number(counts[index]?.result?.total || 0),
+                        ])
+                    )
+                );
+            } else {
+                messageApi.error(
+                    response?.message || "Unable to load attendance records."
+                );
             }
-        } catch (error) {
-            console.error(error);
-        } finally {
+
             setLoading(false);
-        }
-    };
+        },
+        [messageApi]
+    );
 
     useEffect(() => {
-        fetchAttendance();
-    }, []);
+        fetchAttendance(1, 20, EMPTY_FILTERS);
+    }, [fetchAttendance]);
 
-    const handleTableChange = (pagination) => {
-        fetchAttendance(pagination.current, pagination.pageSize);
+    const applyFilters = () => {
+        setAppliedFilters(filters);
+        fetchAttendance(1, pagination.pageSize, filters);
     };
 
-    const deleteAttendance = async (id) => {
-        setLoading(true);
+    const resetFilters = () => {
+        setFilters(EMPTY_FILTERS);
+        setAppliedFilters(EMPTY_FILTERS);
+        fetchAttendance(1, 20, EMPTY_FILTERS);
+    };
+
+    const remove = async (id) => {
+        const response = await deleteData(`/admin/attendance/${id}`);
+        if (!response?.success) {
+            return messageApi.error(
+                response?.message || "Unable to delete attendance."
+            );
+        }
+        messageApi.success(response.msg || "Attendance record deleted.");
+        fetchAttendance(pagination.current, pagination.pageSize, appliedFilters);
+    };
+
+    const copyPhone = async (phone) => {
+        if (!phone) return;
         try {
-            const res = await deleteData(`/admin/attendance/${id}`);
-            if (res?.success) {
-                message.success(res.message || "Attendance record deleted successfully");
-                fetchAttendance();
-            } else {
-                message.error(res.message || "Failed to delete record");
-            }
-        } catch (error) {
-            console.error(error);
-            message.error("An error occurred while deleting the record");
-        } finally {
-            setLoading(false);
+            await navigator.clipboard.writeText(phone);
+            messageApi.success("Phone number copied");
+        } catch {
+            messageApi.error("Unable to copy phone number");
         }
     };
 
-    const columns = 
-    [
+    const openWhatsApp = (phone) => {
+        if (!phone) return;
+        let number = String(phone).replace(/\D/g, "");
+        if (number.startsWith("0")) number = `88${number}`;
+        window.open(`https://wa.me/${number}`, "_blank", "noopener,noreferrer");
+    };
+
+    const summaryCards = [
         {
-            title: "SL",
-            key: "sl",
-            width: 60,
-            align: 'center',
-            render: (_, __, index) => (
-                <Text type="secondary">
-                    {(pagination.current - 1) * pagination.paginate_size + index + 1}
-                </Text>
-            ),
+            key: "present",
+            label: "Present",
+            hint: "On-time attendance",
+            icon: <CheckCircleOutlined />,
+            tone: "green",
         },
+        {
+            key: "late",
+            label: "Late",
+            hint: "After shift grace",
+            icon: <ClockCircleOutlined />,
+            tone: "orange",
+        },
+        {
+            key: "absent",
+            label: "Absent",
+            hint: "No attendance record",
+            icon: <CloseCircleOutlined />,
+            tone: "red",
+        },
+        {
+            key: "half_day",
+            label: "Half Day",
+            hint: "Below half shift hours",
+            icon: <FieldTimeOutlined />,
+            tone: "blue",
+        },
+    ];
+
+    const columns = [
         {
             title: "Employee",
-            key: "user",
-            width: 250,
+            key: "employee",
+            fixed: "left",
+            width: 315,
             render: (_, record) => (
-                <Space size="middle">
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Text strong style={{ fontSize: '14px', textTransform: 'capitalize' }}>{record.user?.username}</Text>
-                        <Text type="secondary" size="small" style={{ fontSize: '12px' }}>{record.user?.email}</Text>
+                <div className="attendance-employee">
+                    <Avatar
+                        size={40}
+                        src={record.user?.img_path || undefined}
+                        icon={<UserOutlined />}
+                    />
+                    <div className="attendance-employee__details">
+                        <strong>{record.user?.username || "Unknown employee"}</strong>
+                        <div className="attendance-employee__contact">
+                            <span className="attendance-employee__phone">
+                                <PhoneOutlined />
+                                {record.user?.phone_number || "No phone"}
+                            </span>
+                            {record.user?.phone_number && (
+                                <span className="attendance-contact-actions">
+                                    <Tooltip title="Copy phone number">
+                                        <button
+                                            type="button"
+                                            className="attendance-contact-btn attendance-contact-btn--copy"
+                                            aria-label={`Copy ${record.user.phone_number}`}
+                                            onClick={() => copyPhone(record.user.phone_number)}
+                                        >
+                                            <CopyOutlined />
+                                        </button>
+                                    </Tooltip>
+                                    <Tooltip title="Open WhatsApp">
+                                        <button
+                                            type="button"
+                                            className="attendance-contact-btn attendance-contact-btn--whatsapp"
+                                            aria-label={`WhatsApp ${record.user.phone_number}`}
+                                            onClick={() => openWhatsApp(record.user.phone_number)}
+                                        >
+                                            <WhatsAppOutlined />
+                                        </button>
+                                    </Tooltip>
+                                </span>
+                            )}
+                        </div>
+                        {record.user?.email && (
+                            <span className="attendance-employee__email">
+                                <MailOutlined />
+                                {record.user.email}
+                            </span>
+                        )}
                     </div>
-                </Space>
-            ),
-        },
-        {
-            title: "Log Date",
-            dataIndex: "attendance_date",
-            key: "attendance_date",
-            render: (date) => (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CalendarOutlined style={{ color: '#8c8c8c' }} />
-                    <Text>{dayjs(date).format("DD MMM, YYYY")}</Text>
                 </div>
             ),
         },
         {
-            title: "Check In",
-            dataIndex: "check_in_at",
-            key: "check_in_at",
-            render: (time) => time ? (
-                <Space>
-                    <Badge status="success" />
-                    <Text>{dayjs(time).format("hh:mm A")}</Text>
-                </Space>
-            ) : <Text type="secondary" italic>No Record</Text>,
+            title: "Date & Shift",
+            width: 190,
+            render: (_, record) => (
+                <div className="attendance-date-cell">
+                    <strong>
+                        <CalendarOutlined />
+                        {dayjs(record.attendance_date).format("DD MMM YYYY")}
+                    </strong>
+                    <span>{record.work_shift?.name || "No shift"}</span>
+                </div>
+            ),
         },
         {
-            title: "Check Out",
-            dataIndex: "check_out_at",
-            key: "check_out_at",
-            render: (time) => time ? (
-                <Space>
-                    <Badge status="error" />
-                    <Text>{dayjs(time).format("hh:mm A")}</Text>
-                </Space>
-            ) : <Text type="secondary" italic>Pending</Text>,
+            title: "Scheduled",
+            width: 150,
+            render: (_, record) => (
+                <span className="attendance-time-range">
+                    {time(record.scheduled_start_at)}
+                    <small>to</small>
+                    {time(record.scheduled_end_at)}
+                </span>
+            ),
         },
         {
-            title: "Duration",
-            key: "duration",
-            render: (_, record) => {
-                const calcDuration = () => {
-                    if (record.check_out_at) {
-                        const mins = record.working_minutes || record.duration;
-                        if (!mins) return null;
-                        const h = Math.floor(mins / 60);
-                        const m = mins % 60;
-                        return `${h}h ${m}m`;
-                    }
-                    if (record.check_in_at) {
-                        const diff = dayjs().diff(dayjs(record.check_in_at), "minute");
-                        const h = Math.floor(diff / 60);
-                        const m = diff % 60;
-                        return `${h}h ${m}m`;
-                    }
-                    return null;
-                };
-                const val = calcDuration();
-                return val ? (
-                    <Space>
-                        <ClockCircleOutlined style={{ color: '#1890ff' }} />
-                        <Text>{val}</Text>
-                    </Space>
-                ) : <Tag bordered={false}>-</Tag>;
-            },
+            title: "Actual Time",
+            width: 170,
+            render: (_, record) => (
+                <div className="attendance-actual-time">
+                    <span>
+                        <i className="attendance-dot attendance-dot--in" />
+                        {time(record.check_in_at)}
+                    </span>
+                    <span>
+                        <i className="attendance-dot attendance-dot--out" />
+                        {time(record.check_out_at)}
+                    </span>
+                </div>
+            ),
+        },
+        {
+            title: "Work Duration",
+            width: 135,
+            render: (_, record) => (
+                <strong className="attendance-duration">
+                    <ClockCircleOutlined />
+                    {formatMinutes(record.working_minutes)}
+                </strong>
+            ),
+        },
+        {
+            title: "Exceptions",
+            width: 180,
+            render: (_, record) => (
+                <div className="attendance-exceptions">
+                    {Number(record.late_minutes) > 0 && (
+                        <Tag color="orange">
+                            Late {formatMinutes(record.late_minutes)}
+                        </Tag>
+                    )}
+                    {Number(record.early_leave_minutes) > 0 && (
+                        <Tag color="volcano">
+                            Early {formatMinutes(record.early_leave_minutes)}
+                        </Tag>
+                    )}
+                    {!Number(record.late_minutes) &&
+                        !Number(record.early_leave_minutes) && (
+                            <Text type="secondary">No exceptions</Text>
+                        )}
+                </div>
+            ),
         },
         {
             title: "Status",
             dataIndex: "status",
-            key: "status",
-            align: 'center',
+            width: 120,
+            align: "center",
             render: (status) => {
-                let color = "default";
-                if (status === "present") color = "success";
-                if (status === "absent") color = "error";
-                if (status === "late") color = "warning";
-                if (status === "half_day") color = "processing";
-                
+                const meta = STATUS_META[status] || {
+                    label: status || "Unknown",
+                    color: "default",
+                };
+
                 return (
-                    <Tag color={color} style={{ textTransform: 'capitalize', minWidth: '70px', textAlign: 'center' }}>
-                        {status}
+                    <Tag className="attendance-status" color={meta.color}>
+                        {meta.label}
                     </Tag>
                 );
             },
         },
         {
-            title: "Actions",
-            key: "action",
-            align: 'center',
-            width: 150,
+            title: "Action",
+            width: 100,
+            align: "center",
+            fixed: "right",
             render: (_, record) => (
-                <Space size="small">
-                    <Tooltip title="Edit Record">
-                        <Button type="text" size="small" icon={<EditOutlined style={{ color: '#1890ff' }} />} onClick={() => navigate(`/team/attendance/edit/${record.id}`)} />
-                    </Tooltip>
-                    <Tooltip title="Delete Record">
-                        <Popconfirm title="Delete entry" description="Are you sure you want to delete this record?" onConfirm={() => deleteAttendance(record.id)} okText="Yes" cancelText="No" icon={<DeleteOutlined style={{ color: 'red' }} />}
+                <Space size={4}>
+                    {can("attendance-update") && (
+                        <Tooltip title="Edit attendance">
+                            <Button
+                                className="attendance-action-btn attendance-action-btn--edit"
+                                type="text"
+                                icon={<EditOutlined />}
+                                onClick={() =>
+                                    navigate(`/team/attendance/edit/${record.id}`)
+                                }
+                            />
+                        </Tooltip>
+                    )}
+                    {can("attendance-delete") && (
+                        <Popconfirm
+                            title="Delete attendance record?"
+                            description="This action cannot be undone."
+                            onConfirm={() => remove(record.id)}
                         >
-                            <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+                            <Tooltip title="Delete attendance">
+                                <Button
+                                    className="attendance-action-btn attendance-action-btn--delete"
+                                    type="text"
+                                    danger
+                                    icon={<DeleteOutlined />}
+                                />
+                            </Tooltip>
                         </Popconfirm>
-                    </Tooltip>
+                    )}
                 </Space>
             ),
         },
     ];
 
     return (
-        <div style={{ padding: '4px' }}>
-            <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
-                <Space align="start" size="middle">
-                    <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ marginTop: 8 }} />
+        <div className="attendance-page">
+            {contextHolder}
+            <div className="pagehead attendance-pagehead">
+                <div className="head-left attendance-heading">
+                    <Button
+                        icon={<ArrowLeftOutlined />}
+                        onClick={() => navigate(-1)}
+                    />
                     <div>
-                        <Breadcrumb items={[
-                                { title: <Link to="/">Dashboard</Link> },
-                                { title: 'Team Management' },
-                                { title: 'Attendance' },
+                        <Breadcrumb
+                            items={[
+                                {
+                                    title: <Link to="/dashboard">Dashboard</Link>,
+                                },
+                                { title: "HRM" },
+                                { title: "Attendance" },
                             ]}
-                            style={{ marginBottom: 4 }}
                         />
-                        <Title level={3} style={{ margin: 0 }}>Attendance Log</Title>
+                        <h1 className="title">Attendance Management</h1>
+                        <p className="subtitle">
+                            Monitor daily presence, working time and attendance
+                            exceptions.
+                        </p>
                     </div>
-                </Space>
-                <Space>
-                    <Button icon={<ReloadOutlined />} onClick={() => fetchAttendance(pagination.current)}>
-                        Refresh Data
-                    </Button>
-                    <Button type="primary" icon={<FileExcelOutlined />}>
-                        Export Excel
-                    </Button>
-                </Space>
+                </div>
+                <Button
+                    icon={<ReloadOutlined />}
+                    loading={loading}
+                    onClick={() =>
+                        fetchAttendance(
+                            pagination.current,
+                            pagination.pageSize,
+                            appliedFilters
+                        )
+                    }
+                >
+                    Refresh
+                </Button>
             </div>
 
-            <Card style={{ marginBottom: 24, borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }} bodyStyle={{ padding: '16px 24px' }}>
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ flex: 1, minWidth: '200px' }}>
-                        <Text strong style={{ display: 'block', marginBottom: 4 }}>Search Employee</Text>
-                        <Input placeholder="Name or Email..." prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} allowClear value={params.search} onChange={(e) => setParams({ ...params, search: e.target.value })} onPressEnter={() => fetchAttendance(1)} />
-                    </div>
-                    <div style={{ width: '180px' }}>
-                        <Text strong style={{ display: 'block', marginBottom: 4 }}>Status</Text>
-                        <Select placeholder="All Status" style={{ width: '100%' }} allowClear value={params.status} onChange={(val) => setParams({ ...params, status: val })} options={[
-                                { label: 'Present', value: 'present' },
-                                { label: 'Late', value: 'late' },
-                                { label: 'Absent', value: 'absent' },
-                                { label: 'Half Day', value: 'half_day' },
-                            ]}
+            <Row gutter={[14, 14]} className="attendance-summary">
+                {summaryCards.map((card) => (
+                    <Col xs={24} sm={12} xl={6} key={card.key}>
+                        <Card
+                            bordered={false}
+                            className={`attendance-stat attendance-stat--${card.tone}`}
+                        >
+                            <span className="attendance-stat__icon">
+                                {card.icon}
+                            </span>
+                            <div>
+                                <span>{card.label}</span>
+                                <strong>
+                                    {Number(
+                                        summary[card.key] || 0
+                                    ).toLocaleString()}
+                                </strong>
+                                <small>{card.hint}</small>
+                            </div>
+                        </Card>
+                    </Col>
+                ))}
+            </Row>
+
+            <Card bordered={false} className="attendance-filter-card">
+                <div className="attendance-filters">
+                    <div className="attendance-filter attendance-filter--search">
+                        <label>Search employee</label>
+                        <Input
+                            allowClear
+                            value={filters.search}
+                            prefix={<SearchOutlined />}
+                            placeholder="Name, email or phone"
+                            onChange={(event) =>
+                                setFilters((current) => ({
+                                    ...current,
+                                    search: event.target.value,
+                                }))
+                            }
+                            onPressEnter={applyFilters}
                         />
                     </div>
-                    <div style={{ flex: 1, minWidth: '250px' }}>
-                        <Text strong style={{ display: 'block', marginBottom: 4 }}>Date Range</Text>
-                        <RangePicker style={{ width: '100%' }} value={params.date_range} onChange={(dates) => setParams({ ...params, date_range: dates })} />
+                    <div className="attendance-filter">
+                        <label>Status</label>
+                        <Select
+                            allowClear
+                            value={filters.status}
+                            placeholder="All statuses"
+                            onChange={(status) =>
+                                setFilters((current) => ({
+                                    ...current,
+                                    status,
+                                }))
+                            }
+                            options={Object.entries(STATUS_META).map(
+                                ([value, meta]) => ({
+                                    value,
+                                    label: meta.label,
+                                })
+                            )}
+                        />
                     </div>
-                    <div style={{ alignSelf: 'end' }}>
-                        <Space>
-                            <Button type="primary" icon={<FilterOutlined />} onClick={() => fetchAttendance(1)} style={{ borderRadius: '6px' }}>
-                                Apply Filters
-                            </Button>
-                            <Button onClick={() => { setParams({ search: "", date_range: null, status: null }); fetchAttendance(1, 20); }} style={{ borderRadius: '6px' }}>
-                                Reset
-                            </Button>
-                        </Space>
+                    <div className="attendance-filter attendance-filter--date">
+                        <label>Date range</label>
+                        <RangePicker
+                            value={filters.dateRange}
+                            onChange={(dateRange) =>
+                                setFilters((current) => ({
+                                    ...current,
+                                    dateRange,
+                                }))
+                            }
+                        />
+                    </div>
+                    <div className="attendance-filter-actions">
+                        <Button
+                            type="primary"
+                            icon={<FilterOutlined />}
+                            onClick={applyFilters}
+                        >
+                            Apply
+                        </Button>
+                        <Button onClick={resetFilters}>Reset</Button>
                     </div>
                 </div>
             </Card>
 
-            <Card bodyStyle={{ padding: 0 }} style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <Card bordered={false} className="attendance-table-card">
+                <div className="attendance-table-title">
+                    <div>
+                        <h3>Attendance Records</h3>
+                        <p>
+                            {pagination.total.toLocaleString()} records match the
+                            current filters
+                        </p>
+                    </div>
+                </div>
                 <Table
+                    rowKey="id"
                     columns={columns}
                     dataSource={data}
-                    rowKey="id"
                     loading={loading}
-                    pagination={{
-                        ...pagination,
-                        showSizeChanger: true,
-                        pageSizeOptions: ['10', '20', '50', '100'],
-                        showTotal: (total, range) => (
-                            <Text type="secondary">
-                                Showing {range[0]}-{range[1]} of {total} records
-                            </Text>
+                    locale={{
+                        emptyText: (
+                            <Empty description="No attendance records found" />
                         ),
-                        position: ['bottomRight']
                     }}
-                    onChange={handleTableChange}
-                    scroll={{ x: 1000 }}
-                    style={{ borderRadius: '0px' }}
+                    scroll={{ x: 1450 }}
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total: pagination.total,
+                        showSizeChanger: true,
+                        pageSizeOptions: [10, 20, 50, 100],
+                        showTotal: (total, range) =>
+                            `${range[0]}–${range[1]} of ${total}`,
+                    }}
+                    onChange={(page) =>
+                        fetchAttendance(
+                            page.current,
+                            page.pageSize,
+                            appliedFilters
+                        )
+                    }
                 />
             </Card>
         </div>
     );
 }
-
-export default Attendance;
-

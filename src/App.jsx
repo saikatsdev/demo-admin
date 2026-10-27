@@ -169,7 +169,7 @@ import EditStatus from "./pages/order/EditStatus";
 import UnpreparedOrderList from "./pages/team/UnpreparedOrderList";
 import AssignList from "./pages/team/AssignList";
 import UpdatePassword from "./pages/auth/employee/UpdatePassword";
-import Attendance from "./pages/team/attendance/AttendancePro";
+import Attendance from "./pages/team/attendance/Attendance";
 import EditAttendance from "./pages/team/attendance/EditAttendance";
 import TeamSetting from "./pages/team/settings/HRSettings";
 import Team from "./pages/team/Team";

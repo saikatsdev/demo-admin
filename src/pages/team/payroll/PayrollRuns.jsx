@@ -43,6 +43,7 @@ export default function PayrollRuns() {
         periodForm.resetFields();
         load();
     };
+
     const openDetails = async (id) => {
         setActionLoading(true);
         const r = await getDatas(`/admin/payroll/${id}`);
@@ -50,6 +51,7 @@ export default function PayrollRuns() {
         if (r?.success) setDetails(r.result);
         else messageApi.error(r?.message || "Unable to load payroll.");
     };
+
     const action = async (id, name) => {
         setActionLoading(true);
         const r =
@@ -62,6 +64,7 @@ export default function PayrollRuns() {
         setDetails(r.result);
         load();
     };
+
     const recordPayment = async (values) => {
         const r = await postData(`/admin/payroll/employee-payrolls/${paymentPayroll.id}/pay`, {
             ...values,
@@ -114,7 +117,7 @@ export default function PayrollRuns() {
                     {
                         title: "Status",
                         dataIndex: "status",
-                        render: (v) => <Tag color={colors[v]}>{v}</Tag>,
+                        render: (v) => <Tag style={{textTransform:"capitalize"}} color={colors[v]}>{v}</Tag>,
                     },
                     {
                         title: "Action",
@@ -213,7 +216,9 @@ export default function PayrollRuns() {
                                     key: "status",
                                     label: "Status",
                                     children: (
-                                        <Tag color={colors[details.status]}>{details.status}</Tag>
+                                        <Tag color={colors[details.status]} style={{textTransform: "capitalize"}}>
+                                            {details.status}
+                                        </Tag>
                                     ),
                                 },
                                 {
@@ -241,8 +246,7 @@ export default function PayrollRuns() {
                                             { title: "Item", dataIndex: "label" },
                                             {
                                                 title: "Amount",
-                                                render: (_, i) =>
-                                                    `৳${Number(i.amount).toLocaleString()}`,
+                                                render: (_, i) => `৳${Number(i.amount).toLocaleString()}`,
                                             },
                                         ]}
                                     />
@@ -259,24 +263,21 @@ export default function PayrollRuns() {
                                 },
                                 {
                                     title: "Gross",
-                                    render: (_, r) =>
-                                        `৳${Number(r.gross_earnings).toLocaleString()}`,
+                                    render: (_, r) => `৳${Number(r.gross_earnings).toLocaleString()}`,
                                 },
                                 {
                                     title: "Deduction",
-                                    render: (_, r) =>
-                                        `৳${Number(r.total_deductions).toLocaleString()}`,
+                                    render: (_, r) => `৳${Number(r.total_deductions).toLocaleString()}`,
                                 },
                                 {
                                     title: "Net Salary",
-                                    render: (_, r) => (
-                                        <strong>৳{Number(r.net_salary).toLocaleString()}</strong>
+                                    render: (_, r) => (<strong>৳{Number(r.net_salary).toLocaleString()}</strong>
                                     ),
                                 },
                                 {
                                     title: "Status",
                                     dataIndex: "status",
-                                    render: (v) => <Tag color={colors[v]}>{v}</Tag>,
+                                    render: (v) => <Tag style={{textTransform:"capitalize"}} color={colors[v]}>{v}</Tag>,
                                 },
                                 {
                                     title: "Payment",
