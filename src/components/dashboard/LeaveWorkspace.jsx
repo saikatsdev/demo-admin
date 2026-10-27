@@ -617,11 +617,13 @@ export default function LeaveWorkspace() {
                         },
                     ]}
                     />
+
                     {details.attachment_url && (
                         <Button type="link" href={details.attachment_url} target="_blank" icon={<FileTextOutlined />}>
                             View attachment
                         </Button>
                     )}
+                    
                     {details.status === "pending" && (
                         <Popconfirm title="Cancel this leave request?" onConfirm={() => cancelRequest(details.id)}>
                             <Button danger icon={<StopOutlined />} style={{ float: "right", marginTop: 16 }}>
