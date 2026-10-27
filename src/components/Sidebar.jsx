@@ -126,7 +126,6 @@ const Sidebar = ({ onMenuSelect }) => {
 
     const reportSubmenus = [
         can('reports-read') && { label: "Order Report", path: "/report/orders" },
-        // can('reports-read') && { label: "Sell Report", path: "/sales/report" },
         can('reports-read') && { label: "Product Report", path: "/product/report" },
         can('reports-read') && { label: "Customer Report", path: "/all/customer/report" },
         can('reports-read') && { label: "Incomplete Order Report", path: "/incomplte/order/report" },
@@ -183,7 +182,7 @@ const Sidebar = ({ onMenuSelect }) => {
         },
 
         hrmSubmenus.length > 0 && {
-            title: "HRM",
+            title: "HRM & Team",
             icon: <TeamOutlined />,
             submenus: hrmSubmenus
         },
