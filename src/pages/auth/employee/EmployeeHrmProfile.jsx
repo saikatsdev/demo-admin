@@ -59,6 +59,8 @@ export default function EmployeeHrmProfile() {
             gender            : data?.gender,
             marital_status    : data?.marital_status,
             blood_group       : data?.blood_group,
+            home_address      : data?.home_address,
+            office_address    : data?.office_address,
             status            : data?.status || "active",
             capabilities      : data?.capabilities || [],
         });
@@ -166,6 +168,8 @@ export default function EmployeeHrmProfile() {
             gender            : values.gender || null,
             marital_status    : values.marital_status || null,
             blood_group       : values.blood_group || null,
+            home_address      : values.home_address?.trim() || null,
+            office_address    : values.office_address?.trim() || null,
             status            : values.status,
             capabilities      : values.capabilities || [],
         };
@@ -500,6 +504,18 @@ export default function EmployeeHrmProfile() {
                         </Card>
                     </Col>
 
+                    <Col xs={24} lg={12}>
+                        <Card className="employee-detail-card" title={<span><BankOutlined /> Home Address</span>}>
+                            <Text>{profile.home_address || "No home address added"}</Text>
+                        </Card>
+                    </Col>
+
+                    <Col xs={24} lg={12}>
+                        <Card className="employee-detail-card" title={<span><BankOutlined /> Office Address</span>}>
+                            <Text>{profile.office_address || "No office address added"}</Text>
+                        </Card>
+                    </Col>
+
                     <Col xs={24}>
                         <Card className="employee-detail-card employee-overview-list-card" title={<span><FileTextOutlined /> Employee Documents</span>}
                             extra={<Tag color="blue">{documents.length} Documents</Tag>}
@@ -734,6 +750,18 @@ export default function EmployeeHrmProfile() {
                 <Col xs={24} md={8}>
                     <Form.Item name="status" label="Status" rules={[{ required: true }]}>
                         <Select options={statusOptions} />
+                    </Form.Item>
+                </Col>
+
+                <Col xs={24} md={12}>
+                    <Form.Item name="home_address" label="Home Address">
+                        <Input.TextArea rows={3} maxLength={2000} showCount placeholder="Enter employee home address" />
+                    </Form.Item>
+                </Col>
+
+                <Col xs={24} md={12}>
+                    <Form.Item name="office_address" label="Office Address">
+                        <Input.TextArea rows={3} maxLength={2000} showCount placeholder="Enter employee office address" />
                     </Form.Item>
                 </Col>
             </Row>
