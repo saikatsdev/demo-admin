@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Table, Typography, Divider, Row, Col, Card, Avatar, Tag, Space, Progress, Button, Tooltip, Badge, Select, Input, DatePicker, Statistic, Modal, Form, InputNumber, Empty, Pagination, Segmented } from "antd";
-import { UserOutlined, TeamOutlined, DollarOutlined, BarChartOutlined, ReloadOutlined, FireOutlined, ThunderboltOutlined, HistoryOutlined, ClockCircleOutlined, SearchOutlined, ArrowLeftOutlined,MailOutlined,EditOutlined, AppstoreOutlined, UnorderedListOutlined, CheckCircleFilled} from "@ant-design/icons";
+import { Table, Typography, Divider, Row, Col, Card, Avatar, Tag, Space, Progress, Button, Tooltip, Badge, Select, Input, DatePicker, Statistic, Empty, Pagination, Segmented } from "antd";
+import { UserOutlined, TeamOutlined, DollarOutlined, BarChartOutlined, ReloadOutlined, FireOutlined, ThunderboltOutlined, HistoryOutlined, ClockCircleOutlined, SearchOutlined, ArrowLeftOutlined,MailOutlined, AppstoreOutlined, UnorderedListOutlined, CheckCircleFilled} from "@ant-design/icons";
 import { getDatas } from "../../api/common/common";
 import useTitle from "../../hooks/useTitle";
 import dayjs from "dayjs";
@@ -46,11 +46,6 @@ export default function Team() {
     const [pagination, setPagination]     = useState({ current: 1, pageSize: 12 });
     const [viewMode, setViewMode]         = useState("cards");
     
-    // Modal & Form state
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [selectedEmployee, setSelectedEmployee] = useState(null);
-    const [form] = Form.useForm();
-
     const buildQuery = useCallback(() => {
         const params = new URLSearchParams();
 
@@ -84,28 +79,6 @@ export default function Team() {
     useEffect(() => {
         getTeamDashboard();
     }, [getTeamDashboard]);
-
-    const handleEditClick = (employee) => {
-        setSelectedEmployee(employee);
-        form.setFieldsValue({
-            salary              : employee.salary || "",
-            commission_per_order: employee.commission_per_order || "",
-            present_address     : employee.present_address || employee.address || "",
-            permanent_address   : employee.permanent_address || "",
-        });
-        setIsEditModalOpen(true);
-    };
-
-    const handleSaveEdit = (values) => {
-        if (selectedEmployee) {
-            setEmployees((prev) =>
-                prev.map((emp) =>
-                    emp.id === selectedEmployee.id ? { ...emp, ...values } : emp
-                )
-            );
-        }
-        setIsEditModalOpen(false);
-    };
 
     const columns = 
     [
@@ -323,28 +296,6 @@ export default function Team() {
                 );
             },
         },
-        {
-            title: "Action",
-            key: "action",
-            align: "center",
-            width: 80,
-            fixed: "right",
-            render: (_, record) => (
-                <Tooltip title="Edit Employee Settings">
-                    <Button
-                        size="small"
-                        type="text"
-                        icon={<EditOutlined />}
-                        style={{
-                            color: '#1c558b',
-                            background: '#e8f1f8',
-                            borderRadius: 6
-                        }}
-                        onClick={() => handleEditClick(record)}
-                    />
-                </Tooltip>
-            ),
-        },
     ];
 
     const visibleEmployees = employees.slice(
@@ -512,9 +463,6 @@ export default function Team() {
                                                             <span>{employee.phone_number || employee.email || `Employee #${employee.id}`}</span>
                                                         </div>
                                                     </div>
-                                                    <Tooltip title="Edit Employee Settings">
-                                                        <Button type="text" className="employee-card__edit" icon={<EditOutlined />} onClick={() => handleEditClick(employee)} />
-                                                    </Tooltip>
                                                 </div>
 
                                                 <div className="employee-card__meta">
@@ -650,57 +598,6 @@ export default function Team() {
                 )}
             </div>
 
-            <Modal
-                title={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Avatar src={selectedEmployee?.img_path} icon={<UserOutlined />} style={{ background: '#1c558b' }} />
-                        <div>
-                            <div style={{ fontWeight: 700, fontSize: 16, textTransform: 'capitalize' }}>
-                                Edit Employee Details
-                            </div>
-                            <div style={{ fontSize: 12, color: '#64748b', fontWeight: 400 }}>
-                                {selectedEmployee?.username} (#{selectedEmployee?.id})
-                            </div>
-                        </div>
-                    </div>
-                }
-                open={isEditModalOpen}
-                onCancel={() => setIsEditModalOpen(false)}
-                footer={[
-                    <Button key="cancel" onClick={() => setIsEditModalOpen(false)}>
-                        Cancel
-                    </Button>,
-                    <Button key="save" type="primary" style={{ background: '#1c558b', borderColor: '#1c558b' }} onClick={() => form.submit()}>
-                        Save Changes
-                    </Button>
-                ]}
-                destroyOnClose
-            >
-                <Form form={form} layout="vertical" onFinish={handleSaveEdit} style={{ marginTop: 14 }}>
-                    <Row gutter={12}>
-                        <Col span={12}>
-                            <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>Monthly Salary</span>} name="salary">
-                                <InputNumber style={{ width: '100%', borderRadius: 8 }} prefix="৳" placeholder="Enter base salary (e.g. 25000)" min={0}
-                                    formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} parser={value => value.replace(/\$\s?|(,*)/g, '')}/>
-                            </Form.Item>
-                        </Col>
-
-                        <Col span={12}>
-                            <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>Commission per Order</span>} name="commission_per_order">
-                                <InputNumber style={{ width: '100%', borderRadius: 8 }} prefix="৳" placeholder="Enter commission (e.g. 15)" min={0}/>
-                            </Form.Item>
-                        </Col>
-                    </Row>
-
-                    <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>Present Address</span>} name="present_address">
-                        <Input.TextArea rows={2} placeholder="Enter current present address..." style={{ borderRadius: 8 }}/>
-                    </Form.Item>
-
-                    <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>Permanent Address</span>} name="permanent_address">
-                        <Input.TextArea rows={2} placeholder="Enter permanent address..." style={{ borderRadius: 8 }}/>
-                    </Form.Item>
-                </Form>
-            </Modal>
         </div>
     );
 }
