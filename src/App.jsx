@@ -184,7 +184,6 @@ import EditCrossSell from "./pages/product/crosssell/EditCrossSell";
 import IncompleteOrderReport from "./pages/report/IncompleteOrderReport";
 import CourierEntryReport from "./pages/order/CourierEntryReport";
 import JobType from "./pages/auth/JobType";
-import HrmModulePlaceholder from "./pages/hrm/HrmModulePlaceholder";
 import Department from "./pages/team/department/Department";
 import Designation from "./pages/team/designation/Designation";
 import EmployeeType from "./pages/team/employee-type/EmployeeType";
@@ -195,6 +194,7 @@ import Leave from "./pages/team/leave/Leave";
 import MyLeave from "./pages/team/leave/MyLeave";
 import PayrollAccess from "./pages/team/payroll/PayrollAccess";
 import SalaryAdvance from "./pages/team/advance/SalaryAdvance";
+import Performance from "./pages/team/performance/Performance";
 
 function App() {
     const dispatch         = useDispatch();
@@ -333,7 +333,7 @@ function App() {
                     
                     <Route path="/hrm/payroll" element={<PayrollAccess />} />
                     <Route path="/hrm/salary-advances" element={<SalaryAdvance />} />
-                    <Route path="/hrm/performance" element={<HrmModulePlaceholder title="Performance" description="Set employee targets, combine ecommerce performance metrics, run review cycles, and record manager ratings." />} />
+                    <Route path="/hrm/performance" element={<Performance />} />
 
                     <Route path="/prepared/list" element={<PrepareOrderList/>} />
                     <Route path="/unprepared/list" element={<UnpreparedOrderList/>} />

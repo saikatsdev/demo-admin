@@ -7,6 +7,7 @@ import { getDatas } from "../../api/common/common";
 import "./css/EmployeeDashboard.css";
 import AttendanceWorkspace from "./AttendanceWorkspace";
 import IncentiveWorkspace from "./IncentiveWorkspace";
+import PerformanceLeaderboards from "./PerformanceLeaderboards";
 
 const countOrdersByStatus = (statuses = [], matchers = []) => {
     if (!Array.isArray(statuses) || !matchers.length) return 0;
@@ -167,6 +168,8 @@ export default function EmployeeDashboard() {
             <AttendanceWorkspace />
 
             <IncentiveWorkspace />
+
+            <PerformanceLeaderboards />
 
             <section className="ed-section">
                 <div className="ed-section__head">
