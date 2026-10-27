@@ -45,7 +45,7 @@ export default function Leave() {
     const [options, setOptions]       = useState({departments: [],designations: [],employmentTypes: []});
     const [loading, setLoading]       = useState(false);
     const [saving, setSaving]         = useState(false);
-    const [status, setStatus]         = useState();
+    const [status, setStatus]         = useState("pending");
     const [typeId, setTypeId]         = useState();
     const [range, setRange]           = useState();
     const [pagination, setPagination] = useState({current: 1,pageSize: 10,total: 0});
@@ -177,7 +177,7 @@ export default function Leave() {
 
     const changeTab = (key) => {
         setTab(key);
-        setStatus(undefined);
+        setStatus(key === "requests" ? "pending" : undefined);
         setTypeId(undefined);
         setRange(undefined);
         setPagination({ current: 1, pageSize: 10, total: 0 });
@@ -567,7 +567,10 @@ export default function Leave() {
                         allowClear
                         placeholder="All statuses"
                         value={status}
-                        onChange={setStatus}
+                        onChange={(value) => {
+                            setStatus(value);
+                            setPagination((current) => ({ ...current, current: 1 }));
+                        }}
                         style={{ width: 145 }}
                         options={tab === "requests" ? requestStatuses : activeStatuses}
                         />

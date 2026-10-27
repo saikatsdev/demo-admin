@@ -1,4 +1,4 @@
-import {CheckOutlined,DeleteOutlined,EditOutlined,PlusOutlined,ReloadOutlined,StopOutlined} from "@ant-design/icons";
+import {CheckOutlined,DeleteOutlined,EditOutlined,PlusOutlined,ReloadOutlined,StopOutlined,UnlockOutlined} from "@ant-design/icons";
 import {Button,Card,Col,DatePicker,Form,Input,InputNumber,Modal,Popconfirm,Row,Select,Space,Table,Tabs,Tag,message} from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useState } from "react";
@@ -21,6 +21,7 @@ export default function Payroll() {
     const { can }                     = usePermission();
     const [messageApi, contextHolder] = message.useMessage();
     const [form]                      = Form.useForm();
+    const [reopenForm]                = Form.useForm();
     const [activeTab, setActiveTab]   = useState("payroll");
     const [loading, setLoading]       = useState(false);
     const [rows, setRows]             = useState([]);
@@ -28,6 +29,8 @@ export default function Payroll() {
     const [modalOpen, setModalOpen]   = useState(false);
     const [editing, setEditing]       = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [reopenEntry, setReopenEntry] = useState(null);
+    const [reopening, setReopening]     = useState(false);
 
     const loadEmployees = useCallback(async () => {
         const response = await getDatas("/admin/employee-profiles", { paginate_size: 1000 });
@@ -104,6 +107,33 @@ export default function Payroll() {
             messageApi.success(response.msg);
             loadRows();
         } else messageApi.error(response?.message || "Unable to update entry.");
+    };
+
+    const openReopenModal = (record) => {
+        setReopenEntry(record);
+        reopenForm.resetFields();
+    };
+
+    const reopenPackaging = async (values) => {
+        if (!reopenEntry) return;
+
+        setReopening(true);
+        const response = await putData(
+            `/admin/incentives/packaging/${reopenEntry.id}/reopen`,
+            values,
+        );
+        setReopening(false);
+
+        if (!response?.success) {
+            return messageApi.error(
+                response?.message || "Unable to reopen packaging work entry.",
+            );
+        }
+
+        messageApi.success(response.msg || "Packaging work entry reopened.");
+        setReopenEntry(null);
+        reopenForm.resetFields();
+        loadRows();
     };
 
     const ruleColumns = [
@@ -231,42 +261,71 @@ export default function Payroll() {
         {
             title: "Action",
             width: 150,
-            render: (_, record) =>
-                record.status === "pending" &&
-                can(
-                    activeTab === "commissions" ? "sales-commissions-update" : "packaging-work-update",
-                ) ? (
-                    <Space>
+            render: (_, record) => {
+                const permission = activeTab === "commissions"
+                    ? "sales-commissions-update"
+                    : "packaging-work-update";
+
+                if (!can(permission)) return "—";
+
+                if (record.status === "pending") {
+                    return (
+                        <Space>
+                            <Button
+                                size="small"
+                                type="primary"
+                                icon={<CheckOutlined />}
+                                onClick={() =>
+                                    decide(
+                                        activeTab === "commissions"
+                                            ? "commission"
+                                            : "packaging",
+                                        record.id,
+                                        "approved",
+                                    )
+                                }
+                            >
+                                Approve
+                            </Button>
+                            <Button
+                                size="small"
+                                danger
+                                icon={<StopOutlined />}
+                                onClick={() =>
+                                    decide(
+                                        activeTab === "commissions"
+                                            ? "commission"
+                                            : "packaging",
+                                        record.id,
+                                        "rejected",
+                                    )
+                                }
+                            />
+                        </Space>
+                    );
+                }
+
+                if (
+                    activeTab === "packaging" &&
+                    ["approved", "rejected"].includes(record.status)
+                ) {
+                    if (record.is_payroll_locked) {
+                        return <Tag color="default">Payroll locked</Tag>;
+                    }
+
+                    return (
                         <Button
                             size="small"
-                            type="primary"
-                            icon={<CheckOutlined />}
-                            onClick={() =>
-                                decide(
-                                    activeTab === "commissions" ? "commission" : "packaging",
-                                    record.id,
-                                    "approved",
-                                )
-                            }
+                            icon={<UnlockOutlined />}
+                            onClick={() => openReopenModal(record)}
                         >
-                            Approve
+                            Reopen
                         </Button>
-                        <Button
-                            size="small"
-                            danger
-                            icon={<StopOutlined />}
-                            onClick={() =>
-                                decide(
-                                    activeTab === "commissions" ? "commission" : "packaging",
-                                    record.id,
-                                    "rejected",
-                                )
-                            }
-                        />
-                    </Space>
-                ) : (
-                    "—"
-                ),
+                    );
+                }
+
+                return "—";
+            },
         },
     ];
 
@@ -432,6 +491,51 @@ export default function Payroll() {
                             Save rule
                         </Button>
                     </div>
+                </Form>
+            </Modal>
+
+            <Modal
+                title="Reopen packaging work"
+                open={Boolean(reopenEntry)}
+                onCancel={() => {
+                    setReopenEntry(null);
+                    reopenForm.resetFields();
+                }}
+                onOk={() => reopenForm.submit()}
+                okText="Reopen for review"
+                okButtonProps={{ loading: reopening }}
+                cancelButtonProps={{ disabled: reopening }}
+                closable={!reopening}
+                maskClosable={!reopening}
+                destroyOnClose
+            >
+                <p className="payroll-muted">
+                    This will return the entry to Pending so it can be reviewed and
+                    approved or rejected again. The correction reason will be stored
+                    in the audit history.
+                </p>
+                <Form
+                    form={reopenForm}
+                    layout="vertical"
+                    onFinish={reopenPackaging}
+                    preserve={false}
+                >
+                    <Form.Item
+                        name="reason"
+                        label="Correction reason"
+                        rules={[
+                            { required: true, message: "Please enter the correction reason" },
+                            { min: 5, message: "Reason must be at least 5 characters" },
+                            { max: 1000, message: "Reason cannot exceed 1000 characters" },
+                        ]}
+                    >
+                        <Input.TextArea
+                            rows={4}
+                            maxLength={1000}
+                            showCount
+                            placeholder="e.g. Approved by mistake; supporting details need review"
+                        />
+                    </Form.Item>
                 </Form>
             </Modal>
         </div>

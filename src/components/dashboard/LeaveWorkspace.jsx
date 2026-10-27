@@ -31,7 +31,11 @@ const statusColors = {
     cancelled: "default",
 };
 
-const responseMessage = (response, fallback) => Object.values(response?.errors || {})?.[0]?.[0] || response?.msg || response?.message || fallback;
+const responseMessage = (response, fallback) => {
+    const validationMessage = Object.values(response?.errors || {})?.[0]?.[0];
+
+    return validationMessage || response?.message || response?.msg || fallback;
+};
 
 const displayDays = (value) => `${Number(value || 0)} day${Number(value) === 1 ? "" : "s"}`;
 
@@ -47,6 +51,7 @@ export default function LeaveWorkspace() {
     const [calculating, setCalculating]       = useState(false);
     const [calculation, setCalculation]       = useState(null);
     const [calculationError, setCalculationError] = useState("");
+    const [submissionError, setSubmissionError]   = useState("");
     const [details, setDetails]               = useState(null);
     const [status, setStatus]                 = useState();
     const [pagination, setPagination]         = useState({current: 1,pageSize: 5,total: 0});
@@ -124,11 +129,13 @@ export default function LeaveWorkspace() {
 
         setCalculation(null);
         setCalculationError("");
+        setSubmissionError("");
         setModalOpen(true);
     };
 
     const calculateLeave = async () => {
         setCalculationError("");
+        setSubmissionError("");
         const values = await form.validateFields(["leave_type_id","date_range","start_day_type","end_day_type"]);
 
         setCalculating(true);
@@ -179,9 +186,12 @@ export default function LeaveWorkspace() {
 
         setSubmitting(false);
 
-        if (!response?.success)
+        if (!response?.success) {
+            const error = responseMessage(response, "Unable to submit leave request");
+            setSubmissionError(error);
 
-        return message.error(responseMessage(response, "Unable to submit leave request"),);
+            return message.error(error);
+        }
 
         message.success(response.msg || "Leave request submitted successfully");
 
@@ -416,9 +426,11 @@ export default function LeaveWorkspace() {
             >
                 <Form form={form} layout="vertical" style={{ marginTop: 18 }}
                 onValuesChange={(changed) => {
-                    if (["leave_type_id","date_range","start_day_type","end_day_type"].some((key) => key in changed))
-                    setCalculation(null);
+                    if (["leave_type_id","date_range","start_day_type","end_day_type"].some((key) => key in changed)) {
+                        setCalculation(null);
+                    }
                     setCalculationError("");
+                    setSubmissionError("");
                 }}
                 >
                 <Row gutter={16}>
@@ -518,6 +530,18 @@ export default function LeaveWorkspace() {
                         message="Unable to calculate leave"
                         description={calculationError}
                         onClose={() => setCalculationError("")}
+                        style={{ marginTop: 14 }}
+                    />
+                )}
+
+                {submissionError && (
+                    <Alert
+                        type="error"
+                        showIcon
+                        closable
+                        message="Leave request could not be submitted"
+                        description={submissionError}
+                        onClose={() => setSubmissionError("")}
                         style={{ marginTop: 14 }}
                     />
                 )}
