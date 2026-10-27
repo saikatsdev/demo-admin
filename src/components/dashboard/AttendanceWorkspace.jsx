@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button, Progress, Spin, Tag, Typography, message } from "antd";
 import { postData, getDatas } from "../../api/common/common";
-import { CalendarOutlined, CheckCircleFilled, ClockCircleOutlined, FieldTimeOutlined, LoginOutlined, LogoutOutlined, ReloadOutlined, WarningFilled } from "@ant-design/icons";
+import { CheckCircleFilled, ClockCircleOutlined, FieldTimeOutlined, LoginOutlined, LogoutOutlined, ReloadOutlined, WarningFilled } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -236,17 +236,6 @@ export default function AttendanceWorkspace({ onUpdate }) {
                             </div>
                         </article>
 
-                        <article>
-                            <CalendarOutlined />
-                            <div>
-                                <span>
-                                    Overtime
-                                </span>
-                                <strong>
-                                    {formatDuration(attendance?.overtime_minutes)}
-                                </strong>
-                            </div>
-                        </article>
                     </div>
                 </div>
             </Spin>

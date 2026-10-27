@@ -1,0 +1,14 @@
+.incentive-workspace { margin-top: 18px; }
+.incentive-workspace__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.incentive-stat { height: 100%; border: 1px solid #edf0f5; border-radius: 12px; }
+.incentive-stat .ant-card-body { display: flex; align-items: center; gap: 12px; padding: 16px; }
+.incentive-stat__icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 12px; font-size: 19px; }
+.incentive-stat--blue .incentive-stat__icon { color: #1677ff; background: #e6f4ff; }
+.incentive-stat--purple .incentive-stat__icon { color: #722ed1; background: #f9f0ff; }
+.incentive-stat--orange .incentive-stat__icon { color: #d46b08; background: #fff7e6; }
+.incentive-stat--green .incentive-stat__icon { color: #389e0d; background: #f6ffed; }
+.incentive-history { margin-top: 16px; padding: 16px; background: #fff; border: 1px solid #edf0f5; border-radius: 12px; }
+.incentive-history h3 { margin: 0 0 12px; font-size: 14px; }
+.incentive-form-alert { margin-bottom: 16px; }
+.incentive-form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+@media (max-width: 575px) { .incentive-workspace__head { align-items: flex-start; flex-direction: column; } }

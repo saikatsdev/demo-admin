@@ -45,6 +45,7 @@ const Sidebar = ({ onMenuSelect }) => {
         can('employment-types-read') && { label: "Employment Types", path: "/hrm/employment-types" },
         canAny('shifts-read', 'holidays-read') && { label: "Shifts & Holidays", path: "/hrm/shifts-holidays" },
         canAny('payroll-read', 'self-payslips-read') && { label: "Payroll", path: "/hrm/payroll" },
+        can('salary-advances-read') && { label: "Salary Advances", path: "/hrm/salary-advances" },
         can('performance-read') && { label: "Performance", path: "/hrm/performance" },
         can('orders-team-list-read') && { label: "Prepared Order List", path: "/prepared/list" },
         can('orders-team-list-read') && { label: "Unprepare Order List", path: "/unprepared/list" },

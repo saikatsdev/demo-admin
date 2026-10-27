@@ -169,9 +169,9 @@ import EditStatus from "./pages/order/EditStatus";
 import UnpreparedOrderList from "./pages/team/UnpreparedOrderList";
 import AssignList from "./pages/team/AssignList";
 import UpdatePassword from "./pages/auth/employee/UpdatePassword";
-import Attendance from "./pages/team/attendance/Attendance";
+import Attendance from "./pages/team/attendance/AttendancePro";
 import EditAttendance from "./pages/team/attendance/EditAttendance";
-import TeamSetting from "./pages/team/settings/TeamSetting";
+import TeamSetting from "./pages/team/settings/HRSettings";
 import Team from "./pages/team/Team";
 import ScreeningManager from "./components/auth/ScreeningManager";
 import PrepareOrderList from "./pages/team/PrepareOrderList";
@@ -193,6 +193,8 @@ import EmployeeHrmProfile from "./pages/auth/employee/EmployeeHrmProfile";
 import HrmEmployee from "./pages/team/employee/HrmEmployee";
 import Leave from "./pages/team/leave/Leave";
 import MyLeave from "./pages/team/leave/MyLeave";
+import PayrollAccess from "./pages/team/payroll/PayrollAccess";
+import SalaryAdvance from "./pages/team/advance/SalaryAdvance";
 
 function App() {
     const dispatch         = useDispatch();
@@ -329,7 +331,8 @@ function App() {
                     
                     <Route path="/hrm/shifts-holidays" element={<ShiftHoliday/>} />
                     
-                    <Route path="/hrm/payroll" element={<HrmModulePlaceholder title="Payroll" description="Prepare salary structures, earnings, deductions, payroll periods, approvals, payments, and employee payslips." />} />
+                    <Route path="/hrm/payroll" element={<PayrollAccess />} />
+                    <Route path="/hrm/salary-advances" element={<SalaryAdvance />} />
                     <Route path="/hrm/performance" element={<HrmModulePlaceholder title="Performance" description="Set employee targets, combine ecommerce performance metrics, run review cycles, and record manager ratings." />} />
 
                     <Route path="/prepared/list" element={<PrepareOrderList/>} />

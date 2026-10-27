@@ -1,0 +1,8 @@
+.payroll-page { padding-bottom: 32px; }
+.payroll-card { border: 1px solid #eef1f5; border-radius: 14px; box-shadow: 0 8px 28px rgba(31, 56, 88, .06); }
+.payroll-muted { margin-top: 3px; color: #8c8c8c; font-size: 11px; }
+.payroll-modal-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
+.payroll-run-actions { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+.payroll-detail-table { margin-top: 18px; }
+.payslip-summary { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin-bottom: 18px; }
+@media(max-width:767px){.payslip-summary{grid-template-columns:repeat(2,minmax(0,1fr));}}

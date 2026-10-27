@@ -6,6 +6,7 @@ import { UserOutlined, ShoppingCartOutlined, CheckCircleOutlined, HourglassOutli
 import { getDatas } from "../../api/common/common";
 import "./css/EmployeeDashboard.css";
 import AttendanceWorkspace from "./AttendanceWorkspace";
+import IncentiveWorkspace from "./IncentiveWorkspace";
 
 const countOrdersByStatus = (statuses = [], matchers = []) => {
     if (!Array.isArray(statuses) || !matchers.length) return 0;
@@ -164,6 +165,8 @@ export default function EmployeeDashboard() {
             </header>
 
             <AttendanceWorkspace />
+
+            <IncentiveWorkspace />
 
             <section className="ed-section">
                 <div className="ed-section__head">

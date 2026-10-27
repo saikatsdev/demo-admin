@@ -60,6 +60,7 @@ export default function EmployeeHrmProfile() {
             marital_status    : data?.marital_status,
             blood_group       : data?.blood_group,
             status            : data?.status || "active",
+            capabilities      : data?.capabilities || [],
         });
     }, [profileForm]);
 
@@ -166,6 +167,7 @@ export default function EmployeeHrmProfile() {
             marital_status    : values.marital_status || null,
             blood_group       : values.blood_group || null,
             status            : values.status,
+            capabilities      : values.capabilities || [],
         };
 
         const response = profile ? await putData(`/admin/employee-profiles/${profile.id}`, payload) : await postData("/admin/employee-profiles", payload);
@@ -671,6 +673,25 @@ export default function EmployeeHrmProfile() {
                             { value: "daily", label: "Daily" },
                             { value: "hourly", label: "Hourly" },
                         ]} />
+                    </Form.Item>
+                </Col>
+
+                <Col xs={24} md={12}>
+                    <Form.Item
+                        name="capabilities"
+                        label="Work Capabilities"
+                        extra="Controls which operational tools and incentive sections this employee can access."
+                    >
+                        <Select
+                            mode="multiple"
+                            allowClear
+                            placeholder="Select capabilities"
+                            options={[
+                                { value: "sales", label: "Sales" },
+                                { value: "packaging", label: "Packaging" },
+                                { value: "accounts", label: "Accounts" },
+                            ]}
+                        />
                     </Form.Item>
                 </Col>
 
