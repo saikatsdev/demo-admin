@@ -1,11 +1,11 @@
-import {SyncOutlined } from "@ant-design/icons";
+import { LoadingOutlined, LogoutOutlined, SyncOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import useAxios from "../hooks/useAxios";
 import TopMenuBar from "./TopMenuBar";
 import { getDatas } from "../api/common/common";
 import { message } from "antd";
-import {useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./Header.css";
 import OrderSearch from "./search/OrderSearch";
 import { useAppSettings } from "../contexts/useAppSettings";
@@ -18,7 +18,9 @@ export default function Header({ submenus }) {
 
     // State
     const [cachLoading, setCacheLoading]       = useState(false);
+    const [logoutLoading, setLogoutLoading]   = useState(false);
     const [messageApi, contextHolder] = message.useMessage();
+    const avatarMenuRef = useRef(null);
 
     const { logout, user } = useAuth();
     const api              = useAxios();
@@ -32,7 +34,36 @@ export default function Header({ submenus }) {
         }
     }, [loading, settings?.favicon_icon]);
 
+    useEffect(() => {
+        const closeAvatarMenu = (event) => {
+            const menu = avatarMenuRef.current;
+
+            if (menu?.open && !menu.contains(event.target)) {
+                menu.removeAttribute("open");
+            }
+        };
+
+        const closeAvatarMenuOnEscape = (event) => {
+            if (event.key === "Escape" && avatarMenuRef.current?.open) {
+                avatarMenuRef.current.removeAttribute("open");
+                avatarMenuRef.current.querySelector("summary")?.focus();
+            }
+        };
+
+        document.addEventListener("pointerdown", closeAvatarMenu);
+        document.addEventListener("keydown", closeAvatarMenuOnEscape);
+
+        return () => {
+            document.removeEventListener("pointerdown", closeAvatarMenu);
+            document.removeEventListener("keydown", closeAvatarMenuOnEscape);
+        };
+    }, []);
+
     const handleLogout = async () => {
+        if (logoutLoading) return;
+
+        setLogoutLoading(true);
+
         try {
             await api.post("/admin/logout");
         } catch (e) {
@@ -109,7 +140,7 @@ export default function Header({ submenus }) {
                     </span>
                 </div>
         
-                <details className="avatar-menu">
+                <details ref={avatarMenuRef} className="avatar-menu">
                     <summary className="avatar-btn" aria-label="User menu">
                         <div className="avatar" aria-hidden="true"></div>
                     </summary>
@@ -161,8 +192,15 @@ export default function Header({ submenus }) {
 
                         <hr className="sep" />
 
-                        <button onClick={handleLogout} className="dropdown-item danger">
-                            Logout
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="dropdown-item danger logout-action"
+                            disabled={logoutLoading}
+                            aria-busy={logoutLoading}
+                        >
+                            {logoutLoading ? <LoadingOutlined spin /> : <LogoutOutlined />}
+                            <span>{logoutLoading ? "Logging out…" : "Logout"}</span>
                         </button>
                     </div>
 

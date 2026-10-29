@@ -131,7 +131,7 @@ import AddBlockUser from "./pages/order/blocklist/AddBlockUser";
 import UpSell from "./pages/product/thankyou/UpSell";
 import TrashList from "./components/order/TrashList";
 import CourierSetting from "./pages/order/courier/CourierSetting";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchDistricts } from "./features/districts/districtSlice";
 import { fetchOrderFromList } from "./features/orderFrom/orderFromSlice";
@@ -166,16 +166,8 @@ import AddStatus from "./pages/order/AddStatus";
 import AddOnlinePaymentDiscount from "./pages/order/AddOnlinePaymentDiscount";
 import EditOnlinePaymentDiscount from "./pages/order/EditOnlinePaymentDiscount";
 import EditStatus from "./pages/order/EditStatus";
-import UnpreparedOrderList from "./pages/team/UnpreparedOrderList";
-import AssignList from "./pages/team/AssignList";
 import UpdatePassword from "./pages/auth/employee/UpdatePassword";
-import Attendance from "./pages/team/attendance/Attendance";
-import EditAttendance from "./pages/team/attendance/EditAttendance";
-import TeamSetting from "./pages/team/settings/HRSettings";
-import Team from "./pages/team/Team";
 import ScreeningManager from "./components/auth/ScreeningManager";
-import PrepareOrderList from "./pages/team/PrepareOrderList";
-import UnAssignList from "./pages/team/UnAssignList";
 import OrderList from "./pages/order/followupsell/order/OrderList";
 import CustomerFeedback from "./pages/order/customerFeedback/CustomerFeedback";
 import CrossSell from "./pages/product/crosssell/CrossSell";
@@ -184,17 +176,10 @@ import EditCrossSell from "./pages/product/crosssell/EditCrossSell";
 import IncompleteOrderReport from "./pages/report/IncompleteOrderReport";
 import CourierEntryReport from "./pages/order/CourierEntryReport";
 import JobType from "./pages/auth/JobType";
-import Department from "./pages/team/department/Department";
-import Designation from "./pages/team/designation/Designation";
-import EmployeeType from "./pages/team/employee-type/EmployeeType";
-import ShiftHoliday from "./pages/team/shift-holiday/ShiftHoliday";
-import EmployeeHrmProfile from "./pages/auth/employee/EmployeeHrmProfile";
-import HrmEmployee from "./pages/team/employee/HrmEmployee";
-import Leave from "./pages/team/leave/Leave";
-import MyLeave from "./pages/team/leave/MyLeave";
-import PayrollAccess from "./pages/team/payroll/PayrollAccess";
-import SalaryAdvance from "./pages/team/advance/SalaryAdvance";
-import Performance from "./pages/team/performance/Performance";
+import { moduleRegistry } from "./modules/registry";
+import { useModules } from "./contexts/useModules";
+import AppBootLoader from "./components/loaders/AppBootLoader";
+import ModulePageLoader from "./components/loaders/ModulePageLoader";
 
 function App() {
     const dispatch         = useDispatch();
@@ -207,9 +192,11 @@ function App() {
     const couriers         = useSelector((s) => s.courier.list);
     const statuses         = useSelector((s) => s.status.list);
     const deliveryGateways = useSelector((s) => s.deliveryGateway.list);
+    const { isModuleEnabled, loading: modulesLoading } = useModules();
+    const enabledModules = moduleRegistry.filter((module) => isModuleEnabled(module.key));
 
     useEffect(() => {
-        if (!auth?.token) return;
+        if (!auth?.token || modulesLoading) return;
 
         if (!districts.length) dispatch(fetchDistricts());
         if (!orderFromList.length) dispatch(fetchOrderFromList());
@@ -219,7 +206,23 @@ function App() {
         if (!couriers.length) dispatch(fetchCouriers());
         if (!statuses.length) dispatch(fetchStatuses());
         if (!deliveryGateways.length) dispatch(fetchDeliveryGateways());
-    }, [auth]);
+    }, [
+        auth?.token,
+        modulesLoading,
+        districts.length,
+        orderFromList.length,
+        customerTypes.length,
+        cancelReasons.length,
+        paymentGateways.length,
+        couriers.length,
+        statuses.length,
+        deliveryGateways.length,
+        dispatch,
+    ]);
+
+    if (auth?.token && modulesLoading) {
+        return <AppBootLoader />;
+    }
 
     return (
         <>
@@ -258,9 +261,6 @@ function App() {
                     <Route path="/employee" element={<Employee />} />
                     <Route path="/add/employee" element={<AddEmployee />} />
                     <Route path="/edit/employee/:id" element={<EditEmployee />} />
-                    <Route path="/hrm/employees" element={<HrmEmployee />} />
-                    <Route path="/hrm/employees/:id/profile" element={<EmployeeHrmProfile />} />
-
                     <Route path="/system/user-management" element={<Profile />} />
 
                     <Route path="/brands" element={<Brand />} />
@@ -313,33 +313,21 @@ function App() {
                     <Route path="/meta-ad-account" element={<MetaAdAccount />} />
                     {/* Meta Module */}
 
-                    {/* Team Module */}
-                    <Route path="/teams" element={<Team />} />
-                    <Route path="/team/attendance" element={<Attendance />} />
-                    <Route path="/team/attendance/edit/:id" element={<EditAttendance />} />
+                    {enabledModules.flatMap((module) => module.routes.map((moduleRoute) => {
+                        const ModulePage = moduleRoute.component;
 
-                    <Route path="/team-settings" element={<TeamSetting/>}/>
-
-                    <Route path="/hrm/leaves" element={<Leave/>} />
-                    <Route path="/hrm/my-leaves" element={<MyLeave/>} />
-
-                    <Route path="/hrm/departments" element={<Department/>} />
-
-                    <Route path="/hrm/designations" element={<Designation/>} />
-
-                    <Route path="/hrm/employment-types" element={<EmployeeType/>} />
-                    
-                    <Route path="/hrm/shifts-holidays" element={<ShiftHoliday/>} />
-                    
-                    <Route path="/hrm/payroll" element={<PayrollAccess />} />
-                    <Route path="/hrm/salary-advances" element={<SalaryAdvance />} />
-                    <Route path="/hrm/performance" element={<Performance />} />
-
-                    <Route path="/prepared/list" element={<PrepareOrderList/>} />
-                    <Route path="/unprepared/list" element={<UnpreparedOrderList/>} />
-                    <Route path="/unassign/list" element={<UnAssignList/>} />
-                    <Route path="/assign-by-list" element={<AssignList/>} />
-                    {/* Team Module */}
+                        return (
+                            <Route
+                                key={`${module.key}:${moduleRoute.path}`}
+                                path={moduleRoute.path}
+                                element={(
+                                    <Suspense fallback={<ModulePageLoader />}>
+                                        <ModulePage />
+                                    </Suspense>
+                                )}
+                            />
+                        );
+                    }))}
 
                     <Route path="/product/catalogs" element={<ProductCatelog />} />
                     <Route path="/add/prodcut/catelog" element={<AddProductCatelog />} />

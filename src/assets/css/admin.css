@@ -858,6 +858,24 @@ body::-webkit-scrollbar-thumb {
   color: #b00020;
 }
 
+.avatar-menu .dropdown-item.logout-action {
+  min-height: 38px;
+  font-weight: 600;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.avatar-menu .dropdown-item.logout-action:disabled {
+  color: #cf1322;
+  background: #fff1f0;
+  cursor: wait;
+  opacity: 1;
+}
+
+.avatar-menu .dropdown-item.logout-action svg {
+  flex: 0 0 auto;
+  font-size: 15px;
+}
+
 .avatar-menu .sep {
   border: 0;
   border-top: 1px solid var(--border-color);

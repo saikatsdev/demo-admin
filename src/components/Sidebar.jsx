@@ -1,9 +1,11 @@
-import {BarChartOutlined,DeliveredProcedureOutlined,FallOutlined,NotificationOutlined,TeamOutlined,ProductOutlined,PropertySafetyOutlined,ToolOutlined,FileTextOutlined,BulbOutlined,PictureOutlined,} from "@ant-design/icons";
+import {BarChartOutlined,DeliveredProcedureOutlined,FallOutlined,NotificationOutlined,ProductOutlined,PropertySafetyOutlined,ToolOutlined,FileTextOutlined,BulbOutlined,PictureOutlined,} from "@ant-design/icons";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePermission } from "../hooks/usePermission";
 import { useRole } from "../hooks/useRole";
 import { useAppSettings } from "../contexts/useAppSettings";
+import { useModules } from "../contexts/useModules";
+import { moduleRegistry } from "../modules/registry";
 
 const Sidebar = ({ onMenuSelect }) => {
     const navigate                    = useNavigate();
@@ -13,6 +15,7 @@ const Sidebar = ({ onMenuSelect }) => {
     const {permissions} = usePermission();
 
     const {settings} = useAppSettings();
+    const { isModuleEnabled } = useModules();
 
     const can = (permission) => permissions?.includes(permission);
     const canAny = (...requiredPermissions) => requiredPermissions.some(can);
@@ -35,24 +38,10 @@ const Sidebar = ({ onMenuSelect }) => {
         can('meta-ad-account-read') && { label: "Meta Ad Account", path: "/meta-ad-account" },
     ].filter(Boolean);
 
-    const hrmSubmenus = [
-        can('hrm-dashboard-read') && { label: "HRM Dashboard", path: "/teams" },
-        can('employees-read') && { label: "Employees", path: "/hrm/employees" },
-        canAny('attendance-read', 'attendance-self-read') && { label: "Attendance", path: "/team/attendance" },
-        canAny('leave-requests-read', 'leave-approvals-read') && { label: "Leave Management", path: "/hrm/leaves" },
-        can('departments-read') && { label: "Departments", path: "/hrm/departments" },
-        can('designations-read') && { label: "Designations", path: "/hrm/designations" },
-        can('employment-types-read') && { label: "Employment Types", path: "/hrm/employment-types" },
-        canAny('shifts-read', 'holidays-read') && { label: "Shifts & Holidays", path: "/hrm/shifts-holidays" },
-        canAny('payroll-read', 'self-payslips-read') && { label: "Payroll", path: "/hrm/payroll" },
-        can('salary-advances-read') && { label: "Salary Advances", path: "/hrm/salary-advances" },
-        can('performance-read') && { label: "Performance", path: "/hrm/performance" },
-        can('orders-team-list-read') && { label: "Prepared Order List", path: "/prepared/list" },
-        can('orders-team-list-read') && { label: "Unprepare Order List", path: "/unprepared/list" },
-        can('orders-team-list-read') && { label: "Assign Order List", path: "/assign-by-list" },
-        can('orders-team-list-read') && { label: "Unassign Order List", path: "/unassign/list" },
-        canAny('hr-settings-read', 'orders-team-settings-read') && { label: "HR Settings", path: "/team-settings" },
-    ].filter(Boolean);
+    const moduleMenus = moduleRegistry
+        .filter((module) => isModuleEnabled(module.key))
+        .map((module) => module.getNavigation?.({ can, canAny }))
+        .filter(Boolean);
 
     const productSubmenus = [
         can("products-read") && { label: "Products", path: "/products" },
@@ -181,11 +170,7 @@ const Sidebar = ({ onMenuSelect }) => {
             submenus: metaAdsSubmenus
         },
 
-        hrmSubmenus.length > 0 && {
-            title: "HRM & Team",
-            icon: <TeamOutlined />,
-            submenus: hrmSubmenus
-        },
+        ...moduleMenus,
 
         mediaMenu,
         
