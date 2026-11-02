@@ -438,6 +438,24 @@ export default function ProductAdd() {
     }, [productTypeId, productTypes]);
 
     const handleSubmit = async () => {
+        const buyPriceErrors = {};
+
+        if (dynamicInputs.length > 0) {
+            dynamicInputs.forEach((_, index) => {
+                if (variationBuyPrice[index] === undefined || String(variationBuyPrice[index]).trim() === "") {
+                    buyPriceErrors[`variations.${index}.buy_price`] = ["The buy price field is required."];
+                }
+            });
+        } else if (String(buyPrice).trim() === "") {
+            buyPriceErrors.buy_price = ["The buy price field is required."];
+        }
+
+        if (Object.keys(buyPriceErrors).length > 0) {
+            setErrors(buyPriceErrors);
+            messageApi.error("Please enter all required buy prices.");
+            return;
+        }
+
         setLoading(true);
         setErrors({});
 
@@ -478,7 +496,11 @@ export default function ProductAdd() {
             formData.append("short_description", shortDescription || "");
             formData.append("offer_price", offerPrice || "0");
             formData.append("mrp", regularPrice || "0");
-            formData.append("buy_price", buyPrice || "0");
+
+            const defaultVariationIndex = isDefault.findIndex(Boolean);
+            const resolvedBuyPrice = dynamicInputs.length > 0 ? variationBuyPrice[defaultVariationIndex >= 0 ? defaultVariationIndex : 0] : buyPrice;
+
+            formData.append("buy_price", resolvedBuyPrice ?? "");
             formData.append("current_stock", currentStock || "0");
             formData.append("total_sell_qty", soldQty || 0);
             formData.append("meta_title", metaTitle || "");
@@ -657,18 +679,18 @@ export default function ProductAdd() {
                 {contextHolder}
                 
                 <div style={{
-                background: '#fff',
-                padding: '16px 24px',
-                borderBottom: '1px solid #e2e8f0',
-                display: 'flex',
+                background    : '#fff',
+                padding       : '16px 24px',
+                borderBottom  : '1px solid #e2e8f0',
+                display       : 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 24,
-                position: 'sticky',
-                top: 0,
-                zIndex: 100,
-                boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)'
-            }}>
+                alignItems    : 'center',
+                marginBottom  : 24,
+                position      : 'sticky',
+                top           : 0,
+                zIndex        : 100,
+                boxShadow     : '0 2px 8px rgba(15, 23, 42, 0.08)'
+                }}>
                     <Space size="middle">
                         <Button 
                             icon={<ArrowLeftOutlined />} 
@@ -1051,6 +1073,20 @@ export default function ProductAdd() {
                                                 ),
                                             },
                                             {
+                                                title: "Buy Price",
+                                                dataIndex: "buyPrice",
+                                                width: 130,
+                                                render: (_, record) => {
+                                                    const error = getVariationError(record.index, "buy_price");
+
+                                                    return (
+                                                        <Form.Item validateStatus={error ? "error" : ""} help={error} style={{ marginBottom: 0 }}>
+                                                        <Input placeholder="Enter Buy Price" value={variationBuyPrice[record.index]} onChange={(e) => { updateVariationField(record.index, "buyPrice", e.target.value); setErrors((current) => ({ ...current, [`variations.${record.index}.buy_price`]: undefined })); }} />
+                                                        </Form.Item>
+                                                    );
+                                                },
+                                            },
+                                            {
                                                 title: "Regular Price",
                                                 dataIndex: "regularPrice",
                                                 width: 130,
@@ -1175,6 +1211,14 @@ export default function ProductAdd() {
                                         </Space>
 
                                         <Row gutter={12} style={{ marginTop: 12 }}>
+                                            <Col xs={24} lg={8}>
+                                                <Form layout="vertical">
+                                                    <Form.Item label="Buy Price" validateStatus={errors?.buy_price ? "error" : ""} help={errors?.buy_price?.[0]}>
+                                                        <Input placeholder="Enter Buy Price" value={buyPrice} onChange={(e) => { setBuyPrice(e.target.value); setErrors((current) => ({ ...current, buy_price: undefined })); }} />
+                                                    </Form.Item>
+                                                </Form>
+                                            </Col>
+
                                             <Col xs={24} lg={8}>
                                                 <Form layout="vertical">
                                                     <Form.Item label="Regular Price" required>
@@ -1339,6 +1383,10 @@ export default function ProductAdd() {
                             })()}
                         </div>
                     )}
+
+                    <Form.Item label="Buy Price">
+                        <Input placeholder="Enter Buy Price" value={multiBuyPrice} onChange={(e) => setMultiBuyPrice(e.target.value)}/>
+                    </Form.Item>
 
                     <Form.Item label="Regular Price">
                         <Input placeholder="Enter Regular Price" value={multiRegularPrice} onChange={(e) => setMultiRegularPrice(e.target.value)}/>

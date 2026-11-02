@@ -3,6 +3,7 @@ import { deleteData, getDatas, postData, putData } from "../../../api/common/com
 const WAREHOUSE_ENDPOINT = "/admin/warehouses";
 
 export const getWarehouses              = (params = {}) => getDatas(WAREHOUSE_ENDPOINT, params);
+export const getWarehouseList           = () => getDatas(`${WAREHOUSE_ENDPOINT}/list`);
 export const getWarehouse               = (id) => getDatas(`${WAREHOUSE_ENDPOINT}/${id}`);
 export const createWarehouse            = (payload) => postData(WAREHOUSE_ENDPOINT, payload);
 export const updateWarehouse            = (id, payload) => putData(`${WAREHOUSE_ENDPOINT}/${id}`, payload);
