@@ -38,7 +38,7 @@ export default function PurchaseDetails({ purchase, onClose }) {
             align: "center" 
         },
         { 
-            title: "Unit cost", 
+            title: "Buy price", 
             dataIndex: "unit_cost", 
             width: 120, 
             align: "right", 
@@ -85,15 +85,15 @@ export default function PurchaseDetails({ purchase, onClose }) {
                         <Tag color={color(purchase.payment_status)}>
                             {purchase.payment_status}
                         </Tag>
-
-                        </div>
-                        <Title level={3}>
-                            {purchase.purchase_no}
-                        </Title>
-                        <Text>
-                            Purchase draft and cost overview
-                        </Text>
                     </div>
+                    
+                    <Title level={3}>
+                        {purchase.purchase_no}
+                    </Title>
+                    <Text>
+                        Purchase draft and cost overview
+                    </Text>
+                </div>
             </div>
 
             <Descriptions className="purchase-preview-info" column={{ xs: 1, sm: 2, md: 3 }} bordered size="small" items={[
@@ -159,21 +159,21 @@ export default function PurchaseDetails({ purchase, onClose }) {
 
                     <div>
                         <span>
-                            Tax
+                            VAT
                         </span>
 
                         <strong>
-                            {money(purchase.tax_amount)}
+                            {money(purchase.vat_amount)}
                         </strong>
                     </div>
 
                     <div>
                         <span>
-                            Shipping
+                            Transport cost
                         </span>
 
                         <strong>
-                            {money(purchase.shipping_cost)}
+                            {money(purchase.transport_cost)}
                         </strong>
                     </div>
 

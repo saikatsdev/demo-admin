@@ -84,8 +84,6 @@ export default function Warehouse() {
 
                         <div>
                             <Tag bordered={false} className="warehouse-code">
-                                <span>Code</span>
-
                                 <strong>{record.code}</strong>
                             </Tag>
                         </div>

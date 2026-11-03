@@ -7,6 +7,8 @@ export const getSuppliers = (params = {}) => getDatas(SUPPLIER_ENDPOINT, params)
 export const getSupplierList = (params = {}) => getDatas(`${SUPPLIER_ENDPOINT}/list`, params);
 
 export const getSupplier = (id) => getDatas(`${SUPPLIER_ENDPOINT}/${id}`);
+export const getSupplierFinancialSummary = (id) => getDatas(`${SUPPLIER_ENDPOINT}/${id}/financial-summary`);
+export const recordSupplierPayment = (id, payload) => postData(`${SUPPLIER_ENDPOINT}/${id}/payment`, payload);
 
 export const createSupplier = (payload) => postData(SUPPLIER_ENDPOINT, payload);
 

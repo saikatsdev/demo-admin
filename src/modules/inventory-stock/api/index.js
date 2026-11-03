@@ -2,6 +2,8 @@ export {
     createSupplier,
     deleteSupplier,
     getSupplier,
+    getSupplierFinancialSummary,
+    recordSupplierPayment,
     getSupplierList,
     getSuppliers,
     getTrashedSuppliers,
@@ -32,4 +34,5 @@ export {
     restorePurchase,
     searchPurchaseProducts,
     updatePurchase,
+    completePurchase,
 } from "./purchaseApi";

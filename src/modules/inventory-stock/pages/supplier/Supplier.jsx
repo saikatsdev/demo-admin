@@ -1,4 +1,4 @@
-import { DeleteOutlined, EditOutlined, EnvironmentOutlined, EyeOutlined, MailOutlined, PhoneOutlined, PlusOutlined, ReloadOutlined, RollbackOutlined, SearchOutlined, ShopOutlined } from "@ant-design/icons";
+import { DeleteOutlined, DollarOutlined, EditOutlined, EnvironmentOutlined, EyeOutlined, MailOutlined, PhoneOutlined, PlusOutlined, ReloadOutlined, RollbackOutlined, SearchOutlined, ShopOutlined } from "@ant-design/icons";
 import { Alert, Avatar, Breadcrumb, Button, Card, Empty, Input, message, Popconfirm, Result, Segmented, Select, Space, Table, Tag, Tooltip, Typography } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -6,6 +6,7 @@ import { usePermission } from "../../../../hooks/usePermission";
 import useTitle from "../../../../hooks/useTitle";
 import { deleteSupplier, getSupplier, permanentlyDeleteSupplier, restoreSupplier } from "../../api";
 import SupplierDetails from "../../components/supplier/SupplierDetails";
+import SupplierTransaction from "../../components/supplier/SupplierTransaction";
 import useSuppliers from "../../hooks/useSuppliers";
 import "../../styles/supplier.css";
 
@@ -20,10 +21,11 @@ export default function Supplier() {
     const canCreate                                                       = can("suppliers-create");
     const canUpdate                                                       = can("suppliers-update");
     const canDelete                                                       = can("suppliers-delete");
-    const { rows, total, loading, error, filters, changeFilters, reload } = useSuppliers(canRead);
+    const { rows, total, balanceSummary, loading, error, filters, changeFilters, reload } = useSuppliers(canRead);
     const [messageApi, contextHolder]                                     = message.useMessage();
     const [query, setQuery]                                               = useState("");
     const [details, setDetails]                                           = useState(null);
+    const [transactionSupplier, setTransactionSupplier]                   = useState(null);
     const [busyId, setBusyId]                                             = useState(null);
     const actionPending                                                   = useRef(false);
     const { trashed }                                                     = filters;
@@ -118,17 +120,18 @@ export default function Supplier() {
             render: (value) => value ? <Space align="start" size={7} className="supplier-address-wrap"><EnvironmentOutlined /><Text ellipsis={{ tooltip: value }} className="supplier-address">{value}</Text></Space> : <Text type="secondary">Not provided</Text> 
         },
         {
-            title: "Opening balance",
-            key: "opening_balance",
+            title: "Current balance",
+            key: "current_balance",
             width: 185,
-            sorter: (a, b) => Number(a.opening_balance || 0) - Number(b.opening_balance || 0),
+            sorter: (a, b) => Number(a.current_balance || 0) - Number(b.current_balance || 0),
             render: (_, record) => {
-                const receivable = record.opening_balance_type === "receivable";
+                const receivable = record.current_balance_type === "receivable";
+                const settled = record.current_balance_type === "settled";
                 return (
                     <div className="supplier-balance-cell">
-                        <Text strong className={receivable ? "supplier-amount receivable" : "supplier-amount payable"}>৳ {formatAmount(record.opening_balance)}</Text>
-                        <Tag bordered={false} color={receivable ? "green" : "orange"} className="supplier-balance-type">
-                            {receivable ? "Receivable" : "Payable"}
+                        <Text strong className={`supplier-amount ${receivable ? "receivable" : settled ? "settled" : "payable"}`}>৳ {formatAmount(record.current_balance)}</Text>
+                        <Tag style={{textTransform:"capitalize"}} bordered={false} color={receivable ? "green" : settled ? "default" : "orange"} className="supplier-balance-type">
+                            {record.current_balance_type || "Settled"}
                         </Tag>
                     </div>
                 );
@@ -148,7 +151,7 @@ export default function Supplier() {
             title: "Actions", 
             key: "actions", 
             fixed: "right", 
-            width: 135, 
+            width: 175, 
             render: (_, record) => (
                 <Space size={2}>
                     <Tooltip title="View supplier">
@@ -159,6 +162,8 @@ export default function Supplier() {
                     <Tooltip title="Edit supplier">
                         <Button type="text" aria-label={`Edit ${record.name}`} icon={<EditOutlined />} disabled={busyId !== null} onClick={() => navigate(`/suppliers/${record.id}/edit`)} />
                     </Tooltip>}
+
+                    {!trashed && canUpdate && <Tooltip title="Supplier transaction"><Button type="text" className="supplier-transaction-button" aria-label={`Transaction for ${record.name}`} icon={<DollarOutlined />} disabled={busyId !== null} onClick={() => setTransactionSupplier(record)} /></Tooltip>}
 
                     {trashed && canUpdate && 
                         <Popconfirm title="Restore this supplier?" okText="Restore" onConfirm={() => handleAction(record, "restore")}>
@@ -236,7 +241,7 @@ export default function Supplier() {
                     <Alert type="error" showIcon message={error} action={<Button size="small" onClick={reload}>Retry</Button>} className="supplier-list-error" />
                 }
 
-                <Table className="supplier-table" rowKey="id" columns={columns} dataSource={rows} loading={loading} size="middle" scroll={{ x: 1200 }} locale={
+                <Table className="supplier-table" rowKey="id" columns={columns} dataSource={rows} loading={loading} size="middle" scroll={{ x: 1200 }} summary={() => <Table.Summary fixed><Table.Summary.Row className="supplier-balance-footer"><Table.Summary.Cell index={0} colSpan={4}><strong>Filtered supplier balance summary</strong><span>Totals include all matching suppliers, not only this page.</span></Table.Summary.Cell><Table.Summary.Cell index={4} colSpan={3}><div className="supplier-footer-totals"><div><span>Total payable</span><strong className="payable">৳ {formatAmount(balanceSummary.total_payable)}</strong></div><div><span>Total receivable</span><strong className="receivable">৳ {formatAmount(balanceSummary.total_receivable)}</strong></div></div></Table.Summary.Cell></Table.Summary.Row></Table.Summary>} locale={
                     { emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} 
                     description={error ? "Supplier list unavailable" : trashed ? "No suppliers in trash" : filters.search_key || filters.status ? "No suppliers match your filters" : "No suppliers yet"} /> }} 
                     pagination={{
@@ -254,6 +259,7 @@ export default function Supplier() {
             </Card>
 
             <SupplierDetails supplier={details} onClose={() => setDetails(null)} />
+            <SupplierTransaction supplier={transactionSupplier} onClose={() => setTransactionSupplier(null)} onSuccess={async (response) => { messageApi.success(response.msg || "Supplier payment recorded"); setTransactionSupplier(null); await reload(); }} />
         </div>
     );
 }

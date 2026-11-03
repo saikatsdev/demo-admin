@@ -4,7 +4,7 @@ import { getSuppliers, getTrashedSuppliers } from "../api";
 export default function useSuppliers(enabled) {
     const [filters, setFilters] = useState({ page: 1, paginate_size: 20, search_key: "", status: undefined, trashed: false });
 
-    const [state, setState] = useState({ rows: [], total: 0, loading: false, error: null });
+    const [state, setState] = useState({ rows: [], total: 0, balanceSummary: { total_payable: "0.00", total_receivable: "0.00" }, loading: false, error: null });
     const requestId         = useRef(0);
     const filtersRef        = useRef(filters);
 
@@ -25,7 +25,7 @@ export default function useSuppliers(enabled) {
             if (id !== requestId.current) return;
 
             if (!response?.success) {
-                setState({ rows: [], total: 0, loading: false, error: response?.message || "Unable to load suppliers. Please try again." });
+                setState({ rows: [], total: 0, balanceSummary: { total_payable: "0.00", total_receivable: "0.00" }, loading: false, error: response?.message || "Unable to load suppliers. Please try again." });
                 return;
             }
 
@@ -40,9 +40,9 @@ export default function useSuppliers(enabled) {
                 return;
             }
             
-            setState({ rows: result.data || [], total, loading: false, error: null });
+            setState({ rows: result.data || [], total, balanceSummary: result.balance_summary || { total_payable: "0.00", total_receivable: "0.00" }, loading: false, error: null });
         } catch {
-            if (id === requestId.current) setState({ rows: [], total: 0, loading: false, error: "Unable to load suppliers. Please try again." });
+            if (id === requestId.current) setState({ rows: [], total: 0, balanceSummary: { total_payable: "0.00", total_receivable: "0.00" }, loading: false, error: "Unable to load suppliers. Please try again." });
         }
     }, [enabled]);
 

@@ -1,11 +1,11 @@
-import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, RollbackOutlined, SearchOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, RollbackOutlined, SearchOutlined } from "@ant-design/icons";
 import { Alert, Breadcrumb, Button, Card, Empty, Input, message, Popconfirm, Result, Segmented, Select, Space, Table, Tag, Tooltip, Typography } from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { usePermission } from "../../../../hooks/usePermission";
 import useTitle from "../../../../hooks/useTitle";
-import { deletePurchase, getPurchase, permanentlyDeletePurchase, restorePurchase } from "../../api";
+import { completePurchase, deletePurchase, getPurchase, permanentlyDeletePurchase, restorePurchase } from "../../api";
 import PurchaseDetails from "../../components/purchase/PurchaseDetails";
 import usePurchases from "../../hooks/usePurchases";
 import "../../styles/purchase.css";
@@ -64,7 +64,7 @@ export default function Purchase() {
         pending.current = true; setBusyId(record.id);
 
         try {
-            const operation = action === "restore" ? restorePurchase : action === "permanent" ? permanentlyDeletePurchase : deletePurchase;
+            const operation = action === "complete" ? completePurchase : action === "restore" ? restorePurchase : action === "permanent" ? permanentlyDeletePurchase : deletePurchase;
 
             const response = await operation(record.id);
 
@@ -155,7 +155,7 @@ export default function Purchase() {
         { 
             title: "Due", 
             dataIndex: "due_amount", 
-            width: 125, 
+            width: 165, 
             align: "right", 
             render: (value) => 
             <Text className={Number(value) > 0 ? "purchase-due" : ""}>
@@ -167,11 +167,11 @@ export default function Purchase() {
             width: 160, 
             render: (_, record) => 
             <Space size={4} wrap>
-                <Tag color={tagColor(record.status)}>
+                <Tag style={{textTransform:"capitalize"}} color={tagColor(record.status)}>
                     {record.status}
                 </Tag>
 
-                <Tag color={tagColor(record.payment_status)}>
+                <Tag style={{textTransform:"capitalize"}} color={tagColor(record.payment_status)}>
                     {record.payment_status}
                 </Tag>
             </Space> 
@@ -190,6 +190,12 @@ export default function Purchase() {
                     <Tooltip title="Edit purchase">
                         <Button type="text" icon={<EditOutlined />} disabled={busyId !== null} onClick={() => navigate(`/purchases/${record.id}/edit`)} />
                     </Tooltip>
+                }
+
+                {!trashed && canUpdate && record.status === "draft" &&
+                    <Popconfirm title="Complete this purchase?" description="Stock, supplier ledger and any planned payment will be posted. A completed purchase cannot be edited or deleted." okText="Complete purchase" onConfirm={() => act(record, "complete")}>
+                        <Tooltip title="Complete purchase"><Button type="text" className="purchase-complete-action" icon={<CheckCircleOutlined />} disabled={busyId !== null} /></Tooltip>
+                    </Popconfirm>
                 }
 
                 {trashed && canUpdate && 

@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { usePermission } from "../../../../hooks/usePermission";
 import useTitle from "../../../../hooks/useTitle";
-import { createPurchase, getPurchase, getSupplierList, getWarehouseList, searchPurchaseProducts, updatePurchase } from "../../api";
+import { createPurchase, getPurchase, getSupplierFinancialSummary, getSupplierList, getWarehouseList, searchPurchaseProducts, updatePurchase } from "../../api";
+import { getAccountList } from "../../../accounting/api/accountApi";
 import PurchaseForm from "../../components/purchase/PurchaseForm";
 import "../../styles/purchase.css";
 
@@ -13,47 +14,87 @@ const unwrapRows = (response) => response?.result?.data || response?.result || [
 const mergeSuppliers = (current, incoming) => Array.from(new Map([...current, ...incoming].map((supplier) => [supplier.id, supplier])).values());
 
 const productOptions = (products) => products.flatMap((product) => {
-    const base = { productId: product.id, productName: product.name, sku: product.sku || null };
-    if (!product.variations?.length) return [{ ...base, value: `${product.id}:0`, variationId: null, variationName: null, label: `${product.name}${product.sku ? ` — ${product.sku}` : ""}` }];
+    const base = { 
+        productId  : product.id,
+        productName: product.name,
+        sku        : product.sku || null,
+        image      : product.image || null,
+        buyPrice   : product.buy_price ?? 0
+    };
+
+    if (!product.variations?.length) {
+        return [{ ...base, value: `${product.id}:0`, variationId: null, variationName: null, label: `${product.name}${product.sku ? ` — ${product.sku}` : ""}` }];
+    }
+
     return product.variations.map((variation) => {
-        const variationName = [variation.attribute_value_1?.value, variation.attribute_value_2?.value, variation.attribute_value_3?.value].filter(Boolean).join(" / ");
-        return { ...base, value: `${product.id}:${variation.id}`, variationId: variation.id, variationName, label: `${product.name}${variationName ? ` — ${variationName}` : ""}${product.sku ? ` — ${product.sku}` : ""}` };
+        const variationName = 
+        [
+            variation.attribute_value_1?.value, 
+            variation.attribute_value_2?.value, 
+            variation.attribute_value_3?.value
+        ].filter(Boolean).join(" / ");
+
+        return { 
+            ...base, image: variation.image || product.image || null, 
+            buyPrice: variation.buy_price ?? product.buy_price ?? 0, 
+            value: `${product.id}:${variation.id}`, 
+            variationId: variation.id, 
+            variationName, 
+            label: `${product.name}${variationName ? ` — ${variationName}` : ""}${product.sku ? ` — ${product.sku}` : ""}` 
+        };
     });
 });
 
 export default function PurchaseEditor() {
-    const { id }                              = useParams();
-    const editing                             = Boolean(id);
-    const navigate                            = useNavigate();
-    const { can }                             = usePermission();
-    const allowed                             = can(editing ? "purchases-update" : "purchases-create");
-    const [messageApi, contextHolder]         = message.useMessage();
-    const [purchase, setPurchase]             = useState(null);
-    const [suppliers, setSuppliers]           = useState([]);
-    const [warehouses, setWarehouses]         = useState([]);
-    const [products, setProducts]             = useState([]);
-    const [loading, setLoading]               = useState(true);
-    const [supplierLoading, setSupplierLoading] = useState(false);
-    const [productLoading, setProductLoading] = useState(false);
-    const [notFound, setNotFound]             = useState(false);
-    const [saving, setSaving]                 = useState(false);
-    const [formError, setFormError]           = useState(null);
-    const [fieldErrors, setFieldErrors]       = useState(null);
-    const searchTimer                         = useRef(null);
-    const supplierSearchTimer                 = useRef(null);
-    const searchId                            = useRef(0);
-    const supplierSearchId                    = useRef(0);
-    const savePending                         = useRef(false);
+    const { id }                                    = useParams();
+    const editing                                   = Boolean(id);
+    const navigate                                  = useNavigate();
+    const { can }                                   = usePermission();
+    const allowed                                   = can(editing ? "purchases-update" : "purchases-create");
+    const [messageApi, contextHolder]               = message.useMessage();
+    const [purchase, setPurchase]                   = useState(null);
+    const [suppliers, setSuppliers]                 = useState([]);
+    const [warehouses, setWarehouses]               = useState([]);
+    const [products, setProducts]                   = useState([]);
+    const [accounts, setAccounts]                   = useState([]);
+    const [supplierSummary, setSupplierSummary]     = useState(null);
+    const [summaryLoading, setSummaryLoading]       = useState(false);
+    const [loading, setLoading]                     = useState(true);
+    const [supplierLoading, setSupplierLoading]     = useState(false);
+    const [productLoading, setProductLoading]       = useState(false);
+    const [productSearchText, setProductSearchText] = useState("");
+    const [notFound, setNotFound]                   = useState(false);
+    const [saving, setSaving]                       = useState(false);
+    const [formError, setFormError]                 = useState(null);
+    const [fieldErrors, setFieldErrors]             = useState(null);
+    const searchTimer                               = useRef(null);
+    const supplierSearchTimer                       = useRef(null);
+    const searchId                                  = useRef(0);
+    const supplierSearchId                          = useRef(0);
+    const savePending                               = useRef(false);
 
     useTitle(`${editing ? "Edit" : "Add"} Purchase | Inventory & Stock`);
 
     const loadProducts = useCallback(async (searchKey = "") => {
+        if (!searchKey) {
+            searchId.current += 1;
+            setProducts([]);
+            setProductLoading(false);
+            return;
+        }
+
         const request = ++searchId.current;
+
         setProductLoading(true);
+
         try {
             const response = await searchPurchaseProducts(searchKey);
             if (request === searchId.current && response?.success) setProducts(productOptions(unwrapRows(response)));
-        } finally { if (request === searchId.current) setProductLoading(false); }
+        } finally { 
+            if (request === searchId.current) {
+                setProductLoading(false); 
+            }
+        }
     }, []);
 
     const loadSuppliers = useCallback(async (searchKey = "") => {
@@ -64,12 +105,16 @@ export default function PurchaseEditor() {
             const response = await getSupplierList({ search_key: searchKey || undefined, limit: 20 });
 
             if (request === supplierSearchId.current && response?.success) {
-                setSuppliers((current) => mergeSuppliers(current, unwrapRows(response)));
+                const results = unwrapRows(response);
+                const selectedSupplier = purchase?.supplier;
+                setSuppliers(selectedSupplier ? mergeSuppliers(results, [selectedSupplier]) : results);
             }
         } finally {
-            if (request === supplierSearchId.current) setSupplierLoading(false);
+            if (request === supplierSearchId.current) {
+                setSupplierLoading(false);
+            }
         }
-    }, []);
+    }, [purchase?.supplier]);
 
     useEffect(() => {
         if (!allowed) return;
@@ -77,11 +122,11 @@ export default function PurchaseEditor() {
         const load = async () => {
             setLoading(true);
             try {
-                const requests = [getSupplierList({ limit: 20 }), getWarehouseList(), searchPurchaseProducts("")];
+                const requests = [getSupplierList({ limit: 20 }), getWarehouseList(), getAccountList()];
 
                 if (editing) requests.push(getPurchase(id));
 
-                const [supplierResponse, warehouseResponse, productResponse, purchaseResponse] = await Promise.all(requests);
+                const [supplierResponse, warehouseResponse, accountResponse, purchaseResponse] = await Promise.all(requests);
 
                 if (!active) return;
 
@@ -91,8 +136,7 @@ export default function PurchaseEditor() {
                 setSuppliers(selectedSupplier ? mergeSuppliers(initialSuppliers, [selectedSupplier]) : initialSuppliers);
 
                 setWarehouses(unwrapRows(warehouseResponse));
-
-                if (productResponse?.success) setProducts(productOptions(unwrapRows(productResponse)));
+                setAccounts(unwrapRows(accountResponse));
 
                 if (editing) {
                     if (purchaseResponse?.success && purchaseResponse.result) setPurchase(purchaseResponse.result);
@@ -116,8 +160,14 @@ export default function PurchaseEditor() {
     }, [allowed, editing, id]);
 
     const searchProducts = (value) => {
+        const searchKey = value.trim();
+        setProductSearchText(searchKey);
         window.clearTimeout(searchTimer.current);
-        searchTimer.current = window.setTimeout(() => loadProducts(value.trim()), 350);
+        if (!searchKey) {
+            loadProducts("");
+            return;
+        }
+        searchTimer.current = window.setTimeout(() => loadProducts(searchKey), 350);
     };
 
     const searchSuppliers = (value) => {
@@ -125,10 +175,26 @@ export default function PurchaseEditor() {
 
         window.clearTimeout(supplierSearchTimer.current);
 
-        if (searchKey.length === 1) return;
+        if (searchKey.length === 1) {
+            setSuppliers(purchase?.supplier ? [purchase.supplier] : []);
+            return;
+        }
 
         supplierSearchTimer.current = window.setTimeout(() => loadSuppliers(searchKey), 400);
     };
+
+    const loadSupplierSummary = useCallback(async (supplierId) => {
+        if (!supplierId) { setSupplierSummary(null); return; }
+        setSummaryLoading(true);
+        try {
+            const response = await getSupplierFinancialSummary(supplierId);
+            setSupplierSummary(response?.success ? response.result : null);
+        } finally { setSummaryLoading(false); }
+    }, []);
+
+    useEffect(() => {
+        if (purchase?.supplier_id) loadSupplierSummary(purchase.supplier_id);
+    }, [loadSupplierSummary, purchase?.supplier_id]);
 
     const clearErrors = () => { setFormError(null); setFieldErrors(null); };
 
@@ -185,7 +251,7 @@ export default function PurchaseEditor() {
                 <Card className="purchase-form-card">
                     <Skeleton active paragraph={{ rows: 10 }} />
                 </Card> :
-                <PurchaseForm purchase={purchase} suppliers={suppliers} supplierLoading={supplierLoading} warehouses={warehouses} productOptions={products} productLoading={productLoading} saving={saving} serverError={formError} fieldErrors={fieldErrors} onSearchSuppliers={searchSuppliers} onSearchProducts={searchProducts} onSave={save} onCancel={() => navigate("/purchases")} onChange={clearErrors} />
+                <PurchaseForm purchase={purchase} suppliers={suppliers} supplierLoading={supplierLoading} supplierSummary={supplierSummary} summaryLoading={summaryLoading} accounts={accounts} warehouses={warehouses} productOptions={products} productLoading={productLoading} productSearchText={productSearchText} saving={saving} serverError={formError} fieldErrors={fieldErrors} onSupplierChange={loadSupplierSummary} onSearchSuppliers={searchSuppliers} onSearchProducts={searchProducts} onSave={save} onCancel={() => navigate("/purchases")} onChange={clearErrors} />
             }
         </div>
     );
