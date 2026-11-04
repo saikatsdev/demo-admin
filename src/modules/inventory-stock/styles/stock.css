@@ -1,0 +1,137 @@
+.stock-page {
+  padding-bottom: 28px;
+}
+
+.stock-subtitle {
+  margin: 6px 0 0;
+  color: #64748b;
+}
+
+.stock-shell {
+  overflow: hidden;
+  border: 1px solid #e7edf4;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.stock-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #edf1f5;
+  background: linear-gradient(135deg, #fff, #f8fbff);
+}
+
+.stock-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  padding: 18px 20px 0;
+}
+
+.stock-stat-grid .ant-card {
+  border-radius: 13px;
+  border-color: #e6edf5;
+}
+
+.stock-low-card .ant-statistic-content {
+  color: #d97706;
+}
+
+.stock-out-card .ant-statistic-content {
+  color: #dc2626;
+}
+
+.stock-toolbar {
+  padding: 18px 20px;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.stock-search {
+  width: 280px;
+}
+
+.stock-filter {
+  width: 220px;
+}
+
+.stock-error {
+  margin: 14px 20px 0;
+}
+
+.stock-item-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stock-item-cell span,
+.stock-muted,
+.stock-variation {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.stock-variation {
+  margin-top: 2px;
+}
+
+.stock-quantity {
+  font-size: 15px;
+}
+
+.stock-quantity small {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.stock-quantity.low {
+  color: #d97706;
+}
+
+.stock-quantity.out,
+.stock-out {
+  color: #dc2626;
+}
+
+.stock-in {
+  color: #16a34a;
+}
+
+.stock-page .ant-table-wrapper {
+  padding: 0 20px 20px;
+}
+
+.stock-page .ant-table-thead > tr > th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 900px) {
+  .stock-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stock-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 575px) {
+  .stock-stat-grid {
+    grid-template-columns: 1fr;
+  }
+  .stock-search,
+  .stock-filter {
+    width: 100%;
+  }
+  .stock-toolbar .ant-space,
+  .stock-toolbar .ant-space-item {
+    width: 100%;
+  }
+}
