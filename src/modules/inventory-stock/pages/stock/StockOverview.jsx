@@ -132,7 +132,7 @@ export default function StockOverview() {
             align: "right", 
             render: (_, row) => 
             <Typography.Text strong className={`stock-quantity ${row.stock_status}`}>
-                {quantity(row.quantity)} 
+                {quantity(row.quantity)} {' '}
                 <small>{row.unit}</small>
             </Typography.Text> 
         },

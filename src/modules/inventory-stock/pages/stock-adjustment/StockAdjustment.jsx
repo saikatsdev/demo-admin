@@ -177,15 +177,15 @@ export default function StockAdjustment() {
             <Card className="stock-shell" styles={{ body: { padding: 0 } }}>
                 <div className="stock-adjustment-head">
                     <div>
-                        <b>Adjustment register</b>
+                        <b>Adjustment Register</b>
                         <span>
-                            {meta.total || 0} adjustment{meta.total === 1 ? "" : "s"}
+                            {meta.total || 0} Adjustment{meta.total === 1 ? "" : "s"}
                         </span>
                     </div>
 
                     {can("stock-adjustments-create") && (
                         <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/stock-adjustments/create")}>
-                            Create adjustment
+                            Create Adjustment
                         </Button>
                     )}
                 </div>

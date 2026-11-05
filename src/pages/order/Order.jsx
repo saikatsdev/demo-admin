@@ -551,7 +551,7 @@ export default function Order() {
             }
 
             if(res?.success === false){
-                alert(res.message);
+                messageApi.error(res?.message || res?.msg || "Unable to update order status");
             }
 
         } catch (error) {
@@ -1201,7 +1201,7 @@ export default function Order() {
                 message.success(`Order #${orderId} marked as Delivered`);
                 await Promise.all([getOrders()]);
             } else {
-                message.error(resUp?.msg || "Failed to update order status");
+                message.error(resUp?.message || resUp?.msg || "Failed to update order status");
             }
         } catch (err) {
             console.error("Scan update failed:", err);
@@ -2918,6 +2918,24 @@ export default function Order() {
                                                 <div className="opm-field__value" style={{ textTransform: "capitalize" }}>
                                                     {previewOrder?.paid_status || "—"}
                                                 </div>
+                                            </div>
+                                        </Col>
+
+                                        <Col span={12}>
+                                            <div className="opm-field">
+                                                <div className="opm-field__label">Fulfillment Warehouse</div>
+                                                <div className="opm-field__value">
+                                                    {previewOrder?.warehouse?.name || "Default warehouse"}
+                                                </div>
+                                            </div>
+                                        </Col>
+
+                                        <Col span={12}>
+                                            <div className="opm-field">
+                                                <div className="opm-field__label">Inventory Status</div>
+                                                <Tag color={previewOrder?.stock_out_at ? "green" : "gold"}>
+                                                    {previewOrder?.stock_out_at ? "Stock deducted" : "Pending delivery"}
+                                                </Tag>
                                             </div>
                                         </Col>
 

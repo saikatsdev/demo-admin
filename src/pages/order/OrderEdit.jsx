@@ -80,6 +80,8 @@ const OrderEdit = () => {
     const [selectedOrderId, setSelectedOrderId]             = useState(null);
     const [itemQuantity, setItemQuantity]                   = useState("");
     const [itemDescription, setItemDescription]             = useState("");
+    const [fulfillmentWarehouse, setFulfillmentWarehouse]   = useState(null);
+    const [stockOutAt, setStockOutAt]                       = useState(null);
 
     // Redux State
     const paymentGateways           = useSelector((state) => state.paymentGateway.list);
@@ -125,6 +127,8 @@ const OrderEdit = () => {
             setAdvancePayment(orderInfo?.advance_payment || 0);
             setSpecialDiscount(orderInfo?.special_discount || 0);
             setChangeableChargeValue(orderInfo?.delivery_charge || 0);
+            setFulfillmentWarehouse(orderInfo?.warehouse || null);
+            setStockOutAt(orderInfo?.stock_out_at || null);
             
             // Load Pathao area if exists
             if (orderInfo?.city_id && orderInfo?.zone_id && orderInfo?.area_id) {
@@ -835,6 +839,19 @@ const OrderEdit = () => {
                                                 <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
                                             ))}
                                         </Select>
+                                    </Form.Item>
+                                </Col>
+
+                                <Col xs={24} md={8}>
+                                    <Form.Item label="Fulfillment Warehouse" className="custom-form-item">
+                                        <Input
+                                            value={fulfillmentWarehouse ? `${fulfillmentWarehouse.name} (${fulfillmentWarehouse.code})` : 'Default warehouse'}
+                                            readOnly
+                                            className="custom-input"
+                                        />
+                                        <Typography.Text type={stockOutAt ? 'success' : 'secondary'} style={{ fontSize: 12 }}>
+                                            {stockOutAt ? 'Stock deducted on delivery' : 'Stock will deduct when delivered'}
+                                        </Typography.Text>
                                     </Form.Item>
                                 </Col>
 
