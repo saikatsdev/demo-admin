@@ -226,10 +226,6 @@ export default function PurchaseEditor() {
             {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
-                    <Button className="purchase-back-button" icon={<ArrowLeftOutlined />} onClick={() => navigate("/purchases")}>
-                        Back to purchases
-                    </Button>
-
                     <h1 className="title">
                         {editing ? `Edit ${purchase?.purchase_no || "purchase"}` : "Create purchase"}
                     </h1>
@@ -240,10 +236,9 @@ export default function PurchaseEditor() {
                 </div>
 
                 <div className="head-actions">
-                    <Breadcrumb items={[
-                        { title: <Link to="/dashboard">Dashboard</Link> }, 
-                        { title: <Link to="/purchases">Purchases</Link> }, { title: editing ? "Edit" : "Create" }]} 
-                    />
+                    <Button className="purchase-back-button" type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate("/purchases")}>
+                        Back to Purchases
+                    </Button>
                 </div>
             </div>
 

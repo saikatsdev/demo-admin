@@ -362,14 +362,6 @@ export default function StockAdjustmentEditor() {
 
             <div className="pagehead">
                 <div className="head-left">
-                    <Button
-                        className="purchase-back-button"
-                        icon={<ArrowLeftOutlined />}
-                        onClick={() => navigate("/stock-adjustments")}
-                    >
-                        Back to adjustments
-                    </Button>
-
                     <h1 className="title">
                         {editing ? "Edit" : "Create"} stock adjustment
                     </h1>
@@ -378,6 +370,9 @@ export default function StockAdjustmentEditor() {
                         Save a draft, review it, then complete to update stock and movement history.
                     </p>
                 </div>
+                <Button className="purchase-back-button" icon={<ArrowLeftOutlined />} type="primary" onClick={() => navigate("/stock-adjustments")}>
+                    Back to Adjustments
+                </Button>
             </div>
 
             <Form form={form} layout="vertical" onFinish={submit}>
@@ -467,7 +462,7 @@ export default function StockAdjustmentEditor() {
                         </Button>
 
                         <Button type="primary" htmlType="submit" loading={saving}>
-                            {editing ? "Save changes" : "Create draft adjustment"}
+                            {editing ? "Save Changes" : "Create Draft Adjustment"}
                         </Button>
                     </Space>
                 </div>

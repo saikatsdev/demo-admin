@@ -100,7 +100,7 @@
   align-self: flex-start;
   border-color: #dbe4f0;
   border-radius: 9px;
-  color: #475569;
+  color: #fff;
   font-size: 13px;
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
@@ -823,17 +823,40 @@
   background: #fff;
 }
 
-.raw-material-final-balance > div { display: grid; gap: 3px; }
-.raw-material-final-balance > div span { color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase; }
-.raw-material-final-balance > div small { color: #64748b; }
-.raw-material-final-balance > strong { font-size: 20px; color: #b45309; }
-.raw-material-final-balance.receivable > strong { color: #15803d; }
-.raw-material-final-balance.settled > strong { color: #475569; }
+.raw-material-final-balance > div {
+  display: grid;
+  gap: 3px;
+}
+.raw-material-final-balance > div span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.raw-material-final-balance > div small {
+  color: #64748b;
+}
+.raw-material-final-balance > strong {
+  font-size: 20px;
+  color: #b45309;
+}
+.raw-material-final-balance.receivable > strong {
+  color: #15803d;
+}
+.raw-material-final-balance.settled > strong {
+  color: #475569;
+}
 
 @media (max-width: 767px) {
-  .raw-material-balance-equation { grid-template-columns: 1fr; }
-  .raw-material-balance-equation > b { transform: none; }
-  .raw-material-final-balance { grid-template-columns: 1fr; }
+  .raw-material-balance-equation {
+    grid-template-columns: 1fr;
+  }
+  .raw-material-balance-equation > b {
+    transform: none;
+  }
+  .raw-material-final-balance {
+    grid-template-columns: 1fr;
+  }
 }
 
 .purchase-pay-full-button.ant-btn {

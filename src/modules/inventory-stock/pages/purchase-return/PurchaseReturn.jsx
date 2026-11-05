@@ -181,12 +181,8 @@ export default function PurchaseReturn() {
                     </Space>
 
                     {can("purchase-returns-create") && (
-                        <Button
-                            type="primary"
-                            icon={<PlusOutlined />}
-                            onClick={() => nav("/purchase-returns/create")}
-                        >
-                            Create return
+                        <Button type="primary" icon={<PlusOutlined />} onClick={() => nav("/purchase-returns/create")}>
+                            Create Return
                         </Button>
                     )}
                 </div>

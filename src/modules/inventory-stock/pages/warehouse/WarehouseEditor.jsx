@@ -81,10 +81,6 @@ export default function WarehouseEditor() {
             {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
-                    <Button className="warehouse-back-button" icon={<ArrowLeftOutlined />} onClick={() => navigate("/warehouses")}>
-                        Back to warehouses
-                    </Button>
-
                     <h1 className="title">
                         {editing ? "Edit warehouse" : "Add warehouse"}
                     </h1>
@@ -95,7 +91,9 @@ export default function WarehouseEditor() {
                 </div>
 
                 <div className="head-actions">
-                    <Breadcrumb items={[{ title: <Link to="/dashboard">Dashboard</Link> }, { title: <Link to="/warehouses">Warehouses</Link> }, { title: editing ? "Edit" : "Add" }]} />
+                    <Button type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate("/warehouses")}>
+                        Back to warehouses
+                    </Button>
                 </div>
             </div>
 

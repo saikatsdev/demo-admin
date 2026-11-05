@@ -206,7 +206,7 @@ export default function Supplier() {
                 <div className="supplier-directory-header">
                     <div>
                         <Text strong className="supplier-directory-title">
-                            Supplier directory
+                            Supplier Directory
                         </Text>
 
                         <div>
@@ -218,7 +218,7 @@ export default function Supplier() {
 
                     {canCreate && !trashed && 
                         <Button type="primary" aria-label="Add supplier" icon={<PlusOutlined />} onClick={() => navigate("/suppliers/create")}>
-                            Add supplier
+                            Add Supplier
                         </Button>
                     }
                 </div>

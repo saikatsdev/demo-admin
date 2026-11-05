@@ -214,10 +214,6 @@ export default function RawMaterialPurchaseEditor(){
             {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
-                    <Button className="purchase-back-button" icon={<ArrowLeftOutlined/>} onClick={()=>navigate("/raw-material-purchases")}>
-                        Back to purchases
-                    </Button>
-
                     <h1 className="title">
                         {editing?"Edit":"Create"} raw material purchase
                     </h1>
@@ -226,6 +222,10 @@ export default function RawMaterialPurchaseEditor(){
                         Save a draft first. Complete it from the register to post stock, ledger and payment.
                     </p>
                 </div>
+
+                <Button className="purchase-back-button" type="primary" icon={<ArrowLeftOutlined/>} onClick={()=>navigate("/raw-material-purchases")}>
+                    Back to purchases
+                </Button>
             </div>
 
             <Form form={form} layout="vertical" onFinish={submit}>
@@ -381,13 +381,15 @@ export default function RawMaterialPurchaseEditor(){
                 </Row>
 
                 <div className="purchase-form-actions">
-                    <Button onClick={()=>navigate("/raw-material-purchases")}>
-                        Cancel
-                    </Button>
-                    
-                    <Button type="primary" htmlType="submit" loading={saving}>
-                        {editing?"Save changes":"Create draft purchase"}
-                    </Button>
+                    <Space>
+                        <Button onClick={()=>navigate("/raw-material-purchases")}>
+                            Cancel
+                        </Button>
+                        
+                        <Button type="primary" htmlType="submit" loading={saving}>
+                            {editing?"Save changes":"Create Draft Purchase"}
+                        </Button>
+                    </Space>
                 </div>
             </Form>
         </div>

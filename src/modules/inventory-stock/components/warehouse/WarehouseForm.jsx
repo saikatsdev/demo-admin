@@ -100,7 +100,7 @@ export default function WarehouseForm({ warehouse, saving, serverError, fieldErr
                 <div className="warehouse-form-actions">
                     <Space>
                         <Button onClick={onCancel} disabled={saving}>Cancel</Button>
-                        <Button type="primary" htmlType="submit" loading={saving}>{warehouse ? "Save changes" : "Create warehouse"}</Button>
+                        <Button type="primary" htmlType="submit" loading={saving}>{warehouse ? "Save Changes" : "Create Warehouse"}</Button>
                     </Space>
                 </div>
             </Form>

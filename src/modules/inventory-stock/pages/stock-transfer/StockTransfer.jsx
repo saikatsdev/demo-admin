@@ -123,7 +123,7 @@ export default function StockTransfer(){
                     <Input prefix={<SearchOutlined/>} allowClear value={q} onChange={e=>setQ(e.target.value)} placeholder="Search transfer number" className="stock-search"/>
                     {can("stock-transfers-create") && 
                         <Button type="primary" icon={<PlusOutlined/>} onClick={()=>nav("/stock-transfers/create")}>
-                            Create transfer
+                            Create Transfer
                         </Button>
                     }
                 </div>

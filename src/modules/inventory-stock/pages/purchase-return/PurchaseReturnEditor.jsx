@@ -1,6 +1,6 @@
 import { ArrowLeftOutlined } from "@ant-design/icons";
 
-import {Alert,Button,Card,Col,DatePicker,Form,Input,InputNumber,Result,Row,Select,Table,message,} from "antd";
+import {Alert,Button,Card,Col,DatePicker,Form,Input,InputNumber,Result,Space,Row,Select,Table,message,} from "antd";
 
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
@@ -223,14 +223,13 @@ export default function PurchaseReturnEditor() {
 
             <div className="pagehead">
                 <div className="head-left">
-                    <Button icon={<ArrowLeftOutlined />} onClick={() => nav("/purchase-returns")}>
-                        Back to returns
-                    </Button>
-
                     <h1 className="title">
                         {editing ? "Edit" : "Create"} purchase return
                     </h1>
                 </div>
+                <Button icon={<ArrowLeftOutlined />} type="primary" onClick={() => nav("/purchase-returns")}>
+                    Back to Returns
+                </Button>
             </div>
 
             <Form form={form} layout="vertical" onFinish={submit}>
@@ -297,13 +296,15 @@ export default function PurchaseReturnEditor() {
                 </Card>
 
                 <div className="purchase-form-actions">
-                    <Button onClick={() => nav("/purchase-returns")}>
-                        Cancel
-                    </Button>
+                    <Space>
+                        <Button onClick={() => nav("/purchase-returns")}>
+                            Cancel
+                        </Button>
 
-                    <Button type="primary" htmlType="submit" loading={saving}>
-                        {editing ? "Save changes" : "Create draft return"}
-                    </Button>
+                        <Button type="primary" htmlType="submit" loading={saving}>
+                            {editing ? "Save changes" : "Create Draft Return"}
+                        </Button>
+                    </Space>
                 </div>
             </Form>
         </div>

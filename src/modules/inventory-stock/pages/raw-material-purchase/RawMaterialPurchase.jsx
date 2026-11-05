@@ -152,7 +152,7 @@ export default function RawMaterialPurchase(){
 
                     {can("raw-material-purchases-create") && 
                         <Button type="primary" icon={<PlusOutlined/>} onClick={()=>navigate("/raw-material-purchases/create")}>
-                            Create purchase
+                            Create Purchase
                         </Button>
                     }
                 </div>

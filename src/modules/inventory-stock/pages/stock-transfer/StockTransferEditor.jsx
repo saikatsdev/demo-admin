@@ -158,14 +158,13 @@ export default function StockTransferEditor() {
             {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
-                    <Button className="purchase-back-button" icon={<ArrowLeftOutlined />} onClick={() => navigate("/stock-transfers")}>
-                        Back to transfers
-                    </Button>
-
                     <h1 className="title">
                         {editing ? "Edit" : "Create"} warehouse transfer
                     </h1>
                 </div>
+                <Button className="purchase-back-button" type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate("/stock-transfers")}>
+                    Back to Transfers
+                </Button>
             </div>
 
             <Form form={form} layout="vertical" onFinish={submit}>
@@ -214,13 +213,15 @@ export default function StockTransferEditor() {
                 </Card>
 
                 <div className="purchase-form-actions">
-                    <Button onClick={() => navigate("/stock-transfers")}>
-                        Cancel
-                    </Button>
+                    <Space>
+                        <Button onClick={() => navigate("/stock-transfers")}>
+                            Cancel
+                        </Button>
 
-                    <Button type="primary" htmlType="submit" loading={saving}>
-                        {editing ? "Save changes" : "Save draft transfer"}
-                    </Button>
+                        <Button type="primary" htmlType="submit" loading={saving}>
+                            {editing ? "Save Changes" : "Save Draft Transfer"}
+                        </Button>
+                    </Space>
                 </div>
             </Form>
         </div>

@@ -52,16 +52,15 @@ export default function RawMaterialEditor() {
             {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
-                    <Button className="purchase-back-button" icon={<ArrowLeftOutlined />} onClick={() => navigate("/raw-materials")}>
-                        Back to raw materials
-                    </Button>
-
                     <h1 className="title">{editing ? "Edit raw material" : "Add raw material"}</h1>
 
                     <p className="purchase-subtitle">
                         Maintain reusable material identity, unit and standard purchase price.
                     </p>
                 </div>
+                <Button className="purchase-back-button" type="primary" icon={<ArrowLeftOutlined />} onClick={() => navigate("/raw-materials")}>
+                    Back to Raw Materials
+                </Button>
             </div>
 
             <Card className="purchase-form-card">

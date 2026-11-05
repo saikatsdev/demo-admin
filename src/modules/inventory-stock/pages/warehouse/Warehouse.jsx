@@ -220,7 +220,7 @@ export default function Warehouse() {
 
                     {canCreate && !trashed && 
                         <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/warehouses/create")}>
-                            Add warehouse
+                            Add Warehouse
                         </Button>
                     }
                 </div>

@@ -118,7 +118,7 @@ export default function RawMaterial() {
 
                     {can("raw-materials-create")&&
                         <Button type="primary" icon={<PlusOutlined/>} onClick={() => navigate("/raw-materials/create")}>
-                            Add raw material
+                            Add Raw Material
                         </Button>
                     }
                 </div>

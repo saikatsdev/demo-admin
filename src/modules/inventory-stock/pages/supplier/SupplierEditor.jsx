@@ -96,21 +96,17 @@ export default function SupplierEditor() {
             {contextHolder}
             <div className="pagehead">
                 <div className="head-left">
-                    <Button className="supplier-back-button" icon={<ArrowLeftOutlined />} onClick={() => navigate("/suppliers")}>Back to suppliers</Button>
                     <h1 className="title">
                         {editing ? "Edit supplier" : "Add supplier"}
                     </h1>
+                    
                     <p className="supplier-subtitle">
                         {editing ? "Update supplier contact details and opening balance." : "Create a supplier for purchasing and inventory operations."}
                     </p>
                 </div>
 
                 <div className="head-actions">
-                    <Breadcrumb items={[
-                        { title: <Link to="/dashboard">Dashboard</Link> },
-                        { title: <Link to="/suppliers">Suppliers</Link> },
-                        { title: editing ? "Edit" : "Add" },
-                    ]} />
+                    <Button type="primary" onClick={() => navigate("/suppliers")}>Back to Suppliers</Button>
                 </div>
             </div>
 

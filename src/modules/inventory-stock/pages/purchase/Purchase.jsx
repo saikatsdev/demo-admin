@@ -244,7 +244,7 @@ export default function Purchase() {
 
                 {canCreate && !trashed && 
                     <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate("/purchases/create")}>
-                        Create purchase
+                        Create Purchase
                     </Button>
                 }
             </div>
