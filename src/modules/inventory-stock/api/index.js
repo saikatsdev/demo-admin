@@ -29,6 +29,7 @@ export {
     deletePurchase,
     getPurchase,
     getPurchases,
+    getPurchaseReport,
     getTrashedPurchases,
     permanentlyDeletePurchase,
     restorePurchase,

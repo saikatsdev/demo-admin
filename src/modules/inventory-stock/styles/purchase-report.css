@@ -1,0 +1,82 @@
+.purchase-report-page {
+  padding-bottom: 24px;
+}
+
+.purchase-report-subtitle {
+  margin: 4px 0 0;
+  color: #64748b;
+}
+
+.purchase-report-summary {
+  margin-bottom: 16px;
+}
+
+.purchase-report-summary .ant-card {
+  height: 100%;
+  border-radius: 12px;
+}
+
+.purchase-report-card-note {
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.purchase-report-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.purchase-report-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.purchase-report-search {
+  width: 240px;
+}
+
+.purchase-report-select {
+  min-width: 190px;
+}
+
+.purchase-report-status-select {
+  min-width: 150px;
+}
+
+.purchase-report-muted {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.purchase-report-due {
+  color: #cf1322;
+  font-weight: 600;
+}
+
+.purchase-report-status {
+  text-transform: capitalize;
+}
+
+.purchase-report-error {
+  margin: 12px 16px;
+}
+
+@media (max-width: 992px) {
+  .purchase-report-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .purchase-report-search,
+  .purchase-report-select,
+  .purchase-report-status-select {
+    width: 100%;
+    min-width: 180px;
+  }
+}

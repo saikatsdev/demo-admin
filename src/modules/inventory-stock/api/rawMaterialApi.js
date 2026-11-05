@@ -11,6 +11,7 @@ export const updateRawMaterial  = (id, data) => putData(`${MATERIALS}/${id}`, da
 export const deleteRawMaterial  = (id) => deleteData(`${MATERIALS}/${id}`);
 
 export const getRawMaterialPurchases     = (params = {}) => getDatas(PURCHASES, params);
+export const getRawMaterialPurchaseReport = (params = {}) => getDatas(`${PURCHASES}/report`, params);
 export const getRawMaterialPurchase      = (id) => getDatas(`${PURCHASES}/${id}`);
 export const createRawMaterialPurchase   = (data) => postData(PURCHASES, data);
 export const updateRawMaterialPurchase   = (id, data) => putData(`${PURCHASES}/${id}`, data);

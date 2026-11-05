@@ -3,6 +3,7 @@ import { deleteData, getDatas, postData, putData } from "../../../api/common/com
 const PURCHASE_ENDPOINT = "/admin/purchases";
 
 export const getPurchases              = (params = {}) => getDatas(PURCHASE_ENDPOINT, params);
+export const getPurchaseReport         = (params = {}) => getDatas(`${PURCHASE_ENDPOINT}/report`, params);
 export const getPurchase               = (id) => getDatas(`${PURCHASE_ENDPOINT}/${id}`);
 export const createPurchase            = (payload) => postData(PURCHASE_ENDPOINT, payload);
 export const updatePurchase            = (id, payload) => putData(`${PURCHASE_ENDPOINT}/${id}`, payload);
