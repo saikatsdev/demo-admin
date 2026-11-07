@@ -1,4 +1,4 @@
-import { AccountBookOutlined, BookOutlined,DollarOutlined,TagsOutlined,SwapOutlined,PlusCircleOutlined,DollarCircleOutlined,CreditCardOutlined } from "@ant-design/icons";
+import { AccountBookOutlined, BookOutlined,DollarOutlined,TagsOutlined,SwapOutlined,PlusCircleOutlined,DollarCircleOutlined,CreditCardOutlined,UserOutlined } from "@ant-design/icons";
 import { lazy } from "react";
 
 const Account               = lazy(() => import("./pages/account/Account"));
@@ -14,6 +14,7 @@ const IncomeEditor          = lazy(() => import("./pages/income/IncomeEditor"));
 const IncomeCategory        = lazy(() => import("./pages/income-category/IncomeCategory"));
 const Payable               = lazy(() => import("./pages/payable/Payable"));
 const Receivable            = lazy(() => import("./pages/receivable/Receivable"));
+const CustomerLedger        = lazy(() => import("./pages/customer-ledger/CustomerLedger"));
 
 const routes = 
 [
@@ -44,6 +45,10 @@ const routes =
     { 
         path: "/supplier-ledger", 
         component: SupplierLedger 
+    },
+    { 
+        path: "/all-customer-ledger", 
+        component: CustomerLedger 
     },
     { 
         path: "/incomes", 
@@ -97,6 +102,7 @@ const getNavigation = ({ can }) => {
     const canExpenseCategories = can("expense-categories-read");
     const canPayables          = can("payables-read") || can("supplier-ledgers-read") || can("suppliers-read");
     const canReceivables       = can("receivables-read");
+    const canCustomerLedger    = can("customer-ledgers-read");
 
     if (!canAccounts && !canTransfers && !canSupplierLedger && !canIncomes && !canIncomeCategories && !canPayables && !canExpenses && !canReceivables && !canExpenseCategories) return null;
 
@@ -104,6 +110,7 @@ const getNavigation = ({ can }) => {
     if (canAccounts) submenus.push({ label: "Accounts", path: "/accounts" });
     if (canTransfers) submenus.push({ label: "Account Transfer", path: "/account-transfers", icon: <SwapOutlined /> });
     if (canSupplierLedger) submenus.push({ label: "Supplier Ledger", path: "/supplier-ledger", icon: <BookOutlined /> });
+    if (canCustomerLedger) {submenus.push({label: "Customer Ledger",path: "/all-customer-ledger",icon: <UserOutlined />,});}
     if (canIncomes) submenus.push({ label: "Other Income", path: "/incomes", icon: <PlusCircleOutlined /> });
     if (canIncomeCategories) submenus.push({ label: "Income Categories", path: "/income-categories", icon: <TagsOutlined /> });
     if (canExpenses) submenus.push({ label: "Expenses", path: "/expenses", icon: <DollarOutlined /> });
