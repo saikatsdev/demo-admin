@@ -1,4 +1,4 @@
-import { AccountBookOutlined, BookOutlined,DollarOutlined,TagsOutlined,SwapOutlined } from "@ant-design/icons";
+import { AccountBookOutlined, BookOutlined,DollarOutlined,TagsOutlined,SwapOutlined,PlusCircleOutlined } from "@ant-design/icons";
 import { lazy } from "react";
 
 const Account               = lazy(() => import("./pages/account/Account"));
@@ -9,6 +9,9 @@ const SupplierLedger        = lazy(() => import("./pages/supplier-ledger/Supplie
 const Expense               = lazy(() => import("./pages/expense/Expense"));
 const ExpenseEditor         = lazy(() => import("./pages/expense/ExpenseEditor"));
 const ExpenseCategory       = lazy(() => import("./pages/expense-category/ExpenseCategory"));
+const Income                = lazy(() => import("./pages/income/Income"));
+const IncomeEditor          = lazy(() => import("./pages/income/IncomeEditor"));
+const IncomeCategory        = lazy(() => import("./pages/income-category/IncomeCategory"));
 
 const routes = 
 [
@@ -41,6 +44,22 @@ const routes =
         component: SupplierLedger 
     },
     { 
+        path: "/incomes", 
+        component: Income 
+    },
+    { 
+        path: "/incomes/create", 
+        component: IncomeEditor 
+    },
+    { 
+        path: "/incomes/:id/edit", 
+        component: IncomeEditor 
+    },
+    { 
+        path: "/income-categories", 
+        component: IncomeCategory 
+    },
+    { 
         path: "/expenses", 
         component: Expense 
     },
@@ -62,19 +81,27 @@ const getNavigation = ({ can }) => {
     const canAccounts          = can("accounts-read");
     const canTransfers         = can("account-transfers-read");
     const canSupplierLedger    = can("supplier-ledgers-read") || can("suppliers-read");
+    const canIncomes           = can("incomes-read");
+    const canIncomeCategories  = can("income-categories-read");
     const canExpenses          = can("expenses-read");
     const canExpenseCategories = can("expense-categories-read");
 
-    if (!canAccounts && !canTransfers && !canSupplierLedger && !canExpenses && !canExpenseCategories) return null;
+    if (!canAccounts && !canTransfers && !canSupplierLedger && !canIncomes && !canIncomeCategories && !canExpenses && !canExpenseCategories) return null;
 
     const submenus = [];
     if (canAccounts) submenus.push({ label: "Accounts", path: "/accounts" });
     if (canTransfers) submenus.push({ label: "Account Transfer", path: "/account-transfers", icon: <SwapOutlined /> });
     if (canSupplierLedger) submenus.push({ label: "Supplier Ledger", path: "/supplier-ledger", icon: <BookOutlined /> });
+    if (canIncomes) submenus.push({ label: "Other Income", path: "/incomes", icon: <PlusCircleOutlined /> });
+    if (canIncomeCategories) submenus.push({ label: "Income Categories", path: "/income-categories", icon: <TagsOutlined /> });
     if (canExpenses) submenus.push({ label: "Expenses", path: "/expenses", icon: <DollarOutlined /> });
     if (canExpenseCategories) submenus.push({ label: "Expense Categories", path: "/expense-categories", icon: <TagsOutlined /> });
 
-    return { title: "Account Management", icon: <AccountBookOutlined />, submenus };
+    return { 
+        title: "Account Management", 
+        icon: <AccountBookOutlined />, 
+        submenus 
+    };
 };
 
 export const accountingModule = {

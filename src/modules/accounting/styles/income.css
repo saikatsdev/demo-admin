@@ -1,0 +1,174 @@
+.income-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.income-subtitle {
+  margin: 5px 0 0;
+  color: #667085;
+}
+.income-summary-row .ant-card {
+  height: 100%;
+}
+.income-summary-card {
+  border: 1px solid #e7edf3;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.04);
+}
+.income-summary-total {
+  background: linear-gradient(135deg, #f0fff7 0%, #ffffff 100%);
+  border-color: #cdeedc;
+}
+.income-directory,
+.income-editor-card {
+  border: 1px solid #e7edf3;
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.05);
+  overflow: hidden;
+}
+.income-directory-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px;
+  border-bottom: 1px solid #edf1f5;
+}
+.income-directory-title {
+  font-size: 16px;
+}
+.income-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  background: #fbfcfd;
+  border-bottom: 1px solid #edf1f5;
+}
+.income-filter-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.income-search {
+  width: 260px;
+}
+.income-category-filter,
+.income-account-filter {
+  min-width: 170px;
+}
+.income-status-filter {
+  min-width: 130px;
+}
+.income-list-error {
+  margin: 14px 18px;
+}
+.income-table .ant-table-thead > tr > th {
+  background: #f8fafb;
+}
+.income-money-positive {
+  color: #16794b;
+}
+.income-form-section {
+  padding: 24px;
+  border-bottom: 1px solid #edf1f5;
+}
+.income-section-heading {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.income-section-heading h2 {
+  margin: 0 0 3px;
+  font-size: 17px;
+}
+.income-section-heading p {
+  margin: 0;
+  color: #667085;
+}
+.income-section-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #16794b;
+  background: #ecfdf3;
+  font-size: 18px;
+  flex: 0 0 auto;
+}
+.income-meta-icon {
+  color: #175cd3;
+  background: #eff8ff;
+}
+.income-note-icon {
+  color: #6941c6;
+  background: #f4f3ff;
+}
+.income-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 18px 24px 24px;
+}
+.income-form-error {
+  margin: 20px 24px 0;
+}
+.income-status-note {
+  margin-top: -13px;
+  margin-bottom: 20px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.income-status-posted {
+  color: #16794b;
+}
+.income-status-draft {
+  color: #b54708;
+}
+.income-status-cancelled {
+  color: #667085;
+}
+.income-back-button {
+  margin-bottom: 8px;
+}
+.income-details-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 18px;
+  border: 1px solid #e7edf3;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f0fff7 0%, #ffffff 70%);
+  margin-bottom: 18px;
+}
+.income-details-hero h3 {
+  margin: 3px 0 8px !important;
+}
+.income-details-amount {
+  color: #16794b;
+  font-weight: 700;
+  font-size: 22px;
+  white-space: nowrap;
+}
+.income-details-grid .ant-descriptions-item-label {
+  width: 180px;
+}
+@media (max-width: 768px) {
+  .income-search,
+  .income-category-filter,
+  .income-account-filter,
+  .income-status-filter {
+    width: 100%;
+    min-width: 100%;
+  }
+  .income-filter-group {
+    width: 100%;
+  }
+  .income-details-hero {
+    flex-direction: column;
+  }
+}
