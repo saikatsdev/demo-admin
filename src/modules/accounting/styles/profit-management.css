@@ -1,0 +1,84 @@
+.profit-management-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.pm-subtitle {
+  margin: 5px 0 0;
+  color: #667085;
+}
+.pm-filter-card,
+.pm-stat,
+.pm-mini,
+.pm-report-card {
+  border: 1px solid #e7edf3;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.04);
+}
+.pm-filter-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pm-presets {
+  display: flex;
+  gap: 6px;
+}
+.pm-stat {
+  height: 100%;
+}
+.pm-stat-green {
+  background: linear-gradient(135deg, #f0fff7 0%, #fff 100%);
+  border-color: #cdeedc;
+}
+.pm-stat-blue {
+  background: linear-gradient(135deg, #eff8ff 0%, #fff 100%);
+  border-color: #b2ddff;
+}
+.pm-stat-red {
+  background: linear-gradient(135deg, #fff3f2 0%, #fff 100%);
+  border-color: #fecdc9;
+}
+.pm-mini {
+  height: 100%;
+}
+.pm-positive {
+  color: #067647;
+}
+.pm-negative {
+  color: #d92d20;
+}
+.pm-report-card {
+  overflow: hidden;
+}
+.pm-report-card .ant-tabs-nav {
+  padding: 0 18px;
+  margin: 0;
+}
+.pm-report-card .ant-tabs-content-holder {
+  border-top: 1px solid #edf1f5;
+}
+.pm-tab-toolbar {
+  display: flex;
+  padding: 14px 16px;
+  background: #fbfcfd;
+  border-bottom: 1px solid #edf1f5;
+}
+.pm-tab-toolbar .ant-input-affix-wrapper {
+  max-width: 340px;
+}
+.pm-product-note {
+  margin: 14px 16px 0;
+}
+@media (max-width: 768px) {
+  .pm-filter-row {
+    align-items: stretch;
+  }
+  .pm-presets {
+    flex-wrap: wrap;
+  }
+  .pm-tab-toolbar .ant-input-affix-wrapper {
+    max-width: none;
+    width: 100%;
+  }
+}
