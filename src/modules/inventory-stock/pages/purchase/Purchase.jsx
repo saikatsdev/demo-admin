@@ -1,10 +1,11 @@
-import { CheckCircleOutlined, DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, ReloadOutlined, RollbackOutlined, SearchOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined,FileTextOutlined, ReloadOutlined, RollbackOutlined, SearchOutlined } from "@ant-design/icons";
 import { Alert, Breadcrumb, Button, Card, Empty, Input, message, Popconfirm, Result, Segmented, Select, Space, Table, Tag, Tooltip, Typography } from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { usePermission } from "../../../../hooks/usePermission";
 import useTitle from "../../../../hooks/useTitle";
+import PurchaseInvoice from "../../components/purchase/PurchaseInvoice";
 import { completePurchase, deletePurchase, getPurchase, permanentlyDeletePurchase, restorePurchase } from "../../api";
 import PurchaseDetails from "../../components/purchase/PurchaseDetails";
 import usePurchases from "../../hooks/usePurchases";
@@ -30,6 +31,7 @@ export default function Purchase() {
     const [details, setDetails]                                           = useState(null);
     const [busyId, setBusyId]                                             = useState(null);
     const pending                                                         = useRef(false);
+    const [invoice, setInvoice]                                           = useState(null);
     const { trashed }                                                     = filters;
 
     useEffect(() => {
@@ -55,6 +57,27 @@ export default function Purchase() {
             messageApi.error("Unable to load purchase"); 
         }finally { 
             pending.current = false; setBusyId(null); 
+        }
+    };
+
+    const viewInvoice = async (record) => {
+        if (pending.current) return;
+
+        pending.current = true; setBusyId(record.id);
+
+        try {
+            const response = await getPurchase(record.id);
+
+            if (!response?.success) {
+                messageApi.error(firstError(response, "Unable to load purchase invoice"));
+                return;
+            }
+
+            setInvoice(response.result);
+        } catch {
+            messageApi.error("Unable to load purchase invoice");
+        } finally {
+            pending.current = false; setBusyId(null);
         }
     };
 
@@ -186,6 +209,12 @@ export default function Purchase() {
                     <Button type="text" icon={<EyeOutlined />} loading={busyId === record.id} disabled={busyId !== null && busyId !== record.id} onClick={() => view(record)} />
                 </Tooltip>
 
+                {!trashed &&
+                    <Tooltip title="Purchase invoice">
+                        <Button type="text" className="purchase-invoice-action" icon={<FileTextOutlined />} disabled={busyId !== null} onClick={() => viewInvoice(record)} />
+                    </Tooltip>
+                }
+
                 {!trashed && canUpdate && record.status === "draft" && 
                     <Tooltip title="Edit purchase">
                         <Button type="text" icon={<EditOutlined />} disabled={busyId !== null} onClick={() => navigate(`/purchases/${record.id}/edit`)} />
@@ -282,5 +311,6 @@ export default function Purchase() {
         </Card>
         
         <PurchaseDetails purchase={details} onClose={() => setDetails(null)} />
+        <PurchaseInvoice purchase={invoice} onClose={() => setInvoice(null)} />
     </div>;
 }

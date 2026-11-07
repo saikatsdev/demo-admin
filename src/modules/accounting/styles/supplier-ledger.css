@@ -1,0 +1,79 @@
+.supplier-ledger-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.supplier-ledger-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.supplier-ledger-heading h3 {
+  margin: 0 0 2px;
+}
+
+.supplier-ledger-summary .ant-card {
+  height: 100%;
+}
+
+.supplier-ledger-card {
+  border-radius: 12px;
+}
+
+.supplier-ledger-filters,
+.supplier-ledger-statement-filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 220px auto;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.supplier-ledger-identity,
+.supplier-ledger-transaction {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.supplier-ledger-identity span,
+.supplier-ledger-transaction span {
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+}
+
+.supplier-ledger-current {
+  font-size: 15px;
+}
+
+.supplier-ledger-alert {
+  margin-bottom: 14px;
+}
+
+.statement-summary {
+  margin: 0 0 16px;
+}
+
+.ledger-debit {
+  color: #cf1322;
+  font-weight: 600;
+}
+
+.ledger-credit {
+  color: #389e0d;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .supplier-ledger-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .supplier-ledger-filters,
+  .supplier-ledger-statement-filters {
+    grid-template-columns: 1fr;
+  }
+}

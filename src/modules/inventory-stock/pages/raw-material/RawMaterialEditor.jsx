@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import { Alert, Button, Card, Col, Form, Input, InputNumber, Result, Row, Select, Skeleton, message } from "antd";
+import { Alert, Button, Card, Col, Form, Input, InputNumber, Result, Space,Row, Select, Skeleton, message } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { usePermission } from "../../../../hooks/usePermission";
@@ -108,10 +108,15 @@ export default function RawMaterialEditor() {
                         </Form.Item>
 
                         <div className="purchase-form-actions">
-                            <Button onClick={() => navigate("/raw-materials")}>
-                                Cancel
-                            </Button>
-                            <Button type="primary" htmlType="submit" loading={saving}>{editing ? "Save changes" : "Create raw material"}</Button>
+                            <Space>
+                                <Button onClick={() => navigate("/raw-materials")}>
+                                    Cancel
+                                </Button>
+
+                                <Button type="primary" htmlType="submit" loading={saving}>
+                                    {editing ? "Save Changes" : "Create Raw Material"}
+                                </Button>
+                            </Space>
                         </div>
                     </Form>
                 }

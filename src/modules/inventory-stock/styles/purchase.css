@@ -40,6 +40,10 @@
   width: 310px;
 }
 
+.raw-material-purchase-search {
+  width: 260px;
+}
+
 .purchase-status-filter {
   width: 150px;
 }
@@ -1015,6 +1019,348 @@
 
 @media (min-width: 768px) and (max-width: 1100px) {
   .purchase-financial-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Purchase invoice */
+.purchase-invoice-action {
+  color: #2563eb;
+}
+
+.purchase-invoice-action:hover {
+  color: #174ea6 !important;
+  background: #eef4ff !important;
+}
+
+.purchase-invoice-modal .ant-modal-content {
+  overflow: hidden;
+  padding: 0;
+  border-radius: 16px;
+}
+
+.purchase-invoice-modal .ant-modal-close {
+  top: 17px;
+  color: #64748b;
+}
+
+.purchase-invoice-modal .ant-modal-body {
+  max-height: calc(100vh - 150px);
+  overflow: auto;
+  padding: 0;
+  background: #f5f7fb;
+}
+
+.purchase-invoice-modal .ant-modal-footer {
+  margin: 0;
+  padding: 14px 20px;
+  border-top: 1px solid #e8edf4;
+  background: #fff;
+}
+
+.purchase-invoice-sheet {
+  margin: 22px;
+  padding: 30px;
+  border: 1px solid #e3e9f1;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.07);
+}
+
+.purchase-invoice-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 28px;
+  padding-bottom: 23px;
+  border-bottom: 2px solid #172033;
+}
+
+.purchase-invoice-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.purchase-invoice-logo,
+.purchase-invoice-logo-fallback {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  border-radius: 14px;
+}
+
+.purchase-invoice-logo {
+  padding: 5px;
+  border: 1px solid #e4eaf2;
+  object-fit: contain;
+  background: #fff;
+}
+
+.purchase-invoice-logo-fallback {
+  display: grid;
+  place-items: center;
+  background: #eef4ff;
+  color: #2563eb;
+  font-size: 27px;
+}
+
+.purchase-invoice-brand h2 {
+  margin: 0 0 5px;
+  color: #172033;
+  font-size: 21px;
+}
+
+.purchase-invoice-brand p {
+  max-width: 380px;
+  margin: 0;
+  color: #718096;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.purchase-invoice-contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 13px;
+  margin-top: 4px;
+  color: #718096;
+  font-size: 11px;
+}
+
+.purchase-invoice-heading {
+  text-align: right;
+}
+
+.purchase-invoice-label {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: #2563eb;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.purchase-invoice-heading h1 {
+  margin: 5px 0 3px;
+  color: #172033;
+  font-size: 25px;
+}
+
+.purchase-invoice-heading p {
+  margin: 0 0 8px;
+  color: #718096;
+  font-size: 12px;
+}
+
+.purchase-invoice-heading .ant-tag {
+  margin-inline-end: 4px;
+  text-transform: capitalize;
+}
+
+.purchase-invoice-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 22px 0;
+}
+
+.purchase-invoice-info-card {
+  min-height: 92px;
+  padding: 13px 14px;
+  border: 1px solid #e5eaf1;
+  border-radius: 10px;
+  background: #fbfcfe;
+}
+
+.purchase-invoice-info-card > span:first-child {
+  display: block;
+  margin-bottom: 6px;
+  color: #8a96a8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.purchase-invoice-info-card > strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #172033;
+  font-size: 13px;
+}
+
+.purchase-invoice-info-card .ant-typography {
+  font-size: 11px;
+}
+
+.purchase-invoice-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e4e9f0;
+  border-radius: 10px;
+}
+
+.purchase-invoice-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.purchase-invoice-table thead th {
+  padding: 10px 9px;
+  background: #172033;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.purchase-invoice-table tbody td {
+  padding: 10px 9px;
+  border-bottom: 1px solid #edf0f4;
+  color: #344054;
+  vertical-align: top;
+}
+
+.purchase-invoice-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.purchase-invoice-table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.purchase-invoice-table td > strong {
+  color: #172033;
+}
+
+.purchase-invoice-table td small {
+  display: block;
+  margin-top: 2px;
+  color: #7b8799;
+}
+
+.purchase-invoice-table td em {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #eef4ff;
+  color: #2563eb;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.purchase-invoice-table .center {
+  text-align: center;
+}
+
+.purchase-invoice-table .right {
+  text-align: right;
+}
+
+.purchase-invoice-bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: 28px;
+  margin-top: 22px;
+}
+
+.purchase-invoice-note {
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.purchase-invoice-note > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #172033;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.purchase-invoice-note p {
+  max-width: 430px;
+  margin: 0 0 10px;
+  white-space: pre-line;
+}
+
+.purchase-invoice-totals {
+  overflow: hidden;
+  border: 1px solid #e4e9f0;
+  border-radius: 10px;
+}
+
+.purchase-invoice-totals > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #edf0f4;
+  color: #667085;
+  font-size: 11px;
+}
+
+.purchase-invoice-totals > div:last-child {
+  border-bottom: 0;
+}
+
+.purchase-invoice-totals strong {
+  color: #172033;
+}
+
+.purchase-invoice-totals .grand {
+  padding: 12px;
+  background: #eef4ff;
+  color: #134f9c;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.purchase-invoice-totals .grand strong {
+  color: #134f9c;
+}
+
+.purchase-invoice-totals .due,
+.purchase-invoice-totals .due strong {
+  color: #c62828;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .purchase-invoice-sheet {
+    margin: 10px;
+    padding: 18px;
+  }
+
+  .purchase-invoice-top,
+  .purchase-invoice-bottom {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .purchase-invoice-heading {
+    text-align: left;
+  }
+
+  .purchase-invoice-label {
+    justify-content: flex-start;
+  }
+
+  .purchase-invoice-info-grid {
     grid-template-columns: 1fr;
   }
 }

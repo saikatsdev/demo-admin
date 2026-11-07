@@ -227,7 +227,7 @@ export default function PurchaseEditor() {
             <div className="pagehead">
                 <div className="head-left">
                     <h1 className="title">
-                        {editing ? `Edit ${purchase?.purchase_no || "purchase"}` : "Create purchase"}
+                        {editing ? `Edit ${purchase?.purchase_no || "Purchase"}` : "Create Purchase"}
                     </h1>
 
                     <p className="purchase-subtitle">

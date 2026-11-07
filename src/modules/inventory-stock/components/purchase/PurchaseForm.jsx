@@ -419,7 +419,7 @@ export default function PurchaseForm({ purchase, suppliers, supplierLoading, sup
                     </Button>
 
                     <Button type="primary" htmlType="submit" loading={saving}>
-                        {purchase ? "Save Changes" : "Create draft purchase"}
+                        {purchase ? "Save Changes" : "Create Draft Purchase"}
                     </Button>
                 </Space>
             </div>
