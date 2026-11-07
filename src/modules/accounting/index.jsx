@@ -1,9 +1,12 @@
-import { AccountBookOutlined, BookOutlined } from "@ant-design/icons";
+import { AccountBookOutlined, BookOutlined,DollarOutlined,TagsOutlined } from "@ant-design/icons";
 import { lazy } from "react";
 
-const Account = lazy(() => import("./pages/account/Account"));
-const AccountEditor = lazy(() => import("./pages/account/AccountEditor"));
-const SupplierLedger = lazy(() => import("./pages/supplier-ledger/SupplierLedger"));
+const Account         = lazy(() => import("./pages/account/Account"));
+const AccountEditor   = lazy(() => import("./pages/account/AccountEditor"));
+const SupplierLedger  = lazy(() => import("./pages/supplier-ledger/SupplierLedger"));
+const Expense         = lazy(() => import("./pages/expense/Expense"));
+const ExpenseEditor   = lazy(() => import("./pages/expense/ExpenseEditor"));
+const ExpenseCategory = lazy(() => import("./pages/expense-category/ExpenseCategory"));
 
 const routes = 
 [
@@ -23,23 +26,39 @@ const routes =
         path: "/supplier-ledger", 
         component: SupplierLedger 
     },
+    { 
+        path: "/expenses", 
+        component: Expense 
+    },
+    { 
+        path: "/expenses/create", 
+        component: ExpenseEditor 
+    },
+    { 
+        path: "/expenses/:id/edit", 
+        component: ExpenseEditor 
+    },
+    { 
+        path: "/expense-categories", 
+        component: ExpenseCategory 
+    },
 ];
 
 const getNavigation = ({ can }) => {
-    const canAccounts = can("accounts-read");
-    const canSupplierLedger = can("supplier-ledgers-read") || can("suppliers-read");
+    const canAccounts          = can("accounts-read");
+    const canSupplierLedger    = can("supplier-ledgers-read") || can("suppliers-read");
+    const canExpenses          = can("expenses-read");
+    const canExpenseCategories = can("expense-categories-read");
 
-    if (!canAccounts && !canSupplierLedger) return null;
+    if (!canAccounts && !canSupplierLedger && !canExpenses && !canExpenseCategories) return null;
 
     const submenus = [];
     if (canAccounts) submenus.push({ label: "Accounts", path: "/accounts" });
     if (canSupplierLedger) submenus.push({ label: "Supplier Ledger", path: "/supplier-ledger", icon: <BookOutlined /> });
+    if (canExpenses) submenus.push({ label: "Expenses", path: "/expenses", icon: <DollarOutlined /> });
+    if (canExpenseCategories) submenus.push({ label: "Expense Categories", path: "/expense-categories", icon: <TagsOutlined /> });
 
-    return {
-        title: "Account Management",
-        icon: <AccountBookOutlined />,
-        submenus,
-    };
+    return { title: "Account Management", icon: <AccountBookOutlined />, submenus };
 };
 
 export const accountingModule = {
