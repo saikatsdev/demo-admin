@@ -1,4 +1,4 @@
-import { AccountBookOutlined, BookOutlined,DollarOutlined,TagsOutlined,SwapOutlined,PlusCircleOutlined } from "@ant-design/icons";
+import { AccountBookOutlined, BookOutlined,DollarOutlined,TagsOutlined,SwapOutlined,PlusCircleOutlined,DollarCircleOutlined,CreditCardOutlined } from "@ant-design/icons";
 import { lazy } from "react";
 
 const Account               = lazy(() => import("./pages/account/Account"));
@@ -12,6 +12,8 @@ const ExpenseCategory       = lazy(() => import("./pages/expense-category/Expens
 const Income                = lazy(() => import("./pages/income/Income"));
 const IncomeEditor          = lazy(() => import("./pages/income/IncomeEditor"));
 const IncomeCategory        = lazy(() => import("./pages/income-category/IncomeCategory"));
+const Payable               = lazy(() => import("./pages/payable/Payable"));
+const Receivable            = lazy(() => import("./pages/receivable/Receivable"));
 
 const routes = 
 [
@@ -75,6 +77,14 @@ const routes =
         path: "/expense-categories", 
         component: ExpenseCategory 
     },
+    { 
+        path: "/payables", 
+        component: Payable 
+    },
+    { 
+        path: "/receivables", 
+        component: Receivable 
+    },
 ];
 
 const getNavigation = ({ can }) => {
@@ -85,8 +95,10 @@ const getNavigation = ({ can }) => {
     const canIncomeCategories  = can("income-categories-read");
     const canExpenses          = can("expenses-read");
     const canExpenseCategories = can("expense-categories-read");
+    const canPayables          = can("payables-read") || can("supplier-ledgers-read") || can("suppliers-read");
+    const canReceivables       = can("receivables-read");
 
-    if (!canAccounts && !canTransfers && !canSupplierLedger && !canIncomes && !canIncomeCategories && !canExpenses && !canExpenseCategories) return null;
+    if (!canAccounts && !canTransfers && !canSupplierLedger && !canIncomes && !canIncomeCategories && !canPayables && !canExpenses && !canReceivables && !canExpenseCategories) return null;
 
     const submenus = [];
     if (canAccounts) submenus.push({ label: "Accounts", path: "/accounts" });
@@ -96,6 +108,8 @@ const getNavigation = ({ can }) => {
     if (canIncomeCategories) submenus.push({ label: "Income Categories", path: "/income-categories", icon: <TagsOutlined /> });
     if (canExpenses) submenus.push({ label: "Expenses", path: "/expenses", icon: <DollarOutlined /> });
     if (canExpenseCategories) submenus.push({ label: "Expense Categories", path: "/expense-categories", icon: <TagsOutlined /> });
+    if (canPayables) {submenus.push({ label: "Payables", path: "/payables", icon: <CreditCardOutlined /> })}
+    if (canReceivables) {submenus.push({ label: "Receivables", path: "/receivables", icon: <DollarCircleOutlined /> });}
 
     return { 
         title: "Account Management", 
