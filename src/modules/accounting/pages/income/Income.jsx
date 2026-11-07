@@ -167,7 +167,7 @@ export default function Income() {
             title: "Payer / Source",
             dataIndex: "payer",
             width: 180,
-            render: (value) => value || "-",
+            render: (value) => <Text style={{textTransform: "capitalize"}}>{value || "-"}</Text>,
         },
         {
             title: "Date",
