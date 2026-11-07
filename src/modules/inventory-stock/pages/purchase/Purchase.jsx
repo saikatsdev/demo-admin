@@ -29,7 +29,8 @@ export default function Purchase() {
     const [messageApi, contextHolder]                                     = message.useMessage();
     const [query, setQuery]                                               = useState("");
     const [details, setDetails]                                           = useState(null);
-    const [busyId, setBusyId]                                             = useState(null);
+    const [busy, setBusy]                                                 = useState(null);
+    const isBusy                                                          = (record, type) => busy?.id === record.id && busy?.type === type;
     const pending                                                         = useRef(false);
     const [invoice, setInvoice]                                           = useState(null);
     const { trashed }                                                     = filters;
@@ -42,7 +43,7 @@ export default function Purchase() {
     const view = async (record) => {
         if (pending.current) return;
 
-        pending.current = true; setBusyId(record.id);
+        pending.current = true; setBusy({ id: record.id, type: "view" });
 
         try {
             const response = await getPurchase(record.id);
@@ -56,14 +57,14 @@ export default function Purchase() {
         } catch {
             messageApi.error("Unable to load purchase"); 
         }finally { 
-            pending.current = false; setBusyId(null); 
+            pending.current = false; setBusy(null); 
         }
     };
 
     const viewInvoice = async (record) => {
         if (pending.current) return;
 
-        pending.current = true; setBusyId(record.id);
+        pending.current = true; setBusy({ id: record.id, type: "invoice" });
 
         try {
             const response = await getPurchase(record.id);
@@ -77,14 +78,14 @@ export default function Purchase() {
         } catch {
             messageApi.error("Unable to load purchase invoice");
         } finally {
-            pending.current = false; setBusyId(null);
+            pending.current = false; setBusy(null);
         }
     };
 
     const act = async (record, action) => {
         if (pending.current) return;
 
-        pending.current = true; setBusyId(record.id);
+        pending.current = true; setBusy({ id: record.id, type: action });
 
         try {
             const operation = action === "complete" ? completePurchase : action === "restore" ? restorePurchase : action === "permanent" ? permanentlyDeletePurchase : deletePurchase;
@@ -100,7 +101,7 @@ export default function Purchase() {
         } catch { 
             messageApi.error("Unable to complete action. Please try again."); 
         }finally { 
-            pending.current = false; setBusyId(null); 
+            pending.current = false; setBusy(null); 
         }
     };
 
@@ -206,36 +207,36 @@ export default function Purchase() {
             render: (_, record) => 
             <Space size={2}>
                 <Tooltip title="View purchase">
-                    <Button type="text" icon={<EyeOutlined />} loading={busyId === record.id} disabled={busyId !== null && busyId !== record.id} onClick={() => view(record)} />
+                    <Button type="text" icon={<EyeOutlined />} loading={isBusy(record, "view")} disabled={busy !== null && !isBusy(record, "view")} onClick={() => view(record)} />
                 </Tooltip>
 
                 {!trashed &&
                     <Tooltip title="Purchase invoice">
-                        <Button type="text" className="purchase-invoice-action" icon={<FileTextOutlined />} disabled={busyId !== null} onClick={() => viewInvoice(record)} />
+                        <Button type="text" className="purchase-invoice-action" icon={<FileTextOutlined />} loading={isBusy(record, "invoice")} disabled={busy !== null && !isBusy(record, "invoice")} onClick={() => viewInvoice(record)} />
                     </Tooltip>
                 }
 
                 {!trashed && canUpdate && record.status === "draft" && 
                     <Tooltip title="Edit purchase">
-                        <Button type="text" icon={<EditOutlined />} disabled={busyId !== null} onClick={() => navigate(`/purchases/${record.id}/edit`)} />
+                        <Button type="text" icon={<EditOutlined />} disabled={busy !== null} onClick={() => navigate(`/purchases/${record.id}/edit`)} />
                     </Tooltip>
                 }
 
                 {!trashed && canUpdate && record.status === "draft" &&
                     <Popconfirm title="Complete this purchase?" description="Stock, supplier ledger and any planned payment will be posted. A completed purchase cannot be edited or deleted." okText="Complete purchase" onConfirm={() => act(record, "complete")}>
-                        <Tooltip title="Complete purchase"><Button type="text" className="purchase-complete-action" icon={<CheckCircleOutlined />} disabled={busyId !== null} /></Tooltip>
+                        <Tooltip title="Complete purchase"><Button type="text" className="purchase-complete-action" icon={<CheckCircleOutlined />} disabled={busy !== null} /></Tooltip>
                     </Popconfirm>
                 }
 
                 {trashed && canUpdate && 
                     <Popconfirm title="Restore this purchase?" okText="Restore" onConfirm={() => act(record, "restore")}>
-                        <Button type="text" icon={<RollbackOutlined />} disabled={busyId !== null} />
+                        <Button type="text" icon={<RollbackOutlined />} disabled={busy !== null} />
                     </Popconfirm>
                 }
 
                 {canDelete && 
                     <Popconfirm title={trashed ? "Permanently delete this purchase?" : "Move this purchase to trash?"} description={trashed ? "This action cannot be undone." : "Only draft purchases can be deleted."} okText={trashed ? "Delete permanently" : "Move to trash"} okButtonProps={{ danger: true }} onConfirm={() => act(record, trashed ? "permanent" : "delete")}>
-                        <Button type="text" danger icon={<DeleteOutlined />} disabled={busyId !== null || (!trashed && record.status !== "draft")} />
+                        <Button type="text" danger icon={<DeleteOutlined />} disabled={busy !== null || (!trashed && record.status !== "draft")} />
                     </Popconfirm>
                 }
             </Space> 
