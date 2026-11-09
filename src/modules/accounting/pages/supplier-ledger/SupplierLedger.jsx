@@ -24,10 +24,10 @@ const firstError = (response, fallback) =>
     fallback;
 
 const typeLabel = {
-    purchase: "Product Purchase",
+    purchase             : "Product Purchase",
     raw_material_purchase: "Raw Material Purchase",
-    purchase_return: "Purchase Return",
-    payment: "Payment",
+    purchase_return      : "Purchase Return",
+    payment              : "Payment",
 };
 
 function BalanceTag({ type }) {
@@ -41,27 +41,20 @@ function BalanceTag({ type }) {
 export default function SupplierLedger() {
     useTitle("Supplier Ledger | Accounting");
 
-    const { can }               = usePermission();
-    const canRead               = can("supplier-ledgers-read") || can("suppliers-read");
-    const requestId             = useRef(0);
-    const [rows, setRows]       = useState([]);
-    const [summary, setSummary] = useState({});
-    const [loading, setLoading] = useState(false);
-    const [error, setError]     = useState(null);
-    const [query, setQuery]     = useState("");
-
-    const [filters, setFilters] = useState({
-        page: 1,
-        paginate_size: 10,
-        search_key: "",
-        balance_type: undefined,
-    });
-
-    const [total, setTotal] = useState(0);
-    const [selected, setSelected] = useState(null);
-    const [statement, setStatement] = useState(null);
+    const { can }                                 = usePermission();
+    const canRead                                 = can("supplier-ledgers-read") || can("suppliers-read");
+    const requestId                               = useRef(0);
+    const [rows, setRows]                         = useState([]);
+    const [summary, setSummary]                   = useState({});
+    const [loading, setLoading]                   = useState(false);
+    const [error, setError]                       = useState(null);
+    const [query, setQuery]                       = useState("");
+    const [filters, setFilters]                   = useState({page: 1,paginate_size: 10,search_key: "",balance_type: undefined});
+    const [total, setTotal]                       = useState(0);
+    const [selected, setSelected]                 = useState(null);
+    const [statement, setStatement]               = useState(null);
     const [statementLoading, setStatementLoading] = useState(false);
-    const [statementError, setStatementError] = useState(null);
+    const [statementError, setStatementError]     = useState(null);
     const [statementFilters, setStatementFilters] = useState({
         page         : 1,
         paginate_size: 15,
@@ -85,12 +78,7 @@ export default function SupplierLedger() {
                 if (id !== requestId.current) return;
 
                 if (!response?.success) {
-                    throw new Error(
-                        firstError(
-                            response,
-                            "Unable to load supplier ledgers"
-                        )
-                    );
+                    throw new Error(firstError(response,"Unable to load supplier ledgers"));
                 }
 
                 setRows(response.result?.data || []);
@@ -101,9 +89,7 @@ export default function SupplierLedger() {
 
                 setRows([]);
                 setTotal(0);
-                setError(
-                    e.message || "Unable to load supplier ledgers"
-                );
+                setError(e.message || "Unable to load supplier ledgers");
             } finally {
                 if (id === requestId.current) {
                     setLoading(false);
@@ -147,20 +133,13 @@ export default function SupplierLedger() {
                 );
 
                 if (!response?.success) {
-                    throw new Error(
-                        firstError(
-                            response,
-                            "Unable to load supplier statement"
-                        )
-                    );
+                    throw new Error(firstError(response,"Unable to load supplier statement"));
                 }
 
                 setStatement(response.result);
             } catch (e) {
                 setStatement(null);
-                setStatementError(
-                    e.message || "Unable to load supplier statement"
-                );
+                setStatementError(e.message || "Unable to load supplier statement");
             } finally {
                 setStatementLoading(false);
             }
@@ -179,11 +158,11 @@ export default function SupplierLedger() {
         setStatement(null);
 
         setStatementFilters({
-            page: 1,
+            page         : 1,
             paginate_size: 15,
-            entry_type: undefined,
-            date_from: undefined,
-            date_to: undefined,
+            entry_type   : undefined,
+            date_from    : undefined,
+            date_to      : undefined,
         });
     };
 
@@ -193,10 +172,7 @@ export default function SupplierLedger() {
                 title: "SL",
                 width: 70,
                 align: "center",
-                render: (_, __, index) =>
-                    (filters.page - 1) * filters.paginate_size +
-                    index +
-                    1,
+                render: (_, __, index) => (filters.page - 1) * filters.paginate_size + index + 1,
             },
             {
                 title: "Supplier",
@@ -206,9 +182,7 @@ export default function SupplierLedger() {
                         <strong>{record.name}</strong>
                         <span>
                             {record.code}{" "}
-                            {record.phone_number
-                                ? `· ${record.phone_number}`
-                                : ""}
+                            {record.phone_number ? `· ${record.phone_number}` : ""}
                         </span>
                     </div>
                 ),
@@ -246,10 +220,7 @@ export default function SupplierLedger() {
                 width: 110,
                 align: "center",
                 render: (_, record) => (
-                    <Button
-                        icon={<EyeOutlined />}
-                        onClick={() => openStatement(record)}
-                    >
+                    <Button icon={<EyeOutlined />} onClick={() => openStatement(record)}>
                         Statement
                     </Button>
                 ),
@@ -258,15 +229,13 @@ export default function SupplierLedger() {
         [filters.page, filters.paginate_size]
     );
 
-    const statementColumns = [
+    const statementColumns = 
+    [
         {
             title: "Date",
             dataIndex: "transaction_date",
             width: 170,
-            render: (value) =>
-                value
-                    ? dayjs(value).format("DD MMM YYYY, hh:mm A")
-                    : "-",
+            render: (value) => value ? dayjs(value).format("DD MMM YYYY, hh:mm A") : "-",
         },
         {
             title: "Transaction",
@@ -277,6 +246,7 @@ export default function SupplierLedger() {
                     <strong>
                         {typeLabel[record.entry_type] || record.entry_type}
                     </strong>
+
                     <span>
                         {record.reference_no || record.note || "-"}
                     </span>
@@ -328,11 +298,7 @@ export default function SupplierLedger() {
 
     if (!canRead) {
         return (
-            <Result
-                status="403"
-                title="403"
-                subTitle="You do not have permission to view supplier ledger."
-            />
+            <Result status="403" title="403" subTitle="You do not have permission to view supplier ledger."/>
         );
     }
 
@@ -350,40 +316,29 @@ export default function SupplierLedger() {
 
             <div className="supplier-ledger-heading">
                 <div>
-                    <Title level={3}>Supplier Ledger</Title>
+                    <span className="supplier-ledger-eyebrow">ACCOUNTING · সরবরাহকারীর হিসাব</span>
+                    <Title level={2}>সরবরাহকারী লেজার</Title>
                     <Text type="secondary">
-                        Track supplier purchases, returns, payments and
-                        running balances.
+                        ক্রয়, ফেরত, পরিশোধ ও বর্তমান দেনা-পাওনা এক জায়গায় দেখুন।
                     </Text>
                 </div>
 
-                <Button
-                    icon={<ReloadOutlined />}
-                    onClick={() => load(filters)}
-                    loading={loading}
-                >
-                    Refresh
+                <Button icon={<ReloadOutlined />} onClick={() => load(filters)} loading={loading}>
+                    রিফ্রেশ
                 </Button>
             </div>
 
-            <Row
-                gutter={[16, 16]}
-                className="supplier-ledger-summary"
-            >
+            <Row gutter={[16, 16]} className="supplier-ledger-summary">
                 <Col xs={24} sm={12} xl={6}>
                     <Card>
-                        <Statistic
-                            title="Suppliers"
-                            value={summary.supplier_count || 0}
-                            prefix={<TeamOutlined />}
-                        />
+                        <Statistic title="সরবরাহকারী" value={summary.supplier_count || 0} prefix={<TeamOutlined />}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} xl={6}>
                     <Card>
                         <Statistic
-                            title="Total Payable"
+                            title="সরবরাহকারীকে মোট দিতে হবে"
                             value={Number(summary.total_payable || 0)}
                             precision={2}
                             prefix={<ArrowUpOutlined />}
@@ -395,7 +350,7 @@ export default function SupplierLedger() {
                 <Col xs={24} sm={12} xl={6}>
                     <Card>
                         <Statistic
-                            title="Total Receivable"
+                            title="সরবরাহকারীর কাছ থেকে মোট পাবেন"
                             value={Number(summary.total_receivable || 0)}
                             precision={2}
                             prefix={<ArrowDownOutlined />}
@@ -406,28 +361,28 @@ export default function SupplierLedger() {
 
                 <Col xs={24} sm={12} xl={6}>
                     <Card>
-                        <Statistic
-                            title="Settled"
-                            value={summary.settled_count || 0}
-                            prefix={<WalletOutlined />}
-                        />
+                        <Statistic title="হিসাব মিটেছে" value={summary.settled_count || 0} prefix={<WalletOutlined />}/>
                     </Card>
                 </Col>
             </Row>
 
             <Card className="supplier-ledger-card">
+                <div className="supplier-ledger-section">
+                    <Title level={4}>সরবরাহকারীর তালিকা</Title>
+                    <Text type="secondary">লেনদেন দেখতে সংশ্লিষ্ট সরবরাহকারীর বিবরণ খুলুন।</Text>
+                </div>
                 <div className="supplier-ledger-filters">
                     <Input
                         allowClear
                         prefix={<SearchOutlined />}
-                        placeholder="Search supplier, code or phone"
+                        placeholder="নাম, কোড বা মোবাইল নম্বর খুঁজুন"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                     />
 
                     <Select
                         allowClear
-                        placeholder="Balance status"
+                        placeholder="হিসাবের অবস্থা"
                         value={filters.balance_type}
                         onChange={(value) =>
                             setFilters((x) => ({
@@ -437,20 +392,24 @@ export default function SupplierLedger() {
                             }))
                         }
                         options={[
-                            { value: "payable", label: "Payable" },
-                            { value: "receivable", label: "Receivable" },
-                            { value: "settled", label: "Settled" },
+                            { 
+                                value: "payable", 
+                                label: "দিতে হবে" 
+                            },
+                            { 
+                                value: "receivable", 
+                                label: "পাবেন" 
+                            },
+                            { 
+                                value: "settled", 
+                                label: "হিসাব মিটেছে" 
+                            },
                         ]}
                     />
                 </div>
 
                 {error && (
-                    <Alert
-                        type="error"
-                        showIcon
-                        message={error}
-                        className="supplier-ledger-alert"
-                    />
+                    <Alert type="error" showIcon message={error} className="supplier-ledger-alert"/>
                 )}
 
                 <Table
@@ -532,29 +491,16 @@ export default function SupplierLedger() {
                         )}
                     />
 
-                    <Button
-                        icon={<ReloadOutlined />}
-                        onClick={() =>
-                            loadStatement(selected, statementFilters)
-                        }
-                    >
+                    <Button icon={<ReloadOutlined />} onClick={() => loadStatement(selected, statementFilters)}>
                         Refresh
                     </Button>
                 </div>
 
                 {statementError && (
-                    <Alert
-                        type="error"
-                        showIcon
-                        message={statementError}
-                        className="supplier-ledger-alert"
-                    />
+                    <Alert type="error" showIcon message={statementError} className="supplier-ledger-alert"/>
                 )}
 
-                <Row
-                    gutter={[12, 12]}
-                    className="statement-summary"
-                >
+                <Row gutter={[12, 12]} className="statement-summary">
                     <Col xs={12} lg={6}>
                         <Card size="small">
                             <Statistic
@@ -623,9 +569,7 @@ export default function SupplierLedger() {
                         ),
                     }}
                     pagination={{
-                        current:
-                            statement?.meta?.current_page ||
-                            statementFilters.page,
+                        current: statement?.meta?.current_page || statementFilters.page,
                         pageSize: statementFilters.paginate_size,
                         total: statement?.meta?.total || 0,
                         showSizeChanger: true,

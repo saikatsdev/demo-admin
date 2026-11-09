@@ -70,6 +70,61 @@
 .pm-product-note {
   margin: 14px 16px 0;
 }
+.profit-management-page .pm-hero {
+  padding: clamp(20px, 4vw, 36px);
+  border-radius: 18px;
+  background: linear-gradient(115deg, #10352e, #16594c);
+  color: white;
+}
+.pm-hero .title,
+.pm-hero .pm-subtitle,
+.pm-hero .ant-breadcrumb li,
+.pm-hero .ant-breadcrumb a {
+  color: #f0fdf8;
+}
+.pm-eyebrow {
+  margin-bottom: 8px;
+  color: #a9dfcd;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+.pm-filter-row { margin-top: 10px; }
+.pm-stat .ant-statistic-content,
+.pm-mini .ant-statistic-content {
+  font-size: clamp(18px, 2vw, 26px);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.pm-stat .ant-statistic-content-suffix {
+  display: block;
+  margin-inline: 0;
+  font-size: 14px;
+  color: #526477;
+}
+.pm-chart {
+  display: flex;
+  gap: clamp(2px, .8vw, 10px);
+  height: 160px;
+  margin-top: 16px;
+  background: linear-gradient(transparent calc(50% - 1px), #dce5e8 50%, transparent calc(50% + 1px));
+}
+.pm-chart-day { flex: 1; min-width: 0; }
+.pm-chart-half {
+  height: 50%;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+}
+.pm-chart-half span {
+  width: min(100%, 32px);
+  border-radius: 4px 4px 0 0;
+  background: #168267;
+}
+.pm-chart-loss { align-items: start; }
+.pm-chart-loss span { background: #c5413c; border-radius: 0 0 4px 4px; }
+.pm-chart-day:hover { background: #f1f6f5; }
 @media (max-width: 768px) {
   .pm-filter-row {
     align-items: stretch;

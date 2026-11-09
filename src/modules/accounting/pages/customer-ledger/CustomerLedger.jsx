@@ -1,33 +1,7 @@
-import {
-    EyeOutlined,
-    PhoneOutlined,
-    ReloadOutlined,
-    SearchOutlined,
-    ShoppingCartOutlined,
-    TeamOutlined,
-    WalletOutlined
-} from "@ant-design/icons";
-import {
-    Alert,
-    Breadcrumb,
-    Button,
-    Card,
-    Col,
-    DatePicker,
-    Drawer,
-    Empty,
-    Input,
-    Result,
-    Row,
-    Statistic,
-    Table,
-    Tag,
-    Tooltip,
-    Typography
-} from "antd";
+import {ArrowLeftOutlined,EyeOutlined,PhoneOutlined,ReloadOutlined,SearchOutlined,ShoppingCartOutlined,TeamOutlined} from "@ant-design/icons";
+import {Alert,Button,Card,Col,DatePicker,Drawer,Empty,Input,Result,Row,Statistic,Table,Tag,Tooltip,Typography} from "antd";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { usePermission } from "../../../../hooks/usePermission";
 import useTitle from "../../../../hooks/useTitle";
 import { getCustomerLedgerStatement, getCustomerLedgers } from "../../api/customerLedgerApi";
@@ -37,7 +11,7 @@ const { RangePicker } = DatePicker;
 const { Text, Title } = Typography;
 
 const money = (value) =>
-    `৳${Number(value || 0).toLocaleString("en-BD", {
+    `৳${Number(value || 0).toLocaleString("en-IN", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     })}`;
@@ -45,33 +19,21 @@ const money = (value) =>
 export default function CustomerLedger() {
     useTitle("Customer Ledger | Accounting");
 
-    const { can } = usePermission();
-    const allowed = can("customer-ledgers-read");
-
-    const [rows, setRows] = useState([]);
-    const [summary, setSummary] = useState({});
-    const [meta, setMeta] = useState({
-        current_page: 1,
-        per_page: 20,
-        total: 0,
-    });
-
-    const [filters, setFilters] = useState({
-        page: 1,
-        paginate_size: 20,
-        search_key: "",
-        date_from: undefined,
-        date_to: undefined,
-    });
-
-    const [query, setQuery] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-
-    const [statement, setStatement] = useState(null);
+    const { can }                                 = usePermission();
+    const allowed                                 = can("customer-ledgers-read");
+    const [rows, setRows]                         = useState([]);
+    const [summary, setSummary]                   = useState({});
+    const [meta, setMeta]                         = useState({current_page: 1,per_page: 20,total: 0});
+    const [filters, setFilters]                   = useState({page: 1,paginate_size: 20,search_key: "",date_from: undefined,date_to: undefined});
+    const [query, setQuery]                       = useState("");
+    const [loading, setLoading]                   = useState(false);
+    const [error, setError]                       = useState(null);
+    const [statement, setStatement]               = useState(null);
     const [statementLoading, setStatementLoading] = useState(false);
-
-    const requestId = useRef(0);
+    const requestId                               = useRef(0);
+    const statementRequest                        = useRef(0);
+    const [statementPhone, setStatementPhone]     = useState(null);
+    const [statementError, setStatementError]     = useState("");
 
     const load = useCallback(async () => {
         if (!allowed) return;
@@ -100,6 +62,8 @@ export default function CustomerLedger() {
         } catch (loadError) {
             if (currentRequest === requestId.current) {
                 setRows([]);
+                setSummary({});
+                setMeta({});
                 setError(loadError.message || "Unable to load customer ledger");
             }
         } finally {
@@ -115,57 +79,68 @@ export default function CustomerLedger() {
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (query !== filters.search_key) {
-                setFilters((current) => ({
-                    ...current,
-                    page: 1,
-                    search_key: query,
-                }));
-            }
+            setFilters((current) => current.search_key === query.trim() ? current : { ...current, page: 1, search_key: query.trim() });
         }, 350);
 
         return () => clearTimeout(timer);
     }, [query]);
 
-    const openStatement = async (record) => {
+    const openStatement = async (phone, page = 1, pageSize = 20) => {
+        const id = ++statementRequest.current;
+        setStatementPhone(phone);
+        setStatementError("");
         setStatementLoading(true);
+
+        if (phone !== statementPhone) {
+            setStatement(null);
+        }
 
         try {
             const response = await getCustomerLedgerStatement(
-                record.phone_number,
+                phone,
                 {
                     date_from: filters.date_from,
                     date_to: filters.date_to,
-                    paginate_size: 100,
+                    page,
+                    paginate_size: pageSize,
                 }
             );
 
-            if (response?.success) {
-                setStatement(response.result);
+            if (id !== statementRequest.current) return;
+
+            if (!response?.success) {
+                throw new Error(response?.message || response?.msg || "লেনদেনের বিবরণ লোড হয়নি।");
             }
+
+            setStatement(response.result);
+        } catch (statementError) {
+            if (id === statementRequest.current) setStatementError(statementError.message);
         } finally {
-            setStatementLoading(false);
+            if (id === statementRequest.current) setStatementLoading(false);
         }
     };
 
     if (!allowed) {
         return (
-            <Result
-                status="403"
-                title="Customer Ledger access required"
-                subTitle="You do not have permission to view customer ledgers."
-            />
+            <Result status="403" title="Customer Ledger access required" subTitle="You do not have permission to view customer ledgers."/>
         );
     }
 
-    const dateValue =
-        filters.date_from && filters.date_to
-            ? [dayjs(filters.date_from), dayjs(filters.date_to)]
-            : null;
+    const dateValue = filters.date_from && filters.date_to ? [dayjs(filters.date_from), dayjs(filters.date_to)] : null;
 
-    const columns = [
+    const serialColumn = (pagination) => ({
+        title : "SL",
+        key   : "serial",
+        width : 64,
+        align : "center",
+        render: (_, __, index) => ((pagination?.current_page ?? 1) - 1) * (pagination?.per_page ?? 20) + index + 1,
+    });
+
+    const columns = 
+    [
+        serialColumn(meta),
         {
-            title: "Customer",
+            title: "গ্রাহক",
             key: "customer",
             width: 240,
             render: (_, record) => (
@@ -178,20 +153,20 @@ export default function CustomerLedger() {
             ),
         },
         {
-            title: "Orders",
+            title: "অর্ডার",
             dataIndex: "order_count",
             width: 90,
             align: "center",
         },
         {
-            title: "Gross Sales",
+            title: "মোট বিক্রি",
             dataIndex: "gross_sales",
             width: 140,
             align: "right",
             render: money,
         },
         {
-            title: "Returns",
+            title: "ফেরত",
             dataIndex: "return_adjustment",
             width: 125,
             align: "right",
@@ -200,14 +175,14 @@ export default function CustomerLedger() {
             ),
         },
         {
-            title: "Net Sales",
+            title: "নিট বিক্রি",
             dataIndex: "net_sales",
             width: 140,
             align: "right",
             render: money,
         },
         {
-            title: "Received",
+            title: "জমা",
             dataIndex: "total_received",
             width: 140,
             align: "right",
@@ -216,7 +191,7 @@ export default function CustomerLedger() {
             ),
         },
         {
-            title: "Balance",
+            title: "বাকি",
             dataIndex: "current_balance",
             width: 140,
             align: "right",
@@ -227,34 +202,26 @@ export default function CustomerLedger() {
             ),
         },
         {
-            title: "Status",
+            title: "অবস্থা",
             dataIndex: "balance_status",
             width: 95,
             align: "center",
-            render: (value) =>
-                value === "due"
-                    ? <Tag color="red">Due</Tag>
-                    : <Tag color="green">Settled</Tag>,
+            render: (value) => value === "due" ? <Tag color="red">Due</Tag> : <Tag color="green">Settled</Tag>,
         },
         {
-            title: "Last Order",
+            title: "শেষ অর্ডার",
             dataIndex: "last_order_date",
             width: 130,
-            render: (value) =>
-                value ? dayjs(value).format("DD MMM YYYY") : "-",
+            render: (value) => value ? dayjs(value).format("DD MMM YYYY") : "-",
         },
         {
-            title: "Action",
+            title: "বিবরণ",
             width: 80,
             fixed: "right",
             align: "center",
             render: (_, record) => (
                 <Tooltip title="View ledger statement">
-                    <Button
-                        type="text"
-                        icon={<EyeOutlined />}
-                        onClick={() => openStatement(record)}
-                    />
+                    <Button type="text" icon={<EyeOutlined />} aria-label="লেনদেনের বিবরণ দেখুন" onClick={() => openStatement(record.phone_number)}/>
                 </Tooltip>
             ),
         },
@@ -262,64 +229,42 @@ export default function CustomerLedger() {
 
     return (
         <div className="customer-ledger-page">
-            <div className="pagehead">
+            <div className="pagehead cl-hero">
                 <div className="head-left">
-                    <h1 className="title">Customer Ledger</h1>
+                    <span className="cl-eyebrow">ACCOUNTING · গ্রাহকের হিসাব</span>
+
+                    <h1 className="title">গ্রাহক লেজার</h1>
+                    
                     <p className="cl-subtitle">
-                        Phone-based customer financial history from delivered orders,
-                        payments, dues and partial returns.
+                        মোবাইল নম্বর দিয়ে গ্রাহকের বিক্রি, জমা ও বাকি দেখুন।
                     </p>
                 </div>
 
-                <Breadcrumb
-                    items={[
-                        { title: <Link to="/dashboard">Dashboard</Link> },
-                        { title: "Accounting" },
-                        { title: "Customer Ledger" },
-                    ]}
-                />
+                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>ফিরে যান</Button>
             </div>
 
             <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} xl={6}>
                     <Card className="cl-stat">
-                        <Statistic
-                            title="Customers"
-                            value={summary.customer_count || 0}
-                            prefix={<TeamOutlined />}
-                        />
+                        <Statistic title="গ্রাহক" value={summary.customer_count || 0} prefix={<TeamOutlined />}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} xl={6}>
                     <Card className="cl-stat">
-                        <Statistic
-                            title="Financial Orders"
-                            value={summary.order_count || 0}
-                            prefix={<ShoppingCartOutlined />}
-                        />
+                        <Statistic title="হিসাবে থাকা অর্ডার" value={summary.order_count || 0} prefix={<ShoppingCartOutlined />}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} xl={6}>
                     <Card className="cl-stat cl-stat-green">
-                        <Statistic
-                            title="Net Sales"
-                            value={Number(summary.net_sales || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="নিট বিক্রি" value={Number(summary.net_sales || 0)} formatter={money}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} xl={6}>
                     <Card className="cl-stat cl-stat-red">
-                        <Statistic
-                            title="Customer Balance Due"
-                            value={Number(summary.current_balance || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="মোট বাকি" value={Number(summary.current_balance || 0)} formatter={money}/>
                     </Card>
                 </Col>
             </Row>
@@ -327,34 +272,19 @@ export default function CustomerLedger() {
             <Row gutter={[16, 16]}>
                 <Col xs={24} md={8}>
                     <Card size="small" className="cl-mini-stat">
-                        <Statistic
-                            title="Gross Sales"
-                            value={Number(summary.gross_sales || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="মোট বিক্রি" value={Number(summary.gross_sales || 0)} formatter={money}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} md={8}>
                     <Card size="small" className="cl-mini-stat">
-                        <Statistic
-                            title="Partial Return Adjustment"
-                            value={Number(summary.return_adjustment || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="আংশিক ফেরত" value={Number(summary.return_adjustment || 0)} formatter={money}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} md={8}>
                     <Card size="small" className="cl-mini-stat">
-                        <Statistic
-                            title="Received"
-                            value={Number(summary.total_received || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="জমা" value={Number(summary.total_received || 0)} formatter={money}/>
                     </Card>
                 </Col>
             </Row>
@@ -366,7 +296,7 @@ export default function CustomerLedger() {
                         prefix={<SearchOutlined />}
                         value={query}
                         onChange={(event) => setQuery(event.target.value)}
-                        placeholder="Search customer, phone or invoice"
+                        placeholder="নাম, মোবাইল বা ইনভয়েস খুঁজুন"
                         className="cl-search"
                     />
 
@@ -376,37 +306,22 @@ export default function CustomerLedger() {
                         onChange={(dates) =>
                             setFilters((current) => ({
                                 ...current,
-                                page: 1,
+                                page     : 1,
                                 date_from: dates?.[0]?.format("YYYY-MM-DD"),
-                                date_to: dates?.[1]?.format("YYYY-MM-DD"),
+                                date_to  : dates?.[1]?.format("YYYY-MM-DD"),
                             }))
                         }
                     />
 
-                    <Button
-                        icon={<ReloadOutlined />}
-                        loading={loading}
-                        onClick={load}
-                    >
-                        Refresh
+                    <Button icon={<ReloadOutlined />} loading={loading} onClick={load}>
+                        রিফ্রেশ
                     </Button>
                 </div>
 
-                <Alert
-                    type="info"
-                    showIcon
-                    className="cl-info"
-                    message="Customer identity is grouped by normalized phone number."
-                    description="Financial balance includes Delivered and Partial Returned orders. Partial return value is deducted before calculating customer outstanding balance."
-                />
+                <Alert type="info" showIcon className="cl-info" message="মোবাইল নম্বর অনুযায়ী গ্রাহকের হিসাব একত্র করা হয়েছে।" description="ডেলিভারি ও আংশিক ফেরত হওয়া অর্ডারগুলো এই হিসাবে অন্তর্ভুক্ত।"/>
 
                 {error && (
-                    <Alert
-                        type="error"
-                        showIcon
-                        message={error}
-                        style={{ margin: 16 }}
-                    />
+                    <Alert type="error" showIcon message={error} style={{ margin: 16 }}/>
                 )}
 
                 <Table
@@ -414,12 +329,12 @@ export default function CustomerLedger() {
                     columns={columns}
                     dataSource={rows}
                     loading={loading}
-                    scroll={{ x: 1450 }}
+                    scroll={{ x: 1514 }}
                     locale={{
                         emptyText: (
                             <Empty
                                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                description="No customer ledger found"
+                                description="কোনো গ্রাহকের হিসাব পাওয়া যায়নি"
                             />
                         ),
                     }}
@@ -445,13 +360,19 @@ export default function CustomerLedger() {
             </Card>
 
             <Drawer
-                open={Boolean(statement) || statementLoading}
-                onClose={() => setStatement(null)}
-                width={920}
-                title="Customer Ledger Statement"
+                open={Boolean(statementPhone)}
+                onClose={() => {
+                    statementRequest.current++;
+                    setStatementPhone(null);
+                    setStatement(null);
+                    setStatementLoading(false);
+                }}
+                width="min(960px, 100vw)"
+                title="গ্রাহকের লেনদেনের বিবরণ"
                 loading={statementLoading}
                 destroyOnHidden
             >
+                {statementError && <Alert type="error" showIcon message={statementError} />}
                 {statement && (
                     <>
                         <div className="cl-statement-hero">
@@ -485,8 +406,7 @@ export default function CustomerLedger() {
                                         value={Number(
                                             statement.summary?.opening_balance || 0
                                         )}
-                                        precision={2}
-                                        prefix="৳"
+                                        formatter={money}
                                     />
                                 </Card>
                             </Col>
@@ -494,12 +414,11 @@ export default function CustomerLedger() {
                             <Col xs={12} lg={6}>
                                 <Card size="small">
                                     <Statistic
-                                        title="Net Sales"
+                                        title="নিট বিক্রি"
                                         value={Number(
                                             statement.summary?.net_sales || 0
                                         )}
-                                        precision={2}
-                                        prefix="৳"
+                                        formatter={money}
                                     />
                                 </Card>
                             </Col>
@@ -507,12 +426,11 @@ export default function CustomerLedger() {
                             <Col xs={12} lg={6}>
                                 <Card size="small">
                                     <Statistic
-                                        title="Received"
+                                        title="জমা"
                                         value={Number(
                                             statement.summary?.total_received || 0
                                         )}
-                                        precision={2}
-                                        prefix="৳"
+                                        formatter={money}
                                     />
                                 </Card>
                             </Col>
@@ -524,8 +442,7 @@ export default function CustomerLedger() {
                                         value={Number(
                                             statement.summary?.period_outstanding || 0
                                         )}
-                                        precision={2}
-                                        prefix="৳"
+                                        formatter={money}
                                     />
                                 </Card>
                             </Col>
@@ -546,12 +463,18 @@ export default function CustomerLedger() {
                         <Table
                             rowKey="order_id"
                             size="small"
-                            pagination={false}
+                            pagination={{
+                                current: statement.meta?.current_page ?? 1,
+                                pageSize: statement.meta?.per_page ?? 20,
+                                total: statement.meta?.total ?? 0,
+                                onChange: (page, size) => openStatement(statementPhone, page, size),
+                            }}
                             dataSource={statement.data || []}
                             scroll={{ x: 1050 }}
                             columns={[
+                                serialColumn(statement.meta),
                                 {
-                                    title: "Date",
+                                    title: "তারিখ",
                                     dataIndex: "order_date",
                                     width: 115,
                                     render: (value) =>
@@ -560,14 +483,14 @@ export default function CustomerLedger() {
                                             : "-",
                                 },
                                 {
-                                    title: "Invoice",
+                                    title: "ইনভয়েস",
                                     dataIndex: "invoice_number",
                                     width: 130,
                                     render: (value, record) =>
                                         value || `#${record.order_id}`,
                                 },
                                 {
-                                    title: "Status",
+                                    title: "অবস্থা",
                                     dataIndex: "status",
                                     width: 120,
                                 },
@@ -593,21 +516,21 @@ export default function CustomerLedger() {
                                     render: money,
                                 },
                                 {
-                                    title: "Received",
+                                    title: "জমা",
                                     dataIndex: "received_amount",
                                     align: "right",
                                     render: (value) =>
                                         <span className="cl-received">{money(value)}</span>,
                                 },
                                 {
-                                    title: "Outstanding",
+                                    title: "বাকি",
                                     dataIndex: "outstanding",
                                     align: "right",
                                     render: (value) =>
                                         <span className="cl-due">{money(value)}</span>,
                                 },
                                 {
-                                    title: "Running Balance",
+                                    title: "চলতি বাকি",
                                     dataIndex: "running_balance",
                                     align: "right",
                                     render: (value) => <strong>{money(value)}</strong>,

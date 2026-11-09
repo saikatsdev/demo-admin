@@ -9,6 +9,41 @@
   color: #667085;
 }
 
+.customer-ledger-page .cl-hero {
+  padding: clamp(20px, 4vw, 36px);
+  border-radius: 18px;
+  background: linear-gradient(115deg, #12324c, #145e63);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cl-hero .title,
+.cl-hero .cl-subtitle { color: #f2fbff; }
+
+.cl-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #bce9ef;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+}
+
+.customer-ledger-page .ant-statistic-content {
+  font-size: clamp(18px, 2vw, 28px);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.cl-card .ant-table-thead > tr > th {
+  background: #eef5f8;
+  color: #24465a;
+}
+
+.cl-card .ant-table-pagination {
+  padding-inline: 16px;
+}
+
 .cl-stat,
 .cl-mini-stat,
 .cl-card {

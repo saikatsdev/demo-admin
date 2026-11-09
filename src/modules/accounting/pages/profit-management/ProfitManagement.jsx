@@ -1,8 +1,7 @@
-import {ArrowDownOutlined,ArrowUpOutlined,ReloadOutlined,SearchOutlined,ShoppingCartOutlined} from "@ant-design/icons";
-import {Alert,Breadcrumb,Button,Card,Col,DatePicker,Empty,Input,Result,Row,Statistic,Table,Tabs,Tooltip,Typography} from "antd";
+import {ArrowLeftOutlined,ReloadOutlined,SearchOutlined,ShoppingCartOutlined} from "@ant-design/icons";
+import {Alert,Button,Card,Col,DatePicker,Empty,Input,Result,Row,Statistic,Table,Tabs,Tooltip,Typography} from "antd";
 import dayjs from "dayjs";
 import {useCallback,useEffect,useMemo,useRef,useState} from "react";
-import { Link } from "react-router-dom";
 import { usePermission } from "../../../../hooks/usePermission";
 import useTitle from "../../../../hooks/useTitle";
 import {getOrderProfit,getProductProfit,getProfitSummary,getProfitTrend} from "../../api/profitManagementApi";
@@ -11,11 +10,15 @@ import "../../styles/profit-management.css";
 const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
-const money = (value) =>
-    `৳${Number(value || 0).toLocaleString("en-BD", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    })}`;
+const amountFormat = new Intl.NumberFormat("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
+
+const money = (value) => {
+    const amount = Number(value ?? 0);
+    return `${amount < 0 ? "−" : ""}৳ ${amountFormat.format(Math.abs(amount))}`;
+};
 
 const initialRange = [dayjs().startOf("month"), dayjs()];
 
@@ -24,7 +27,7 @@ export default function ProfitManagement() {
 
     const { can }                               = usePermission();
     const allowed                               = can("profit-management-read");
-    const [range, setRange]                     = useState(initialRange);
+    const [range, setReportRange]               = useState(initialRange);
     const [summary, setSummary]                 = useState({});
     const [trend, setTrend]                     = useState([]);
     const [loading, setLoading]                 = useState(false);
@@ -41,13 +44,22 @@ export default function ProfitManagement() {
     const [productPageSize, setProductPageSize] = useState(20);
     const [productSearch, setProductSearch]     = useState("");
     const [productNote, setProductNote]         = useState("");
+    const requestId                             = useRef(0);
+    const orderRequestId                        = useRef(0);
+    const productRequestId                      = useRef(0);
+    const [orderError, setOrderError]           = useState("");
+    const [productError, setProductError]       = useState("");
 
-    const requestId = useRef(0);
+    const setRange = (dates) => {
+        setOrderPage(1);
+        setProductPage(1);
+        setReportRange(dates);
+    };
 
     const period = useMemo(
         () => ({
             date_from: range?.[0]?.format("YYYY-MM-DD"),
-            date_to: range?.[1]?.format("YYYY-MM-DD"),
+            date_to  : range?.[1]?.format("YYYY-MM-DD"),
         }),
         [range]
     );
@@ -69,13 +81,16 @@ export default function ProfitManagement() {
             if (id !== requestId.current) return;
 
             if (!s?.success) {
-                throw new Error(
-                    s?.message || s?.msg || "Unable to load profit summary"
-                );
+                throw new Error(s?.message || s?.msg || "Unable to load profit summary");
             }
 
-            setSummary(s.result || []);
-            setTrend(t?.success ? (t.result || []) : []);
+            setSummary(s.result || {});
+
+            if (!t?.success) {
+                throw new Error(t?.message || t?.msg || "দৈনিক হিসাব লোড হয়নি।");
+            }
+
+            setTrend(t.result || []);
         } catch (e) {
             if (id === requestId.current) {
                 setError(e.message || "Unable to load profit report");
@@ -90,33 +105,49 @@ export default function ProfitManagement() {
     const loadOrders = useCallback(async () => {
         if (!allowed) return;
 
+        const id = ++orderRequestId.current;
+        setOrderError("");
+        setOrders([]);
         const response = await getOrderProfit({
             ...period,
-            page: orderPage,
+            page         : orderPage,
             paginate_size: orderPageSize,
-            search_key: orderSearch || undefined,
+            search_key   : orderSearch || undefined,
         });
+
+        if (id !== orderRequestId.current) return;
 
         if (response?.success) {
             setOrders(response.result?.data || []);
             setOrderMeta(response.result?.meta || {});
+        } else {
+            setOrderError(response?.message || response?.msg || "রিপোর্ট লোড হয়নি।");
         }
     }, [allowed, period, orderPage, orderPageSize, orderSearch]);
 
     const loadProducts = useCallback(async () => {
         if (!allowed) return;
 
+        const id = ++productRequestId.current;
+        setProductError("");
+        setProducts([]);
         const response = await getProductProfit({
             ...period,
-            page: productPage,
+            page         : productPage,
             paginate_size: productPageSize,
-            search_key: productSearch || undefined,
+            search_key   : productSearch || undefined,
         });
 
+        if (id !== productRequestId.current){
+             return;
+        }
+        
         if (response?.success) {
             setProducts(response.result?.data || []);
             setProductMeta(response.result?.meta || {});
             setProductNote(response.result?.note || "");
+        } else {
+            setProductError(response?.message || response?.msg || "রিপোর্ট লোড হয়নি।");
         }
     }, [allowed, period, productPage, productPageSize, productSearch]);
 
@@ -140,47 +171,49 @@ export default function ProfitManagement() {
 
     const netProfit = Number(summary.net_profit || 0);
     const positive = netProfit >= 0;
+    const chartDays = trend.slice(-31);
+    const chartMax = Math.max(1, ...chartDays.map((day) => Math.abs(Number(day.net_profit))));
 
     const dailyColumns = 
     [
         {
-            title: "Date",
+            title: "তারিখ",
             dataIndex: "date",
             width: 120,
             render: (v) => dayjs(v).format("DD MMM YYYY"),
         },
         {
-            title: "Orders",
+            title: "অর্ডার",
             dataIndex: "order_count",
             width: 85,
             align: "center",
         },
         {
-            title: "Net Sales",
+            title: "নিট বিক্রি",
             dataIndex: "net_sales",
             align: "right",
             render: money,
         },
         {
-            title: "COGS",
+            title: "বিক্রি হওয়া পণ্যের খরচ",
             dataIndex: "cogs",
             align: "right",
             render: money,
         },
         {
-            title: "Gross Profit",
+            title: "মোট লাভ",
             dataIndex: "gross_profit",
             align: "right",
             render: (v) => <strong>{money(v)}</strong>,
         },
         {
-            title: "Order Costs",
+            title: "অর্ডারের অতিরিক্ত খরচ",
             dataIndex: "order_costs",
             align: "right",
             render: money,
         },
         {
-            title: "Other Income",
+            title: "অন্যান্য আয়",
             dataIndex: "other_income",
             align: "right",
             render: (v) => (
@@ -188,7 +221,7 @@ export default function ProfitManagement() {
             ),
         },
         {
-            title: "Expenses",
+            title: "ব্যবসার খরচ",
             dataIndex: "operating_expense",
             align: "right",
             render: (v) => (
@@ -196,7 +229,7 @@ export default function ProfitManagement() {
             ),
         },
         {
-            title: "Net Profit",
+            title: "নিট লাভ / ক্ষতি",
             dataIndex: "net_profit",
             align: "right",
             render: (v) => (
@@ -214,13 +247,13 @@ export default function ProfitManagement() {
     const orderColumns = 
     [
         {
-            title: "Invoice",
+            title: "ইনভয়েস",
             dataIndex: "invoice_number",
             width: 140,
             render: (v, r) => v || `#${r.order_id}`,
         },
         {
-            title: "Customer",
+            title: "গ্রাহক",
             key: "customer",
             width: 210,
             render: (_, r) => (
@@ -236,52 +269,42 @@ export default function ProfitManagement() {
             ),
         },
         {
-            title: "Date",
+            title: "তারিখ",
             dataIndex: "order_date",
             width: 120,
             render: (v) =>
                 v ? dayjs(v).format("DD MMM YYYY") : "-",
         },
         {
-            title: "Net Sales",
+            title: "নিট বিক্রি",
             dataIndex: "net_sales",
             align: "right",
             render: money,
         },
         {
-            title: "COGS",
+            title: "বিক্রি হওয়া পণ্যের খরচ",
             dataIndex: "cogs",
             align: "right",
             render: money,
         },
         {
-            title: "Courier",
-            dataIndex: "courier_cost",
-            align: "right",
-            render: money,
-        },
-        {
-            title: "Additional",
+            title: "অতিরিক্ত খরচ",
             dataIndex: "additional_cost",
             align: "right",
             render: money,
         },
         {
-            title: "Profit",
+            title: "লাভ / ক্ষতি",
             dataIndex: "profit",
             align: "right",
             render: (v) => (
-                <strong
-                    className={
-                        Number(v) >= 0 ? "pm-positive" : "pm-negative"
-                    }
-                >
+                <strong className={Number(v) >= 0 ? "pm-positive" : "pm-negative"}>
                     {money(v)}
                 </strong>
             ),
         },
         {
-            title: "Margin",
+            title: "লাভের হার",
             dataIndex: "margin_percent",
             width: 90,
             align: "right",
@@ -292,7 +315,7 @@ export default function ProfitManagement() {
     const productColumns = 
     [
         {
-            title: "Product",
+            title: "পণ্য",
             key: "product",
             width: 260,
             render: (_, r) => (
@@ -306,48 +329,44 @@ export default function ProfitManagement() {
             ),
         },
         {
-            title: "Sold Qty",
+            title: "বিক্রি",
             dataIndex: "sold_qty",
             align: "right",
         },
         {
-            title: "Returned",
+            title: "ফেরত",
             dataIndex: "returned_qty",
             align: "right",
         },
         {
-            title: "Net Qty",
+            title: "নিট পরিমাণ",
             dataIndex: "net_qty",
             align: "right",
         },
         {
-            title: "Net Sales",
+            title: "নিট বিক্রি",
             dataIndex: "net_sales",
             align: "right",
             render: money,
         },
         {
-            title: "COGS",
+            title: "বিক্রি হওয়া পণ্যের খরচ",
             dataIndex: "cogs",
             align: "right",
             render: money,
         },
         {
-            title: "Gross Profit",
+            title: "মোট লাভ",
             dataIndex: "gross_profit",
             align: "right",
             render: (v) => (
-                <strong
-                    className={
-                        Number(v) >= 0 ? "pm-positive" : "pm-negative"
-                    }
-                >
+                <strong className={Number(v) >= 0 ? "pm-positive" : "pm-negative"}>
                     {money(v)}
                 </strong>
             ),
         },
         {
-            title: "Margin",
+            title: "লাভের হার",
             dataIndex: "margin_percent",
             align: "right",
             width: 90,
@@ -357,67 +376,37 @@ export default function ProfitManagement() {
 
     return (
         <div className="profit-management-page">
-            <div className="pagehead">
+            <div className="pagehead pm-hero">
                 <div className="head-left">
-                    <h1 className="title">Profit Management</h1>
+                    <div className="pm-eyebrow">ACCOUNTING / ব্যবসার হিসাব</div>
+                    <h1 className="title">লাভ-ক্ষতির ড্যাশবোর্ড</h1>
 
                     <p className="pm-subtitle">
-                        Understand sales profitability after product cost,
-                        returns, courier, operating expenses and other income.
+                        বিক্রি, পণ্যের ক্রয়মূল্য ও অন্যান্য খরচ মিলিয়ে ব্যবসার চূড়ান্ত হিসাব।
                     </p>
                 </div>
 
-                <Breadcrumb
-                    items={[
-                        {
-                            title: <Link to="/dashboard">Dashboard</Link>,
-                        },
-                        {
-                            title: "Accounting",
-                        },
-                        {
-                            title: "Profit Management",
-                        },
-                    ]}
-                />
+                <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
+                    ফিরে যান
+                </Button>
             </div>
 
             <Card className="pm-filter-card">
+                <Text strong>হিসাবের সময়সীমা</Text>
                 <div className="pm-filter-row">
-                    <RangePicker
-                        value={range}
-                        format="DD MMM YYYY"
-                        onChange={(dates) => dates && setRange(dates)}
-                        allowClear={false}
-                    />
+                    <RangePicker value={range} format="DD MMM YYYY" onChange={(dates) => dates && setRange(dates)} allowClear={false}/>
 
                     <div className="pm-presets">
-                        <Button
-                            size="small"
-                            onClick={() => setRange([dayjs(), dayjs()])}
-                        >
-                            Today
+                        <Button size="small" onClick={() => setRange([dayjs(), dayjs()])}>
+                            আজ
                         </Button>
 
-                        <Button
-                            size="small"
-                            onClick={() =>
-                                setRange([
-                                    dayjs().subtract(1, "day"),
-                                    dayjs().subtract(1, "day"),
-                                ])
-                            }
-                        >
-                            Yesterday
+                        <Button size="small" onClick={() => setRange([dayjs().subtract(1, "day"),dayjs().subtract(1, "day"),])}>
+                            গতকাল
                         </Button>
 
-                        <Button
-                            size="small"
-                            onClick={() =>
-                                setRange([dayjs().startOf("month"), dayjs()])
-                            }
-                        >
-                            This Month
+                        <Button size="small" onClick={() => setRange([dayjs().startOf("month"), dayjs()])}>
+                            এই মাস
                         </Button>
                     </div>
 
@@ -437,49 +426,28 @@ export default function ProfitManagement() {
             </Card>
 
             {error && (
-                <Alert
-                    type="error"
-                    showIcon
-                    message={error}
-                />
+                <Alert type="error" showIcon message={error}/>
             )}
 
             <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} xl={6}>
                     <Card className="pm-stat">
-                        <Statistic
-                            title="Net Sales"
-                            value={Number(summary.net_sales || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="নিট বিক্রি" value={Number(summary.net_sales || 0)} formatter={money}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} xl={6}>
                     <Card className="pm-stat">
-                        <Statistic
-                            title="COGS"
-                            value={Number(summary.cogs || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="বিক্রি হওয়া পণ্যের খরচ" value={Number(summary.cogs || 0)} formatter={money}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} xl={6}>
                     <Card className="pm-stat pm-stat-green">
-                        <Statistic
-                            title="Gross Profit"
-                            value={Number(summary.gross_profit || 0)}
-                            precision={2}
-                            prefix="৳"
+                        <Statistic title="মোট লাভ" value={Number(summary.gross_profit || 0)} formatter={money}
                             suffix={
                                 <small>
-                                    {Number(
-                                        summary.gross_margin_percent || 0
-                                    ).toFixed(1)}
-                                    %
+                                    {Number(summary.gross_margin_percent || 0).toFixed(1)}%
                                 </small>
                             }
                         />
@@ -487,26 +455,11 @@ export default function ProfitManagement() {
                 </Col>
 
                 <Col xs={24} sm={12} xl={6}>
-                    <Card
-                        className={`pm-stat ${
-                            positive ? "pm-stat-blue" : "pm-stat-red"
-                        }`}
-                    >
-                        <Statistic
-                            title="Net Profit"
-                            value={netProfit}
-                            precision={2}
-                            prefix={
-                                positive
-                                    ? <ArrowUpOutlined />
-                                    : <ArrowDownOutlined />
-                            }
+                    <Card className={`pm-stat ${positive ? "pm-stat-blue" : "pm-stat-red"}`}>
+                        <Statistic title="নিট লাভ / ক্ষতি" value={netProfit} formatter={money}
                             suffix={
                                 <small>
-                                    {Number(
-                                        summary.net_margin_percent || 0
-                                    ).toFixed(1)}
-                                    %
+                                    {Number(summary.net_margin_percent || 0).toFixed(1)}%
                                 </small>
                             }
                         />
@@ -517,103 +470,72 @@ export default function ProfitManagement() {
             <Row gutter={[16, 16]}>
                 <Col xs={24} md={8}>
                     <Card className="pm-mini">
-                        <Statistic
-                            title="Courier Cost"
-                            value={Number(summary.courier_cost || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="অতিরিক্ত খরচ" value={Number(summary.additional_cost || 0)} formatter={money}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} md={8}>
                     <Card className="pm-mini">
-                        <Statistic
-                            title="Additional Cost"
-                            value={Number(summary.additional_cost || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="পরিচালন খরচ" value={Number(summary.operating_expense || 0)} formatter={money}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} md={8}>
                     <Card className="pm-mini">
-                        <Statistic
-                            title="Operating Expenses"
-                            value={Number(summary.operating_expense || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="অন্যান্য আয়" value={Number(summary.other_income || 0)} formatter={money}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} md={8}>
                     <Card className="pm-mini">
-                        <Statistic
-                            title="Other Income"
-                            value={Number(summary.other_income || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
+                        <Statistic title="অর্ডার থেকে লাভ" value={Number(summary.order_operating_profit || 0)} formatter={money}/>
                     </Card>
                 </Col>
 
                 <Col xs={24} md={8}>
                     <Card className="pm-mini">
-                        <Statistic
-                            title="Order Operating Profit"
-                            value={Number(summary.order_operating_profit || 0)}
-                            precision={2}
-                            prefix="৳"
-                        />
-                    </Card>
-                </Col>
-
-                <Col xs={24} md={8}>
-                    <Card className="pm-mini">
-                        <Statistic
-                            title="Financial Orders"
-                            value={summary.order_count || 0}
-                            prefix={<ShoppingCartOutlined />}
-                        />
+                        <Statistic title="হিসাবে থাকা অর্ডার" value={summary.order_count || 0} prefix={<ShoppingCartOutlined />}/>
                     </Card>
                 </Col>
             </Row>
 
-            <Alert
-                type={
-                    summary.meta?.cogs_method ===
-                    "historical_order_detail_buy_price"
-                        ? "success"
-                        : "warning"
-                }
+            <Alert type={summary.meta?.cogs_method === "historical_order_detail_buy_price" ? "success" : "warning"}
                 showIcon
                 message={
-                    summary.meta?.cogs_method ===
-                    "historical_order_detail_buy_price"
-                        ? "Historical COGS mode"
-                        : "COGS fallback mode"
+                    summary.meta?.cogs_method === "historical_order_detail_buy_price" ? "অর্ডারের সময়ের ক্রয়মূল্য" : "COGS fallback mode"
                 }
-                description={
-                    summary.meta?.cogs_method ===
-                    "historical_order_detail_buy_price"
-                        ? "Profit uses the buy price saved on each order item."
-                        : "order_details.buy_price was not detected, so current product/variation buy price is being used. Historical profit can change when product cost changes."
+                description={summary.meta?.cogs_method === "historical_order_detail_buy_price" ? "লাভের হিসাবে অর্ডারে সংরক্ষিত পণ্যের ক্রয়মূল্য ব্যবহার করা হয়েছে।" : "order_details.buy_price was not detected, so current product/variation buy price is being used. Historical profit can change when product cost changes."
                 }
             />
 
-            <Card
-                className="pm-report-card"
-                styles={{ body: { padding: 0 } }}
-            >
+            <Card className="pm-trend" title="দৈনিক লাভ-ক্ষতির ধারা" loading={loading}>
+                <p className="pm-subtitle">শেষ {chartDays.length} দিনের হিসাব · সবুজে লাভ, লালে ক্ষতি</p>
+                {chartDays.length ? (
+                    <div className="pm-chart" aria-label="দৈনিক লাভ-ক্ষতি">
+                        {chartDays.map(({ date, net_profit }) => (
+                            <Tooltip key={date} title={`${dayjs(date).format("DD MMM YYYY")} · ${money(net_profit)}`}>
+                                <div className="pm-chart-day" aria-label={`${date}: ${money(net_profit)}`}>
+                                    <div className="pm-chart-half">
+                                        {Number(net_profit) >= 0 && <span style={{ height: `${Math.abs(Number(net_profit)) / chartMax * 100}%` }} />}
+                                    </div>
+                                    <div className="pm-chart-half pm-chart-loss">
+                                        {Number(net_profit) < 0 && <span style={{ height: `${Math.abs(Number(net_profit)) / chartMax * 100}%` }} />}
+                                    </div>
+                                </div>
+                            </Tooltip>
+                        ))}
+                    </div>
+                ) : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="এই সময়ে কোনো হিসাব নেই" />}
+            </Card>
+
+            <Card className="pm-report-card" styles={{ body: { padding: 0 } }}>
                 <Tabs
                     activeKey={activeTab}
                     onChange={setActiveTab}
                     items={[
                         {
                             key: "daily",
-                            label: "Daily Profit",
+                            label: "দিন অনুযায়ী",
                             children: (
                                 <Table
                                     rowKey="date"
@@ -629,7 +551,7 @@ export default function ProfitManagement() {
                                         emptyText: (
                                             <Empty
                                                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                                description="No profit data found"
+                                                description="এই সময়ে কোনো হিসাব নেই"
                                             />
                                         ),
                                     }}
@@ -638,14 +560,14 @@ export default function ProfitManagement() {
                         },
                         {
                             key: "orders",
-                            label: "Order-wise Profit",
+                            label: "অর্ডার অনুযায়ী",
                             children: (
                                 <div>
                                     <div className="pm-tab-toolbar">
                                         <Input
                                             allowClear
                                             prefix={<SearchOutlined />}
-                                            placeholder="Search invoice, customer or phone"
+                                            placeholder="ইনভয়েস, গ্রাহক বা মোবাইল নম্বর"
                                             value={orderSearch}
                                             onChange={(e) => {
                                                 setOrderSearch(e.target.value);
@@ -656,6 +578,7 @@ export default function ProfitManagement() {
 
                                     <Table
                                         rowKey="order_id"
+                                        locale={{ emptyText: orderError || "কোনো অর্ডার পাওয়া যায়নি" }}
                                         columns={orderColumns}
                                         dataSource={orders}
                                         scroll={{ x: 1300 }}
@@ -682,7 +605,7 @@ export default function ProfitManagement() {
                         },
                         {
                             key: "products",
-                            label: "Product-wise Gross Profit",
+                            label: "পণ্য অনুযায়ী",
                             children: (
                                 <div>
                                     {productNote && (
@@ -698,7 +621,7 @@ export default function ProfitManagement() {
                                         <Input
                                             allowClear
                                             prefix={<SearchOutlined />}
-                                            placeholder="Search product or SKU"
+                                            placeholder="পণ্যের নাম বা SKU"
                                             value={productSearch}
                                             onChange={(e) => {
                                                 setProductSearch(e.target.value);
@@ -712,6 +635,7 @@ export default function ProfitManagement() {
                                             r.product_id || r.product_name
                                         }
                                         columns={productColumns}
+                                        locale={{ emptyText: productError || "কোনো পণ্য পাওয়া যায়নি" }}
                                         dataSource={products}
                                         scroll={{ x: 1100 }}
                                         pagination={{
