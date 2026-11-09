@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Row, Col, Card, Typography, Divider, Spin } from 'antd';
-import { DollarOutlined, ShoppingCartOutlined, CreditCardOutlined, RiseOutlined } from '@ant-design/icons';
+import {DollarOutlined,ShoppingCartOutlined,CreditCardOutlined,RiseOutlined} from '@ant-design/icons';
 import { getDatas } from '../../../api/common/common';
 
 const { Title, Text } = Typography;
+
+const formatUSD = (value) => `$${Number(value || 0).toFixed(2)}`;
+const formatBDT = (value) => `৳${new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Number(value || 0))}`;
 
 const AnalysisCard = ({ title, value, subtitle, icon, details }) => (
     <Card className="analysis-metric-card" bordered={false}>
@@ -13,12 +16,10 @@ const AnalysisCard = ({ title, value, subtitle, icon, details }) => (
                 <Title level={2} className="metric-value">{value}</Title>
                 <Text type="secondary" className="metric-subtitle">{subtitle}</Text>
             </div>
-            <div className="header-icon">
-                {icon}
-            </div>
+            <div className="header-icon">{icon}</div>
         </div>
-        
-        {details && details.length > 0 && (
+
+        {details?.length > 0 && (
             <>
                 <Divider className="metric-divider" />
                 <div className="metric-details">
@@ -35,23 +36,20 @@ const AnalysisCard = ({ title, value, subtitle, icon, details }) => (
 );
 
 const OrderAnalysis = () => {
-    // State
-    const [loading, setLoading]             = useState(false);
+    const [loading, setLoading] = useState(false);
     const [orderAnalysis, setOrderAnalysis] = useState({});
 
     const getOrderAnalysis = async () => {
         try {
             setLoading(true);
             const res = await getDatas('/admin/meta/order-analysis');
-            if (res && res?.success) {
-                setOrderAnalysis(res.result || {});
-            }
+            if (res?.success) setOrderAnalysis(res.result || {});
         } catch (error) {
-            console.log(error);
+            console.error(error);
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     useEffect(() => {
         getOrderAnalysis();
@@ -59,8 +57,8 @@ const OrderAnalysis = () => {
 
     if (loading) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-                <Spin size="large" tip="Loading analysis..." />
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+                <Spin size="large" />
             </div>
         );
     }
@@ -69,46 +67,54 @@ const OrderAnalysis = () => {
         <div className="order-analysis-container">
             <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} lg={6}>
-                    <AnalysisCard 
-                        title="Ad Spend"
-                        value={`$${orderAnalysis.ad_spend || 0}`}
-                        subtitle="Total Meta Ads expense"
+                    <AnalysisCard
+                        title="Meta Ad Spend"
+                        value={formatBDT(orderAnalysis.ad_spend_bdt)}
+                        subtitle="Today's active Meta account spend"
                         icon={<DollarOutlined className="icon-green" />}
+                        details={[
+                            { label: 'USD Equivalent', value: formatUSD(orderAnalysis.ad_spend_usd) },
+                            { label: 'USD/BDT Rate', value: Number(orderAnalysis.usd_bdt_rate || 0).toFixed(2) },
+                        ]}
                     />
                 </Col>
+
                 <Col xs={24} sm={12} lg={6}>
-                    <AnalysisCard 
-                        title="Total Orders"
-                        value={orderAnalysis.total_orders || 0}
-                        subtitle="Placed during this period"
+                    <AnalysisCard
+                        title="Meta Orders"
+                        value={orderAnalysis.meta_orders || 0}
+                        subtitle="Orders with Meta attribution today"
                         icon={<ShoppingCartOutlined className="icon-green" />}
                         details={[
-                            { label: 'Web Orders', value: orderAnalysis.web_orders || 0 },
-                            { label: 'Incomplete Orders', value: orderAnalysis.incomplete_orders || 0 }
+                            { label: 'All Store Orders', value: orderAnalysis.total_orders || 0 },
+                            { label: 'Incomplete Meta Orders', value: orderAnalysis.incomplete_orders || 0 },
                         ]}
                     />
                 </Col>
+
                 <Col xs={24} sm={12} lg={6}>
-                    <AnalysisCard 
-                        title="Cost Per Order"
-                        value={`$${(orderAnalysis.cost_per_order || 0).toFixed(2)}`}
-                        subtitle="Average acquisition cost"
+                    <AnalysisCard
+                        title="Meta Cost Per Order"
+                        value={formatBDT(orderAnalysis.cost_per_order_bdt)}
+                        subtitle="Meta spend ÷ Meta-attributed orders"
                         icon={<CreditCardOutlined className="icon-green" />}
                         details={[
-                            { label: 'Cost Per Web Order', value: `$${(orderAnalysis.cost_per_web_order || 0).toFixed(2)}` },
-                            { label: 'Cost Per Incomplete Order', value: `$${(orderAnalysis.cost_per_incomplete_order || 0).toFixed(2)}` }
+                            { label: 'USD CPO', value: formatUSD(orderAnalysis.cost_per_order_usd) },
+                            { label: 'Delivered CPO', value: formatBDT(orderAnalysis.cost_per_delivered_order_bdt) },
                         ]}
                     />
                 </Col>
+
                 <Col xs={24} sm={12} lg={6}>
-                    <AnalysisCard 
-                        title="Conversion Rate"
-                        value={`${(orderAnalysis.conversion_rate || 0).toFixed(2)}%`}
-                        subtitle="Orders completed successfully"
+                    <AnalysisCard
+                        title="Delivery Rate"
+                        value={`${Number(orderAnalysis.conversion_rate || 0).toFixed(2)}%`}
+                        subtitle="Delivered / partial-returned Meta orders"
                         icon={<RiseOutlined className="icon-green" />}
                         details={[
-                            { label: 'Completed Orders', value: orderAnalysis.completed_orders || 0 },
-                            { label: 'Cancelled Orders', value: orderAnalysis.cancelled_orders || 0 }
+                            { label: 'Delivered', value: orderAnalysis.completed_orders || 0 },
+                            { label: 'Cancelled / Returned', value: orderAnalysis.cancelled_orders || 0 },
+                            { label: 'Cancel Rate', value: `${Number(orderAnalysis.cancel_rate || 0).toFixed(2)}%` },
                         ]}
                     />
                 </Col>

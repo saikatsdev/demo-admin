@@ -24,9 +24,18 @@ const CampaignTable = ({ campaigns, loading, refreshing, onRefresh, pagination, 
         });
     }, [campaigns, searchText, statusFilter, showFilter]);
 
-    const formatCurrency = (amount) => {
-        if (amount === undefined || amount === null || isNaN(amount)) return '$0.00';
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+    const formatCurrency = (amount, currency = 'USD') => {
+        const value = Number(amount || 0);
+
+        try {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: currency || 'USD',
+                maximumFractionDigits: 2,
+            }).format(value);
+        } catch {
+            return `${currency || ''} ${value.toFixed(2)}`.trim();
+        }
     };
 
     const formatCompact = (val) => new Intl.NumberFormat('en', { notation: 'compact' }).format(val || 0);
@@ -64,12 +73,12 @@ const CampaignTable = ({ campaigns, loading, refreshing, onRefresh, pagination, 
         {
             title: 'Budget',
             key: 'budget',
-            render: (_, record) => formatCurrency(record.daily_budget || record.lifetime_budget),
+            render: (_, record) => formatCurrency(record.daily_budget || record.lifetime_budget, record.currency),
             width: 110,
         },
-        { title: 'Spent', dataIndex: 'spend', key: 'spend', render: formatCurrency, width: 100 },
+        { title: 'Spent', dataIndex: 'spend', key: 'spend', render: (_, record) => formatCurrency(record.spend, record.currency), width: 100 },
         { title: 'Purch.', dataIndex: 'purchases', key: 'purchases', render: v => v || 0, width: 80 },
-        { title: 'ROAS', dataIndex: 'roas', key: 'roas', render: v => v ? `${parseFloat(v).toFixed(2)}x` : '—', width: 100 },
+        { title: 'ROAS', dataIndex: 'roas', key: 'roas', render: v => v ? `${parseFloat(v).toFixed(2)}x` : '-', width: 100 },
         { title: 'Impr.', dataIndex: 'impressions', key: 'impressions', render: formatCompact, width: 100 },
         { title: 'Clicks', dataIndex: 'clicks', key: 'clicks', render: formatCompact, width: 100 },
         { title: '', key: 'actions', fixed: 'right', width: 50, render: () => <Button type="text" icon={<EllipsisOutlined />} /> }
@@ -91,7 +100,7 @@ const CampaignTable = ({ campaigns, loading, refreshing, onRefresh, pagination, 
             align: 'right',
             render: (_, ad) => (
                 <Row gutter={16} justify="end" style={{ paddingRight: '24px' }}>
-                    <Col><Text style={{ fontSize: '12px' }}>{formatCurrency(ad.spend)}</Text></Col>
+                    <Col><Text style={{ fontSize: '12px' }}>{formatCurrency(ad.spend, ad.currency)}</Text></Col>
                     <Col><Text type="secondary" style={{ fontSize: '12px' }}>{formatCompact(ad.impressions)} impr</Text></Col>
                     <Col><Text type="secondary" style={{ fontSize: '12px' }}>{formatCompact(ad.clicks)} clicks</Text></Col>
                 </Row>
@@ -115,7 +124,7 @@ const CampaignTable = ({ campaigns, loading, refreshing, onRefresh, pagination, 
             align: 'right',
             render: (_, adset) => (
                 <Row gutter={16} justify="end" style={{ paddingRight: '24px' }}>
-                    <Col><Text strong style={{ fontSize: '13px' }}>{formatCurrency(adset.spend)}</Text></Col>
+                    <Col><Text strong style={{ fontSize: '13px' }}>{formatCurrency(adset.spend, adset.currency)}</Text></Col>
                     <Col><Text type="secondary" style={{ fontSize: '13px' }}>{formatCompact(adset.impressions)} impr</Text></Col>
                     <Col><Text type="secondary" style={{ fontSize: '13px' }}>{formatCompact(adset.clicks)} clicks</Text></Col>
                 </Row>
@@ -148,7 +157,7 @@ const CampaignTable = ({ campaigns, loading, refreshing, onRefresh, pagination, 
             render: (_, record) => (
                 <Row gutter={24} justify="end" style={{ paddingRight: '24px' }}>
                     <Col style={{ textAlign: 'right', minWidth: '85px' }}>
-                        <div style={{ fontSize: '14px', fontWeight: '600' }}>{formatCurrency(record.spend)}</div>
+                        <div style={{ fontSize: '14px', fontWeight: '600' }}>{formatCurrency(record.spend, record.currency)}</div>
                         <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>Spend</div>
                     </Col>
                     <Col style={{ textAlign: 'right', minWidth: '85px' }}>
@@ -160,7 +169,7 @@ const CampaignTable = ({ campaigns, loading, refreshing, onRefresh, pagination, 
                         <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>Purchases</div>
                     </Col>
                     <Col style={{ textAlign: 'right', minWidth: '85px' }}>
-                        <div style={{ fontSize: '14px', fontWeight: '600' }}>{record.roas ? `${parseFloat(record.roas).toFixed(2)}x` : '—'}</div>
+                        <div style={{ fontSize: '14px', fontWeight: '600' }}>{record.roas ? `${parseFloat(record.roas).toFixed(2)}x` : '-'}</div>
                         <div style={{ fontSize: '10px', color: '#9ca3af', textTransform: 'uppercase' }}>ROAS</div>
                     </Col>
                 </Row>

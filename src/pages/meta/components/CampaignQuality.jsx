@@ -4,7 +4,6 @@ import { LineChartOutlined, DollarOutlined, ClockCircleOutlined, CheckCircleOutl
 import { Link } from 'react-router-dom';
 import { getDatas } from '../../../api/common/common';
 import dayjs from 'dayjs';
-import CampaignQualityHelpModal from './CampaignQualityHelpModal';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -75,7 +74,6 @@ const CampaignQuality = ({ selectedAccount }) => {
     const [loading, setLoading]                           = useState(false);
     const [campaigns, setCampaigns]                       = useState([]);
     const [dateRange, setDateRange]                       = useState([dayjs().startOf('day'), dayjs().endOf('day')]);
-    const [helpModalOpen, setHelpModalOpen]               = useState(false);
     const [sources, setSources]                           = useState([]);
     const [selectedSource, setSelectedSource]             = useState('all');
     const [dateLabel, setDateLabel]                       = useState('Today');
@@ -723,7 +721,6 @@ const CampaignQuality = ({ selectedAccount }) => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Title level={4} style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Campaign Quality Report</Title>
                     <Badge count="Beta" style={{ backgroundColor: '#e6f4ff', color: '#1677ff', fontSize: '10px' }} />
-                    <Button type="text" icon={<InfoCircleOutlined />} size="small" style={{ color: '#9ca3af' }} onClick={() => setHelpModalOpen(true)}>Help</Button>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <FilterOutlined style={{ color: '#9ca3af' }} />
@@ -1050,8 +1047,6 @@ const CampaignQuality = ({ selectedAccount }) => {
                     margin: 4px 0;
                 }
             `}</style>
-
-            <CampaignQualityHelpModal open={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
         </div>
     );
 };

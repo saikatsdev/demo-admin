@@ -160,20 +160,25 @@ const AccountLimit = () => {
         return accountLimit;
     };
 
-    const exportRow = (item) => ({
-        'Account ID'     : item.account_id,
-        'Account'        : item.account,
-        'Status'         : item.status,
-        'Today Spend'    : item.today,
-        'Yesterday Spend': item.yesterday,
-        'Limit'          : item.budget?.limit,
-        'Balance'        : item.budget?.balance,
-        'Spent'          : item.budget?.spent,
-        'Remaining'      : item.budget?.remaining,
-        'Currency'       : item.budget?.currency,
-        'Days Left'      : item.days_left ?? '',
-        'Last Updated'   : item.last_updated,
-    });
+    const exportRow = (item) => {
+        const hasSpendingLimit =
+            item.budget?.has_spending_limit ?? Number(item.budget?.limit || 0) > 0;
+
+        return {
+            'Account ID'     : item.account_id,
+            'Account'        : item.account,
+            'Status'         : item.status,
+            'Today Spend'    : item.today,
+            'Yesterday Spend': item.yesterday,
+            'Limit'          : hasSpendingLimit ? item.budget?.limit : 'No spending limit',
+            'Balance'        : item.budget?.balance,
+            'Spent'          : item.budget?.spent,
+            'Remaining'      : hasSpendingLimit ? item.budget?.remaining : 'N/A',
+            'Currency'       : item.budget?.currency,
+            'Days Left'      : hasSpendingLimit ? (item.days_left ?? 'N/A') : 'N/A',
+            'Last Updated'   : item.last_updated,
+        };
+    };
 
     const handleDownloadExcel = () => {
         const dataToExport = getSelectedData().map(exportRow);
@@ -245,7 +250,9 @@ const AccountLimit = () => {
                                     <td>${item.yesterday}</td>
                                     <td>${item.budget?.balance ?? 0}</td>
                                     <td>${item.budget?.spent ?? 0}</td>
-                                    <td>${item.budget?.limit ?? 0}</td>
+                                    <td>${(item.budget?.has_spending_limit ?? Number(item.budget?.limit || 0) > 0) ? (item.budget?.limit ?? 0) : 'No spending limit'}</td>
+                                    <td>${(item.budget?.has_spending_limit ?? Number(item.budget?.limit || 0) > 0) ? (item.budget?.remaining ?? 0) : 'N/A'}</td>
+                                    <td>${(item.budget?.has_spending_limit ?? Number(item.budget?.limit || 0) > 0) ? (item.days_left ?? 'N/A') : 'N/A'}</td>
                                     <td>${item.budget?.currency ?? ''}</td>
                                 </tr>
                             `).join('')}
@@ -377,18 +384,18 @@ const AccountLimit = () => {
                 const balance = Number(record.budget?.balance || 0);
                 const remaining = Number(record.budget?.remaining || 0);
                 const currency = record.budget?.currency || 'USD';
+                const hasSpendingLimit =
+                    record.budget?.has_spending_limit ?? limit > 0;
 
-                if (limit <= 0) {
+                if (!hasSpendingLimit) {
                     return (
                         <div className="budget-balance-info">
                             <Text type="secondary" style={{ fontSize: '11px', fontWeight: 600 }}>
                                 No spending limit
                             </Text>
-                            {remaining > 0 && (
-                                <div style={{ fontSize: '11px', color: '#6b7280', marginTop: 4 }}>
-                                    Remaining: {formatMoney(remaining, currency)}
-                                </div>
-                            )}
+                            <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: 4 }}>
+                                Remaining limit: N/A
+                            </div>
                         </div>
                     );
                 }
@@ -421,6 +428,18 @@ const AccountLimit = () => {
             width: 100,
             align: 'center',
             render: (_, record) => {
+                const limit = Number(record.budget?.limit || 0);
+                const hasSpendingLimit =
+                    record.budget?.has_spending_limit ?? limit > 0;
+
+                if (!hasSpendingLimit) {
+                    return (
+                        <Tooltip title="Days Left is only available when an account spending limit is set">
+                            <Text type="secondary">N/A</Text>
+                        </Tooltip>
+                    );
+                }
+
                 if (record.days_left != null) {
                     return (
                         <Tag color={record.days_left <= 3 ? 'red' : record.days_left <= 7 ? 'orange' : 'blue'}>
@@ -428,17 +447,12 @@ const AccountLimit = () => {
                         </Tag>
                     );
                 }
-                const today = Number(record.today || 0);
-                const balance = Number(record.budget?.balance || 0);
-                if (today > 0 && balance > 0) {
-                    const est = Math.floor(balance / today);
-                    return (
-                        <Tooltip title="Estimated from balance ÷ today spend">
-                            <Text type="secondary" style={{ fontSize: '12px' }}>~{est}d</Text>
-                        </Tooltip>
-                    );
-                }
-                return <Text type="secondary">—</Text>;
+
+                return (
+                    <Tooltip title="Today's spend is zero, so remaining days cannot be estimated">
+                        <Text type="secondary">N/A</Text>
+                    </Tooltip>
+                );
             },
         },
         {

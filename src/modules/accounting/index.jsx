@@ -126,7 +126,7 @@ const getNavigation = ({ can }) => {
     if (canReceivables) {submenus.push({ label: "Receivables", path: "/receivables", icon: <DollarCircleOutlined /> });}
 
     return { 
-        title: "Account Management", 
+        title: "Finance & Profit", 
         icon: <AccountBookOutlined />, 
         submenus 
     };

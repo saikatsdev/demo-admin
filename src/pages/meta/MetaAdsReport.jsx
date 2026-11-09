@@ -7,7 +7,6 @@ import SummaryCards from './components/SummaryCards';
 import PerformanceTabs from './components/PerformanceTabs';
 import CampaignQuality from './components/CampaignQuality';
 import AccountLimit from './components/AccountLimit';
-import AccountExpense from './components/AccountExpense';
 import OrderAnalysis from './components/OrderAnalysis';
 import './MetaAdsReport.css';
 
@@ -38,7 +37,11 @@ const MetaAdsReport = () => {
     const getSummary = async () => {
         try {
             setLoadingSummary(true);
-            const res = await getDatas('/admin/meta/summary');
+            setError(null);
+            setSummary(null);
+
+            const res = await getDatas(`/admin/meta/summary?_t=${Date.now()}`);
+
             if (res && res.success) {
                 setSummary(res.result);
             }
@@ -48,7 +51,7 @@ const MetaAdsReport = () => {
         } finally {
             setLoadingSummary(false);
         }
-    }
+    };
 
     const connectMeta = async () => {
         const res = await getDatas('/admin/meta/connect');
@@ -149,13 +152,6 @@ const MetaAdsReport = () => {
                             children: (
                                 <AccountLimit/>
                             )
-                        },
-                        { 
-                            key: 'expenses', 
-                            label: 'Expenses', 
-                            children: (
-                                <AccountExpense accounts={accounts}/>
-                            ) 
                         },
                         { 
                             key: 'orders', 
