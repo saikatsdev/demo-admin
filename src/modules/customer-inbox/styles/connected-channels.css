@@ -1,0 +1,354 @@
+.cc-page {
+  display: flex;
+  max-width: 1640px;
+  margin-inline: auto;
+}
+
+.cc-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: clamp(20px, 4vw, 36px);
+  border-radius: 16px;
+  background: linear-gradient(115deg, #14243c, #25456b);
+}
+
+.cc-heading h2.ant-typography {
+  margin: 5px 0 8px;
+  color: #fff;
+}
+
+.cc-heading .ant-typography,
+.cc-security {
+  color: #e2ebfa;
+}
+
+.cc-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.cc-security {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #ffffff45;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.cc-tabs .ant-tabs-nav {
+  margin-bottom: 0;
+}
+
+.cc-tabs .ant-tabs-nav::before,
+.cc-tabs .ant-tabs-ink-bar {
+  display: none;
+}
+
+.cc-tabs .ant-tabs-tab {
+  padding: 0;
+  border: 1px solid #dbe3ee;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.cc-tabs .ant-tabs-tab + .ant-tabs-tab {
+  margin-inline-start: 10px;
+}
+
+.cc-tabs .ant-tabs-tab-active {
+  border-color: #3978bf;
+  background: #eff6ff;
+}
+
+.cc-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 148px;
+  padding: 10px 12px;
+  text-align: start;
+}
+
+.cc-tab-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 9px;
+  background: #e7f1ff;
+  color: #175bb0;
+  font-size: 18px;
+}
+
+.cc-tab--whatsapp .cc-tab-icon {
+  background: #e2f7eb;
+  color: #137548;
+}
+.cc-tab--instagram .cc-tab-icon {
+  background: #fce8f2;
+  color: #a92167;
+}
+.cc-tab--tiktok .cc-tab-icon {
+  background: #e9edf2;
+  color: #243044;
+}
+
+.cc-tab-name,
+.cc-tab-status {
+  display: block;
+  text-shadow: none;
+}
+
+.cc-tab-name {
+  font-weight: 650;
+}
+.cc-tab-status {
+  color: #526177;
+  font-size: 11px;
+}
+
+.cc-card {
+  border-radius: 14px;
+}
+
+.cc-page .cc-facebook-connect.ant-btn {
+  max-width: 100%;
+  height: auto;
+  min-height: 44px;
+  margin-top: 16px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: normal;
+}
+
+.cc-page .cc-facebook-connect.ant-btn:not(:disabled) {
+  border-color: #0866ff;
+  background: #0866ff;
+  color: #fff;
+  box-shadow: 0 3px 8px #0866ff30;
+}
+
+.cc-page .cc-facebook-connect.ant-btn:not(:disabled):hover {
+  border-color: #0056dd;
+  background: #0056dd;
+  color: #fff;
+}
+
+.cc-page .cc-facebook-connect.ant-btn:focus-visible {
+  outline: 2px solid #0056dd;
+  outline-offset: 3px;
+}
+
+.cc-page .cc-connect-help {
+  margin: 12px 0;
+}
+
+.cc-page-token {
+  overflow: hidden;
+  border: 1px solid #cddcf0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.cc-page-token-toggle {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f2f7ff;
+  color: #164b98;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.cc-page-token-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.cc-page-token-toggle:hover {
+  background: #e7f1ff;
+}
+
+.cc-page-token-toggle:focus-visible {
+  outline: 2px solid #0056dd;
+  outline-offset: -2px;
+}
+
+.cc-page-token-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 8px;
+  background: #dceaff;
+}
+
+.cc-page-token[open] .cc-page-token-arrow {
+  transform: rotate(180deg);
+}
+.cc-page-token-form {
+  padding: 16px;
+}
+
+.cc-steps {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding-inline-start: 22px;
+  line-height: 1.55;
+}
+
+.cc-steps li::marker {
+  color: #175bb0;
+  font-weight: 700;
+}
+
+.cc-messenger-steps {
+  gap: 16px;
+}
+
+.cc-messenger-steps p {
+  margin: 5px 0 0;
+  color: #465773;
+}
+
+.cc-messenger-webhook-settings {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  min-width: 0;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #dbe7f6;
+  border-radius: 8px;
+  background: #f4f8fd;
+  overflow-wrap: anywhere;
+}
+
+.cc-messenger-url {
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #dbe7f6;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.cc-whatsapp-steps {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.cc-whatsapp-steps details {
+  border: 1px solid #cfe3dc;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.cc-whatsapp-steps summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f2faf6;
+  color: #174a3b;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.cc-whatsapp-steps summary::-webkit-details-marker {
+  display: none;
+}
+
+.cc-whatsapp-steps summary:hover {
+  background: #e8f6ee;
+}
+
+.cc-whatsapp-steps summary:focus-visible {
+  outline: 2px solid #197353;
+  outline-offset: -2px;
+}
+
+.cc-whatsapp-steps details[open] .cc-whatsapp-step-arrow {
+  transform: rotate(180deg);
+}
+
+.cc-whatsapp-step-number {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 8px;
+  background: #dcefe5;
+}
+
+.cc-whatsapp-step-body {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid #cfe3dc;
+  color: #354a42;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.cc-whatsapp-step-body p,
+.cc-whatsapp-fields,
+.cc-whatsapp-fields dd {
+  margin: 0;
+}
+
+.cc-whatsapp-fields dt {
+  font-weight: 600;
+}
+
+.cc-whatsapp-fields dd + dt {
+  margin-top: 8px;
+}
+
+.cc-tiktok-guide,
+.cc-telegram-guide {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.cc-tiktok-guide .ant-collapse-header,
+.cc-telegram-guide .ant-collapse-header {
+  font-weight: 600;
+}
+
+.cc-tiktok-guide p,
+.cc-telegram-guide p {
+  margin: 0;
+  color: #465773;
+  line-height: 1.6;
+}
+
+.cc-tiktok-guide p + p,
+.cc-telegram-guide p + p {
+  margin-top: 10px;
+}
+
+.cc-telegram-guide .cc-telegram-command {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}

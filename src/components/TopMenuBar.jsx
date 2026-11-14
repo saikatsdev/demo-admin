@@ -38,7 +38,7 @@ export default function TopMenuBar({ submenus = [] }) {
     return (
         <div className="top-menu-bar">
             {visibleMenus.map((item, i) => (
-                <NavLink key={i} to={item.path} className={({ isActive }) => `top-menu-item ${isActive ? "active" : ""}`}>
+                <NavLink key={i} to={item.path} end={item.end} className={({ isActive }) => `top-menu-item ${isActive ? "active" : ""}`}>
                     {item.label}
                 </NavLink>
             ))}
@@ -52,7 +52,7 @@ export default function TopMenuBar({ submenus = [] }) {
                     {showMore && (
                         <div className="dropdown-menu">
                             {hiddenMenus.map((item, i) => (
-                                <NavLink key={i} to={item.path} className={({ isActive }) => `dropdown-item ${isActive ? "active" : ""}`} onClick={() => setShowMore(false)}>
+                                <NavLink key={i} to={item.path} end={item.end} className={({ isActive }) => `dropdown-item ${isActive ? "active" : ""}`} onClick={() => setShowMore(false)}>
                                     {item.label}
                                 </NavLink>
                             ))}
